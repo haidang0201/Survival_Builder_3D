@@ -1,37 +1,51 @@
 using UnityEngine;
 
 /*
-Script nay dung de tao hieu ung highlight cho doi tuong.
+Script tao hieu ung vien (outline) cho doi tuong.
 
 Chuc nang:
-- Luu material ban dau.
-- Doi sang material highlight khi duoc hover.
-- Tra ve material cu khi khong hover.
+- Tao ban sao mesh de lam vien
+- Scale lon hon de tao hieu ung vien
+- Bat / tat vien khi can
 */
 
 namespace Game.Player
 {
-    public class ObjectHighlighter : MonoBehaviour
+    public class OutlineHighlighter : MonoBehaviour
     {
-        private Material originalMat;
-        public Material highlightMat;
+        public Material outlineMat;
+        public float scaleMultiplier = 1.05f;
 
-        private Renderer rend;
+        private GameObject outlineObj;
 
-        void Start()
+        public void ShowOutline()
         {
-            rend = GetComponent<Renderer>();
-            originalMat = rend.material;
+            if (outlineObj != null) return;
+
+            // Tao ban sao
+            outlineObj = Instantiate(gameObject, transform.position, transform.rotation, transform);
+
+            // Xoa script tren ban sao
+            Destroy(outlineObj.GetComponent<OutlineHighlighter>());
+
+            // Xoa collider
+            Collider col = outlineObj.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+
+            // Set material outline
+            Renderer rend = outlineObj.GetComponent<Renderer>();
+            rend.material = outlineMat;
+
+            // Scale lon hon
+            outlineObj.transform.localScale = transform.localScale * scaleMultiplier;
         }
 
-        public void Highlight()
+        public void HideOutline()
         {
-            rend.material = highlightMat;
-        }
-
-        public void UnHighlight()
-        {
-            rend.material = originalMat;
+            if (outlineObj != null)
+            {
+                Destroy(outlineObj);
+            }
         }
     }
 }

@@ -1,18 +1,17 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/*
+Script quan ly cursor va outline.
+
+Chuc nang:
+- Hover: doi cursor
+- Click: bat outline
+- Click ra ngoai: tat outline
+*/
+
 namespace Game.Player
 {
-    /*
-    Script nay dung de dieu khien con tro chuot trong game.
-
-    Chuc nang:
-    - Lay vi tri chuot.
-    - Ban raycast tu camera.
-    - Neu trung doi tuong co the tuong tac thi doi cursor.
-    - Dong thoi highlight doi tuong.
-    */
-
     public class CursorController : MonoBehaviour
     {
         public Texture2D defaultCursor;
@@ -20,47 +19,53 @@ namespace Game.Player
 
         public LayerMask interactLayer;
 
-        private ObjectHighlighter current;
+        private OutlineHighlighter current;
 
         void Update()
         {
-            // Lay vi tri chuot tu Input System moi
             Vector2 mousePos = Mouse.current.position.ReadValue();
-
-            // Ban ray tu camera theo vi tri chuot
             Ray ray = Camera.main.ScreenPointToRay(mousePos);
             RaycastHit hit;
 
+            // ===== HOVER =====
             if (Physics.Raycast(ray, out hit, 100f, interactLayer))
             {
-                // Doi icon cursor khi hover vao object
                 Cursor.SetCursor(interactCursor, Vector2.zero, CursorMode.Auto);
-
-                var highlighter = hit.collider.GetComponent<ObjectHighlighter>();
-
-                if (highlighter != null)
-                {
-                    if (current != highlighter)
-                    {
-                        ClearHighlight();
-                        current = highlighter;
-                        current.Highlight();
-                    }
-                }
             }
             else
             {
-                // Tra ve cursor mac dinh
                 Cursor.SetCursor(defaultCursor, Vector2.zero, CursorMode.Auto);
-                ClearHighlight();
+            }
+
+            // ===== CLICK =====
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                if (Physics.Raycast(ray, out hit, 100f, interactLayer))
+                {
+                    var outline = hit.collider.GetComponent<OutlineHighlighter>();
+
+                    if (outline != null)
+                    {
+                        if (current != outline)
+                        {
+                            ClearOutline();
+                            current = outline;
+                            current.ShowOutline();
+                        }
+                    }
+                }
+                else
+                {
+                    ClearOutline();
+                }
             }
         }
 
-        void ClearHighlight()
+        void ClearOutline()
         {
             if (current != null)
             {
-                current.UnHighlight();
+                current.HideOutline();
                 current = null;
             }
         }
