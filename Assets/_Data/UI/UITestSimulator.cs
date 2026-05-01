@@ -3,64 +3,27 @@ using UnityEngine.InputSystem;
 
 public class UITestSimulator : MonoBehaviour
 {
-    public HUDController hud;
-
-    private int gold = 100;
-    private int wood = 50;
-    private float hp = 1f;
-
-    private void Update()
+    void Update()
     {
-        if (hud == null)
-        {
-            Debug.LogWarning("HUD chưa được gán!");
-            return;
-        }
-
         var keyboard = Keyboard.current;
         if (keyboard == null) return;
 
-        // ===== GOLD =====
-        if (keyboard.gKey.wasPressedThisFrame)
-        {
-            gold += 10;
-            hud.UpdateGold(gold);
-        }
+        if (keyboard.digit1Key.wasPressedThisFrame)
+            JsonDataManager.Ins.SetGold(JsonDataManager.Ins.gold + 10);
 
-        if (keyboard.hKey.wasPressedThisFrame)
-        {
-            gold = Mathf.Max(0, gold - 10);
-            hud.UpdateGold(gold);
-            hud.Shake();
-        }
+        if (keyboard.digit2Key.wasPressedThisFrame)
+            JsonDataManager.Ins.SetGold(Mathf.Max(0, JsonDataManager.Ins.gold - 10));
 
-        // ===== WOOD =====
-        if (keyboard.jKey.wasPressedThisFrame)
-        {
-            wood += 5;
-            hud.UpdateWood(wood);
-        }
+        if (keyboard.digit3Key.wasPressedThisFrame)
+            JsonDataManager.Ins.SetWood(JsonDataManager.Ins.wood + 5);
 
-        if (keyboard.uKey.wasPressedThisFrame)
-        {
-            wood = Mathf.Max(0, wood - 5);
-            hud.UpdateWood(wood);
-            hud.Shake();
-        }
+        if (keyboard.digit4Key.wasPressedThisFrame)
+            JsonDataManager.Ins.SetWood(Mathf.Max(0, JsonDataManager.Ins.wood - 5));
 
-        // ===== HEALTH =====
-        if (keyboard.kKey.wasPressedThisFrame)
-        {
-            hp -= 0.1f;
-            hp = Mathf.Clamp01(hp);
-            hud.UpdateHealth(hp);
-        }
+        if (keyboard.digit5Key.wasPressedThisFrame)
+            JsonDataManager.Ins.SetHP(JsonDataManager.Ins.hp - 0.1f);
 
-        if (keyboard.lKey.wasPressedThisFrame)
-        {
-            hp += 0.1f;
-            hp = Mathf.Clamp01(hp);
-            hud.UpdateHealth(hp);
-        }
+        if (keyboard.digit6Key.wasPressedThisFrame)
+            JsonDataManager.Ins.SetHP(JsonDataManager.Ins.hp + 0.1f);
     }
 }
