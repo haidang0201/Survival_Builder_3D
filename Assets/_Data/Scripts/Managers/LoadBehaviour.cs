@@ -1,22 +1,56 @@
-using UnityEngine;
+// using UnityEngine;
 
-public class LoadBehavior : Singleton<LoadBehavior>
-{
-    // // 1. Khai báo các "ổ cắm" để các thành viên khác kéo vào
-    // [Header("Core Systems")]
-    // public JsonDataManager Data;     // Của Dũng
-    // public HUDController UI;         // Của Dũng/Vũ
-    // public GameplayManager Gameplay; // Của Tiến
-    // public SoundManager Sound;
+// public class LoadBehavior : Singleton<LoadBehavior>
+// {
+//     [Header("Managers")]
+//     public GameMgr Game;
+//     public SoundMgr Sound;
 
-    // protected override void Awake()
-    // {
-    //     // 2. Sử dụng hàm của bạn: truyền false để giữ lại qua các Scene
-    //     MakeSingleton(false);
+//     [Header("Systems")]
+//     public JsonDataManager Data;
 
-    //     // 3. Tự động tìm tham chiếu nếu Leader quên kéo tay trong Inspector
-    //     if (Data == null) Data = FindObjectOfType<JsonDataManager>();
-    //     if (UI == null) UI = FindObjectOfType<HUDController>();
-    //     // ... tương tự cho các manager khác
-    // }
-}
+//     private bool initialized;
+
+//     protected override void Awake()
+//     {
+//         MakeSingleton(false);
+
+//         if (LoadBehavior.Ins != this)
+//         {
+//             enabled = false;
+//             return;
+//         }
+
+//         LoadManagers();
+//     }
+
+//     private void Start()
+//     {
+//         InitSystems();
+//     }
+
+//     private void LoadManagers()
+//     {
+//         if (Game == null)
+//             Game = FindObjectOfType<GameMgr>();
+
+//         if (Sound == null)
+//             Sound = FindObjectOfType<SoundMgr>();
+
+//         if (Data == null)
+//             Data = FindObjectOfType<JsonDataManager>();
+//     }
+
+//     private void InitSystems()
+//     {
+//         if (initialized) return;
+//         initialized = true;
+
+//         if (Data != null)
+//         {
+//             Data.LoadGame();
+//         }
+
+//         Debug.Log("LoadBehavior initialized.");
+//     }
+// }
