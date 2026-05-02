@@ -19,15 +19,25 @@ public class InventorySystem : Singleton<InventorySystem>
         LoadFromJson();
     }
 
-    public int GetItemCount(ItemType itemType)
+    public int GetItemAmount(ItemType itemType)
     {
         int index = FindItemIndex(itemType);
         return index >= 0 ? Mathf.Max(0, items[index].amount) : 0;
     }
 
+    public int GetItemCount(ItemType itemType)
+    {
+        return GetItemAmount(itemType);
+    }
+
     public bool HasItem(ItemType itemType, int amount = 1)
     {
-        return amount > 0 && GetItemCount(itemType) >= amount;
+        return amount > 0 && GetItemAmount(itemType) >= amount;
+    }
+
+    public bool AddWood(int amount = 1)
+    {
+        return AddItem(ItemType.Wood, amount);
     }
 
     public bool AddItem(ItemType itemType, int amount = 1)
@@ -201,7 +211,7 @@ public class InventorySystem : Singleton<InventorySystem>
     [ContextMenu("Inventory/Add Wood +1")]
     private void ContextAddWood()
     {
-        AddItem(ItemType.Wood, 1);
+        AddWood(1);
     }
 
     [ContextMenu("Inventory/Remove Wood -1")]
