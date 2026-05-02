@@ -1,56 +1,56 @@
-// using UnityEngine;
+using UnityEngine;
 
-// public class LoadBehavior : Singleton<LoadBehavior>
-// {
-//     [Header("Managers")]
-//     public GameMgr Game;
-//     public SoundMgr Sound;
+public class LoadBehavior : Singleton<LoadBehavior>
+{
+    [Header("Managers")]
+    public GameMgr Game;
+    public SoundMgr Sound;
 
-//     [Header("Systems")]
-//     public JsonDataManager Data;
+    [Header("Systems")]
+    public JsonDataManager Data;
 
-//     private bool initialized;
+    private bool initialized;
 
-//     protected override void Awake()
-//     {
-//         MakeSingleton(false);
+    protected override void Awake()
+    {
+        MakeSingleton(false);
 
-//         if (LoadBehavior.Ins != this)
-//         {
-//             enabled = false;
-//             return;
-//         }
+        if (LoadBehavior.Ins != this)
+        {
+            enabled = false;
+            return;
+        }
 
-//         LoadManagers();
-//     }
+        LoadManagers();
+    }
 
-//     private void Start()
-//     {
-//         InitSystems();
-//     }
+    private void Start()
+    {
+        InitSystems();
+    }
 
-//     private void LoadManagers()
-//     {
-//         if (Game == null)
-//             Game = FindObjectOfType<GameMgr>();
+    private void LoadManagers()
+    {
+        if (Game == null)
+            Game = FindObjectOfType<GameMgr>();
 
-//         if (Sound == null)
-//             Sound = FindObjectOfType<SoundMgr>();
+        if (Sound == null)
+            Sound = FindObjectOfType<SoundMgr>();
 
-//         if (Data == null)
-//             Data = FindObjectOfType<JsonDataManager>();
-//     }
+        if (Data == null)
+            Data = FindObjectOfType<JsonDataManager>();
+    }
 
-//     private void InitSystems()
-//     {
-//         if (initialized) return;
-//         initialized = true;
+    private void InitSystems()
+    {
+        if (initialized) return;
+        initialized = true;
 
-//         if (Data != null)
-//         {
-//             Data.LoadGame();
-//         }
+        if (Data != null)
+        {
+            Data.LoadGame();
+        }
 
-//         Debug.Log("LoadBehavior initialized.");
-//     }
-// }
+        Debug.Log("LoadBehavior initialized.");
+    }
+}

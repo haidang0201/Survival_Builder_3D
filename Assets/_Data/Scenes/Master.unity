@@ -302,7 +302,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 375758591}
-  - component: {fileID: 375758592}
   m_Layer: 0
   m_Name: LoadBehavior
   m_TagString: Untagged
@@ -325,18 +324,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2132688540}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &375758592
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 375758590}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 543966c4e244e4146a08d62602e949e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LoadBehaviour
 --- !u!1 &411140499
 GameObject:
   m_ObjectHideFlags: 0
@@ -439,6 +426,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1246157474}
+  - component: {fileID: 1246157475}
   m_Layer: 0
   m_Name: GameplayManage
   m_TagString: Untagged
@@ -461,6 +449,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2132688540}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1246157475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246157473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92daf58f50ffd4f4f82654ef4ff0c42c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameMgr
 --- !u!1 &1288660077
 GameObject:
   m_ObjectHideFlags: 0
@@ -598,6 +598,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1978564836}
+  - component: {fileID: 1978564837}
   m_Layer: 0
   m_Name: JsonDataManager
   m_TagString: Untagged
@@ -620,6 +621,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2132688540}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1978564837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1978564835}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4857dfd6e711bd40adca757b08beb57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JsonDataManager
+  saveFileName: savegame.json
 --- !u!1 &2132688539
 GameObject:
   m_ObjectHideFlags: 0
