@@ -52,6 +52,7 @@ public class SaveLoadTester : MonoBehaviour
     public void Save()
     {
         var save = new JsonDataManager.GameSaveData();
+        var existingSave = JsonDataManager.Ins.LoadGame();
         save.sceneName = SceneManager.GetActiveScene().name;
 
         foreach (var go in buildings)
@@ -73,6 +74,11 @@ public class SaveLoadTester : MonoBehaviour
             rs.id = r.id;
             rs.count = r.count;
             save.resources.Add(rs);
+        }
+
+        if (existingSave != null && existingSave.inventoryData != null)
+        {
+            save.inventoryData = existingSave.inventoryData;
         }
 
         save.savedAtUnix = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();

@@ -117,6 +117,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
         public string sceneName;
         public List<BuildingState> buildings = new List<BuildingState>();
         public List<ResourceState> resources = new List<ResourceState>();
+        public List<InventoryState> inventoryData = new List<InventoryState>();
         public long savedAtUnix;
     }
 
@@ -133,6 +134,13 @@ public class JsonDataManager : Singleton<JsonDataManager>
     {
         public string id;
         public int count;
+    }
+
+    [System.Serializable]
+    public class InventoryState
+    {
+        public string itemType;
+        public int amount;
     }
 
     [System.Serializable]
