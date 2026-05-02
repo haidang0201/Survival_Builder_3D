@@ -1232,6 +1232,7 @@ GameObject:
   - component: {fileID: 1727030563}
   - component: {fileID: 1727030562}
   - component: {fileID: 1727030566}
+  - component: {fileID: 1727030567}
   m_Layer: 7
   m_Name: Sphere
   m_TagString: Player
@@ -1326,7 +1327,7 @@ Transform:
   m_GameObject: {fileID: 1727030557}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.31686, y: 1.93, z: 0.31686}
+  m_LocalPosition: {x: 0.31686, y: 0.68, z: 4.36}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1346,6 +1347,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.ObjectHighlighter
   outlineMat: {fileID: 0}
   scaleMultiplier: 1.05
+--- !u!114 &1727030567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1727030557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 074631ca1deada44bbce1c4bf63d9a58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Tree
+  health: 3
 --- !u!1 &1784645075
 GameObject:
   m_ObjectHideFlags: 0
@@ -1360,6 +1374,7 @@ GameObject:
   - component: {fileID: 1784645079}
   - component: {fileID: 1784645080}
   - component: {fileID: 1784645081}
+  - component: {fileID: 1784645082}
   m_Layer: 0
   m_Name: Player(demo)
   m_TagString: Untagged
@@ -1493,6 +1508,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc2718f3f7f2fe749b94b093f8a94127, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Player.PlayerInputHandler
+--- !u!114 &1784645082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1784645075}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05983ea928b2ad64d9183bbbed9c3cd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TreeChopper
+  chopCooldown: 1
+  damage: 1
+  inputHandler: {fileID: 1784645081}
 --- !u!1 &1837815181
 GameObject:
   m_ObjectHideFlags: 0
