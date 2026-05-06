@@ -13,7 +13,6 @@ public class Tree : MonoBehaviour
     public bool TryClaim()
     {
         if (isOccupied) return false;
-
         isOccupied = true;
         return true;
     }
@@ -23,7 +22,6 @@ public class Tree : MonoBehaviour
         isOccupied = false;
     }
 
-    // 🔥 TRẢ VỀ GỖ
     public WoodPickup[] TakeDamage(int damage)
     {
         health -= damage;
@@ -36,11 +34,8 @@ public class Tree : MonoBehaviour
         return null;
     }
 
-    // 🔥 TRẢ DANH SÁCH GỖ
     WoodPickup[] DestroyTree()
     {
-        Debug.Log("Cây bị đốn!");
-
         WoodPickup[] woods = DropWood();
 
         isOccupied = false;
@@ -49,7 +44,6 @@ public class Tree : MonoBehaviour
         return woods;
     }
 
-    // 🔥 DROP GỖ
     WoodPickup[] DropWood()
     {
         if (woodPool == null) return null;
@@ -58,34 +52,35 @@ public class Tree : MonoBehaviour
 
         for (int i = 0; i < dropAmount; i++)
         {
-            GameObject woodObj = woodPool.GetObject();
+            GameObject obj = woodPool.GetObject();
 
-            Vector3 randomPos = transform.position + new Vector3(
+            Vector3 pos = transform.position + new Vector3(
                 Random.Range(-1f, 1f),
                 0.5f,
                 Random.Range(-1f, 1f)
             );
 
-            woodObj.transform.position = randomPos;
+            obj.transform.position = pos;
 
-            Rigidbody rb = woodObj.GetComponent<Rigidbody>();
+            Rigidbody rb = obj.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                if (!rb.isKinematic)
-                {
-                    rb.linearVelocity = Vector3.zero;
-                    rb.angularVelocity = Vector3.zero;
-                }
+                rb.isKinematic = false;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
 
-                rb.AddForce(
-                    Vector3.up * 3f + Random.insideUnitSphere,
-                    ForceMode.Impulse
-                );
+                rb.AddForce(Vector3.up * 3f + Random.insideUnitSphere, ForceMode.Impulse);
             }
 
-            woods[i] = woodObj.GetComponent<WoodPickup>();
+            woods[i] = obj.GetComponent<WoodPickup>();
         }
 
         return woods;
+    }
+
+    void OnEnable()
+    {
+        health = 3;
+        isOccupied = false;
     }
 }

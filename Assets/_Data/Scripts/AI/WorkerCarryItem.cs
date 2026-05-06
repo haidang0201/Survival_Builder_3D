@@ -5,7 +5,6 @@ public class WorkerCarryItem : MonoBehaviour
 {
     public Transform handPoint;
     public NavMeshAgent agent;
-
     public Transform house;
 
     private WoodPickup currentWood;
@@ -25,40 +24,33 @@ public class WorkerCarryItem : MonoBehaviour
 
     public void PickupWood(WoodPickup wood)
     {
+        if (wood == null) return;
+
+        if (wood.IsTaken()) return;
+
+        wood.MarkTaken();
+
         currentWood = wood;
-
-        Rigidbody rb = wood.GetComponent<Rigidbody>();
-        if (rb != null && !rb.isKinematic) // 🔥 FIX
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
-
         currentWood.Pickup(handPoint);
 
-        if (agent.isOnNavMesh && house != null)
-        {
-            agent.SetDestination(house.position);
-        }
+        agent.ResetPath();
     }
 
-    void Update()
+    public bool MoveToHouse()
     {
-        if (currentWood == null || house == null) return;
+        if (currentWood == null || house == null) return false;
+        if (!agent.isOnNavMesh) return false;
 
-        if (agent.isOnNavMesh &&
-            !agent.pathPending &&
-            agent.remainingDistance <= agent.stoppingDistance + 0.5f)
-        {
-            Deposit();
-        }
+        agent.isStopped = false;
+        agent.SetDestination(house.position);
+
+        return !agent.pathPending &&
+               agent.remainingDistance <= agent.stoppingDistance + 0.5f;
     }
 
-    void Deposit()
+    public bool TryDeposit()
     {
-        if (currentWood == null) return;
-
-        Debug.Log("Worker nộp gỗ!");
+        if (currentWood == null) return false;
 
         ObjectPool pool = currentWood.pool;
 
@@ -70,5 +62,7 @@ public class WorkerCarryItem : MonoBehaviour
         currentWood = null;
 
         agent.ResetPath();
+
+        return true;
     }
 }

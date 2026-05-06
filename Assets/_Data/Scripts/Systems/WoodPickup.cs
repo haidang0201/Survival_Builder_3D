@@ -7,26 +7,36 @@ public class WoodPickup : MonoBehaviour
     private Rigidbody rb;
     private Collider col;
 
+    private bool isTaken = false;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
     }
 
+    public bool IsTaken()
+    {
+        return isTaken;
+    }
+
+    public void MarkTaken()
+    {
+        isTaken = true;
+    }
+
     public void Pickup(Transform handPoint)
     {
-        Debug.Log("Cầm gỗ!");
+        if (handPoint == null) return;
 
         if (rb != null)
         {
-            // 🔥 CHỈ reset velocity khi KHÔNG phải kinematic
             if (!rb.isKinematic)
             {
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
 
-            // 🔥 sau đó mới set kinematic
             rb.isKinematic = true;
             rb.detectCollisions = false;
         }
@@ -49,8 +59,26 @@ public class WoodPickup : MonoBehaviour
         {
             rb.isKinematic = false;
             rb.detectCollisions = true;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
 
-            // 🔥 lúc này mới được set velocity
+        if (col != null)
+        {
+            col.enabled = true;
+        }
+    }
+
+    void OnEnable()
+    {
+        isTaken = false;
+
+        transform.SetParent(null);
+
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.detectCollisions = true;
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
