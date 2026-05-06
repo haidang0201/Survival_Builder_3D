@@ -21,7 +21,6 @@ public class EnemyAI : MonoBehaviour
     public float chaseSpeed = 4f;
 
     [Header("Animation")]
-    public string moveParam = "isMove";
     public string attackTrigger = "Attack";
 
     [Header("Day / Night")]
@@ -49,7 +48,6 @@ public class EnemyAI : MonoBehaviour
     private Renderer[] renderers;
     private Collider[] colliders;
     private bool lastNightState = true;
-    private string resolvedMoveParam;
 
     private void Awake()
     {
@@ -271,10 +269,7 @@ public class EnemyAI : MonoBehaviour
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(moveParam))
-        {
-            animator.SetBool(moveParam, isMoving);
-        }
+        animator.SetBool("isMove", isMoving);
 
         if (debugLogs && Time.time >= nextDebugLogTime)
         {
@@ -292,52 +287,5 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    private string ResolveMoveParameterName()
-    {
-        if (animator == null)
-        {
-            return null;
-        }
-
-        if (!string.IsNullOrWhiteSpace(moveParam) && HasBoolParameter(moveParam))
-        {
-            return moveParam;
-        }
-
-        if (HasBoolParameter("isMove"))
-        {
-            return "isMove";
-        }
-
-        if (HasBoolParameter("Move_P"))
-        {
-            return "Move_P";
-        }
-
-        if (debugLogs)
-        {
-            Debug.LogWarning("[EnemyAI] No matching Animator bool parameter found for isMove/Move_P");
-        }
-
-        return null;
-    }
-
-    private bool HasBoolParameter(string parameterName)
-    {
-        if (animator == null || string.IsNullOrWhiteSpace(parameterName))
-        {
-            return false;
-        }
-
-        foreach (AnimatorControllerParameter parameter in animator.parameters)
-        {
-            if (parameter.name == parameterName && parameter.type == AnimatorControllerParameterType.Bool)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-    // dynamic parameter detection removed to avoid editor-only types; use `moveParam` directly
 }
+
