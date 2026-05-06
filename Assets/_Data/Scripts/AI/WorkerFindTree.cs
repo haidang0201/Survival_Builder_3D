@@ -6,7 +6,7 @@ public class WorkerFindTree : MonoBehaviour
     public NavMeshAgent agent;
     public WorkerCarryItem carrySystem;
 
-    public Animator animator; // 🎬 animation
+    public Animator animator;
 
     public float chopDistance = 2f;
     public float chopTime = 2f;
@@ -18,17 +18,14 @@ public class WorkerFindTree : MonoBehaviour
 
     void Update()
     {
-        // ================= ANIMATION (Idle / Run) =================
+        // Animation Idle / Run
         if (animator != null && agent != null)
         {
             float speed = agent.velocity.magnitude;
             animator.SetFloat("Speed", speed, 0.1f, Time.deltaTime);
         }
 
-        // ================= DEBUG =================
-        Debug.Log("IsCarrying: " + carrySystem.IsCarrying());
-
-        // ===== PRIORITY 1: MANG GỖ =====
+        // ===== MANG GỖ =====
         if (carrySystem.IsCarrying())
         {
             carrySystem.MoveToHouse();
@@ -42,14 +39,14 @@ public class WorkerFindTree : MonoBehaviour
             return;
         }
 
-        // ===== PRIORITY 2: TÌM CÂY =====
+        // ===== TÌM CÂY =====
         if (targetTree == null)
         {
             FindTree();
             return;
         }
 
-        // ===== PRIORITY 3: DI CHUYỂN =====
+        // ===== DI CHUYỂN =====
         float dist = Vector3.Distance(transform.position, targetTree.transform.position);
 
         if (dist > chopDistance)
@@ -60,24 +57,28 @@ public class WorkerFindTree : MonoBehaviour
                 agent.SetDestination(targetTree.transform.position);
             }
 
-            // 🎬 không chặt → tắt state chặt
-            if (animator != null)
-                animator.SetBool("IsChopping", false);
-
             isChopping = false;
             return;
         }
 
-        // ===== PRIORITY 4: CHẶT =====
+        // ===== CHẶT =====
         agent.isStopped = true;
 
-        // 🎬 bật animation chặt
+        // chỉ trigger 1 lần
         if (!isChopping)
         {
             isChopping = true;
 
             if (animator != null)
-                animator.SetTrigger("Chop");
+            {
+                AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+
+                if (!state.IsName("ChopWorker"))
+                {
+                    animator.ResetTrigger("Chop");
+                    animator.SetTrigger("Chop");
+                }
+            }
         }
 
         chopTimer += Time.deltaTime;
@@ -86,9 +87,6 @@ public class WorkerFindTree : MonoBehaviour
         {
             chopTimer = 0f;
 
-            Debug.Log("Đang chặt cây...");
-
-            // ✅ DAMAGE vẫn từ LOGIC (KHÔNG phải animation)
             WoodPickup[] woods = targetTree.TakeDamage(1);
 
             if (woods != null && woods.Length > 0)
@@ -101,10 +99,6 @@ public class WorkerFindTree : MonoBehaviour
 
             agent.isStopped = false;
             isChopping = false;
-
-            // 🎬 tắt chặt
-            if (animator != null)
-                animator.SetBool("IsChopping", false);
         }
     }
 
@@ -138,11 +132,6 @@ public class WorkerFindTree : MonoBehaviour
         if (best != null)
         {
             targetTree = best;
-            Debug.Log("Chọn cây: " + targetTree.name);
-        }
-        else
-        {
-            Debug.Log("KHÔNG TÌM THẤY CÂY!");
         }
     }
 }
