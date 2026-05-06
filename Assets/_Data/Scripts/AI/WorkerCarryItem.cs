@@ -25,17 +25,16 @@ public class WorkerCarryItem : MonoBehaviour
     public void PickupWood(WoodPickup wood)
     {
         if (wood == null) return;
-
         if (wood.IsTaken()) return;
 
         wood.MarkTaken();
-
         currentWood = wood;
         currentWood.Pickup(handPoint);
 
         agent.ResetPath();
     }
 
+    // Trả về true nếu đã đến nơi
     public bool MoveToHouse()
     {
         if (currentWood == null || house == null) return false;

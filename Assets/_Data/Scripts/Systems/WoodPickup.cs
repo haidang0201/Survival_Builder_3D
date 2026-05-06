@@ -6,13 +6,19 @@ public class WoodPickup : MonoBehaviour
 
     private Rigidbody rb;
     private Collider col;
-
     private bool isTaken = false;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
+    }
+
+    void OnEnable()
+    {
+        isTaken = false;
+        transform.SetParent(null);
+        ResetPhysics(kinematic: false, collisions: true);
     }
 
     public bool IsTaken()
@@ -29,22 +35,7 @@ public class WoodPickup : MonoBehaviour
     {
         if (handPoint == null) return;
 
-        if (rb != null)
-        {
-            if (!rb.isKinematic)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
-
-            rb.isKinematic = true;
-            rb.detectCollisions = false;
-        }
-
-        if (col != null)
-        {
-            col.enabled = false;
-        }
+        ResetPhysics(kinematic: true, collisions: false);
 
         transform.SetParent(handPoint);
         transform.localPosition = Vector3.zero;
@@ -54,38 +45,28 @@ public class WoodPickup : MonoBehaviour
     public void Drop()
     {
         transform.SetParent(null);
-
-        if (rb != null)
-        {
-            rb.isKinematic = false;
-            rb.detectCollisions = true;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
-
-        if (col != null)
-        {
-            col.enabled = true;
-        }
+        ResetPhysics(kinematic: false, collisions: true);
     }
 
-    void OnEnable()
+    void ResetPhysics(bool kinematic, bool collisions)
     {
-        isTaken = false;
-
-        transform.SetParent(null);
-
         if (rb != null)
         {
-            rb.isKinematic = false;
-            rb.detectCollisions = true;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            // Phải reset velocity TRƯỚC khi set isKinematic = true
+            // vì Unity không cho phép set velocity trên kinematic body
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
+            rb.isKinematic = kinematic;
+            rb.detectCollisions = collisions;
         }
 
         if (col != null)
         {
-            col.enabled = true;
+            col.enabled = collisions;
         }
     }
 }

@@ -10,6 +10,12 @@ public class Tree : MonoBehaviour
 
     private bool isOccupied = false;
 
+    void OnEnable()
+    {
+        health = 3;
+        isOccupied = false;
+    }
+
     public bool TryClaim()
     {
         if (isOccupied) return false;
@@ -22,6 +28,7 @@ public class Tree : MonoBehaviour
         isOccupied = false;
     }
 
+    // Trả về mảng gỗ nếu cây chết, null nếu cây còn sống
     public WoodPickup[] TakeDamage(int damage)
     {
         health -= damage;
@@ -37,10 +44,8 @@ public class Tree : MonoBehaviour
     WoodPickup[] DestroyTree()
     {
         WoodPickup[] woods = DropWood();
-
         isOccupied = false;
         gameObject.SetActive(false);
-
         return woods;
     }
 
@@ -54,13 +59,13 @@ public class Tree : MonoBehaviour
         {
             GameObject obj = woodPool.GetObject();
 
-            Vector3 pos = transform.position + new Vector3(
+            Vector3 dropPos = transform.position + new Vector3(
                 Random.Range(-1f, 1f),
                 0.5f,
                 Random.Range(-1f, 1f)
             );
 
-            obj.transform.position = pos;
+            obj.transform.position = dropPos;
 
             Rigidbody rb = obj.GetComponent<Rigidbody>();
             if (rb != null)
@@ -68,7 +73,6 @@ public class Tree : MonoBehaviour
                 rb.isKinematic = false;
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
-
                 rb.AddForce(Vector3.up * 3f + Random.insideUnitSphere, ForceMode.Impulse);
             }
 
@@ -76,11 +80,5 @@ public class Tree : MonoBehaviour
         }
 
         return woods;
-    }
-
-    void OnEnable()
-    {
-        health = 3;
-        isOccupied = false;
     }
 }
