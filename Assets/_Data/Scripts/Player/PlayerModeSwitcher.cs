@@ -9,6 +9,9 @@ public class PlayerModeSwitcher : MonoBehaviour
 
     public BuildCameraController buildCamera;
 
+    [Header("Input")]
+    public Key switchModeKey = Key.Tab;
+
     private bool isBuildMode = false;
 
     void Start()
@@ -18,7 +21,10 @@ public class PlayerModeSwitcher : MonoBehaviour
 
     void Update()
     {
-        if (Keyboard.current.tabKey.wasPressedThisFrame)
+        var keyboard = Keyboard.current;
+        if (keyboard == null) return;
+
+        if (keyboard[switchModeKey].wasPressedThisFrame)
         {
             isBuildMode = !isBuildMode;
 
@@ -31,23 +37,45 @@ public class PlayerModeSwitcher : MonoBehaviour
 
     void SetPlayerMode()
     {
-        movement.SetMove(true);
-        playerCamera.SetLook(true);
+        if (movement != null)
+            movement.SetMove(true);
 
-        playerCamObj.gameObject.SetActive(true);
-        buildCamera.SetActive(false);
+        if (playerCamera != null)
+        {
+            playerCamera.enabled = true;
+            playerCamera.SetLook(true);
+        }
 
+        if (playerCamObj != null)
+            playerCamObj.gameObject.SetActive(true);
+
+        if (buildCamera != null)
+            buildCamera.SetActive(false);
+
+        // reset cursor cho player mode
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void SetBuildMode()
     {
-        movement.SetMove(false);
-        playerCamera.SetLook(false);
+        if (movement != null)
+            movement.SetMove(false);
 
-        playerCamObj.gameObject.SetActive(false);
-        buildCamera.SetActive(true);
+        if (playerCamera != null)
+        {
+            playerCamera.SetLook(false);
+            playerCamera.enabled = false;
+        }
 
+        if (playerCamObj != null)
+            playerCamObj.gameObject.SetActive(false);
+
+        if (buildCamera != null)
+            buildCamera.SetActive(true);
+
+        // ép lại cursor ngay khi vào build mode
         Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }
