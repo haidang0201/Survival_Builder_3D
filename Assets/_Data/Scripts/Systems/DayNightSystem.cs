@@ -65,13 +65,13 @@ public class DayNightSystem : Singleton<DayNightSystem>
             // Update Night related actions (e.g. AI logic)
             Debug.Log("Night time: Workers return home, Wolves attack.");
             // Trigger actions such as UI warnings, sounds for wolves
-            UIManager.Ins.ShowWarning("Wolves are coming!", true);
+            // UIManager.Ins.ShowWarning("Wolves are coming!", true);
         }
         else
         {
             // Daytime actions (workers resume tasks)
             Debug.Log("Day time: Workers continue working.");
-            UIManager.Ins.HideWarning();
+            //  UIManager.Ins.HideWarning();
         }
     }
 }
