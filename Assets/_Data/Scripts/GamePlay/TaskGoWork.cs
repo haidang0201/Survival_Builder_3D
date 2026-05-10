@@ -5,7 +5,7 @@ public class TaskGoWork : WorkerTask
     // Tìm công trình WorkStation cho công nhân
     protected override void FindWork()
     {
-        BuildingCtrl workStation = BuildingManager.Ins.GetWorkBuilding();  // Tìm công trình làm việc
+        BuildingCtrl workStation = BuildingManager.Ins.FindSawmill();  // Tìm công trình làm việc
         if (workStation != null)
         {
             workerCtrl.workerMovement.SetTarget(workStation.transform.position);  // Di chuyển công nhân đến công trình

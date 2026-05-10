@@ -32,7 +32,7 @@ public static class FileIO
             // Kiểm tra nếu file tồn tại
             if (!File.Exists(path))
             {
-                Debug.LogWarning($"File not found: {path}");
+                //                Debug.LogWarning($"File not found: {path}");
                 return string.Empty;
             }
 
@@ -43,6 +43,29 @@ public static class FileIO
         {
             Debug.LogError($"Error reading file: {ex.Message}");  // Xử lý lỗi nếu có
             return string.Empty;
+        }
+    }
+    // Thêm vào FileIO.cs
+    public static bool Delete(string fileName)
+    {
+        try
+        {
+            string path = Path.Combine(Application.persistentDataPath, fileName);
+
+            if (!File.Exists(path))
+            {
+                Debug.LogWarning($"[FileIO] File không tồn tại: {path}");
+                return false;
+            }
+
+            File.Delete(path);
+            Debug.Log($"[FileIO] Đã xóa file: {path}");
+            return true;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[FileIO] Lỗi xóa file: {ex.Message}");
+            return false;
         }
     }
 }

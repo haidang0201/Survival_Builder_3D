@@ -1,71 +1,82 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+/*
+ * BuildingManager.cs
+ * Folder: Scripts/Managers/
+ * Người làm: DŨNG
+ *
+ * Quản lý toàn bộ BuildingCtrl trong scene
+ * Singleton – truy cập qua BuildingManager.Ins
+ * Được gắn vào Scene Master bởi ĐĂNG
+ */
+
 public class BuildingManager : Singleton<BuildingManager>
 {
-    public List<BuildingCtrl> buildings = new List<BuildingCtrl>();  // Danh sách các tòa nhà trong game
+    // ================= DATA =================
 
-    // Tìm kiếm tòa nhà theo loại công trình
-    public BuildingCtrl FindBuilding(WorkerType workerType)
-    {
-        foreach (BuildingCtrl building in buildings)
-        {
-            if (building.GetBuildingType() == WorkerTypeToBuildingType(workerType))  // Sử dụng WorkerType để lấy BuildingType
-            {
-                return building;  // Trả về tòa nhà nếu tìm thấy
-            }
-        }
-        return null;  // Nếu không tìm thấy, trả về null
-    }
+    private readonly List<BuildingCtrl> buildings = new List<BuildingCtrl>();
 
-    // Hàm chuyển đổi WorkerType thành BuildingType tương ứng
-    private BuildingType WorkerTypeToBuildingType(WorkerType workerType)
-    {
-        switch (workerType)
-        {
-            case WorkerType.Home:
-                return BuildingType.Home;
-            case WorkerType.WorkStation:
-                return BuildingType.WorkStation;
-            // Thêm các trường hợp khác nếu cần thiết
-            default:
-                return BuildingType.WorkStation;  // Mặc định trả về WorkStation
-        }
-    }
+    // ================= PUBLIC – REGISTER =================
 
-    // Thêm tòa nhà vào danh sách
     public void AddBuilding(BuildingCtrl building)
     {
-        if (building != null && !buildings.Contains(building))
+        if (building == null || buildings.Contains(building)) return;
+
+        buildings.Add(building);
+        Debug.Log($"[BuildingManager] Thêm: {building.buildingType} | Tổng: {buildings.Count}");
+    }
+
+    public void RemoveBuilding(BuildingCtrl building)
+    {
+        if (buildings.Remove(building))
+            Debug.Log($"[BuildingManager] Xóa: {building.buildingType} | Còn: {buildings.Count}");
+    }
+
+    // ================= PUBLIC – FIND =================
+
+    /// <summary>Tìm building sẵn sàng theo loại</summary>
+    public BuildingCtrl FindAvailable(BuildingType type)
+    {
+        foreach (var b in buildings)
         {
-            buildings.Add(building);  // Thêm tòa nhà vào danh sách nếu chưa tồn tại
+            if (b.buildingType == type && b.IsAvailable)
+                return b;
         }
+        return null;
     }
 
-    // Lấy về tòa nhà nhà ở (Home)
-    public BuildingCtrl GetHomeBuilding()
+    /// <summary>Lấy tất cả building theo loại</summary>
+    public List<BuildingCtrl> GetAllByType(BuildingType type)
     {
-        return GetBuildingByType(WorkerType.Home);  // Tìm tòa nhà Home
-    }
+        var result = new List<BuildingCtrl>();
 
-    // Lấy về tòa nhà công việc (WorkStation)
-    public BuildingCtrl GetWorkBuilding()
-    {
-        return GetBuildingByType(WorkerType.WorkStation);  // Tìm tòa nhà WorkStation
-    }
-
-    // Hàm lấy tòa nhà theo loại
-    private BuildingCtrl GetBuildingByType(WorkerType workerType)
-    {
-        // Lấy BuildingType từ WorkerType và tìm kiếm tòa nhà
-        BuildingType buildingType = WorkerTypeToBuildingType(workerType);
-        foreach (BuildingCtrl building in buildings)
+        foreach (var b in buildings)
         {
-            if (building.GetBuildingType() == buildingType)
-            {
-                return building;  // Trả về tòa nhà theo loại
-            }
+            if (b.buildingType == type)
+                result.Add(b);
         }
-        return null;  // Nếu không tìm thấy, trả về null
+
+        return result;
+    }
+
+    // ================= PUBLIC – SHORTCUT =================
+
+    public BuildingCtrl FindHouse() => FindAvailable(BuildingType.House);
+    public BuildingCtrl FindForestHut() => FindAvailable(BuildingType.ForestHut);
+    public BuildingCtrl FindSawmill() => FindAvailable(BuildingType.Sawmill);
+    public BuildingCtrl FindWarehouse() => FindAvailable(BuildingType.Warehouse);
+
+    // ================= PUBLIC – SAVE =================
+
+    /// <summary>Lấy data tất cả building để lưu JSON</summary>
+    public List<BuildingData> GetAllData()
+    {
+        var data = new List<BuildingData>();
+
+        foreach (var b in buildings)
+            data.Add(b.GetData());
+
+        return data;
     }
 }

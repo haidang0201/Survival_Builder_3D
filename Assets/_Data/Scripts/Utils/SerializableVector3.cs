@@ -14,10 +14,9 @@ public struct SerializableVector3
         this.x = x; this.y = y; this.z = z;
     }
 
-    public SerializableVector3(Vector3 v)
-    {
-        x = v.x; y = v.y; z = v.z;
-    }
+    // Constructor nhận Vector3
+    public SerializableVector3(Vector3 v) { x = v.x; y = v.y; z = v.z; }
 
+    // Convert ngược lại
     public Vector3 ToVector3() => new Vector3(x, y, z);
 }

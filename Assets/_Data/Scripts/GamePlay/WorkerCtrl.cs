@@ -22,7 +22,7 @@ public class WorkerCtrl : MonoBehaviour
     // Công nhân trở về nhà
     public void ReturnHome()
     {
-        BuildingCtrl homeBuilding = BuildingManager.Ins.GetHomeBuilding();
+        BuildingCtrl homeBuilding = BuildingManager.Ins.FindHouse();
         if (homeBuilding != null)
         {
             MoveToLocation(homeBuilding.transform.position);

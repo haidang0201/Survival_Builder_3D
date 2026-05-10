@@ -23,25 +23,6 @@ public class JsonDataManager : Singleton<JsonDataManager>
     }
 
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.T))  // Nhấn phím T để tải game
-        {
-            GameSaveData loadedData = JsonDataManager.Ins.LoadGame();
-            if (loadedData != null)
-            {
-                Debug.Log($"Loaded game:");
-            }
-
-            else
-            {
-                Debug.LogError("No save file found!");
-            }
-
-
-        }
-    }
-
     // Lưu game vào PersistentDataPath
     public bool SaveGame(GameSaveData save)
     {
@@ -49,14 +30,18 @@ public class JsonDataManager : Singleton<JsonDataManager>
         {
             string json = JsonUtility.ToJson(save, true);
             FileIO.SaveToFile(json, saveFileName);
-            Debug.Log($"Saved game to {saveFileName}");
+            //     Debug.Log($"Saved game to {saveFileName}");
             return true;
         }
         catch (Exception ex)
         {
-            Debug.LogError("Failed to save game: " + ex.Message);
+            Debug.Log("Failed to save game: " + ex.Message);
             return false;
         }
+    }
+    public bool DeleteSave()
+    {
+        return FileIO.Delete(saveFileName); // ← truyền fileName, không phải full path
     }
 
     // Tải game từ PersistentDataPath
@@ -65,7 +50,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
         string json = FileIO.LoadFromFile(saveFileName);
         if (string.IsNullOrEmpty(json))
         {
-            Debug.LogWarning("Save file not found or empty");
+            //            Debug.LogWarning("Save file not found or empty");
             return null;
         }
 
@@ -77,7 +62,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
         }
         catch (Exception ex)
         {
-            Debug.LogError("Failed to load save: " + ex.Message);
+            //     Debug.LogError("Failed to load save: " + ex.Message);
             return null;
         }
     }
@@ -93,7 +78,6 @@ public class JsonDataManager : Singleton<JsonDataManager>
             yield return null;
         }
     }
-
 
     // Save Data Types
     // ==============================
