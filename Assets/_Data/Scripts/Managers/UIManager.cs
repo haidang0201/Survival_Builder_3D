@@ -15,4 +15,25 @@ public class UIManager : Singleton<UIManager>
     {
         warningUI.SetActive(false);
     }
+    public void OnClickHouseButton()
+    {
+        BuildingSystem.Ins.StartPlacing(BuildingType.House);
+    }
+
+    public void OnClickForestHutButton()
+    {
+        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+    }
+    public void OnClickSawmillButton()
+    {
+        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+    }
+    public void OnClickWarehouseButton()
+    {
+        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+    }
+    public void OnClickHouseBuilderButton()
+    {
+        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+    }
 }

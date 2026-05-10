@@ -6,16 +6,18 @@ using System.Collections.Generic;
  * Folder: Scripts/Building/
  * Người làm: DŨNG (test)
  *
- * Test toàn bộ luồng: đặt công trình → xoay → save → load
- *
  * Điều khiển:
  *   1~4         → Spawn ghost loại tương ứng
- *   R           → Xoay 90° (khi đang giữ ghost)
+ *   R           → Xoay 90°
  *   Click trái  → Đặt công trình
  *   Click phải  → Huỷ
- *   SPACE       → Lưu JSON
- *   L           → Tải JSON
- *   C           → Xóa save
+ *   SPACE       → Lưu JSON (chỉ lưu khi nhấn)
+ *   L           → Tải JSON (xóa hết hiện tại, load về trạng thái đã lưu)
+ *   C           → Xóa file save
+ *
+ * Nguyên tắc:
+ *   - Chưa nhấn SPACE → chưa lưu → nhấn L sẽ báo chưa có save, KHÔNG xóa nhà
+ *   - Đã nhấn SPACE → nhấn L → xóa hết nhà hiện tại → load đúng save
  */
 
 public class TestBuildingPlacement : MonoBehaviour
@@ -88,14 +90,19 @@ public class TestBuildingPlacement : MonoBehaviour
 
     private void TestSave()
     {
-        // List<BuildingState> đồng bộ với JsonDataManager.GameSaveData.buildings
         List<BuildingState> states = BuildingManager.Ins.GetAllStates();
+
+        if (states.Count == 0)
+        {
+            Debug.LogWarning("[Test] ⚠️ Không có công trình nào để lưu!");
+            return;
+        }
 
         var saveData = new JsonDataManager.GameSaveData
         {
             sceneName = "MainGame",
             savedAtUnix = System.DateTimeOffset.Now.ToUnixTimeSeconds(),
-            buildings = states,                       // List<BuildingState> ✅
+            buildings = states,
             resources = new List<ResourceData>()
         };
 
@@ -105,9 +112,9 @@ public class TestBuildingPlacement : MonoBehaviour
         {
             Debug.Log("===========================================");
             Debug.Log("[Test] ✅ LƯU THÀNH CÔNG!");
-            Debug.Log($"  Số công trình: {states.Count}");
+            Debug.Log($"  Số công trình đã lưu: {states.Count}");
             foreach (var s in states)
-                Debug.Log($"  🏠 {s.buildingType,-15} | Rot Y: {s.rotation.y}° | Built: {s.isBuilt}");
+                Debug.Log($"  🏠 {s.buildingType,-15} | Rot Y: {s.rotation.y}°");
             Debug.Log("===========================================");
         }
         else
@@ -118,18 +125,21 @@ public class TestBuildingPlacement : MonoBehaviour
 
     private void TestLoad()
     {
+        // ✅ Load trước – kiểm tra có file hợp lệ không
         JsonDataManager.GameSaveData loaded = JsonDataManager.Ins.LoadGame();
 
-        if (loaded == null)
+        // ✅ Nếu chưa có save → KHÔNG xóa nhà hiện tại
+        if (loaded == null || loaded.buildings == null || loaded.buildings.Count == 0)
         {
-            Debug.LogError("[Test] ❌ TẢI THẤT BẠI! Chưa có file save.");
+            Debug.LogWarning("[Test] ⚠️ Chưa có file save! Nhấn SPACE để lưu trước.");
             return;
         }
 
-        BuildingManager.Ins.LoadStates(loaded.buildings); // List<BuildingState> ✅
+        // ✅ Có save → xóa hết nhà hiện tại (kể cả chưa lưu) → load về save
+        BuildingManager.Ins.LoadStates(loaded.buildings);
 
         Debug.Log("===========================================");
-        Debug.Log("[Test] ✅ TẢI THÀNH CÔNG!");
+        Debug.Log("[Test] ✅ TẢI THÀNH CÔNG! Nhà chưa lưu đã bị xóa.");
         Debug.Log($"  Số công trình: {loaded.buildings.Count}");
         foreach (var s in loaded.buildings)
             Debug.Log($"  🏠 {s.buildingType,-15} | Rot Y: {s.rotation.y}° | Built: {s.isBuilt}");
@@ -140,8 +150,8 @@ public class TestBuildingPlacement : MonoBehaviour
     {
         bool result = JsonDataManager.Ins.DeleteSave();
         Debug.Log(result
-            ? "[Test] 🗑️ XÓA SAVE THÀNH CÔNG!"
-            : "[Test] ❌ Chưa có file save!");
+            ? "[Test] 🗑️ XÓA FILE SAVE THÀNH CÔNG!"
+            : "[Test] ⚠️ Chưa có file save để xóa!");
     }
 
     // ================= LOG =================
@@ -150,11 +160,10 @@ public class TestBuildingPlacement : MonoBehaviour
     {
         Debug.Log("===========================================");
         Debug.Log("[TestBuildingPlacement] Hướng dẫn:");
-        Debug.Log("  1 → House | 2 → ForestHut | 3 → Sawmill | 4 → Warehouse");
-        Debug.Log("  R           → Xoay 90°");
-        Debug.Log("  Click trái  → Đặt");
-        Debug.Log("  Click phải  → Huỷ");
-        Debug.Log("  SPACE → Lưu | L → Tải | C → Xóa save");
+        Debug.Log("  1~4   → Chọn loại công trình");
+        Debug.Log("  R     → Xoay 90°");
+        Debug.Log("  Click trái  → Đặt | Click phải → Huỷ");
+        Debug.Log("  SPACE → Lưu | L → Load về save | C → Xóa save");
         Debug.Log("===========================================");
     }
 }

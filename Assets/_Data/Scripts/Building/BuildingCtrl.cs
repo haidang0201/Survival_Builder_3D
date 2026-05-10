@@ -52,20 +52,18 @@ public class BuildingCtrl : MonoBehaviour
     {
         if (!IsAvailable)
         {
-            Debug.LogWarning($"[BuildingCtrl] {buildingType} không sẵn sàng nhận worker!");
             return;
         }
 
         isOccupied = true;
         worker.MoveToLocation(door.position);
-        Debug.Log($"[BuildingCtrl] Worker được giao đến {buildingType}");
+
     }
 
     public void ReleaseWorker(WorkerCtrl worker)
     {
         isOccupied = false;
         worker.ComeBackToWork();
-        Debug.Log($"[BuildingCtrl] Worker hoàn thành tại {buildingType}");
     }
 
     // ================= PUBLIC – BUILD =================
@@ -75,7 +73,6 @@ public class BuildingCtrl : MonoBehaviour
         if (IsBuilt) return;
 
         buildProgress = Mathf.Clamp01(buildProgress + amount);
-        Debug.Log($"[BuildingCtrl] {buildingType} tiến độ: {buildProgress * 100:F0}%");
 
         if (IsBuilt) OnBuildComplete();
     }
@@ -84,7 +81,6 @@ public class BuildingCtrl : MonoBehaviour
     {
         buildProgress = 0f;
         isOccupied = false;
-        Debug.Log($"[BuildingCtrl] Hủy xây dựng {buildingType}");
     }
 
     // ================= PUBLIC – ROTATION =================
@@ -94,7 +90,6 @@ public class BuildingCtrl : MonoBehaviour
     {
         float newY = (CurrentYRotation + 90f) % 360f;
         transform.rotation = Quaternion.Euler(0f, newY, 0f);
-        Debug.Log($"[BuildingCtrl] Xoay: {newY}°");
     }
 
     /// <summary>Set góc xoay cụ thể (dùng khi load từ save)</summary>
@@ -131,16 +126,12 @@ public class BuildingCtrl : MonoBehaviour
 
         transform.position = state.position.ToVector3();
         transform.eulerAngles = state.rotation.ToVector3();
-
-        Debug.Log($"[BuildingCtrl] Loaded: {buildingType} | Xoay: {CurrentYRotation}° | Built: {IsBuilt}");
     }
 
     // ================= PRIVATE =================
 
     private void OnBuildComplete()
     {
-        Debug.Log($"[BuildingCtrl] ✅ {buildingType} xây xong!");
-        // TODO: VFXManager.Ins.Play("BuildComplete", transform.position);
     }
 
     /// <summary>Snap góc về bội số 90° gần nhất</summary>

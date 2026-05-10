@@ -7,13 +7,12 @@ using System.Collections.Generic;
  * Người làm: DŨNG
  *
  * Quản lý toàn bộ BuildingCtrl trong scene
- * Singleton – truy cập qua BuildingManager.Ins
- * Gắn vào Scene Master bởi ĐĂNG
+ * Singleton – gắn vào Scene Master bởi ĐĂNG
  *
- * Luồng save:
- *   BuildingManager.GetAllStates() → List<BuildingState> → GameSaveData → JSON
- * Luồng load:
- *   JSON → GameSaveData → List<BuildingState> → BuildingManager.LoadStates()
+ * Nguyên tắc Save/Load:
+ *   - Chỉ lưu khi người chơi nhấn Space
+ *   - Load → xóa TOÀN BỘ building hiện tại → spawn lại từ save
+ *   - Nếu chưa có file save → không xóa gì cả
  */
 
 public class BuildingManager : Singleton<BuildingManager>
@@ -29,39 +28,27 @@ public class BuildingManager : Singleton<BuildingManager>
         if (building == null || buildings.Contains(building)) return;
 
         buildings.Add(building);
-        Debug.Log($"[BuildingManager] Thêm: {building.buildingType} | Tổng: {buildings.Count}");
     }
 
     public void RemoveBuilding(BuildingCtrl building)
     {
-        if (buildings.Remove(building))
-            Debug.Log($"[BuildingManager] Xóa: {building.buildingType} | Còn: {buildings.Count}");
+        buildings.Remove(building);
     }
 
     // ================= PUBLIC – FIND =================
 
-    /// <summary>Tìm building sẵn sàng đầu tiên theo loại</summary>
     public BuildingCtrl FindAvailable(BuildingType type)
     {
         foreach (var b in buildings)
-        {
-            if (b.buildingType == type && b.IsAvailable)
-                return b;
-        }
+            if (b.buildingType == type && b.IsAvailable) return b;
         return null;
     }
 
-    /// <summary>Lấy tất cả building theo loại</summary>
     public List<BuildingCtrl> GetAllByType(BuildingType type)
     {
         var result = new List<BuildingCtrl>();
-
         foreach (var b in buildings)
-        {
-            if (b.buildingType == type)
-                result.Add(b);
-        }
-
+            if (b.buildingType == type) result.Add(b);
         return result;
     }
 
@@ -72,42 +59,55 @@ public class BuildingManager : Singleton<BuildingManager>
     public BuildingCtrl FindSawmill() => FindAvailable(BuildingType.Sawmill);
     public BuildingCtrl FindWarehouse() => FindAvailable(BuildingType.Warehouse);
 
-    // ================= PUBLIC – SAVE / LOAD =================
+    // ================= PUBLIC – SAVE =================
 
-    /// <summary>Gom toàn bộ BuildingState → JsonDataManager lưu JSON</summary>
+    /// <summary>Gom trạng thái tất cả building để JsonDataManager lưu JSON</summary>
     public List<BuildingState> GetAllStates()
     {
         var states = new List<BuildingState>();
-
         foreach (var b in buildings)
             states.Add(b.ToState());
-
         return states;
     }
 
-    /// <summary>Restore toàn bộ building từ JSON sau khi load</summary>
+    // ================= PUBLIC – LOAD =================
+
+    /// <summary>
+    /// Load từ save:
+    /// 1. Xóa toàn bộ building hiện tại (kể cả chưa lưu)
+    /// 2. Spawn lại đúng theo dữ liệu đã lưu
+    /// Chỉ gọi khi đã xác nhận có file save hợp lệ
+    /// </summary>
     public void LoadStates(List<BuildingState> states)
     {
+        if (ConstructionManager.Ins == null)
+        {
+            return;
+        }
+
+        ClearAll();
+
         foreach (var state in states)
         {
-            var building = FindByPrefabName(state.prefabName);
+            BuildingCtrl spawned = ConstructionManager.Ins.SpawnBuilding(
+                state.buildingType,
+                state.position.ToVector3(),
+                Quaternion.Euler(state.rotation.ToVector3())
+            );
 
-            if (building != null)
-                building.FromState(state);
-            else
-                Debug.LogWarning($"[BuildingManager] Không tìm thấy: {state.prefabName}");
+            if (spawned != null)
+                spawned.FromState(state);
         }
     }
 
-    // ================= PRIVATE =================
-
-    private BuildingCtrl FindByPrefabName(string prefabName)
+    private void ClearAll()
     {
-        foreach (var b in buildings)
+        for (int i = buildings.Count - 1; i >= 0; i--)
         {
-            if (b.gameObject.name == prefabName)
-                return b;
+            if (buildings[i] != null)
+                Destroy(buildings[i].gameObject);
         }
-        return null;
+
+        buildings.Clear();
     }
 }
