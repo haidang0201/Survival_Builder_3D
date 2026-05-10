@@ -8,7 +8,12 @@ using System.Collections.Generic;
  *
  * Quản lý toàn bộ BuildingCtrl trong scene
  * Singleton – truy cập qua BuildingManager.Ins
- * Được gắn vào Scene Master bởi ĐĂNG
+ * Gắn vào Scene Master bởi ĐĂNG
+ *
+ * Luồng save:
+ *   BuildingManager.GetAllStates() → List<BuildingState> → GameSaveData → JSON
+ * Luồng load:
+ *   JSON → GameSaveData → List<BuildingState> → BuildingManager.LoadStates()
  */
 
 public class BuildingManager : Singleton<BuildingManager>
@@ -35,7 +40,7 @@ public class BuildingManager : Singleton<BuildingManager>
 
     // ================= PUBLIC – FIND =================
 
-    /// <summary>Tìm building sẵn sàng theo loại</summary>
+    /// <summary>Tìm building sẵn sàng đầu tiên theo loại</summary>
     public BuildingCtrl FindAvailable(BuildingType type)
     {
         foreach (var b in buildings)
@@ -67,16 +72,42 @@ public class BuildingManager : Singleton<BuildingManager>
     public BuildingCtrl FindSawmill() => FindAvailable(BuildingType.Sawmill);
     public BuildingCtrl FindWarehouse() => FindAvailable(BuildingType.Warehouse);
 
-    // ================= PUBLIC – SAVE =================
+    // ================= PUBLIC – SAVE / LOAD =================
 
-    /// <summary>Lấy data tất cả building để lưu JSON</summary>
-    public List<BuildingData> GetAllData()
+    /// <summary>Gom toàn bộ BuildingState → JsonDataManager lưu JSON</summary>
+    public List<BuildingState> GetAllStates()
     {
-        var data = new List<BuildingData>();
+        var states = new List<BuildingState>();
 
         foreach (var b in buildings)
-            data.Add(b.GetData());
+            states.Add(b.ToState());
 
-        return data;
+        return states;
+    }
+
+    /// <summary>Restore toàn bộ building từ JSON sau khi load</summary>
+    public void LoadStates(List<BuildingState> states)
+    {
+        foreach (var state in states)
+        {
+            var building = FindByPrefabName(state.prefabName);
+
+            if (building != null)
+                building.FromState(state);
+            else
+                Debug.LogWarning($"[BuildingManager] Không tìm thấy: {state.prefabName}");
+        }
+    }
+
+    // ================= PRIVATE =================
+
+    private BuildingCtrl FindByPrefabName(string prefabName)
+    {
+        foreach (var b in buildings)
+        {
+            if (b.gameObject.name == prefabName)
+                return b;
+        }
+        return null;
     }
 }

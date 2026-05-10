@@ -18,7 +18,7 @@ public static class FileIO
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Error saving file: {ex.Message}");  // Xử lý lỗi nếu có
+            Debug.Log($"Error saving file: {ex.Message}");  // Xử lý lỗi nếu có
         }
     }
 

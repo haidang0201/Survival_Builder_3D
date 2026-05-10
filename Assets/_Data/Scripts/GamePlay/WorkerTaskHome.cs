@@ -5,7 +5,7 @@ public class WorkerTaskHome : WorkerTask
     // Tìm tòa nhà Home cho công nhân
     protected override void FindWork()
     {
-        BuildingCtrl home = BuildingManager.Ins.GetHomeBuilding();  // Tìm tòa nhà Home
+        BuildingCtrl home = BuildingManager.Ins.FindHouse();  // Tìm tòa nhà Home
         if (home != null)
         {
             workerCtrl.workerMovement.SetTarget(home.transform.position);  // Di chuyển công nhân về nhà

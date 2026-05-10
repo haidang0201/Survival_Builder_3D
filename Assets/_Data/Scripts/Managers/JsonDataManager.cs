@@ -30,7 +30,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
         {
             string json = JsonUtility.ToJson(save, true);
             FileIO.SaveToFile(json, saveFileName);
-            //     Debug.Log($"Saved game to {saveFileName}");
+            Debug.Log($"Saved game to {saveFileName}");
             return true;
         }
         catch (Exception ex)
@@ -50,7 +50,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
         string json = FileIO.LoadFromFile(saveFileName);
         if (string.IsNullOrEmpty(json))
         {
-            //            Debug.LogWarning("Save file not found or empty");
+            Debug.Log("Save file not found or empty");
             return null;
         }
 
@@ -62,7 +62,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
         }
         catch (Exception ex)
         {
-            //     Debug.LogError("Failed to load save: " + ex.Message);
+            Debug.Log("Failed to load save: " + ex.Message);
             return null;
         }
     }
@@ -85,7 +85,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
     public class GameSaveData
     {
         public string sceneName;
-        public List<BuildingData> buildings = new List<BuildingData>();
+        public List<BuildingState> buildings = new List<BuildingState>();
         public List<ResourceData> resources = new List<ResourceData>();
         public long savedAtUnix;
     }
