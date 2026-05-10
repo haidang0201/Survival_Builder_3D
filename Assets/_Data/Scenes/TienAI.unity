@@ -288,14 +288,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Bld_Hut_01_Snow
       objectReference: {fileID: 0}
-    - target: {fileID: 153292, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-      propertyPath: m_Layer
-      value: 8
-      objectReference: {fileID: 0}
-    - target: {fileID: 153292, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-      propertyPath: m_TagString
-      value: House
-      objectReference: {fileID: 0}
     - target: {fileID: 441438, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
       propertyPath: m_LocalPosition.x
       value: 9.962272
@@ -336,32 +328,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 64407017604939894, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 64407017604939894, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-      propertyPath: m_IsTrigger
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 64607980942226920, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 64607980942226920, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-      propertyPath: m_IsTrigger
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 441438, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 504944847}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 153292, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1358963019}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
 --- !u!1 &185138536
 GameObject:
@@ -755,37 +725,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 424454347}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &504944846
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 504944847}
-  m_Layer: 8
-  m_Name: DeliveryPoint
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &504944847
+--- !u!4 &504944847 stripped
 Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 9145235052847872895, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
+  m_PrefabInstance: {fileID: 154569193}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 504944846}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -4.61}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 823092276}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &650832025
 GameObject:
   m_ObjectHideFlags: 0
@@ -1183,11 +1127,6 @@ MonoBehaviour:
   interactLayer:
     serializedVersion: 2
     m_Bits: 384
---- !u!4 &823092276 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 441438, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-  m_PrefabInstance: {fileID: 154569193}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &867663205 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9186632565056512479, guid: c0c4e4ee85b77ef41a15c9f5f2258052, type: 3}
@@ -1511,30 +1450,6 @@ Transform:
   - {fileID: 1837815183}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 30, y: 45, z: 0}
---- !u!1 &1358963018 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 153292, guid: 970346f953bb5014ab233dc57c73bafb, type: 3}
-  m_PrefabInstance: {fileID: 154569193}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1358963019
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1358963018}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
-  maxCapacity: 3
-  onStorageFull:
-    m_PersistentCalls:
-      m_Calls: []
-  onWoodAdded:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1001 &1453316512
 PrefabInstance:
   m_ObjectHideFlags: 0

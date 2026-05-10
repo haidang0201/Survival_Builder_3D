@@ -15,7 +15,7 @@ public class WorkerCarryItem : MonoBehaviour
         woodStorage = FindWoodStorage();
 
         if (woodStorage == null)
-            Debug.LogError($"[WorkerCarryItem] {name}: Không tìm thấy WoodStorage ở bất kỳ đâu! " +
+            Debug.Log($"[WorkerCarryItem] {name}: Không tìm thấy WoodStorage ở bất kỳ đâu! " +
                            $"Hãy gắn WoodStorage vào House GameObject.");
         else
             Debug.Log($"[WorkerCarryItem] {name}: Tìm thấy WoodStorage trên '{woodStorage.gameObject.name}'.");

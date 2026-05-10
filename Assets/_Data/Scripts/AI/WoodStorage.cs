@@ -14,9 +14,9 @@ public class WoodStorage : MonoBehaviour
 
     // ===== PROPERTIES =====
     public int CurrentAmount => currentAmount;
-    public int MaxCapacity   => maxCapacity;
-    public bool IsFull       => currentAmount >= maxCapacity;
-    public bool IsEmpty      => currentAmount <= 0;
+    public int MaxCapacity => maxCapacity;
+    public bool IsFull => currentAmount >= maxCapacity;
+    public bool IsEmpty => currentAmount <= 0;
 
     // ===== PUBLIC API =====
 
@@ -27,11 +27,11 @@ public class WoodStorage : MonoBehaviour
     {
         if (IsFull)
         {
-            Debug.LogWarning($"[WoodStorage] Kho đã đầy! ({currentAmount}/{maxCapacity}) — Không thể thêm gỗ.");
+            Debug.Log($"[WoodStorage] Kho đã đầy! ({currentAmount}/{maxCapacity}) — Không thể thêm gỗ.");
             return 0;
         }
 
-        int canAdd    = Mathf.Min(amount, maxCapacity - currentAmount);
+        int canAdd = Mathf.Min(amount, maxCapacity - currentAmount);
         currentAmount += canAdd;
 
         Debug.Log($"[WoodStorage] +{canAdd} gỗ → Kho: {currentAmount}/{maxCapacity}");
@@ -58,7 +58,7 @@ public class WoodStorage : MonoBehaviour
             return 0;
         }
 
-        int canTake    = Mathf.Min(amount, currentAmount);
+        int canTake = Mathf.Min(amount, currentAmount);
         currentAmount -= canTake;
 
         Debug.Log($"[WoodStorage] -{canTake} gỗ → Kho: {currentAmount}/{maxCapacity}");
