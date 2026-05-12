@@ -23,6 +23,11 @@ public class EnemyAI : MonoBehaviour
     [Header("Animation")]
     public string attackTrigger = "Attack";
 
+    [Header("Scare")]
+    public AudioSource audioSource;
+    public AudioClip scareClip;
+    public float scareDuration = 5f;
+
     [Header("Day / Night")]
     [Tooltip("If true use 'isNight' checkbox to force night for testing. If false, use Sun Light (optional).")]
     public bool useManualNight = true;
@@ -42,6 +47,10 @@ public class EnemyAI : MonoBehaviour
     private bool hasPatrolPoint;
     private float nextRepathTime;
     private Transform chaseTarget;
+    private Transform pendingChaseTarget;
+    private bool isScaring;
+    private float scareEndTime;
+    private bool scareSoundPlayed;
     private float nextDebugLogTime;
 
     // render/collider list to hide/show on day/night
@@ -54,6 +63,7 @@ public class EnemyAI : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         if (agent == null && debugLogs) Debug.LogError("EnemyAI requires a NavMeshAgent");
         if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
         // no dynamic resolution — use moveParam directly
 
         // cache renderers and colliders for hide/show
@@ -107,6 +117,14 @@ public class EnemyAI : MonoBehaviour
         if (!nightNow)
         {
             // if day, skip behavior
+            StopScareState();
+            UpdateAnimationState();
+            return;
+        }
+
+        if (isScaring)
+        {
+            TickScareState();
             UpdateAnimationState();
             return;
         }
@@ -116,9 +134,7 @@ public class EnemyAI : MonoBehaviour
         {
             if (player != null && Vector3.Distance(transform.position, player.position) <= chaseTriggerRange)
             {
-                chaseTarget = player;
-                if (agent != null) agent.speed = chaseSpeed;
-                if (debugLogs) Debug.Log("EnemyAI: start chasing player");
+                BeginScare(player);
             }
             else if (villageCenter != null && Vector3.Distance(transform.position, villageCenter.position) <= chaseTriggerRange)
             {
@@ -172,6 +188,11 @@ public class EnemyAI : MonoBehaviour
 
     private void ApplyNightState(bool night)
     {
+        if (!night)
+        {
+            StopScareState();
+        }
+
         // show/hide renderers
         if (renderers != null)
         {
@@ -202,6 +223,106 @@ public class EnemyAI : MonoBehaviour
                 SetDestination(currentPatrolPoint);
             }
         }
+    }
+
+    private void BeginScare(Transform target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        pendingChaseTarget = target;
+        isScaring = true;
+        scareEndTime = Time.time + scareDuration;
+        scareSoundPlayed = false;
+
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        if (debugLogs)
+        {
+            Debug.LogFormat("[EnemyAI] Player detected, scare for {0} seconds", scareDuration);
+        }
+
+        PlayScareSound();
+        FaceTarget(target.position);
+    }
+
+    private void TickScareState()
+    {
+        Transform target = pendingChaseTarget != null ? pendingChaseTarget : player;
+        if (target != null)
+        {
+            FaceTarget(target.position);
+        }
+
+        if (Time.time < scareEndTime)
+        {
+            return;
+        }
+
+        isScaring = false;
+        chaseTarget = target;
+        pendingChaseTarget = null;
+        scareSoundPlayed = false;
+
+        if (agent != null)
+        {
+            agent.isStopped = false;
+            agent.speed = chaseSpeed;
+        }
+
+        if (debugLogs)
+        {
+            Debug.Log("EnemyAI: scare ended, start chasing player");
+        }
+    }
+
+    private void StopScareState()
+    {
+        isScaring = false;
+        pendingChaseTarget = null;
+        scareSoundPlayed = false;
+    }
+
+    private void PlayScareSound()
+    {
+        if (scareSoundPlayed)
+        {
+            return;
+        }
+
+        scareSoundPlayed = true;
+
+        if (audioSource == null || scareClip == null)
+        {
+            if (debugLogs)
+            {
+                Debug.LogWarning("EnemyAI: scare sound missing AudioSource or AudioClip");
+            }
+
+            return;
+        }
+
+        audioSource.PlayOneShot(scareClip);
+    }
+
+    private void FaceTarget(Vector3 worldPosition)
+    {
+        Vector3 direction = worldPosition - transform.position;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude < 0.001f)
+        {
+            return;
+        }
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
     }
 
     public void PlayAttackAnimation()
@@ -275,8 +396,9 @@ public class EnemyAI : MonoBehaviour
         {
             nextDebugLogTime = Time.time + debugLogInterval;
             Debug.LogFormat(
-                "[EnemyAI] move={0} chaseTarget={1} hasPath={2} pathPending={3} remainingDistance={4:F2} velocity={5:F2} desiredVelocity={6:F2}",
+                "[EnemyAI] move={0} scaring={1} chaseTarget={2} hasPath={3} pathPending={4} remainingDistance={5:F2} velocity={6:F2} desiredVelocity={7:F2}",
                 isMoving,
+                isScaring,
                 chaseTarget != null ? chaseTarget.name : "none",
                 agent != null && agent.hasPath,
                 agent != null && agent.pathPending,
