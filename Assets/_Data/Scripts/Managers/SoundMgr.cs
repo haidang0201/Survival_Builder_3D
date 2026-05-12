@@ -1,5 +1,13 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+
+[System.Serializable]
+public enum SoundChannel
+{
+    BGM,
+    SFX
+}
 
 [System.Serializable]
 public class SoundData
@@ -7,8 +15,13 @@ public class SoundData
     public string id;
     public AudioClip clip;
 }
+
 public class SoundMgr : Singleton<SoundMgr>
 {
+    [Header("Startup")]
+    public bool playBGMOnStart = true;
+    public string startupBGMId;
+
     [Header("Audio Sources")]
     public AudioSource bgmSource;
     public AudioSource sfxSource;
@@ -25,6 +38,11 @@ public class SoundMgr : Singleton<SoundMgr>
     private Dictionary<string, AudioClip> bgmDict = new Dictionary<string, AudioClip>();
     private Dictionary<string, AudioClip> sfxDict = new Dictionary<string, AudioClip>();
 
+    public event Action<SoundChannel, string, AudioClip> OnSoundPlayed;
+    public event Action<SoundChannel, string> OnSoundMissing;
+    public event Action<float, float, float> OnVolumeChanged;
+    public event Action OnBGMStopped;
+
     protected override void Awake()
     {
         MakeSingleton(false);
@@ -40,26 +58,50 @@ public class SoundMgr : Singleton<SoundMgr>
         ApplyVolume();
     }
 
+    private void Start()
+    {
+        PlayStartupBGM();
+    }
+
+    private void OnValidate()
+    {
+        CacheAudioClips();
+        ApplyVolume();
+    }
+
     private void SetupAudioSources()
     {
-        if (bgmSource == null)
+        bgmSource = EnsureAudioSource(bgmSource, "BGM_Source", true);
+        sfxSource = EnsureAudioSource(sfxSource, "SFX_Source", false);
+        ConfigureAudioSource(bgmSource, true);
+        ConfigureAudioSource(sfxSource, false);
+    }
+
+    private AudioSource EnsureAudioSource(AudioSource source, string sourceName, bool shouldLoop)
+    {
+        if (source != null)
         {
-            GameObject bgmObj = new GameObject("BGM_Source");
-            bgmObj.transform.SetParent(transform);
-            bgmSource = bgmObj.AddComponent<AudioSource>();
+            return source;
         }
 
-        if (sfxSource == null)
+        GameObject sourceObject = new GameObject(sourceName);
+        sourceObject.transform.SetParent(transform);
+
+        AudioSource newSource = sourceObject.AddComponent<AudioSource>();
+        newSource.loop = shouldLoop;
+        newSource.playOnAwake = false;
+        return newSource;
+    }
+
+    private void ConfigureAudioSource(AudioSource source, bool shouldLoop)
+    {
+        if (source == null)
         {
-            GameObject sfxObj = new GameObject("SFX_Source");
-            sfxObj.transform.SetParent(transform);
-            sfxSource = sfxObj.AddComponent<AudioSource>();
+            return;
         }
 
-        bgmSource.loop = true;
-        sfxSource.loop = false;
-        bgmSource.playOnAwake = false;
-        sfxSource.playOnAwake = false;
+        source.loop = shouldLoop;
+        source.playOnAwake = false;
     }
 
     private void CacheAudioClips()
@@ -80,11 +122,44 @@ public class SoundMgr : Singleton<SoundMgr>
         }
     }
 
+    public void RefreshAudioClips()
+    {
+        CacheAudioClips();
+    }
+
+    private void PlayStartupBGM()
+    {
+        if (!playBGMOnStart)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(startupBGMId))
+        {
+            PlayBGM(startupBGMId);
+            return;
+        }
+
+        if (bgmClips.Count == 0)
+        {
+            Debug.LogWarning("SoundMgr: Không có BGM nào để tự phát khi Start.");
+            return;
+        }
+
+        SoundData firstClip = bgmClips[0];
+        if (firstClip == null || string.IsNullOrEmpty(firstClip.id))
+        {
+            Debug.LogWarning("SoundMgr: BGM đầu tiên không hợp lệ để tự phát khi Start.");
+            return;
+        }
+
+        PlayBGM(firstClip.id);
+    }
+
     public void PlayBGM(string id)
     {
-        if (!bgmDict.TryGetValue(id, out AudioClip clip))
+        if (!TryGetClip(bgmDict, id, SoundChannel.BGM, out AudioClip clip))
         {
-            Debug.LogWarning("Không tìm thấy BGM: " + id);
             return;
         }
 
@@ -92,33 +167,45 @@ public class SoundMgr : Singleton<SoundMgr>
 
         bgmSource.clip = clip;
         bgmSource.Play();
+        OnSoundPlayed?.Invoke(SoundChannel.BGM, id, clip);
     }
 
     public void StopBGM()
     {
+        if (bgmSource == null)
+        {
+            return;
+        }
+
         bgmSource.Stop();
+        OnBGMStopped?.Invoke();
     }
 
     public void PlaySFX(string id)
     {
-        if (!sfxDict.TryGetValue(id, out AudioClip clip))
+        if (!TryGetClip(sfxDict, id, SoundChannel.SFX, out AudioClip clip))
         {
-            Debug.LogWarning("Không tìm thấy SFX: " + id);
             return;
         }
 
-        sfxSource.PlayOneShot(clip, sfxVolume * masterVolume);
+        if (sfxSource == null)
+        {
+            return;
+        }
+
+        sfxSource.PlayOneShot(clip, sfxSource.volume);
+        OnSoundPlayed?.Invoke(SoundChannel.SFX, id, clip);
     }
 
     public void PlaySFXAtPosition(string id, Vector3 position)
     {
-        if (!sfxDict.TryGetValue(id, out AudioClip clip))
+        if (!TryGetClip(sfxDict, id, SoundChannel.SFX, out AudioClip clip))
         {
-            Debug.LogWarning("Không tìm thấy SFX: " + id);
             return;
         }
 
-        AudioSource.PlayClipAtPoint(clip, position, sfxVolume * masterVolume);
+        AudioSource.PlayClipAtPoint(clip, position, GetEffectiveVolume(sfxVolume));
+        OnSoundPlayed?.Invoke(SoundChannel.SFX, id, clip);
     }
 
     public void SetMasterVolume(float value)
@@ -139,12 +226,51 @@ public class SoundMgr : Singleton<SoundMgr>
         ApplyVolume();
     }
 
+    public float GetEffectiveMasterVolume()
+    {
+        return masterVolume;
+    }
+
+    public float GetEffectiveBGMVolume()
+    {
+        return GetEffectiveVolume(bgmVolume);
+    }
+
+    public float GetEffectiveSFXVolume()
+    {
+        return GetEffectiveVolume(sfxVolume);
+    }
+
+    private bool TryGetClip(Dictionary<string, AudioClip> library, string id, SoundChannel channel, out AudioClip clip)
+    {
+        if (library != null && library.TryGetValue(id, out clip))
+        {
+            return true;
+        }
+
+        clip = null;
+        Debug.LogWarning("Không tìm thấy " + channel + ": " + id);
+        OnSoundMissing?.Invoke(channel, id);
+        return false;
+    }
+
+    private float GetEffectiveVolume(float channelVolume)
+    {
+        return Mathf.Clamp01(channelVolume) * Mathf.Clamp01(masterVolume);
+    }
+
     private void ApplyVolume()
     {
         if (bgmSource != null)
-            bgmSource.volume = bgmVolume * masterVolume;
+        {
+            bgmSource.volume = GetEffectiveVolume(bgmVolume);
+        }
 
         if (sfxSource != null)
-            sfxSource.volume = sfxVolume * masterVolume;
+        {
+            sfxSource.volume = GetEffectiveVolume(sfxVolume);
+        }
+
+        OnVolumeChanged?.Invoke(masterVolume, bgmVolume, sfxVolume);
     }
 }
