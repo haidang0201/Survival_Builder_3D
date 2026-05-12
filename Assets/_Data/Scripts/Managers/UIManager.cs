@@ -26,14 +26,14 @@ public class UIManager : Singleton<UIManager>
     }
     public void OnClickSawmillButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+        BuildingSystem.Ins.StartPlacing(BuildingType.Sawmill);
     }
     public void OnClickWarehouseButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+        BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
     }
     public void OnClickHouseBuilderButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+        BuildingSystem.Ins.StartPlacing(BuildingType.House);
     }
 }
