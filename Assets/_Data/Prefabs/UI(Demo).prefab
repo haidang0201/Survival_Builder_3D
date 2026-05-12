@@ -1170,10 +1170,9 @@ GameObject:
   - component: {fileID: 1556566322480540950}
   - component: {fileID: 4138941166550314221}
   - component: {fileID: 2297315094231473247}
-  - component: {fileID: 3048346820151310696}
   - component: {fileID: 1543132223411133718}
   - component: {fileID: 5188770976599284328}
-  - component: {fileID: 5932769181204554433}
+  - component: {fileID: 8033422339271921833}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1285,18 +1284,6 @@ MonoBehaviour:
   healthFill: {fileID: 4123021325448730247}
   floatingTextPrefab: {fileID: 4435958920574013911}
   floatingTextParent: {fileID: 7029355908281148968}
---- !u!114 &3048346820151310696
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6050311795451051328}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af3477c8943f1904bb27c946da0e3b4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UITestSimulator
 --- !u!114 &1543132223411133718
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1323,7 +1310,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIResourceObserver
   hud: {fileID: 2297315094231473247}
---- !u!114 &5932769181204554433
+--- !u!114 &8033422339271921833
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1332,9 +1319,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 6050311795451051328}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c1088c063b4499498fa235775ee2445, type: 3}
+  m_Script: {fileID: 11500000, guid: ef5067a5fa3536f4d84fb84256ec5b04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JsonDataManager
+  saveFileName: builder.json
 --- !u!1 &6716220131984735789
 GameObject:
   m_ObjectHideFlags: 0
