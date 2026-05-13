@@ -78,19 +78,6 @@ public class Weapon : MonoBehaviour
             return;
         }
 
-        if (!other.CompareTag("Enemy"))
-        {
-            Debug.Log($"[Weapon] Not Enemy tag: {other.tag}");
-            return;
-        }
-
-        IDamageable damageable = other.GetComponentInParent<IDamageable>();
-        if (damageable == null)
-        {
-            Debug.Log($"[Weapon] No IDamageable found on {other.name}");
-            return;
-        }
-
         int targetId = other.transform.root.GetInstanceID();
         if (hitTargets.Contains(targetId))
         {
@@ -98,9 +85,52 @@ public class Weapon : MonoBehaviour
             return;
         }
 
-        hitTargets.Add(targetId);
-        Vector3 hitPoint = other.ClosestPoint(transform.position);
-        Debug.Log($"[Weapon] Dealing {damage} damage to {other.name}");
-        damageable.TakeDamage(damage, hitPoint);
+        if (other.CompareTag("Enemy"))
+        {
+            IDamageable damageable = other.GetComponentInParent<IDamageable>();
+            if (damageable == null)
+            {
+                Debug.Log($"[Weapon] No IDamageable found on {other.name}");
+                return;
+            }
+
+            hitTargets.Add(targetId);
+            Vector3 hitPoint = other.ClosestPoint(transform.position);
+            Debug.Log($"[Weapon] Dealing {damage} damage to enemy {other.name}");
+            damageable.TakeDamage(damage, hitPoint);
+            return;
+        }
+
+        if (other.CompareTag("Tree"))
+        {
+            Tree tree = other.GetComponentInParent<Tree>();
+            if (tree == null)
+            {
+                SoundTreeChop chopSound = other.GetComponentInParent<SoundTreeChop>();
+                if (chopSound == null)
+                {
+                    chopSound = other.GetComponentInChildren<SoundTreeChop>();
+                }
+
+                if (chopSound != null)
+                {
+                    hitTargets.Add(targetId);
+                    chopSound.PlayRandomChopSound();
+                    Debug.Log($"[Weapon] Played tree chop sound only. Missing Tree component on {other.name}");
+                    return;
+                }
+
+                Debug.Log($"[Weapon] Tree tag found but no Tree component on {other.name}");
+                return;
+            }
+
+            hitTargets.Add(targetId);
+            int treeDamage = Mathf.Max(1, Mathf.RoundToInt(damage));
+            tree.TakeDamage(treeDamage);
+            Debug.Log($"[Weapon] Dealing {treeDamage} damage to tree {other.name}");
+            return;
+        }
+
+        Debug.Log($"[Weapon] Ignored tag: {other.tag}");
     }
 }

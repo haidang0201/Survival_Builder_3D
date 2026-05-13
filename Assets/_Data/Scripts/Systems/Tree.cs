@@ -9,6 +9,16 @@ public class Tree : MonoBehaviour
     public int dropAmount = 3;
 
     private bool isOccupied = false;
+    private SoundTreeChop soundTreeChop;
+
+    void Awake()
+    {
+        soundTreeChop = GetComponent<SoundTreeChop>();
+        if (soundTreeChop == null)
+        {
+            soundTreeChop = GetComponentInChildren<SoundTreeChop>();
+        }
+    }
 
     void OnEnable()
     {
@@ -31,6 +41,11 @@ public class Tree : MonoBehaviour
     // Trả về mảng gỗ nếu cây chết, null nếu cây còn sống
     public WoodPickup[] TakeDamage(int damage)
     {
+        if (CompareTag("Tree") && soundTreeChop != null)
+        {
+            soundTreeChop.PlayRandomChopSound();
+        }
+
         health -= damage;
 
         if (health <= 0)

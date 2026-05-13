@@ -28,12 +28,26 @@ public class TreeChopper : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, 2f))
         {
-            Tree tree = hit.collider.GetComponent<Tree>();
+            Tree tree = hit.collider.GetComponentInParent<Tree>();
 
             if (tree != null)
             {
                 tree.TakeDamage(damage);
                 Debug.Log("Chặt cây!");
+            }
+            else if (hit.collider.CompareTag("Tree"))
+            {
+                SoundTreeChop chopSound = hit.collider.GetComponentInParent<SoundTreeChop>();
+                if (chopSound == null)
+                {
+                    chopSound = hit.collider.GetComponentInChildren<SoundTreeChop>();
+                }
+
+                if (chopSound != null)
+                {
+                    chopSound.PlayRandomChopSound();
+                    Debug.Log("Chặt cây (sound only, chưa có script Tree).");
+                }
             }
         }
 
