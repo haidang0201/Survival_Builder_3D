@@ -2,7 +2,12 @@ using UnityEngine;
 
 public class UIManager : Singleton<UIManager>
 {
+    [SerializeField] private GameObject buildMenu;
     [SerializeField] private GameObject warningUI;
+    public void ToggleBuildMenu()
+    {
+        buildMenu.SetActive(!buildMenu.activeSelf);
+    }
 
     // Hiển thị cảnh báo trên giao diện
     public void ShowWarning(string message)
