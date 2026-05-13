@@ -5,46 +5,55 @@ using UnityEngine;
  * Folder: Scripts/Managers/
  * Người làm: DŨNG / VŨ
  *
- * Nhận lệnh từ GhostBuilding → spawn prefab building thật vào scene
+ * Spawn prefab building thật vào scene
  * Singleton – gắn vào Scene Master bởi ĐĂNG
  *
- * Luồng:
- *   TestBuildingPlacement (nhấn phím) → GhostBuilding (preview + xoay)
- *   → ConfirmPlace() → ConstructionManager.PlaceBuilding() → Instantiate prefab
- *   → BuildingCtrl.Start() → BuildingManager.AddBuilding()
+ * PlaceBuilding() → gọi từ GhostBuilding khi người chơi xác nhận đặt
+ * SpawnBuilding() → gọi từ BuildingManager.LoadStates() khi load JSON
  */
 
 public class ConstructionManager : Singleton<ConstructionManager>
 {
     // ================= INSPECTOR =================
 
-    [Header("Prefab References – kéo prefab vào đây")]
+    [Header("Prefab thật – kéo vào đây")]
     public GameObject housePrefab;
     public GameObject forestHutPrefab;
     public GameObject sawmillPrefab;
     public GameObject warehousePrefab;
     public GameObject houseBuilderPrefab;
 
-    // ================= PUBLIC =================
+    // ================= PUBLIC – ĐẶT MỚI =================
 
     /// <summary>
-    /// Spawn building thật vào scene
-    /// Gọi từ GhostBuilding.ConfirmPlace()
+    /// Gọi từ GhostBuilding.ConfirmPlace() khi người chơi đặt công trình
     /// </summary>
     public void PlaceBuilding(BuildingType type, Vector3 position, Quaternion rotation)
     {
+        var spawned = SpawnBuilding(type, position, rotation);
+
+        if (spawned == null)
+            Debug.LogError($"[ConstructionManager] Chưa gán prefab cho: {type}");
+        else
+            Debug.Log($"[ConstructionManager] ✅ Đặt {type} | Pos: {position} | Rot: {rotation.eulerAngles.y}°");
+    }
+
+    // ================= PUBLIC – SPAWN (dùng chung) =================
+
+    /// <summary>
+    /// Spawn prefab thật → trả về BuildingCtrl
+    /// Dùng cho cả PlaceBuilding() và BuildingManager.LoadStates()
+    /// </summary>
+    public BuildingCtrl SpawnBuilding(BuildingType type, Vector3 position, Quaternion rotation)
+    {
         GameObject prefab = GetPrefab(type);
 
-        if (prefab == null)
-        {
-            Debug.LogError($"[ConstructionManager] Chưa gán prefab cho: {type}");
-            return;
-        }
+        if (prefab == null) return null;
 
         GameObject obj = Instantiate(prefab, position, rotation);
-        obj.name = type.ToString(); // đặt tên để BuildingManager tìm khi load save
+        obj.name = type.ToString(); // "House", "Sawmill"... không có "(Clone)"
 
-        Debug.Log($"[ConstructionManager] ✅ Đã đặt {type} | Pos: {position} | Rot: {rotation.eulerAngles.y}°");
+        return obj.GetComponent<BuildingCtrl>();
     }
 
     // ================= PRIVATE =================

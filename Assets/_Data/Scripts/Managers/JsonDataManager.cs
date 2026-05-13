@@ -7,7 +7,7 @@ using System.IO;
 
 public class JsonDataManager : Singleton<JsonDataManager>
 {
-    public string saveFileName = "savegame/survival/builder.json";
+    public string saveFileName = "builder.json";
 
     public event Action<int> OnGoldChanged;
     public event Action<int> OnWoodChanged;
