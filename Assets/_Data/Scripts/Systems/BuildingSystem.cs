@@ -59,6 +59,13 @@ public class BuildingSystem : Singleton<BuildingSystem>
         // Huỷ ghost cũ nếu đang có
         CancelPlacing();
 
+        // Kiểm tra xem vị trí có hợp lệ không
+        if (!BuildingManager.Ins.CanBuild(currentGhost.transform.position, type))
+        {
+            Debug.LogWarning("[BuildingSystem] Không thể đặt công trình ở vị trí này vì có sự chồng lấn.");
+            return;
+        }
+
         GameObject prefab = GetGhostPrefab(type);
 
         if (prefab == null)
@@ -72,15 +79,12 @@ public class BuildingSystem : Singleton<BuildingSystem>
 
         if (currentGhost == null)
         {
-            Debug.LogError($"[BuildingSystem] Ghost prefab thiếu GhostBuilding.cs: {type}");
-            Destroy(obj);
+            Debug.LogWarning($"[BuildingSystem] Không tìm thấy GhostBuilding cho prefab: {type}");
             return;
         }
 
-        currentGhost.buildingType = type;
+        currentGhost.Show();
         isPlacing = true;
-
-        Debug.Log($"[BuildingSystem] Bắt đầu đặt: {type} | R=xoay | Click trái=đặt | ESC=huỷ");
 
         // Thông báo UIManager ẩn menu building
         // UIManager.Ins?.HideBuildingMenu();
