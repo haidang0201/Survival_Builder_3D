@@ -27,6 +27,13 @@ public class BuildingManager : Singleton<BuildingManager>
     {
         if (building == null || buildings.Contains(building)) return;
 
+        // Kiểm tra xem có thể xây nhà ở vị trí của công trình này không
+        if (!CanBuild(building.transform.position, building.buildingType))
+        {
+            Debug.LogWarning("Không thể xây dựng tại vị trí này vì có sự chồng lấn với công trình khác.");
+            return;
+        }
+
         buildings.Add(building);
     }
 
@@ -110,4 +117,31 @@ public class BuildingManager : Singleton<BuildingManager>
 
         buildings.Clear();
     }
+
+
+
+    // Kiểm tra xem vị trí có bị chồng lấn hay không
+    public bool CanBuild(Vector3 position, BuildingType buildingType)
+    {
+        // Lấy collider của tất cả các công trình hiện có
+        foreach (var building in buildings)
+        {
+            if (building != null && building.IsAvailable)
+            {
+                // Kiểm tra xem vị trí xây có trùng với vị trí của building đã có
+                Collider buildingCollider = building.GetComponent<Collider>();
+                if (buildingCollider != null && buildingCollider.bounds.Intersects(new Bounds(position, buildingCollider.bounds.size)))
+                {
+                    // Nếu trùng, không thể xây công trình ở đây
+                    return false;
+                }
+            }
+        }
+
+        // Kiểm tra nếu không có va chạm, có thể xây
+        return true;
+    }
+
+    // Trong phương thức AddBuilding, thêm kiểm tra trước khi thêm vào danh sách
+
 }
