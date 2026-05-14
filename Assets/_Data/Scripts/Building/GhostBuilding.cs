@@ -32,6 +32,7 @@ public class GhostBuilding : MonoBehaviour
     [Header("Materials")]
     public Material validMat;       // Màu xanh – có thể đặt
     public Material invalidMat;     // Màu đỏ   – không thể đặt
+    public Material constructingMat;// THÊM: Material mờ khi đang chờ xây 10s
 
     [Header("Layer Settings")]
     public LayerMask groundLayer;   // Layer terrain/ground để raycast
@@ -49,6 +50,7 @@ public class GhostBuilding : MonoBehaviour
     private float currentYRot = 0f;
 
     private const float ROT_STEP = 90f;
+    private bool isConstructing = false; // Trạng thái đang đếm ngược 10s
 
     // ================= LIFECYCLE =================
 
@@ -63,6 +65,8 @@ public class GhostBuilding : MonoBehaviour
 
     void Update()
     {
+        // THÊM: Nếu đã click đặt nhà và đang đếm ngược thì không chạy logic theo chuột nữa
+        if (isConstructing) return;
         FollowMouse();
         HandleRotateInput();
         HandleConfirmInput();
@@ -203,15 +207,18 @@ public class GhostBuilding : MonoBehaviour
 
     private void ConfirmPlace()
     {
-        Debug.Log($"[GhostBuilding] ✅ Đặt {buildingType} | Pos: {transform.position} | Rot: {currentYRot}°");
+        Debug.Log($"[GhostBuilding] ⏳ Bắt đầu xây {buildingType} trong 10s | Pos: {transform.position}");
 
-        ConstructionManager.Ins.PlaceBuilding(
+        isConstructing = true; // Khóa di chuyển/xoay
+        ApplyMaterial(constructingMat); // Đổi sang màu mờ
+
+        // Báo cho BuildingSystem đếm ngược, truyền chính gameObject của ghost này vào
+        BuildingSystem.Ins.StartConstruction(
             buildingType,
             transform.position,
-            Quaternion.Euler(0f, currentYRot, 0f)
+            Quaternion.Euler(0f, currentYRot, 0f),
+            gameObject
         );
-
-        Destroy(gameObject);
     }
 
     private void CancelPlace()

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /*
@@ -56,15 +57,11 @@ public class BuildingSystem : Singleton<BuildingSystem>
     /// </summary>
     public void StartPlacing(BuildingType type)
     {
-        // Huỷ ghost cũ nếu đang có
         CancelPlacing();
 
-        // Kiểm tra xem vị trí có hợp lệ không
-        if (!BuildingManager.Ins.CanBuild(currentGhost.transform.position, type))
-        {
-            Debug.LogWarning("[BuildingSystem] Không thể đặt công trình ở vị trí này vì có sự chồng lấn.");
-            return;
-        }
+        // CHÚ Ý: Đã xoá đoạn if (!BuildingManager.Ins.CanBuild(currentGhost...)) ở đây.
+        // Vì lúc này currentGhost chưa được tạo (bằng null), gọi .transform sẽ văng lỗi đỏ.
+        // Việc check va chạm đã được GhostBuilding lo liệu rất tốt rồi.
 
         GameObject prefab = GetGhostPrefab(type);
 
@@ -85,10 +82,49 @@ public class BuildingSystem : Singleton<BuildingSystem>
 
         currentGhost.Show();
         isPlacing = true;
-
-        // Thông báo UIManager ẩn menu building
-        // UIManager.Ins?.HideBuildingMenu();
+        currentGhost.SetInitialRotation(0);
     }
+    // THÊM MỚI: Thay thế cho PlaceBuildingWithDelay
+    public void StartConstruction(BuildingType type, Vector3 position, Quaternion rotation, GameObject ghostObj)
+    {
+        // Nhả currentGhost ra để người chơi có thể tiếp tục bấm UI xây thêm căn nhà khác
+        // trong lúc căn nhà này đang đếm ngược 10s.
+        if (currentGhost != null && currentGhost.gameObject == ghostObj)
+        {
+            currentGhost = null;
+            isPlacing = false;
+        }
+
+        StartCoroutine(ConstructionRoutine(type, position, rotation, ghostObj));
+    }
+
+    private IEnumerator ConstructionRoutine(BuildingType type, Vector3 position, Quaternion rotation, GameObject ghostObj)
+    {
+        yield return new WaitForSeconds(5f); // Đợi 10 giây
+
+        // Hết 10s: Xoá bản preview mờ
+        if (ghostObj != null)
+        {
+            Destroy(ghostObj);
+        }
+
+        // Gọi logic của Dũng để spawn nhà thật (hiện rõ) vào scene
+        ConstructionManager.Ins.PlaceBuilding(type, position, rotation);
+    }
+    public void PlaceBuildingWithDelay(BuildingType type, Vector3 position, Quaternion rotation)
+    {
+        StartCoroutine(PlaceBuildingAfterDelay(type, position, rotation));
+    }
+
+    private IEnumerator PlaceBuildingAfterDelay(BuildingType type, Vector3 position, Quaternion rotation)
+    {
+        yield return new WaitForSeconds(5f); // Đợi 10 giây
+
+        ConstructionManager.Ins.PlaceBuilding(type, position, rotation);
+        currentGhost = null; // Đặt lại currentGhost
+        isPlacing = false; // Cập nhật trạng thái đặt
+    }
+
 
     /// <summary>Huỷ đặt công trình hiện tại</summary>
     public void CancelPlacing()

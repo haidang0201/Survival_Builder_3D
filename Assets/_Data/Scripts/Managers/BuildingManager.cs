@@ -39,6 +39,7 @@ public class BuildingManager : Singleton<BuildingManager>
 
     public void RemoveBuilding(BuildingCtrl building)
     {
+        if (building == null) return;  // Ngăn ngừa lỗi NullReferenceException
         buildings.Remove(building);
     }
 
@@ -112,9 +113,10 @@ public class BuildingManager : Singleton<BuildingManager>
         for (int i = buildings.Count - 1; i >= 0; i--)
         {
             if (buildings[i] != null)
+            {
                 Destroy(buildings[i].gameObject);
+            }
         }
-
         buildings.Clear();
     }
 
