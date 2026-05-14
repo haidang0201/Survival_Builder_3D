@@ -182,6 +182,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2035751835}
+    - targetCorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2035751837}
   m_SourcePrefab: {fileID: 100100000, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
 --- !u!1 &79792462
 GameObject:
@@ -584,6 +587,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
       insertIndex: -1
       addedObject: {fileID: 289992886}
+    - targetCorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 289992887}
   m_SourcePrefab: {fileID: 100100000, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
 --- !u!1 &266364373 stripped
 GameObject:
@@ -610,6 +616,25 @@ MonoBehaviour:
   health: 3
   woodPool: {fileID: 684778669}
   dropAmount: 1
+--- !u!114 &266364376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 266364373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c650f09944822f49a6b055918618cd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TreeVisual
+  shakeAngle: 15
+  shakeSpeed: 12
+  shakeDuration: 0.4
+  fallAngle: 90
+  fallDuration: 0.8
+  fallDelay: 0.1
+  fallDirection: {x: 0, y: 0, z: 0}
 --- !u!1 &289992884 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
@@ -635,6 +660,25 @@ MonoBehaviour:
   health: 3
   woodPool: {fileID: 684778669}
   dropAmount: 1
+--- !u!114 &289992887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 289992884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c650f09944822f49a6b055918618cd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TreeVisual
+  shakeAngle: 15
+  shakeSpeed: 12
+  shakeDuration: 0.4
+  fallAngle: 90
+  fallDuration: 0.8
+  fallDelay: 0.1
+  fallDirection: {x: 0, y: 0, z: 0}
 --- !u!1 &424454347
 GameObject:
   m_ObjectHideFlags: 0
@@ -951,6 +995,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1210379154}
+    - targetCorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1210379156}
   m_SourcePrefab: {fileID: 100100000, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
 --- !u!1 &684778668
 GameObject:
@@ -1061,6 +1108,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
       insertIndex: -1
       addedObject: {fileID: 266364375}
+    - targetCorrespondingSourceObject: {fileID: 170592, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 266364376}
   m_SourcePrefab: {fileID: 100100000, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
 --- !u!1 &746627547
 GameObject:
@@ -1293,6 +1343,25 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 455478, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
   m_PrefabInstance: {fileID: 661880449}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1210379156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210379153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c650f09944822f49a6b055918618cd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TreeVisual
+  shakeAngle: 15
+  shakeSpeed: 12
+  shakeDuration: 0.4
+  fallAngle: 90
+  fallDuration: 0.8
+  fallDelay: 0.1
+  fallDirection: {x: 0, y: 0, z: 0}
 --- !u!1 &1278721846
 GameObject:
   m_ObjectHideFlags: 0
@@ -2701,6 +2770,25 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 455478, guid: 078efdee227ce7b40b3a095532cd4e65, type: 3}
   m_PrefabInstance: {fileID: 30248998}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2035751837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2035751834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c650f09944822f49a6b055918618cd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TreeVisual
+  shakeAngle: 15
+  shakeSpeed: 12
+  shakeDuration: 0.4
+  fallAngle: 90
+  fallDuration: 0.8
+  fallDelay: 0.1
+  fallDirection: {x: 0, y: 0, z: 0}
 --- !u!1 &2078164127
 GameObject:
   m_ObjectHideFlags: 0
