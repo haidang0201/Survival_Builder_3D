@@ -109,7 +109,7 @@ public class WorkerCarryItem : MonoBehaviour
         // Kiểm tra kho trước khi deposit
         if (woodStorage != null && woodStorage.IsFull)
         {
-            Debug.LogWarning($"[WorkerCarryItem] {name}: Kho đầy, không thể nộp gỗ!");
+            Debug.Log($"[WorkerCarryItem] {name}: Kho đầy, không thể nộp gỗ!");
             return false;
         }
 
