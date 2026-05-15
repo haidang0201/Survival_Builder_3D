@@ -1,0 +1,55 @@
+Canvas (UI Canvas)                                    <-- Canvas UI chính của game
+ └── SettingsPanel (UI Panel)                         <-- Panel cài đặt tổng
+      ├── Background (UI Image)                       <-- Ảnh nền tối / khung menu
+      │
+      ├── TopBar (Empty UI Object)                    <-- Thanh trên cùng
+      │    ├── SettingsTitle (TMP Text)               <-- Tiêu đề SETTINGS
+      │    └── CloseButton (UI Button)                <-- Nút đóng menu
+      │
+      ├── CategoryPanel (Empty UI Object)             <-- Thanh tab category
+      │    ├── GameplayButton (UI Button)             <-- Tab Gameplay
+      │    ├── AudioButton (UI Button)                <-- Tab Audio
+      │    ├── GraphicsButton (UI Button)             <-- Tab Graphics
+      │    ├── ControlsButton (UI Button)             <-- Tab Controls
+      │    └── InterfaceButton (UI Button)            <-- Tab Interface
+      │
+      ├── ContentPanel (UI Panel)                     <-- Khu vực nội dung settings
+      │    │
+      │    ├── GameplayPage (UI Panel)                <-- Trang Gameplay
+      │    │    ├── CameraSensitivity (UI Slider)     <-- Slider tốc độ chuột
+      │    │    ├── InvertMouseToggle (UI Toggle)     <-- Đảo trục chuột
+      │    │    ├── AutoSaveToggle (UI Toggle)        <-- Bật/tắt autosave
+      │    │    └── LanguageDropdown (TMP Dropdown)   <-- Chọn ngôn ngữ
+      │    │
+      │    ├── AudioPage (UI Panel)                   <-- Trang âm thanh
+      │    │    ├── MasterVolume (UI Slider)          <-- Âm lượng tổng
+      │    │    ├── MusicVolume (UI Slider)           <-- Âm lượng nhạc
+      │    │    ├── SFXVolume (UI Slider)             <-- Âm lượng hiệu ứng
+      │    │    └── MuteToggle (UI Toggle)            <-- Tắt âm thanh
+      │    │
+      │    ├── GraphicsPage (UI Panel)                <-- Trang đồ họa
+      │    │    ├── ResolutionDropdown (TMP Dropdown) <-- Chọn độ phân giải
+      │    │    ├── QualityDropdown (TMP Dropdown)    <-- Chọn chất lượng
+      │    │    ├── FullscreenToggle (UI Toggle)      <-- Fullscreen
+      │    │    ├── ShadowQuality (UI Slider)         <-- Chất lượng bóng
+      │    │    └── VSyncToggle (UI Toggle)           <-- VSync
+      │    │
+      │    ├── ControlsPage (UI Panel)                <-- Trang keybind
+      │    │    ├── KeybindList (Scroll View)         <-- Danh sách phím
+      │    │    ├── SprintKey (UI Button)             <-- Đổi phím chạy
+      │    │    ├── BuildModeKey (UI Button)          <-- Đổi phím build mode
+      │    │    └── CursorToggleKey (UI Button)       <-- Đổi phím hiện chuột
+      │    │
+      │    └── InterfacePage (UI Panel)               <-- Trang giao diện
+      │         ├── UIScaleSlider (UI Slider)         <-- Scale UI
+      │         ├── ShowDamageToggle (UI Toggle)      <-- Hiện damage text
+      │         ├── ShowFPSToggle (UI Toggle)         <-- Hiện FPS
+      │         └── CrosshairToggle (UI Toggle)       <-- Bật/tắt crosshair
+      │
+      ├── BottomBar (Empty UI Object)                 <-- Thanh nút dưới cùng
+      │    ├── ApplyButton (UI Button)                <-- Áp dụng thay đổi
+      │    ├── ResetButton (UI Button)                <-- Reset mặc định
+      │    └── BackButton (UI Button)                 <-- Quay lại menu trước
+      │
+      └── WarningPopup (UI Panel)                     <-- Popup cảnh báo
+           └── WarningText (TMP Text)                 <-- Nội dung cảnh báo

@@ -2,7 +2,12 @@ using UnityEngine;
 
 public class UIManager : Singleton<UIManager>
 {
+    [SerializeField] private GameObject buildMenu;
     [SerializeField] private GameObject warningUI;
+    public void ToggleBuildMenu()
+    {
+        buildMenu.SetActive(!buildMenu.activeSelf);
+    }
 
     [SerializeField] private GameObject houseSelectionPanel;
     [SerializeField] private GameObject workerStatusPanel;
@@ -47,6 +52,6 @@ public class UIManager : Singleton<UIManager>
     }
     public void OnClickHouseBuilderButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.HouseBuilder);
+        BuildingSystem.Ins.StartPlacing(BuildingType.House);
     }
 }
