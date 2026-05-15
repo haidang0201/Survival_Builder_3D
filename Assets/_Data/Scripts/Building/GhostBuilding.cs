@@ -113,6 +113,11 @@ public class GhostBuilding : MonoBehaviour
         isValid = !IsOverlapping();
         ApplyMaterial(isValid ? validMat : invalidMat);
     }
+    public void Show()
+    {
+        gameObject.SetActive(true);  // Kích hoạt đối tượng "ghost"
+        ApplyMaterial(validMat);     // Áp dụng màu xanh nếu có thể xây dựng
+    }
 
     /// <summary>
     /// Dùng Physics.OverlapBox để kiểm tra có building nào ở vị trí này không

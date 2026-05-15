@@ -30,6 +30,13 @@ public class ConstructionManager : Singleton<ConstructionManager>
     /// </summary>
     public void PlaceBuilding(BuildingType type, Vector3 position, Quaternion rotation)
     {
+        // Trước khi xây dựng, kiểm tra xem vị trí có hợp lệ không
+        if (!BuildingManager.Ins.CanBuild(position, type))
+        {
+            Debug.LogWarning($"[ConstructionManager] Không thể xây dựng tại vị trí này vì có sự chồng lấn.");
+            return;
+        }
+
         var spawned = SpawnBuilding(type, position, rotation);
 
         if (spawned == null)

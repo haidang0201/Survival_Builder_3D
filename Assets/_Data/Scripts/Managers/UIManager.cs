@@ -9,6 +9,19 @@ public class UIManager : Singleton<UIManager>
         buildMenu.SetActive(!buildMenu.activeSelf);
     }
 
+    [SerializeField] private GameObject houseSelectionPanel;
+    [SerializeField] private GameObject workerStatusPanel;
+
+
+    void Start()
+    {
+        houseSelectionPanel.SetActive(true);
+        workerStatusPanel.SetActive(true);
+    }
+
+
+
+
     // Hiển thị cảnh báo trên giao diện
     public void ShowWarning(string message)
     {
