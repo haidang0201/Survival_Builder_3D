@@ -24,3 +24,15 @@ Canvas (UI Canvas)
            └── WheatGroup (Empty UI Object)
                 ├── WheatIcon (UI Image)
                 └── WheatText (TMP Text)
+ │
+ └── Gameplay_Panel_Bottom (Empty UI Object)         <-- Bấm chuột phải vào Canvas -> Create Empty
+      │
+      ├── MainToolbar (Empty UI Object)              <-- Bấm chuột phải vào Panel_Bottom -> Create Empty
+      │    ├── Build_Btn (UI -> Button - TextMeshPro)                 
+      │    ├── Tools_Btn (UI -> Button - TextMeshPro)                 
+      │    └── Setting_Btn (UI -> Button - TextMeshPro)               
+      │
+      └── ControlHints_Group (Empty UI Object)       <-- Bấm chuột phải vào Panel_Bottom -> Create Empty
+           ├── Hint_Place (UI -> Text - TextMeshPro)   <-- Nội dung: "🖱️ Chuột trái: Đặt công trình"
+           ├── Hint_Cancel (UI -> Text - TextMeshPro)  <-- Nội dung: "🖱️ Chuột phải: Hủy đặt"
+           └── Hint_Rotate (UI -> Text - TextMeshPro)  <-- Nội dung: "⌨️ Phím E / R: Xoay công trình"
