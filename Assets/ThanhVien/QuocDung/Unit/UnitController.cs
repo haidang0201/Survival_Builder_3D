@@ -1,14 +1,20 @@
 using UnityEngine;
 using UnityEngine.AI;
-using System.Collections; // Cần thiết để dùng Coroutine
+using System.Collections;
 using System.Collections.Generic;
 
 // 1. Định nghĩa các Trạng thái (State Machine)
 public enum UnitState
 {
-    Idle,      // Đứng yên
-    Moving,    // Di chuyển đến vị trí
-    Attacking  // Tấn công mục tiêu
+    Idle,
+    Moving,
+    Attacking
+}
+
+public enum AttackMode
+{
+    Melee,
+    Ranged
 }
 
 public class UnitController : MonoBehaviour
@@ -19,8 +25,10 @@ public class UnitController : MonoBehaviour
     private NavMeshAgent agent;
     public UnitState currentState = UnitState.Idle;
     public GameObject currentTarget;
-    public float scanFrequency = 0.25f; // Tần suất quét: 4 lần/giây (Tối ưu hóa: 3 đến 5 lần/giây)
-    public float attackRange = 2f;
+    public float scanFrequency = 0.25f;
+    [SerializeField] AttackMode attackMode = AttackMode.Melee;
+    [SerializeField] float attackRange = 2f;
+    [SerializeField] float rangedAttackRange = 5f;
     [SerializeField] LayerMask targetLayerMask = ~0;
     [SerializeField] float raycastDistance = 6f;
     [SerializeField] float raycastHeight = 0.8f;
@@ -28,17 +36,22 @@ public class UnitController : MonoBehaviour
     [SerializeField] int visionRayCount = 7;
     [SerializeField] float destinationUpdateThreshold = 0.5f;
     [SerializeField] string enemyTag = "Enemy";
-    [SerializeField] float enemyReacquireDistance = 8f;
 
     // Internal caches
     private Coroutine lowFreqCoroutine;
     private Vector3 lastDestinationPos = Vector3.positiveInfinity;
+    private int currentTargetInstanceId = 0;
+
+    float GetAttackStopDistance()
+    {
+        return attackMode == AttackMode.Ranged ? rangedAttackRange : attackRange;
+    }
 
     bool IsCurrentTargetClaimedByOther()
     {
-        if (currentTarget == null) return false;
+        if (currentTarget == null && currentTargetInstanceId == 0) return false;
 
-        int id = currentTarget.GetInstanceID();
+        int id = currentTargetInstanceId != 0 ? currentTargetInstanceId : currentTarget.GetInstanceID();
         if (!claimedEnemies.TryGetValue(id, out UnitController owner)) return false;
         return owner != null && owner != this;
     }
@@ -54,24 +67,33 @@ public class UnitController : MonoBehaviour
         }
 
         claimedEnemies[id] = this;
+        currentTargetInstanceId = id;
         return true;
     }
-        private int currentTargetInstanceId = 0;
 
     void ReleaseCurrentTargetClaim()
     {
-        if (currentTarget == null) return;
+        int id = currentTargetInstanceId;
+        if (id == 0 && currentTarget != null)
+        {
+            id = currentTarget.GetInstanceID();
+        }
 
-        int id = currentTarget.GetInstanceID();
+        if (id == 0)
+        {
+            return;
+        }
+
         if (claimedEnemies.TryGetValue(id, out UnitController owner) && owner == this)
         {
             claimedEnemies.Remove(id);
         }
+
+        currentTargetInstanceId = 0;
     }
 
     void Start()
     {
-        // Lấy thành phần NavMeshAgent (hệ thống tìm đường)
         agent = GetComponent<NavMeshAgent>();
         if (agent == null)
         {
@@ -80,10 +102,8 @@ public class UnitController : MonoBehaviour
             return;
         }
 
-        // Bắt đầu Coroutine để xử lý các logic tối ưu (chạy không liên tục)
         lowFreqCoroutine = StartCoroutine(LowFrequencyUpdate());
 
-        // Nếu đã có target được gán từ Inspector và state là Attacking, khởi tạo đường đi ngay
         if (currentState == UnitState.Attacking && currentTarget != null)
         {
             agent.isStopped = false;
@@ -91,25 +111,19 @@ public class UnitController : MonoBehaviour
             agent.SetDestination(tpos);
             lastDestinationPos = tpos;
         }
-        
-        // Ghi chú: Để tối ưu tránh va chạm vật lý, bạn cần CẤU HÌNH NavMeshAgent
-        // trong Inspector để sử dụng 'Avoidance' thay vì 'Physics Collision'.
     }
 
-    // Coroutine: Hàm chạy ngắt quãng (Không chạy liên tục trong Update())
     IEnumerator LowFrequencyUpdate()
     {
-        // Vòng lặp tối ưu
         while (true)
         {
-            // Chờ một khoảng thời gian (scanFrequency) trước khi chạy logic tiếp theo
             yield return new WaitForSeconds(scanFrequency);
-            
-            // Chỉ cập nhật đuổi theo khi đang có target enemy
+
             if (currentState == UnitState.Attacking && currentTarget != null)
             {
                 if (IsCurrentTargetClaimedByOther())
                 {
+                    ReleaseCurrentTargetClaim();
                     currentTarget = null;
                     currentState = UnitState.Idle;
                     agent.isStopped = true;
@@ -117,7 +131,9 @@ public class UnitController : MonoBehaviour
                 }
 
                 Vector3 targetPos = currentTarget.transform.position;
-                if ((transform.position - targetPos).sqrMagnitude > attackRange * attackRange)
+                float stopDistance = GetAttackStopDistance();
+
+                if ((transform.position - targetPos).sqrMagnitude > stopDistance * stopDistance)
                 {
                     if ((targetPos - lastDestinationPos).sqrMagnitude > destinationUpdateThreshold * destinationUpdateThreshold)
                     {
@@ -132,7 +148,6 @@ public class UnitController : MonoBehaviour
 
     void Update()
     {
-        // Raycast 180 độ phía trước: thấy Enemy thì chuyển sang đuổi ngay
         if (currentTarget == null || currentTarget.CompareTag(enemyTag) == false)
         {
             if (TryAcquireEnemyByVision())
@@ -141,7 +156,6 @@ public class UnitController : MonoBehaviour
             }
         }
 
-        // Logic chính chạy liên tục (nhưng nhẹ hơn)
         switch (currentState)
         {
             case UnitState.Attacking:
@@ -150,37 +164,27 @@ public class UnitController : MonoBehaviour
             case UnitState.Moving:
                 HandleMovement();
                 break;
-            default: // Idle
-                // Không làm gì nhiều khi Idle
-                break;
         }
     }
-    
-    // Xử lý lệnh của người chơi (Ưu tiên 1)
+
     public void SetNewTarget(GameObject target)
     {
         if (target == null) return;
-
         if (!target.CompareTag(enemyTag)) return;
+        if (currentTarget == target) return;
 
         ReleaseCurrentTargetClaim();
-
         if (!ClaimEnemy(target)) return;
 
-        // Ưu tiên 1: Unit chỉ nhận enemy làm mục tiêu
         currentTarget = target;
         currentState = UnitState.Attacking;
-
-        // Đảm bảo agent đang cho phép di chuyển
         agent.isStopped = false;
 
-        // Tính toán đường đi NGAY LẬP TỨC khi nhận lệnh (không chờ Coroutine)
         Vector3 tpos = target.transform.position;
         agent.SetDestination(tpos);
         lastDestinationPos = tpos;
     }
 
-    // Logic xử lý khi đang tấn công
     void HandleAttacking()
     {
         if (currentTarget == null)
@@ -192,28 +196,28 @@ public class UnitController : MonoBehaviour
 
         if (IsCurrentTargetClaimedByOther())
         {
+            ReleaseCurrentTargetClaim();
             currentTarget = null;
             currentState = UnitState.Idle;
             agent.isStopped = true;
             return;
         }
-        
-        float sqrDistance = (transform.position - currentTarget.transform.position).sqrMagnitude;
 
-        if (sqrDistance <= attackRange * attackRange)
+        float sqrDistance = (transform.position - currentTarget.transform.position).sqrMagnitude;
+        float stopDistance = GetAttackStopDistance();
+
+        if (sqrDistance <= stopDistance * stopDistance)
         {
-            // Đã tới tầm: Dừng di chuyển và Tấn công
             agent.isStopped = true;
-            // Gọi hàm tấn công (ví dụ: FireWeapon())
+            // Melee: có thể gọi đánh cận chiến ở đây.
+            // Ranged: có thể gọi bắn ở đây.
         }
         else
         {
-            // Chưa tới tầm: Tiếp tục chạy và TÍNH TOÁN ĐƯỜNG ĐI đã được tối ưu trong Coroutine
             agent.isStopped = false;
         }
     }
 
-    // Logic xử lý khi đang di chuyển (nếu lính đang đi đến một vị trí cụ thể)
     void HandleMovement()
     {
         if (!agent.pathPending)
@@ -223,12 +227,6 @@ public class UnitController : MonoBehaviour
                 currentState = UnitState.Idle;
             }
         }
-    }
-
-    // Hàm quét mục tiêu đơn giản (chạy trong Coroutine với tần suất thấp)
-    void ScanForTarget()
-    {
-        // Không dùng vòng tròn cảm ứng nữa; giữ hàm này để tương thích nhưng không làm gì.
     }
 
     bool TryAcquireEnemyByVision()
@@ -248,15 +246,24 @@ public class UnitController : MonoBehaviour
             {
                 if (hit.collider != null && hit.collider.CompareTag(enemyTag))
                 {
-                    if (!ClaimEnemy(hit.collider.gameObject))
+                    GameObject enemy = hit.collider.gameObject;
+
+                    if (currentTarget == enemy)
+                    {
+                        return true;
+                    }
+
+                    ReleaseCurrentTargetClaim();
+
+                    if (!ClaimEnemy(enemy))
                     {
                         continue;
                     }
 
-                    ReleaseCurrentTargetClaim();
-                    currentTarget = hit.collider.gameObject;
+                    currentTarget = enemy;
                     currentState = UnitState.Attacking;
                     agent.isStopped = false;
+
                     Vector3 targetPos = currentTarget.transform.position;
                     agent.SetDestination(targetPos);
                     lastDestinationPos = targetPos;
