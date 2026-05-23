@@ -130,7 +130,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
             sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
             savedAtUnix = System.DateTimeOffset.Now.ToUnixTimeSeconds(),
             buildings = states,
-            resources = new System.Collections.Generic.List<ResourceData>()
+            resources = new System.Collections.Generic.List<JsonDataManager.ResourceData>()
         };
 
         bool result = JsonDataManager.Ins.SaveGame(saveData);

@@ -103,7 +103,7 @@ public class TestBuildingPlacement : MonoBehaviour
             sceneName = "MainGame",
             savedAtUnix = System.DateTimeOffset.Now.ToUnixTimeSeconds(),
             buildings = states,
-            resources = new List<ResourceData>()
+            resources = new List<JsonDataManager.ResourceData>()
         };
 
         bool result = JsonDataManager.Ins.SaveGame(saveData);
