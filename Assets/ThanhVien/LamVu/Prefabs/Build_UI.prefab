@@ -199,7 +199,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1411181826997099207}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
         m_MethodName: OnClickForestHutButton
         m_Mode: 1
@@ -260,8 +260,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 136}
-  m_SizeDelta: {x: 821.6444, y: 272}
+  m_AnchoredPosition: {x: 0, y: 250}
+  m_SizeDelta: {x: 820, y: 270}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &783296745240503796
 CanvasRenderer:
@@ -499,7 +499,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1411181826997099207}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
         m_MethodName: OnClickHouseButton
         m_Mode: 1
@@ -1440,8 +1440,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4854869463211774193}
-  - component: {fileID: 1411181826997099207}
-  - component: {fileID: 2689588888016721635}
   m_Layer: 0
   m_Name: Build_UI
   m_TagString: Untagged
@@ -1466,37 +1464,6 @@ Transform:
   - {fileID: 8394044365981906806}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1411181826997099207
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4694280744690282985}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 76cc508dd9831ad4da0c209fa4cbb8f1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UIManager
-  buildMenu: {fileID: 0}
-  warningUI: {fileID: 0}
---- !u!114 &2689588888016721635
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4694280744690282985}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 42e42af8b8047e44fb856f0594413529, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BuildingSystem
-  ghostHousePrefab: {fileID: 440406392703554519, guid: e0a73e3e6e968ac49a907d49a3183abb, type: 3}
-  ghostForestHutPrefab: {fileID: 4747558252259938282, guid: c6f46d3b78eb9bc4985059102c4e82ef, type: 3}
-  ghostSawmillPrefab: {fileID: 7526978203329140539, guid: c997065683067244db1ee65a2a44b000, type: 3}
-  ghostWarehousePrefab: {fileID: 0}
-  ghostHouseBuilderPrefab: {fileID: 0}
 --- !u!1 &5059694379047655639
 GameObject:
   m_ObjectHideFlags: 0
@@ -1847,7 +1814,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1411181826997099207}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
         m_MethodName: OnClickSawmillButton
         m_Mode: 1
@@ -2474,7 +2441,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1411181826997099207}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
         m_MethodName: OnClickWarehouseButton
         m_Mode: 1
