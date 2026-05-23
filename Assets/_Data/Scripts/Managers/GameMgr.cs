@@ -35,6 +35,9 @@ public class GameMgr : Singleton<GameMgr>
     private void Start()
     {
         SetState(GameState.Loading);
+        var manager = DayNightManager.Ins;
+        manager.OnDayStart += HandleDayStart;
+        manager.OnNightStart += HandleNightStart;
     }
 
     public void SetState(GameState newState)
@@ -86,5 +89,16 @@ public class GameMgr : Singleton<GameMgr>
     public void QuitGame()
     {
         Application.Quit();
+    }
+    void HandleDayStart()
+    {
+        Debug.Log("Bắt đầu ngày: bật harvesting, tắt defense");
+        // Chuyển state worker, bật building interaction
+    }
+
+    void HandleNightStart()
+    {
+        Debug.Log("Bắt đầu đêm: tắt harvesting, bật defense");
+        // Chuyển state worker sang combat, bật defense building
     }
 }
