@@ -24,7 +24,6 @@ public class HUDController : MonoBehaviour
 
     private void Start()
     {
-        //UpdateGold(0);
         UpdateWood(0);
         UpdateHealth(1f);
     }
