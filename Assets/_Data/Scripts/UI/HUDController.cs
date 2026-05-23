@@ -6,50 +6,30 @@ using DG.Tweening;
 public class HUDController : MonoBehaviour
 {
     [Header("UI")]
-    public TextMeshProUGUI goldText;
+    //  public TextMeshProUGUI goldText;
     public TextMeshProUGUI woodText;
+    public TextMeshProUGUI stoneText; // Kéo Text tương ứng vào đây trong Inspector
+    public TextMeshProUGUI foodText;  // Kéo Text tương ứng vào đây trong Inspector
+    public TextMeshProUGUI healthText;
+
+
     public Image healthFill;
 
     [Header("Floating Text")]
     public GameObject floatingTextPrefab;
     public Transform floatingTextParent;
 
-    private int currentGold;
     private int currentWood;
+    public TMPro.TextMeshProUGUI[] resourceTexts;
 
     private void Start()
     {
-        UpdateGold(0);
+        //UpdateGold(0);
         UpdateWood(0);
         UpdateHealth(1f);
     }
 
-    // ================= GOLD =================
-    public void UpdateGold(int value)
-    {
-        int oldValue = currentGold;
-        currentGold = value;
 
-        int delta = value - oldValue;
-
-        AnimateNumber(goldText, oldValue, value);
-
-        if (delta != 0)
-        {
-            ShowFloatingText(delta, goldText.transform.position, Color.yellow);
-
-            if (delta > 0)
-            {
-                goldText.transform.DOScale(1.2f, 0.15f).SetLoops(2, LoopType.Yoyo);
-            }
-            else
-            {
-                goldText.transform.DOShakeScale(0.3f, 0.5f);
-                goldText.DOColor(Color.red, 0.2f)
-                    .OnComplete(() => goldText.DOColor(Color.white, 0.2f));
-            }
-        }
-    }
 
     // ================= WOOD =================
     public void UpdateWood(int value)
@@ -100,6 +80,11 @@ public class HUDController : MonoBehaviour
             text.text = x.ToString();
         }, to, 0.3f);
     }
+    // Ví dụ mẫu trong HUDController.cs
+    public void UpdateWood(int current, int max)
+    {
+        woodText.text = $"{current} / {max}";
+    }
 
     void ShowFloatingText(int amount, Vector3 worldPos, Color color)
     {
@@ -113,6 +98,29 @@ public class HUDController : MonoBehaviour
 
         string prefix = amount > 0 ? "+" : "";
         ft.Setup(prefix + amount.ToString(), color);
+    }
+    public void UpdateStone(int current, int max)
+    {
+        if (stoneText != null)
+        {
+            stoneText.text = $"{current} / {max}";
+        }
+    }
+
+    // Hàm Update Lúa
+    public void UpdateFood(int current, int max)
+    {
+        if (foodText != null)
+        {
+            foodText.text = $"{current} / {max}";
+        }
+    }
+    public void SetTextColor(Color newColor)
+    {
+        foreach (var txt in resourceTexts)
+        {
+            if (txt != null) txt.color = newColor;
+        }
     }
 
     // ===== HOOK SYSTEM =====

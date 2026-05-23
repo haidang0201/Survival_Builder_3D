@@ -1,57 +1,115 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager : Singleton<UIManager>
 {
-    [SerializeField] private GameObject buildMenu;
-    [SerializeField] private GameObject warningUI;
-    public void ToggleBuildMenu()
-    {
-        buildMenu.SetActive(!buildMenu.activeSelf);
-    }
+    public GameObject buildMenu;          // Panel chứa nút xây dựng
+    public GameObject warningPanel;       // Panel cảnh báo
+    public Text warningText;              // Text thông báo
+    public float fadeDuration = 0.5f;     // thời gian fade in/out
+
+    private CanvasGroup warningCanvasGroup;
 
     [SerializeField] private GameObject houseSelectionPanel;
     [SerializeField] private GameObject workerStatusPanel;
 
+    protected override void Awake()
+    {
+        base.Awake(); // Singleton logic
+
+        if (warningPanel != null)
+        {
+            warningCanvasGroup = warningPanel.GetComponent<CanvasGroup>();
+            if (warningCanvasGroup == null)
+                warningCanvasGroup = warningPanel.AddComponent<CanvasGroup>();
+
+            warningCanvasGroup.alpha = 0f;
+            warningPanel.SetActive(false);
+        }
+    }
 
     void Start()
     {
-        houseSelectionPanel.SetActive(true);
-        workerStatusPanel.SetActive(true);
+        var manager = DayNightManager.Ins;
+
+        manager.OnDayStart += HandleDayStart;
+        manager.OnNightStart += HandleNightStart;
     }
 
-
-
-
-    // Hiển thị cảnh báo trên giao diện
-    public void ShowWarning(string message)
+    void HandleDayStart()
     {
-        warningUI.SetActive(true);
+        if (buildMenu != null)
+            buildMenu.SetActive(true);
+
+        if (warningPanel != null)
+            StartCoroutine(FadeOutWarning());
     }
 
-    // Ẩn cảnh báo trên giao diện
-    public void HideWarning()
+    void HandleNightStart()
     {
-        warningUI.SetActive(false);
+        if (buildMenu != null)
+            buildMenu.SetActive(false);
+
+        if (warningPanel != null && warningText != null)
+        {
+            warningText.text = "Trời tối, cấm xây dựng!";
+            StartCoroutine(FadeInWarning());
+        }
     }
+
+    private System.Collections.IEnumerator FadeInWarning()
+    {
+        warningPanel.SetActive(true);
+        float t = 0f;
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            warningCanvasGroup.alpha = Mathf.Clamp01(t / fadeDuration);
+            yield return null;
+        }
+        warningCanvasGroup.alpha = 1f;
+    }
+
+    private System.Collections.IEnumerator FadeOutWarning()
+    {
+        float t = 0f;
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            warningCanvasGroup.alpha = Mathf.Clamp01(1 - t / fadeDuration);
+            yield return null;
+        }
+        warningCanvasGroup.alpha = 0f;
+        warningPanel.SetActive(false);
+    }
+
     public void OnClickHouseButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.House);
+        if (DayNightManager.Ins.IsDay())
+            BuildingSystem.Ins.StartPlacing(BuildingType.House);
     }
 
     public void OnClickForestHutButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+        if (DayNightManager.Ins.IsDay())
+            BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
     }
+
     public void OnClickSawmillButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.Sawmill);
+        if (DayNightManager.Ins.IsDay())
+            BuildingSystem.Ins.StartPlacing(BuildingType.Sawmill);
     }
-    public void OnClickWarehouseButton()
+
+    public void OnClickWareHouseButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
+        if (DayNightManager.Ins.IsDay())
+            BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
     }
+
     public void OnClickHouseBuilderButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.House);
+        if (DayNightManager.Ins.IsDay())
+            BuildingSystem.Ins.StartPlacing(BuildingType.House);
     }
 }
