@@ -3,46 +3,81 @@ using UnityEngine;
 public class UIResourceObserver : MonoBehaviour
 {
     public HUDController hud;
+    private bool isSubscribed = false;
+
+    void Start()
+    {
+        if (JsonDataManager.Ins == null)
+        {
+            Debug.LogError("JsonDataManager.Ins chưa được khởi tạo!");
+            return;
+        }
+
+        SubscribeEvents();
+
+        // Thêm câu lệnh if này để bảo vệ code:
+        if (hud != null)
+        {
+            hud.UpdateGold(JsonDataManager.Ins.gold);
+            hud.UpdateWood(JsonDataManager.Ins.wood);
+            hud.UpdateStone(JsonDataManager.Ins.stone);
+        }
+        else
+        {
+            Debug.LogError("Bạn quên chưa kéo thả HUDController vào UIResourceObserver kìa!");
+        }
+    }
 
     void OnEnable()
     {
-        var data = JsonDataManager.Ins;
-
-        data.OnGoldChanged += OnGoldChanged;
-        data.OnWoodChanged += OnWoodChanged;
-        data.OnHPChanged += OnHPChanged;
+        // Nếu Object bị tắt đi bật lại sau khi Start đã chạy, ta đăng ký lại
+        if (isSubscribed == false && JsonDataManager.Ins != null)
+        {
+            SubscribeEvents();
+        }
     }
 
     void OnDisable()
     {
-        var data = JsonDataManager.Ins;
-
-        data.OnGoldChanged -= OnGoldChanged;
-        data.OnWoodChanged -= OnWoodChanged;
-        data.OnHPChanged -= OnHPChanged;
+        UnsubscribeEvents();
     }
 
-    void Start()
+    private void SubscribeEvents()
     {
+        if (isSubscribed) return;
+        
         var data = JsonDataManager.Ins;
+        data.OnGoldChanged += OnGoldChanged;
+        data.OnWoodChanged += OnWoodChanged;
+        data.OnStoneChanged += OnStoneChanged;
+        
+        isSubscribed = true;
+    }
 
-        hud.UpdateGold(data.gold);
-        hud.UpdateWood(data.wood);
-        hud.UpdateHealth(data.hp);
+    private void UnsubscribeEvents()
+    {
+        if (!isSubscribed || JsonDataManager.Ins == null) return;
+
+        var data = JsonDataManager.Ins;
+        data.OnGoldChanged -= OnGoldChanged;
+        data.OnWoodChanged -= OnWoodChanged;
+        data.OnStoneChanged -= OnStoneChanged;
+        
+        isSubscribed = false;
     }
 
     void OnGoldChanged(int value)
     {
-        hud.UpdateGold(value);
+        if (hud != null) hud.UpdateGold(value);
     }
 
     void OnWoodChanged(int value)
     {
-        hud.UpdateWood(value);
+        if (hud != null) hud.UpdateWood(value);
     }
 
-    void OnHPChanged(float value)
+    void OnStoneChanged(int value)
     {
-        hud.UpdateHealth(value);
+        if (hud != null) hud.UpdateStone(value);
     }
 }

@@ -5,10 +5,19 @@ using DG.Tweening;
 
 public class HUDController : MonoBehaviour
 {
-    [Header("UI")]
+    [Header("Top UI (Resources)")]
     public TextMeshProUGUI goldText;
     public TextMeshProUGUI woodText;
-    public Image healthFill;
+    public TextMeshProUGUI stoneText;
+
+    [Header("Bottom UI (New Toolbar)")]
+    public Button buildButton;
+    public Button toolsButton;
+    public Button settingButton;
+    public GameObject controlHintsGroup; // Bảng chứa text: Chuột trái đặt, chuột phải hủy...
+
+    [Header("External UI References")]
+    public GameObject settingUI;         // Kéo thả Setting_UI có sẵn của bạn vào đây
 
     [Header("Floating Text")]
     public GameObject floatingTextPrefab;
@@ -16,13 +25,79 @@ public class HUDController : MonoBehaviour
 
     private int currentGold;
     private int currentWood;
+    private int currentStone;
 
     private void Start()
     {
         UpdateGold(0);
         UpdateWood(0);
-        UpdateHealth(1f);
+        UpdateStone(0);
+
+        // Mặc định vào game: Ẩn bảng hướng dẫn phím tắt đi
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
+
+        // Đăng ký sự kiện Click cho 3 nút bấm dưới Toolbar
+        if (buildButton != null) buildButton.onClick.AddListener(OnBuildButtonClicked);
+        if (toolsButton != null) toolsButton.onClick.AddListener(OnToolsButtonClicked);
+        if (settingButton != null) settingButton.onClick.AddListener(OnSettingButtonClicked);
     }
+
+    private void Update()
+    {
+        // Nhận diện nếu đang bật bảng hướng dẫn (Chế độ xây dựng/Bộ công cụ) 
+        // mà người chơi click CHUỘT PHẢI thì sẽ hủy chế độ đó và ẩn bảng hướng dẫn đi
+        if (controlHintsGroup != null && controlHintsGroup.activeSelf)
+        {
+            if (Input.GetMouseButtonDown(1)) // 1 là Chuột phải
+            {
+                ExitActionModes();
+                Debug.Log("Đã hủy chế độ hiện tại bằng Chuột Phải.");
+            }
+        }
+    }
+
+    // ================= BOTTOM TOOLBAR LOGIC =================
+
+    private void OnBuildButtonClicked()
+    {
+        // Khi bấm nút Xây dựng -> Hiện bảng hướng dẫn phím tắt đặt/xoay nhà
+        if (controlHintsGroup != null)
+        {
+            controlHintsGroup.SetActive(!controlHintsGroup.activeSelf);
+        }
+
+        // Nếu có script BuildSystem riêng, bạn có thể gọi kích hoạt Ghost Building tại đây
+        Debug.Log("Đã bấm nút Xây Dựng!");
+    }
+
+    private void OnToolsButtonClicked()
+    {
+        // Khi bấm Bộ công cụ (Ví dụ công cụ hủy/ủi nhà) -> Cũng hiện hướng dẫn thao tác chuột
+        if (controlHintsGroup != null)
+        {
+            controlHintsGroup.SetActive(!controlHintsGroup.activeSelf);
+        }
+        Debug.Log("Đã bấm nút Bộ Công Cụ!");
+    }
+
+    private void OnSettingButtonClicked()
+    {
+        // Trước khi mở cài đặt, tắt chế độ xây dựng/bảng hướng dẫn đi cho gọn
+        ExitActionModes();
+
+        // Bật/Tắt bảng Setting_UI có sẵn của bạn
+        if (settingUI != null)
+        {
+            settingUI.SetActive(!settingUI.activeSelf);
+        }
+    }
+
+    // Hàm bổ trợ dùng để tắt nhanh chế độ thao tác và ẩn bảng hướng dẫn
+    public void ExitActionModes()
+    {
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
+    }
+
 
     // ================= GOLD =================
     public void UpdateGold(int value)
@@ -78,17 +153,31 @@ public class HUDController : MonoBehaviour
         }
     }
 
-    // ================= HEALTH =================
-    public void UpdateHealth(float percent)
+    // ================= STONE =================
+    public void UpdateStone(int value)
     {
-        if (healthFill == null) return;
+        int oldValue = currentStone;
+        currentStone = value;
 
-        healthFill.DOFillAmount(percent, 0.3f);
+        int delta = value - oldValue;
 
-        healthFill.DOColor(Color.red, 0.1f)
-            .OnComplete(() => healthFill.DOColor(Color.white, 0.2f));
+        AnimateNumber(stoneText, oldValue, value);
 
-        healthFill.rectTransform.DOShakeAnchorPos(0.2f, 10f);
+        if (delta != 0)
+        {
+            ShowFloatingText(delta, stoneText.transform.position, Color.gray);
+
+            if (delta > 0)
+            {
+                stoneText.transform.DOScale(1.2f, 0.15f).SetLoops(2, LoopType.Yoyo);
+            }
+            else
+            {
+                stoneText.transform.DOShakeScale(0.3f, 0.5f);
+                stoneText.DOColor(Color.red, 0.2f)
+                    .OnComplete(() => stoneText.DOColor(Color.white, 0.2f));
+            }
+        }
     }
 
     // ================= SUPPORT =================
@@ -109,15 +198,10 @@ public class HUDController : MonoBehaviour
 
         obj.transform.position = worldPos;
 
+        // Note: Đảm bảo bạn đã có script FloatingText đính kèm trên prefab này
         var ft = obj.GetComponent<FloatingText>();
 
         string prefix = amount > 0 ? "+" : "";
         ft.Setup(prefix + amount.ToString(), color);
     }
-
-    // ===== HOOK SYSTEM =====
-    // public void ConnectToSystem(float hpValue)
-    // {
-    //     LoadBehavior.Ins.UI.UpdateHealth(hpValue);
-    // }
 }

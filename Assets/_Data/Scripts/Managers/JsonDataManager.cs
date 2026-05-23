@@ -11,11 +11,11 @@ public class JsonDataManager : Singleton<JsonDataManager>
 
     public event Action<int> OnGoldChanged;
     public event Action<int> OnWoodChanged;
-    public event Action<float> OnHPChanged;
+    public event Action<int> OnStoneChanged;
 
     public int gold { get; private set; }
     public int wood { get; private set; }
-    public float hp { get; private set; }
+    public int stone { get; private set; }
 
     protected override void Awake()
     {
@@ -77,6 +77,24 @@ public class JsonDataManager : Singleton<JsonDataManager>
             onProgress?.Invoke(progress);  // Gửi tiến độ đến UI
             yield return null;
         }
+    }
+    // Thêm các hàm này vào ĐUÔI class JsonDataManager để script test có thể gọi công khai
+    public void AddGold(int amount)
+    {
+        gold = Mathf.Max(0, gold + amount);
+        OnGoldChanged?.Invoke(gold); // Kích hoạt sự kiện để UIResourceObserver biết và báo cho HUD
+    }
+
+    public void AddWood(int amount)
+    {
+        wood = Mathf.Max(0, wood + amount);
+        OnWoodChanged?.Invoke(wood); // Kích hoạt sự kiện
+    }
+
+    public void AddStone(int amount)
+    {
+        stone = Mathf.Max(0, stone + amount);
+        OnStoneChanged?.Invoke(stone); // Kích hoạt sự kiện
     }
 
     // Save Data Types
