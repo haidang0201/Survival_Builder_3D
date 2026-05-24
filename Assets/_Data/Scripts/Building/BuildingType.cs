@@ -4,21 +4,39 @@
  * Người làm: DŨNG
  *
  * Enum định nghĩa toàn bộ loại công trình trong KHẨN HOANG
- * Dùng chung cho: BuildingData, BuildingCtrl, BuildingState, BuildingManager, GhostBuilding
+ * Dùng chung cho: BuildingData, BuildingCtrl, BuildingState, BuildingManager,
+ *                 GhostBuilding, BuildingSystem, TestBuildingPlacement
+ *
+ * QUY TẮC:
+ *   - None  → giá trị mặc định, dùng để validate – KHÔNG dùng làm loại thật
+ *   - Thêm loại mới vào đúng nhóm, cập nhật BuildingSystem.GetGhostPrefab() cùng lúc
  */
 
 public enum BuildingType
 {
-    // ── NHÀ Ở ──────────────────────
-    House,          // Nhà ở cơ bản của dân
+    // ── GIÁ TRỊ MẶC ĐỊNH ───────────────────────
+    None = 0,           // Chưa thiết lập – dùng để validate trong BuildingManager
 
-    // ── SẢN XUẤT / THU THẬP ────────
-    ForestHut,      // Lều rừng – worker đi chặt cây
-    Sawmill,        // Xưởng cưa – chế biến gỗ
+    // ── NHÀ Ở ──────────────────────────────────
+    House,              // Nhà ở cơ bản của dân
 
-    // ── LƯU TRỮ ────────────────────
-    Warehouse,      // Kho chứa tài nguyên
+    // ── SẢN XUẤT / THU THẬP ────────────────────
+    WoodCutter,         // Trại Mộc – worker đi chặt cây
+    StoneMine,          // Mỏ Đá   – worker khai thác đá
+    Kitchen,            // Nhà Bếp – chế biến lương thực
 
-    // ── XÂY DỰNG ───────────────────
-    HouseBuilder,   // Công trình đang xây dở
+    // ── LƯU TRỮ ────────────────────────────────
+    FoodStorage,        // Kho Lúa – lưu trữ lương thực
+    StoneStorage,       // Kho Đá  – lưu trữ đá
+    Warehouse,          // Kho Tổng – chứa tài nguyên tổng hợp
+
+    // ── PHÒNG THỦ ──────────────────────────────
+    WatchTower,         // Tháp Canh
+    ArcherTower,        // Tháp Cung
+    Cannon,             // Pháo
+
+    // ── QUÂN SỰ (NHÀLÍNH) ──────────────────────
+    BarracksMelee,      // Doanh Trại Lính Cận Chiến
+    BarracksArcher,     // Doanh Trại Lính Cung
+    BarracksSpear,      // Doanh Trại Lính Giáo
 }

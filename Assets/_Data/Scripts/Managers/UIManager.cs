@@ -92,24 +92,24 @@ public class UIManager : Singleton<UIManager>
     public void OnClickForestHutButton()
     {
         if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+            BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
     }
 
     public void OnClickSawmillButton()
     {
         if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.Sawmill);
+            BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
     }
 
     public void OnClickWareHouseButton()
     {
         if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
+            BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
     }
 
     public void OnClickHouseBuilderButton()
     {
         if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.House);
+            BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
     }
 }
