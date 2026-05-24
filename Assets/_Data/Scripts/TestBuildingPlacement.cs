@@ -1,34 +1,44 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 /*
  * TestBuildingPlacement.cs
- * Folder: Scripts/Building/
- * Người làm: DŨNG (test)
+ * Folder: Scripts/Testing/
+ * Người làm: VŨ
  *
- * Điều khiển:
- *   1~4         → Spawn ghost loại tương ứng
+ * Script test nhanh toàn bộ loại công trình bằng phím tắt.
+ * CHỈ dùng trong Editor / môi trường test – KHÔNG đưa vào build cuối.
+ *
+ * Hướng dẫn:
+ *   [1] Nhà Dân        [2] Trại Mộc      [3] Mỏ Đá
+ *   [4] Nhà Bếp        [5] Kho Lúa       [6] Kho Đá
+ *   [7] Tháp Canh      [8] Tháp Cung     [9] Pháo
+ *   [Q] Lính Cận Chiến [W] Lính Cung     [E] Lính Giáo
  *   R           → Xoay 90°
- *   Click trái  → Đặt công trình
- *   Click phải  → Huỷ
- *   SPACE       → Lưu JSON (chỉ lưu khi nhấn)
- *   L           → Tải JSON (xóa hết hiện tại, load về trạng thái đã lưu)
- *   C           → Xóa file save
- *
- * Nguyên tắc:
- *   - Chưa nhấn SPACE → chưa lưu → nhấn L sẽ báo chưa có save, KHÔNG xóa nhà
- *   - Đã nhấn SPACE → nhấn L → xóa hết nhà hiện tại → load đúng save
+ *   Chuột Trái  → Đặt công trình
+ *   Chuột Phải  → Huỷ thao tác
  */
 
 public class TestBuildingPlacement : MonoBehaviour
 {
     // ================= INSPECTOR =================
 
-    [Header("Ghost Prefabs")]
+    [Header("Ghost Prefabs – Dân sự")]
     public GameObject ghostHousePrefab;
-    public GameObject ghostForestHutPrefab;
-    public GameObject ghostSawmillPrefab;
-    public GameObject ghostWarehousePrefab;
+    public GameObject ghostWoodCutterPrefab;
+    public GameObject ghostStoneMinePrefab;
+    public GameObject ghostKitchenPrefab;
+    public GameObject ghostFoodStoragePrefab;
+    public GameObject ghostStoneStoragePrefab;
+
+    [Header("Ghost Prefabs – Phòng thủ")]
+    public GameObject ghostWatchTowerPrefab;
+    public GameObject ghostArcherTowerPrefab;
+    public GameObject ghostCannonPrefab;
+
+    [Header("Ghost Prefabs – Quân sự (Nhà lính)")]
+    public GameObject ghostBarracksMeleePrefab;
+    public GameObject ghostBarracksArcherPrefab;
+    public GameObject ghostBarracksSpearPrefab;
 
     // ================= PRIVATE =================
 
@@ -36,122 +46,58 @@ public class TestBuildingPlacement : MonoBehaviour
 
     // ================= LIFECYCLE =================
 
-    void Start() => PrintGuide();
+    private void Start() => PrintGuide();
 
-    void Update()
-    {
-        HandleSpawnInput();
-        HandleSaveLoadInput();
-    }
+    private void Update() => HandleSpawnInput();
 
-    // ================= SPAWN =================
+    // ================= SPAWN INPUT =================
 
     private void HandleSpawnInput()
     {
+        // Dân sự
         if (Input.GetKeyDown(KeyCode.Alpha1)) SpawnGhost(BuildingType.House, ghostHousePrefab);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SpawnGhost(BuildingType.ForestHut, ghostForestHutPrefab);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SpawnGhost(BuildingType.Sawmill, ghostSawmillPrefab);
-        if (Input.GetKeyDown(KeyCode.Alpha4)) SpawnGhost(BuildingType.Warehouse, ghostWarehousePrefab);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) SpawnGhost(BuildingType.WoodCutter, ghostWoodCutterPrefab);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) SpawnGhost(BuildingType.StoneMine, ghostStoneMinePrefab);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) SpawnGhost(BuildingType.Kitchen, ghostKitchenPrefab);
+        if (Input.GetKeyDown(KeyCode.Alpha5)) SpawnGhost(BuildingType.FoodStorage, ghostFoodStoragePrefab);
+        if (Input.GetKeyDown(KeyCode.Alpha6)) SpawnGhost(BuildingType.StoneStorage, ghostStoneStoragePrefab);
+
+        // Phòng thủ
+        if (Input.GetKeyDown(KeyCode.Alpha7)) SpawnGhost(BuildingType.WatchTower, ghostWatchTowerPrefab);
+        if (Input.GetKeyDown(KeyCode.Alpha8)) SpawnGhost(BuildingType.ArcherTower, ghostArcherTowerPrefab);
+        if (Input.GetKeyDown(KeyCode.Alpha9)) SpawnGhost(BuildingType.Cannon, ghostCannonPrefab);
+
+        // Quân sự
+        if (Input.GetKeyDown(KeyCode.Q)) SpawnGhost(BuildingType.BarracksMelee, ghostBarracksMeleePrefab);
+        if (Input.GetKeyDown(KeyCode.W)) SpawnGhost(BuildingType.BarracksArcher, ghostBarracksArcherPrefab);
+        if (Input.GetKeyDown(KeyCode.E)) SpawnGhost(BuildingType.BarracksSpear, ghostBarracksSpearPrefab);
     }
 
     private void SpawnGhost(BuildingType type, GameObject prefab)
     {
+        // Huỷ ghost đang có
         if (currentGhost != null)
             Destroy(currentGhost.gameObject);
 
         if (prefab == null)
         {
-            Debug.LogWarning($"[Test] Chưa gán ghost prefab: {type}");
+            Debug.LogError($"[TestPlacement] ❌ Chưa gán Ghost Prefab cho {type} trong Inspector!");
             return;
         }
 
-        var obj = Instantiate(prefab);
+        GameObject obj = Instantiate(prefab);
         currentGhost = obj.GetComponent<GhostBuilding>();
 
         if (currentGhost == null)
         {
-            Debug.LogError("[Test] Ghost prefab thiếu GhostBuilding.cs!");
+            Debug.LogError($"[TestPlacement] ❌ Prefab {type} thiếu component GhostBuilding!");
             Destroy(obj);
             return;
         }
 
         currentGhost.buildingType = type;
-        Debug.Log($"[Test] 👻 {type} | R=xoay | Click trái=đặt | Click phải=huỷ");
-    }
-
-    // ================= SAVE / LOAD =================
-
-    private void HandleSaveLoadInput()
-    {
-        if (Input.GetKeyDown(KeyCode.Space)) TestSave();
-        if (Input.GetKeyDown(KeyCode.L)) TestLoad();
-        if (Input.GetKeyDown(KeyCode.C)) TestClear();
-    }
-
-    private void TestSave()
-    {
-        List<BuildingState> states = BuildingManager.Ins.GetAllStates();
-
-        if (states.Count == 0)
-        {
-            Debug.LogWarning("[Test] ⚠️ Không có công trình nào để lưu!");
-            return;
-        }
-
-        var saveData = new JsonDataManager.GameSaveData
-        {
-            sceneName = "MainGame",
-            savedAtUnix = System.DateTimeOffset.Now.ToUnixTimeSeconds(),
-            buildings = states,
-            resources = new List<JsonDataManager.ResourceData>()
-        };
-
-        bool result = JsonDataManager.Ins.SaveGame(saveData);
-
-        if (result)
-        {
-            Debug.Log("===========================================");
-            Debug.Log("[Test] ✅ LƯU THÀNH CÔNG!");
-            Debug.Log($"  Số công trình đã lưu: {states.Count}");
-            foreach (var s in states)
-                Debug.Log($"  🏠 {s.buildingType,-15} | Rot Y: {s.rotation.y}°");
-            Debug.Log("===========================================");
-        }
-        else
-        {
-            Debug.LogError("[Test] ❌ LƯU THẤT BẠI!");
-        }
-    }
-
-    private void TestLoad()
-    {
-        // ✅ Load trước – kiểm tra có file hợp lệ không
-        JsonDataManager.GameSaveData loaded = JsonDataManager.Ins.LoadGame();
-
-        // ✅ Nếu chưa có save → KHÔNG xóa nhà hiện tại
-        if (loaded == null || loaded.buildings == null || loaded.buildings.Count == 0)
-        {
-            Debug.LogWarning("[Test] ⚠️ Chưa có file save! Nhấn SPACE để lưu trước.");
-            return;
-        }
-
-        // ✅ Có save → xóa hết nhà hiện tại (kể cả chưa lưu) → load về save
-        BuildingManager.Ins.LoadStates(loaded.buildings);
-
-        Debug.Log("===========================================");
-        Debug.Log("[Test] ✅ TẢI THÀNH CÔNG! Nhà chưa lưu đã bị xóa.");
-        Debug.Log($"  Số công trình: {loaded.buildings.Count}");
-        foreach (var s in loaded.buildings)
-            Debug.Log($"  🏠 {s.buildingType,-15} | Rot Y: {s.rotation.y}° | Built: {s.isBuilt}");
-        Debug.Log("===========================================");
-    }
-
-    private void TestClear()
-    {
-        bool result = JsonDataManager.Ins.DeleteSave();
-        Debug.Log(result
-            ? "[Test] 🗑️ XÓA FILE SAVE THÀNH CÔNG!"
-            : "[Test] ⚠️ Chưa có file save để xóa!");
+        currentGhost.Show();
+        Debug.Log($"[TestPlacement] 🔨 Đang chọn xây: {type}");
     }
 
     // ================= LOG =================
@@ -159,11 +105,15 @@ public class TestBuildingPlacement : MonoBehaviour
     private void PrintGuide()
     {
         Debug.Log("===========================================");
-        Debug.Log("[TestBuildingPlacement] Hướng dẫn:");
-        Debug.Log("  1~4   → Chọn loại công trình");
-        Debug.Log("  R     → Xoay 90°");
-        Debug.Log("  Click trái  → Đặt | Click phải → Huỷ");
-        Debug.Log("  SPACE → Lưu | L → Load về save | C → Xóa save");
+        Debug.Log("[TestBuildingPlacement] Hướng dẫn Test:");
+        Debug.Log("  [1] Nhà Dân        | [2] Trại Mộc    | [3] Mỏ Đá");
+        Debug.Log("  [4] Nhà Bếp        | [5] Kho Lúa     | [6] Kho Đá");
+        Debug.Log("  [7] Tháp Canh      | [8] Tháp Cung   | [9] Pháo");
+        Debug.Log("  [Q] Lính Cận Chiến | [W] Lính Cung   | [E] Lính Giáo");
+        Debug.Log("-------------------------------------------");
+        Debug.Log("  R          → Xoay 90°");
+        Debug.Log("  Chuột Trái → Đặt công trình");
+        Debug.Log("  Chuột Phải → Huỷ thao tác");
         Debug.Log("===========================================");
     }
 }

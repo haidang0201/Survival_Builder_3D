@@ -2,35 +2,34 @@ using UnityEngine;
 
 /*
  * ConstructionManager.cs
- * Folder: Scripts/Managers/
- * Người làm: DŨNG / VŨ
- *
- * Spawn prefab building thật vào scene
- * Singleton – gắn vào Scene Master bởi ĐĂNG
- *
- * PlaceBuilding() → gọi từ GhostBuilding khi người chơi xác nhận đặt
- * SpawnBuilding() → gọi từ BuildingManager.LoadStates() khi load JSON
+ * Đã cập nhật: Đồng bộ danh sách 11 công trình thật phục vụ sinh nhà chính thức và Load Game.
  */
 
 public class ConstructionManager : Singleton<ConstructionManager>
 {
     // ================= INSPECTOR =================
 
-    [Header("Prefab thật – kéo vào đây")]
+    [Header("Prefab thật - Dân sự")]
     public GameObject housePrefab;
-    public GameObject forestHutPrefab;
-    public GameObject sawmillPrefab;
-    public GameObject warehousePrefab;
-    public GameObject houseBuilderPrefab;
+    public GameObject woodCutterPrefab;
+    public GameObject stoneMinePrefab;
+    public GameObject kitchenPrefab;
+    public GameObject foodStoragePrefab;
+
+    [Header("Prefab thật - Phòng thủ")]
+    public GameObject watchTowerPrefab;
+    public GameObject archerTowerPrefab;
+    public GameObject cannonPrefab;
+
+    [Header("Prefab thật - Quân sự (Nhà lính)")]
+    public GameObject barracksMeleePrefab;
+    public GameObject barracksArcherPrefab;
+    public GameObject barracksSpearPrefab;
 
     // ================= PUBLIC – ĐẶT MỚI =================
 
-    /// <summary>
-    /// Gọi từ GhostBuilding.ConfirmPlace() khi người chơi đặt công trình
-    /// </summary>
     public void PlaceBuilding(BuildingType type, Vector3 position, Quaternion rotation)
     {
-        // Trước khi xây dựng, kiểm tra xem vị trí có hợp lệ không
         if (!BuildingManager.Ins.CanBuild(position, type))
         {
             Debug.LogWarning($"[ConstructionManager] Không thể xây dựng tại vị trí này vì có sự chồng lấn.");
@@ -45,12 +44,8 @@ public class ConstructionManager : Singleton<ConstructionManager>
             Debug.Log($"[ConstructionManager] ✅ Đặt {type} | Pos: {position} | Rot: {rotation.eulerAngles.y}°");
     }
 
-    // ================= PUBLIC – SPAWN (dùng chung) =================
+    // ================= PUBLIC – SPAWN =================
 
-    /// <summary>
-    /// Spawn prefab thật → trả về BuildingCtrl
-    /// Dùng cho cả PlaceBuilding() và BuildingManager.LoadStates()
-    /// </summary>
     public BuildingCtrl SpawnBuilding(BuildingType type, Vector3 position, Quaternion rotation)
     {
         GameObject prefab = GetPrefab(type);
@@ -58,7 +53,7 @@ public class ConstructionManager : Singleton<ConstructionManager>
         if (prefab == null) return null;
 
         GameObject obj = Instantiate(prefab, position, rotation);
-        obj.name = type.ToString(); // "House", "Sawmill"... không có "(Clone)"
+        obj.name = type.ToString();
 
         return obj.GetComponent<BuildingCtrl>();
     }
@@ -70,10 +65,19 @@ public class ConstructionManager : Singleton<ConstructionManager>
         switch (type)
         {
             case BuildingType.House: return housePrefab;
-            case BuildingType.ForestHut: return forestHutPrefab;
-            case BuildingType.Sawmill: return sawmillPrefab;
-            case BuildingType.Warehouse: return warehousePrefab;
-            case BuildingType.HouseBuilder: return houseBuilderPrefab;
+            case BuildingType.WoodCutter: return woodCutterPrefab;
+            case BuildingType.StoneMine: return stoneMinePrefab;
+            case BuildingType.Kitchen: return kitchenPrefab;
+            case BuildingType.FoodStorage: return foodStoragePrefab;
+
+            case BuildingType.WatchTower: return watchTowerPrefab;
+            case BuildingType.ArcherTower: return archerTowerPrefab;
+            case BuildingType.Cannon: return cannonPrefab;
+
+            case BuildingType.BarracksMelee: return barracksMeleePrefab;
+            case BuildingType.BarracksArcher: return barracksArcherPrefab;
+            case BuildingType.BarracksSpear: return barracksSpearPrefab;
+
             default:
                 Debug.LogWarning($"[ConstructionManager] Không có case cho: {type}");
                 return null;
