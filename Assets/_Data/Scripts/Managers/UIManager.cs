@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager : Singleton<UIManager>
 {
@@ -8,9 +9,14 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private GameObject houseSelectionPanel;
     [SerializeField] private GameObject workerStatusPanel;
 
-    [Header("Bottom UI (New Toolbar)")]
+    [Header("Bottom UI Toolbar (Buttons)")]
+    [SerializeField] private Button buildButton;
+    [SerializeField] private Button toolsButton;
+    [SerializeField] private Button settingButton;
+
+    [Header("Bottom UI Toolbar (Panels)")]
     [SerializeField] private GameObject controlHintsGroup; // Bảng hướng dẫn đặt/xoay nhà
-    [SerializeField] private GameObject settingUI;         // Bảng cài đặt có sẵn của bạn
+    [SerializeField] private GameObject settingUI;         // Bảng cài đặt riêng biệt
 
     void Start()
     {
@@ -21,6 +27,11 @@ public class UIManager : Singleton<UIManager>
         // Mặc định vào game ẩn bảng hướng dẫn và bảng cài đặt đi
         if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
         if (settingUI != null) settingUI.SetActive(false);
+
+        // Đăng ký sự kiện Click tự động cho các nút bấm dưới Toolbar
+        if (buildButton != null) buildButton.onClick.AddListener(ToggleBuildMenu);
+        if (toolsButton != null) toolsButton.onClick.AddListener(OnClickToolsButton);
+        if (settingButton != null) settingButton.onClick.AddListener(OnClickSettingButton);
     }
 
     void Update()
@@ -41,7 +52,7 @@ public class UIManager : Singleton<UIManager>
 
     // ================= BOTTOM TOOLBAR LOGIC =================
 
-    // Hàm gắn vào Build_Btn ở thanh công cụ dưới để Bật/Tắt Menu xây dựng chính
+    // Hàm Bật/Tắt Menu chọn danh mục xây dựng chính
     public void ToggleBuildMenu()
     {
         if (buildMenu != null)
@@ -50,16 +61,15 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
-    // Hàm gắn vào Tools_Btn ở thanh công cụ dưới
+    // Hàm bấm vào nút Bộ công cụ
     public void OnClickToolsButton()
     {
         ExitActionModes();
-        // Hiện bảng hướng dẫn thao tác (ví dụ hướng dẫn click chọn nhà để phá dỡ)
         if (controlHintsGroup != null) controlHintsGroup.SetActive(true);
         Debug.Log("Đã chọn bộ công cụ.");
     }
 
-    // Hàm gắn vào Setting_Btn ở thanh công cụ dưới
+    // Hàm bấm vào nút Cài đặt
     public void OnClickSettingButton()
     {
         ExitActionModes();
@@ -69,13 +79,13 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
-    // Hàm bổ trợ ẩn bảng hướng dẫn
+    // Hàm bổ trợ ẩn bảng hướng dẫn phím tắt
     public void ExitActionModes()
     {
         if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
     }
 
-    // Hàm dùng để kích hoạt bảng hướng dẫn (gọi nội bộ khi chọn xong công trình)
+    // Hàm dùng để kích hoạt bảng hướng dẫn (gọi nội bộ khi chọn xong công trình cụ thể)
     private void EnterPlacementMode()
     {
         if (controlHintsGroup != null) controlHintsGroup.SetActive(true);
@@ -97,7 +107,6 @@ public class UIManager : Singleton<UIManager>
 
 
     // ================= BUILDING BUTTONS =================
-    // Tự động bật bảng hướng dẫn điều khiển ngay khi người chơi chọn loại nhà
 
     public void OnClickHouseButton()
     {
