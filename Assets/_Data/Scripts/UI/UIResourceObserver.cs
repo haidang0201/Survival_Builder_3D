@@ -1,48 +1,86 @@
 using UnityEngine;
 
+/*
+ * UIResourceObserver.cs
+ * Đã cập nhật: Theo dõi sự thay đổi của Gỗ, Đá, Lúa (có sức chứa) và Vàng
+ */
 public class UIResourceObserver : MonoBehaviour
 {
     public HUDController hud;
+    private bool isSubscribed = false;
+
+    void Start()
+    {
+        if (JsonDataManager.Ins == null)
+        {
+            Debug.LogError("JsonDataManager.Ins chưa được khởi tạo!");
+            return;
+        }
+
+        SubscribeEvents();
+
+        // Thêm câu lệnh if này để bảo vệ code:
+        if (hud != null)
+        {
+            hud.UpdateGold(JsonDataManager.Ins.gold);
+            hud.UpdateWood(JsonDataManager.Ins.wood);
+            hud.UpdateStone(JsonDataManager.Ins.stone);
+        }
+        else
+        {
+            Debug.LogError("Bạn quên chưa kéo thả HUDController vào UIResourceObserver kìa!");
+        }
+    }
 
     void OnEnable()
     {
-        var data = JsonDataManager.Ins;
-
-        data.OnGoldChanged += OnGoldChanged;
-        data.OnWoodChanged += OnWoodChanged;
-        data.OnHPChanged += OnHPChanged;
+        // Nếu Object bị tắt đi bật lại sau khi Start đã chạy, ta đăng ký lại
+        if (isSubscribed == false && JsonDataManager.Ins != null)
+        {
+            SubscribeEvents();
+        }
     }
 
     void OnDisable()
     {
-        var data = JsonDataManager.Ins;
+        UnsubscribeEvents();
+    }
 
+    private void SubscribeEvents()
+    {
+        if (isSubscribed) return;
+        
+        var data = JsonDataManager.Ins;
+        data.OnGoldChanged += OnGoldChanged;
+        data.OnWoodChanged += OnWoodChanged;
+        data.OnStoneChanged += OnStoneChanged;
+        
+        isSubscribed = true;
+    }
+
+    private void UnsubscribeEvents()
+    {
+        if (!isSubscribed || JsonDataManager.Ins == null) return;
+
+        var data = JsonDataManager.Ins;
         data.OnGoldChanged -= OnGoldChanged;
         data.OnWoodChanged -= OnWoodChanged;
-        data.OnHPChanged -= OnHPChanged;
+        data.OnStoneChanged -= OnStoneChanged;
+        
+        isSubscribed = false;
+    }
+    void UpdateUIModeDay()
+    {
+        if (hud != null) hud.UpdateGold(value);
     }
 
-    void Start()
+    void UpdateUIModeNight()
     {
-        var data = JsonDataManager.Ins;
-
-        hud.UpdateGold(data.gold);
-        hud.UpdateWood(data.wood);
-        hud.UpdateHealth(data.hp);
+        if (hud != null) hud.UpdateWood(value);
     }
 
-    void OnGoldChanged(int value)
+    void OnStoneChanged(int value)
     {
-        hud.UpdateGold(value);
-    }
-
-    void OnWoodChanged(int value)
-    {
-        hud.UpdateWood(value);
-    }
-
-    void OnHPChanged(float value)
-    {
-        hud.UpdateHealth(value);
+        if (hud != null) hud.UpdateStone(value);
     }
 }

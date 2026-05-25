@@ -5,21 +5,21 @@ using UnityEngine;
  * Folder: Scripts/Building/
  * Người làm: VŨ
  *
- * Preview công trình khi đang đặt (Build Mode)
+ * Preview công trình khi đang đặt (Build Mode).
  *
  * Điều khiển:
- *   R            → xoay 90°
- *   Click trái   → xác nhận đặt (chỉ khi xanh)
- *   Click phải   → huỷ
+ *   R           → xoay 90°
+ *   Click trái  → xác nhận đặt (chỉ khi xanh)
+ *   Click phải  → huỷ
  *
  * Kiểm tra chồng:
- *   Physics.OverlapBox → nếu có collider khác → đỏ, không đặt được
+ *   Physics.OverlapBox → có collider khác → đỏ, không đặt được
  *   Không chồng        → xanh, đặt được
  *
  * Setup trong Unity:
  *   - Ghost prefab cần có Collider (Box/Mesh) để tính kích thước
  *   - Layer "Building" gán cho tất cả prefab building thật
- *   - Layer "Ground" gán cho terrain
+ *   - Layer "Ground"   gán cho terrain
  */
 
 public class GhostBuilding : MonoBehaviour
@@ -38,7 +38,7 @@ public class GhostBuilding : MonoBehaviour
     public LayerMask buildingLayer; // Layer building thật để kiểm tra chồng
 
     [Header("Settings")]
-    public float snapStep = 1f;   // Bước snap lưới
+    public float snapStep = 1f;    // Bước snap lưới
     public float checkYSize = 2f;   // Chiều cao box check (tuỳ model)
 
     // ================= PRIVATE =================
@@ -52,7 +52,7 @@ public class GhostBuilding : MonoBehaviour
 
     // ================= LIFECYCLE =================
 
-    void Awake()
+    private void Awake()
     {
         renderers = GetComponentsInChildren<Renderer>();
         ghostCollider = GetComponentInChildren<Collider>();
@@ -61,12 +61,27 @@ public class GhostBuilding : MonoBehaviour
             Debug.LogWarning("[GhostBuilding] Không tìm thấy Collider! Kiểm tra chồng sẽ không hoạt động.");
     }
 
-    void Update()
+    private void Update()
     {
         FollowMouse();
         HandleRotateInput();
         HandleConfirmInput();
         HandleCancelInput();
+    }
+
+    // ================= HIỂN THỊ =================
+
+    /// <summary>Kích hoạt ghost và áp material xanh mặc định.</summary>
+    public void Show()
+    {
+        gameObject.SetActive(true);
+        ApplyMaterial(validMat);
+    }
+
+    /// <summary>Ẩn ghost (không destroy – dùng khi tạm tắt chế độ đặt).</summary>
+    public void Hide()
+    {
+        gameObject.SetActive(false);
     }
 
     // ================= FOLLOW MOUSE =================
@@ -78,7 +93,6 @@ public class GhostBuilding : MonoBehaviour
         if (!Physics.Raycast(ray, out RaycastHit hit, 300f, groundLayer)) return;
 
         transform.position = SnapToGrid(hit.point);
-
         CheckValidity();
     }
 
@@ -113,39 +127,24 @@ public class GhostBuilding : MonoBehaviour
         isValid = !IsOverlapping();
         ApplyMaterial(isValid ? validMat : invalidMat);
     }
-    public void Show()
-    {
-        gameObject.SetActive(true);  // Kích hoạt đối tượng "ghost"
-        ApplyMaterial(validMat);     // Áp dụng màu xanh nếu có thể xây dựng
-    }
 
-    /// <summary>
-    /// Dùng Physics.OverlapBox để kiểm tra có building nào ở vị trí này không
-    /// </summary>
+    /// <summary>Physics.OverlapBox kiểm tra chồng lên building thật.</summary>
     private bool IsOverlapping()
     {
         if (ghostCollider == null) return false;
 
-        // Lấy kích thước và tâm của collider
         Vector3 center = GetColliderCenter();
         Vector3 halfSize = GetColliderHalfSize();
 
-        // Kiểm tra có collider nào trong vùng này không (trừ chính nó)
-        Collider[] hits = Physics.OverlapBox(
-            center,
-            halfSize,
-            transform.rotation,
-            buildingLayer
-        );
+        Collider[] hits = Physics.OverlapBox(center, halfSize, transform.rotation, buildingLayer);
 
-        // Lọc bỏ collider của chính ghost
         foreach (var hit in hits)
         {
             if (hit.transform.root != transform.root)
-                return true; // Có building khác → bị chồng
+                return true;
         }
 
-        return false; // Không chồng
+        return false;
     }
 
     private Vector3 GetColliderCenter()
@@ -160,7 +159,6 @@ public class GhostBuilding : MonoBehaviour
     {
         if (ghostCollider is BoxCollider box)
         {
-            // Nhân với scale để tính đúng kích thước thực tế
             return new Vector3(
                 box.size.x * transform.lossyScale.x * 0.5f,
                 box.size.y * transform.lossyScale.y * 0.5f,
@@ -188,7 +186,7 @@ public class GhostBuilding : MonoBehaviour
 
         if (!isValid)
         {
-            Debug.LogWarning("[GhostBuilding] ❌ Vị trí bị chồng! Không thể đặt.");
+            Debug.LogWarning("[GhostBuilding] ❌ Vị trí bị chồng, không thể đặt.");
             return;
         }
 
@@ -211,17 +209,20 @@ public class GhostBuilding : MonoBehaviour
             Quaternion.Euler(0f, currentYRot, 0f)
         );
 
+        BuildingSystem.Ins.OnPlacingCompleted();
         Destroy(gameObject);
     }
 
     private void CancelPlace()
     {
         Debug.Log($"[GhostBuilding] ❌ Huỷ {buildingType}");
+        BuildingSystem.Ins.OnPlacingCompleted();
         Destroy(gameObject);
     }
 
     // ================= PUBLIC =================
 
+    /// <summary>Set góc xoay ban đầu – gọi từ BuildingSystem.StartPlacing() nếu cần.</summary>
     public void SetInitialRotation(float yDegrees)
     {
         currentYRot = yDegrees % 360f;
@@ -230,17 +231,12 @@ public class GhostBuilding : MonoBehaviour
 
     // ================= DEBUG =================
 
-    // Vẽ box kiểm tra trong Scene view để dễ debug
-    void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
         if (ghostCollider == null) return;
 
         Gizmos.color = isValid ? Color.green : Color.red;
-        Gizmos.matrix = Matrix4x4.TRS(
-            GetColliderCenter(),
-            transform.rotation,
-            Vector3.one
-        );
+        Gizmos.matrix = Matrix4x4.TRS(GetColliderCenter(), transform.rotation, Vector3.one);
         Gizmos.DrawWireCube(Vector3.zero, GetColliderHalfSize() * 2f);
     }
 }

@@ -5,11 +5,15 @@ using UnityEngine;
  * Folder: Scripts/Building/
  * Người làm: DŨNG / TIẾN
  *
- * Controller gắn lên prefab công trình
- * Quản lý: xây dựng, worker, save/load trạng thái, xoay 90°
+ * Controller gắn lên prefab công trình.
+ * Quản lý: xây dựng, worker, save/load trạng thái, xoay 90°.
  *
  * Luồng save:  ToState()   → BuildingState → JsonDataManager
  * Luồng load:  FromState() ← BuildingState ← JsonDataManager
+ *
+ * API chuẩn (các class khác phải dùng đúng tên này):
+ *   ToState()   – export sang BuildingState
+ *   FromState() – import từ BuildingState
  */
 
 public class BuildingCtrl : MonoBehaviour
@@ -20,7 +24,7 @@ public class BuildingCtrl : MonoBehaviour
     public BuildingType buildingType;
 
     [Header("References")]
-    public Transform door;              // Vị trí worker đứng làm việc
+    public Transform door;          // Vị trí worker đứng làm việc
 
     [Header("State – chỉ xem, không sửa tay")]
     [SerializeField] private float buildProgress = 0f;
@@ -29,6 +33,7 @@ public class BuildingCtrl : MonoBehaviour
     // ================= PROPERTIES =================
 
     public bool IsBuilt => buildProgress >= 1f;
+    public bool IsOccupied => isOccupied;
     public bool IsAvailable => IsBuilt && !isOccupied;
 
     /// <summary>Góc Y hiện tại (luôn là bội số 90°)</summary>
@@ -38,6 +43,12 @@ public class BuildingCtrl : MonoBehaviour
 
     private void Start()
     {
+        if (buildingType == BuildingType.None)
+        {
+            Debug.LogError($"[BuildingCtrl] BuildingType chưa được gán trên {gameObject.name}!");
+            return;
+        }
+
         BuildingManager.Ins.AddBuilding(this);
     }
 
@@ -52,12 +63,12 @@ public class BuildingCtrl : MonoBehaviour
     {
         if (!IsAvailable)
         {
+            Debug.LogWarning($"[BuildingCtrl] {buildingType} không available, không thể gán worker.");
             return;
         }
 
         isOccupied = true;
         worker.MoveToLocation(door.position);
-
     }
 
     public void ReleaseWorker(WorkerCtrl worker)
@@ -85,14 +96,14 @@ public class BuildingCtrl : MonoBehaviour
 
     // ================= PUBLIC – ROTATION =================
 
-    /// <summary>Xoay thêm 90° theo chiều Y (gọi từ GhostBuilding)</summary>
+    /// <summary>Xoay thêm 90° theo chiều Y (gọi từ GhostBuilding hoặc UI)</summary>
     public void RotateStep()
     {
         float newY = (CurrentYRotation + 90f) % 360f;
         transform.rotation = Quaternion.Euler(0f, newY, 0f);
     }
 
-    /// <summary>Set góc xoay cụ thể (dùng khi load từ save)</summary>
+    /// <summary>Set góc xoay cụ thể – dùng khi load từ save</summary>
     public void SetRotation(float yDegrees)
     {
         float snapped = SnapRotation(yDegrees);
@@ -101,7 +112,10 @@ public class BuildingCtrl : MonoBehaviour
 
     // ================= PUBLIC – SAVE / LOAD =================
 
-    /// <summary>Export trạng thái hiện tại → BuildingState để lưu JSON</summary>
+    /// <summary>
+    /// Export trạng thái hiện tại → BuildingState để lưu JSON.
+    /// Tên chuẩn: ToState() – không đổi tên, các class khác phụ thuộc vào tên này.
+    /// </summary>
     public BuildingState ToState()
     {
         return new BuildingState
@@ -117,7 +131,10 @@ public class BuildingCtrl : MonoBehaviour
         };
     }
 
-    /// <summary>Import BuildingState → restore trạng thái sau khi load JSON</summary>
+    /// <summary>
+    /// Import BuildingState → restore trạng thái sau khi load JSON.
+    /// Gọi NGAY SAU khi SpawnBuilding() để tránh Start() đăng ký hai lần.
+    /// </summary>
     public void FromState(BuildingState state)
     {
         buildingType = state.buildingType;
@@ -132,6 +149,8 @@ public class BuildingCtrl : MonoBehaviour
 
     private void OnBuildComplete()
     {
+        Debug.Log($"[BuildingCtrl] ✅ {buildingType} tại {transform.position} đã xây xong!");
+        // Gọi event, mở UI, v.v. ở đây
     }
 
     /// <summary>Snap góc về bội số 90° gần nhất</summary>

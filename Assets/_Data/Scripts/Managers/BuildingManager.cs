@@ -4,15 +4,18 @@ using System.Collections.Generic;
 /*
  * BuildingManager.cs
  * Folder: Scripts/Managers/
- * Người làm: DŨNG
+ * Người làm: DŨNG (Logic) + ĐĂNG (Kiến trúc & Singleton Master)
+ * Dự án: KHẨN HOANG (PENTA DEV)
  *
- * Quản lý toàn bộ BuildingCtrl trong scene
- * Singleton – gắn vào Scene Master bởi ĐĂNG
+ * NHIỆM VỤ: Quản lý tập trung toàn bộ thực thể công trình (BuildingCtrl) trong scene.
+ * KIẾN TRÚC: Kế thừa Generic Singleton<T> – truy cập toàn cục qua BuildingManager.Ins
  *
- * Nguyên tắc Save/Load:
- *   - Chỉ lưu khi người chơi nhấn Space
- *   - Load → xóa TOÀN BỘ building hiện tại → spawn lại từ save
- *   - Nếu chưa có file save → không xóa gì cả
+ * API CHUẨN (class khác phải dùng đúng tên):
+ *   AddBuilding / RemoveBuilding   – đăng ký / huỷ đăng ký
+ *   FindAvailable(type)            – tìm công trình sẵn sàng cho worker
+ *   CanBuild(pos, type, ignore)    – kiểm tra vị trí có bị chồng không
+ *   GetAllStates()                 – gom trạng thái để save
+ *   LoadStates(states)             – restore từ save
  */
 
 public class BuildingManager : Singleton<BuildingManager>
@@ -21,81 +24,116 @@ public class BuildingManager : Singleton<BuildingManager>
 
     private readonly List<BuildingCtrl> buildings = new List<BuildingCtrl>();
 
-    // ================= PUBLIC – REGISTER =================
+    /// <summary>
+    /// ReadOnly để các hệ thống khác (AI, UI) duyệt mà không sửa trực tiếp danh sách.
+    /// </summary>
+    public IReadOnlyList<BuildingCtrl> Buildings => buildings;
 
+
+    // ================= ĐĂNG KÝ / HUỶ ĐĂNG KÝ =================
+
+    /// <summary>
+    /// Đăng ký công trình vào hệ thống. Gọi tự động từ BuildingCtrl.Start().
+    /// </summary>
     public void AddBuilding(BuildingCtrl building)
     {
-        if (building == null || buildings.Contains(building)) return;
+        if (building == null) return;
+        if (buildings.Contains(building)) return;
 
-        // Kiểm tra xem có thể xây nhà ở vị trí của công trình này không
-        if (!CanBuild(building.transform.position, building.buildingType))
+        if (building.buildingType == BuildingType.None)
         {
-            Debug.LogWarning("Không thể xây dựng tại vị trí này vì có sự chồng lấn với công trình khác.");
+            Debug.LogError($"[BuildingManager] ❌ BuildingType chưa thiết lập (None) trên: {building.gameObject.name}");
+            return;
+        }
+
+        // Kiểm tra chồng lấn với công trình đã có (bỏ qua chính nó)
+        if (!CanBuild(building.transform.position, building.buildingType, building))
+        {
+            Debug.LogWarning($"[BuildingManager] ⚠️ Chồng lấn vị trí khi đăng ký {building.buildingType} tại {building.transform.position}");
             return;
         }
 
         buildings.Add(building);
+        Debug.Log($"[BuildingManager] ➕ Đã đăng ký: {building.buildingType} ({building.gameObject.name})");
     }
 
+    /// <summary>
+    /// Gỡ công trình khỏi danh sách. Gọi tự động từ BuildingCtrl.OnDestroy().
+    /// </summary>
     public void RemoveBuilding(BuildingCtrl building)
     {
+        if (building == null) return;
+        if (!buildings.Contains(building)) return;
+
         buildings.Remove(building);
+        Debug.Log($"[BuildingManager] ➖ Đã xoá: {building.buildingType} ({building.gameObject.name})");
     }
 
-    // ================= PUBLIC – FIND =================
 
+    // ================= TÌM KIẾM =================
+
+    /// <summary>
+    /// Tìm công trình đầu tiên thuộc loại chỉ định đang sẵn sàng (đã xây xong và không có worker).
+    /// Dùng cho AI Nông dân: tìm Kitchen để giao lương thực, tìm Warehouse để cất tài nguyên...
+    /// </summary>
     public BuildingCtrl FindAvailable(BuildingType type)
     {
         foreach (var b in buildings)
-            if (b.buildingType == type && b.IsAvailable) return b;
+        {
+            if (b != null && b.buildingType == type && b.IsAvailable)
+                return b;
+        }
         return null;
     }
 
-    public List<BuildingCtrl> GetAllByType(BuildingType type)
+    /// <summary>
+    /// Lấy tất cả công trình thuộc loại chỉ định (bất kể trạng thái).
+    /// </summary>
+    public List<BuildingCtrl> FindAll(BuildingType type)
     {
         var result = new List<BuildingCtrl>();
         foreach (var b in buildings)
-            if (b.buildingType == type) result.Add(b);
+        {
+            if (b != null && b.buildingType == type)
+                result.Add(b);
+        }
         return result;
     }
 
-    // ================= PUBLIC – SHORTCUT =================
 
-    public BuildingCtrl FindHouse() => FindAvailable(BuildingType.House);
-    public BuildingCtrl FindForestHut() => FindAvailable(BuildingType.ForestHut);
-    public BuildingCtrl FindSawmill() => FindAvailable(BuildingType.Sawmill);
-    public BuildingCtrl FindWarehouse() => FindAvailable(BuildingType.Warehouse);
+    // ================= SAVE / LOAD =================
 
-    // ================= PUBLIC – SAVE =================
-
-    /// <summary>Gom trạng thái tất cả building để JsonDataManager lưu JSON</summary>
+    /// <summary>
+    /// Gom trạng thái tất cả công trình để lưu JSON.
+    /// Gọi từ BuildingSystem.SaveBuildings() hoặc JsonDataManager.
+    /// </summary>
     public List<BuildingState> GetAllStates()
     {
         var states = new List<BuildingState>();
         foreach (var b in buildings)
-            states.Add(b.ToState());
+        {
+            if (b != null)
+                states.Add(b.ToState());     // Tên chuẩn: ToState()
+        }
         return states;
     }
 
-    // ================= PUBLIC – LOAD =================
-
     /// <summary>
-    /// Load từ save:
-    /// 1. Xóa toàn bộ building hiện tại (kể cả chưa lưu)
-    /// 2. Spawn lại đúng theo dữ liệu đã lưu
-    /// Chỉ gọi khi đã xác nhận có file save hợp lệ
+    /// Xoá toàn bộ công trình cũ và tái dựng từ danh sách save.
+    /// Gọi từ BuildingSystem.LoadBuildings().
     /// </summary>
     public void LoadStates(List<BuildingState> states)
     {
-        if (ConstructionManager.Ins == null)
-        {
-            return;
-        }
+        if (states == null) return;
 
+        // Bước 1: Dọn sạch scene
         ClearAll();
 
+        // Bước 2: Tái tạo từng công trình từ state
         foreach (var state in states)
         {
+            if (state == null || state.buildingType == BuildingType.None) continue;
+
             BuildingCtrl spawned = ConstructionManager.Ins.SpawnBuilding(
                 state.buildingType,
                 state.position.ToVector3(),
@@ -103,10 +141,17 @@ public class BuildingManager : Singleton<BuildingManager>
             );
 
             if (spawned != null)
+            {
                 spawned.FromState(state);
+            }
+            else
+            {
+                Debug.LogError($"[BuildingManager] ❌ Khôi phục thất bại: {state.buildingType}. Kiểm tra Prefab trong ConstructionManager!");
+            }
         }
     }
 
+    /// <summary>Phá hủy toàn bộ công trình hiện có – chỉ gọi trước LoadStates().</summary>
     private void ClearAll()
     {
         for (int i = buildings.Count - 1; i >= 0; i--)
@@ -114,34 +159,38 @@ public class BuildingManager : Singleton<BuildingManager>
             if (buildings[i] != null)
                 Destroy(buildings[i].gameObject);
         }
-
         buildings.Clear();
+        Debug.Log("[BuildingManager] 🗑️ Đã dọn sạch toàn bộ công trình trong scene.");
     }
 
 
+    // ================= KIỂM TRA VỊ TRÍ =================
 
-    // Kiểm tra xem vị trí có bị chồng lấn hay không
-    public bool CanBuild(Vector3 position, BuildingType buildingType)
+    /// <summary>
+    /// Kiểm tra vị trí có thể xây được không (không chồng lên công trình khác).
+    ///
+    /// Lưu ý: kiểm tra với TẤT CẢ công trình đang tồn tại (kể cả đang xây dở),
+    /// không chỉ những công trình IsAvailable – tránh chồng lấn khi đặt mới.
+    ///
+    /// ignoreBuilding: bỏ qua chính nó khi BuildingCtrl.Start() tự đăng ký.
+    /// </summary>
+    public bool CanBuild(Vector3 position, BuildingType buildingType, BuildingCtrl ignoreBuilding = null)
     {
-        // Lấy collider của tất cả các công trình hiện có
-        foreach (var building in buildings)
+        Bounds testBounds = new Bounds(position, Vector3.one); // Kích thước tạm – GhostBuilding dùng OverlapBox chính xác hơn
+
+        foreach (var b in buildings)
         {
-            if (building != null && building.IsAvailable)
-            {
-                // Kiểm tra xem vị trí xây có trùng với vị trí của building đã có
-                Collider buildingCollider = building.GetComponent<Collider>();
-                if (buildingCollider != null && buildingCollider.bounds.Intersects(new Bounds(position, buildingCollider.bounds.size)))
-                {
-                    // Nếu trùng, không thể xây công trình ở đây
-                    return false;
-                }
-            }
+            if (b == null || b == ignoreBuilding) continue;
+
+            Collider col = b.GetComponent<Collider>();
+            if (col == null) continue;
+
+            // Cập nhật kích thước test theo collider thực tế của công trình đã có
+            Bounds testBoundsActual = new Bounds(position, col.bounds.size);
+            if (col.bounds.Intersects(testBoundsActual))
+                return false;
         }
 
-        // Kiểm tra nếu không có va chạm, có thể xây
         return true;
     }
-
-    // Trong phương thức AddBuilding, thêm kiểm tra trước khi thêm vào danh sách
-
 }

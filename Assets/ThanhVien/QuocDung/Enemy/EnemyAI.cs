@@ -84,8 +84,18 @@ public class EnemyAI : MonoBehaviour
         }
 
         if (agent != null) agent.speed = patrolSpeed;
-        PickNewPatrolPoint();
-        SetDestination(currentPatrolPoint);
+        if (villageCenter != null)
+        {
+            chaseTarget = villageCenter;
+            if (agent != null) agent.speed = chaseSpeed;
+            SetDestination(villageCenter.position);
+        }
+        else
+        {
+            PickNewPatrolPoint();
+            SetDestination(currentPatrolPoint);
+        }
+
         UpdateAnimationState();
 
         // ensure initial visibility according to night state
@@ -114,17 +124,17 @@ public class EnemyAI : MonoBehaviour
         // Check for chase start
         if (chaseTarget == null)
         {
-            if (player != null && Vector3.Distance(transform.position, player.position) <= chaseTriggerRange)
-            {
-                chaseTarget = player;
-                if (agent != null) agent.speed = chaseSpeed;
-                if (debugLogs) Debug.Log("EnemyAI: start chasing player");
-            }
-            else if (villageCenter != null && Vector3.Distance(transform.position, villageCenter.position) <= chaseTriggerRange)
+            if (villageCenter != null && Vector3.Distance(transform.position, villageCenter.position) <= chaseTriggerRange)
             {
                 chaseTarget = villageCenter;
                 if (agent != null) agent.speed = chaseSpeed;
                 if (debugLogs) Debug.Log("EnemyAI: start chasing village");
+            }
+            else if (player != null && Vector3.Distance(transform.position, player.position) <= chaseTriggerRange)
+            {
+                chaseTarget = player;
+                if (agent != null) agent.speed = chaseSpeed;
+                if (debugLogs) Debug.Log("EnemyAI: start chasing player");
             }
         }
         else
@@ -198,8 +208,17 @@ public class EnemyAI : MonoBehaviour
             // when night begins, reposition to a patrol point and start
             if (night)
             {
-                PickNewPatrolPoint();
-                SetDestination(currentPatrolPoint);
+                if (villageCenter != null)
+                {
+                    chaseTarget = villageCenter;
+                    agent.speed = chaseSpeed;
+                    SetDestination(villageCenter.position);
+                }
+                else
+                {
+                    PickNewPatrolPoint();
+                    SetDestination(currentPatrolPoint);
+                }
             }
         }
     }

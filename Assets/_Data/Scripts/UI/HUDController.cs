@@ -1,55 +1,30 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
 using DG.Tweening;
 
 public class HUDController : MonoBehaviour
 {
-    [Header("UI")]
+    [Header("Top UI Text (Resources)")]
     public TextMeshProUGUI goldText;
     public TextMeshProUGUI woodText;
-    public Image healthFill;
+    public TextMeshProUGUI stoneText;
 
-    [Header("Floating Text")]
+    [Header("Floating Text FX")]
     public GameObject floatingTextPrefab;
     public Transform floatingTextParent;
 
-    private int currentGold;
     private int currentWood;
+    private int currentStone;
 
     private void Start()
     {
+        // Khởi tạo hiển thị ban đầu với giá trị bằng 0
         UpdateGold(0);
         UpdateWood(0);
-        UpdateHealth(1f);
+        UpdateStone(0);
     }
 
-    // ================= GOLD =================
-    public void UpdateGold(int value)
-    {
-        int oldValue = currentGold;
-        currentGold = value;
 
-        int delta = value - oldValue;
-
-        AnimateNumber(goldText, oldValue, value);
-
-        if (delta != 0)
-        {
-            ShowFloatingText(delta, goldText.transform.position, Color.yellow);
-
-            if (delta > 0)
-            {
-                goldText.transform.DOScale(1.2f, 0.15f).SetLoops(2, LoopType.Yoyo);
-            }
-            else
-            {
-                goldText.transform.DOShakeScale(0.3f, 0.5f);
-                goldText.DOColor(Color.red, 0.2f)
-                    .OnComplete(() => goldText.DOColor(Color.white, 0.2f));
-            }
-        }
-    }
 
     // ================= WOOD =================
     public void UpdateWood(int value)
@@ -78,27 +53,48 @@ public class HUDController : MonoBehaviour
         }
     }
 
-    // ================= HEALTH =================
-    public void UpdateHealth(float percent)
+    // ================= STONE =================
+    public void UpdateStone(int value)
     {
-        if (healthFill == null) return;
+        int oldValue = currentStone;
+        currentStone = value;
 
-        healthFill.DOFillAmount(percent, 0.3f);
+        int delta = value - oldValue;
 
-        healthFill.DOColor(Color.red, 0.1f)
-            .OnComplete(() => healthFill.DOColor(Color.white, 0.2f));
+        AnimateNumber(stoneText, oldValue, value);
 
-        healthFill.rectTransform.DOShakeAnchorPos(0.2f, 10f);
+        if (delta != 0)
+        {
+            ShowFloatingText(delta, stoneText.transform.position, Color.gray);
+
+            if (delta > 0)
+            {
+                stoneText.transform.DOScale(1.2f, 0.15f).SetLoops(2, LoopType.Yoyo);
+            }
+            else
+            {
+                stoneText.transform.DOShakeScale(0.3f, 0.5f);
+                stoneText.DOColor(Color.red, 0.2f)
+                    .OnComplete(() => stoneText.DOColor(Color.white, 0.2f));
+            }
+        }
     }
 
-    // ================= SUPPORT =================
+    // ================= SUPPORT FX =================
 
     void AnimateNumber(TextMeshProUGUI text, int from, int to)
     {
+        if (text == null) return;
+        
         DOTween.To(() => from, x =>
         {
             text.text = x.ToString();
         }, to, 0.3f);
+    }
+    // Ví dụ mẫu trong HUDController.cs
+    public void UpdateWood(int current, int max)
+    {
+        woodText.text = $"{current} / {max}";
     }
 
     void ShowFloatingText(int amount, Vector3 worldPos, Color color)
@@ -106,18 +102,13 @@ public class HUDController : MonoBehaviour
         if (floatingTextPrefab == null || floatingTextParent == null) return;
 
         GameObject obj = Instantiate(floatingTextPrefab, floatingTextParent);
-
         obj.transform.position = worldPos;
 
         var ft = obj.GetComponent<FloatingText>();
-
-        string prefix = amount > 0 ? "+" : "";
-        ft.Setup(prefix + amount.ToString(), color);
+        if (ft != null)
+        {
+            string prefix = amount > 0 ? "+" : "";
+            ft.Setup(prefix + amount.ToString(), color);
+        }
     }
-
-    // ===== HOOK SYSTEM =====
-    // public void ConnectToSystem(float hpValue)
-    // {
-    //     LoadBehavior.Ins.UI.UpdateHealth(hpValue);
-    // }
 }
