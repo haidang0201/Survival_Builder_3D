@@ -8,14 +8,13 @@ public class WorkerFindTree : MonoBehaviour
     public Animator animator;
 
     public float chopDistance = 2f;
-    public float chopTime = 2f;
+    public float chopTime     = 2f;
 
     private Tree targetTree;
-    private float chopTimer = 0f;
-    private bool isChopping = false;
+    private float chopTimer          = 0f;
     private bool hasTriggeredChopAnim = false;
 
-    private float findTreeCooldown = 0f;
+    private float findTreeCooldown         = 0f;
     private const float FIND_TREE_INTERVAL = 0.5f;
 
     void Update()
@@ -48,11 +47,10 @@ public class WorkerFindTree : MonoBehaviour
     // ===== ANIMATION =====
     void UpdateAnimationSpeed()
     {
-        if (animator != null && agent != null)
-        {
-            float speed = agent.velocity.magnitude;
-            animator.SetFloat("Speed", speed, 0.1f, Time.deltaTime);
-        }
+        if (animator == null || agent == null) return;
+
+        float speed = agent.velocity.magnitude;
+        animator.SetFloat("Speed", speed, 0.1f, Time.deltaTime);
     }
 
     // ===== MANG GỖ VỀ NHÀ =====
@@ -64,9 +62,7 @@ public class WorkerFindTree : MonoBehaviour
                        agent.remainingDistance <= agent.stoppingDistance + 0.5f;
 
         if (arrived)
-        {
             carrySystem.TryDeposit();
-        }
     }
 
     // ===== TÌM CÂY =====
@@ -86,7 +82,7 @@ public class WorkerFindTree : MonoBehaviour
         Tree[] trees = GameObject.FindObjectsOfType<Tree>();
 
         float minDist = Mathf.Infinity;
-        Tree best = null;
+        Tree best     = null;
 
         foreach (var tree in trees)
         {
@@ -99,7 +95,7 @@ public class WorkerFindTree : MonoBehaviour
             {
                 if (best != null) best.Release();
                 minDist = dist;
-                best = tree;
+                best    = tree;
             }
             else
             {
@@ -109,10 +105,9 @@ public class WorkerFindTree : MonoBehaviour
 
         if (best != null)
         {
-            targetTree = best;
-            chopTimer = 0f;
+            targetTree           = best;
+            chopTimer            = 0f;
             hasTriggeredChopAnim = false;
-            isChopping = false;
         }
     }
 
@@ -125,7 +120,6 @@ public class WorkerFindTree : MonoBehaviour
             agent.SetDestination(targetTree.transform.position);
         }
 
-        isChopping = false;
         hasTriggeredChopAnim = false;
     }
 
@@ -134,31 +128,30 @@ public class WorkerFindTree : MonoBehaviour
     {
         agent.isStopped = true;
 
-        // Chỉ trigger animation 1 lần mỗi chu kỳ chặt
+        // Trigger animation 1 lần mỗi chu kỳ
         if (!hasTriggeredChopAnim)
         {
             hasTriggeredChopAnim = true;
-            isChopping = true;
             TriggerChopAnimation();
         }
 
         chopTimer += Time.deltaTime;
 
-        if (chopTimer >= chopTime)
+        if (chopTimer < chopTime) return;
+
+        // Hết 1 chu kỳ → apply damage
+        chopTimer            = 0f;
+        hasTriggeredChopAnim = false;
+
+        WoodPickup[] woods = targetTree.TakeDamage(1);
+
+        if (woods != null && woods.Length > 0)
         {
-            chopTimer = 0f;
-            hasTriggeredChopAnim = false;
-
-            WoodPickup[] woods = targetTree.TakeDamage(1);
-
-            if (woods != null && woods.Length > 0)
-            {
-                // Cây đã chết → nhặt gỗ và tìm cây mới
-                carrySystem.PickupWood(woods[0]);
-                ReleaseCurrentTree();
-            }
-            // Nếu woods == null → cây chưa chết, giữ nguyên target và chặt tiếp
+            // Cây đã chết → nhặt gỗ và tìm cây mới
+            carrySystem.PickupWood(woods[0]);
+            ReleaseCurrentTree();
         }
+        // woods == null → cây chưa chết, tiếp tục chặt
     }
 
     void TriggerChopAnimation()
@@ -177,8 +170,8 @@ public class WorkerFindTree : MonoBehaviour
             targetTree = null;
         }
 
-        agent.isStopped = false;
-        isChopping = false;
+        agent.isStopped      = false;
         hasTriggeredChopAnim = false;
+        chopTimer            = 0f;
     }
 }

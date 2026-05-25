@@ -20,14 +20,14 @@ public class WorkerCtrl : MonoBehaviour
     }
 
     // Công nhân trở về nhà
-    public void ReturnHome()
-    {
-        BuildingCtrl homeBuilding = BuildingManager.Ins.FindHouse();
-        if (homeBuilding != null)
-        {
-            MoveToLocation(homeBuilding.transform.position);
-        }
-    }
+    // public void ReturnHome()
+    // {
+    //     BuildingCtrl homeBuilding = BuildingManager.Ins.FindHouse();
+    //     if (homeBuilding != null)
+    //     {
+    //         MoveToLocation(homeBuilding.transform.position);
+    //     }
+    // }
 
     // Hiển thị công nhân khi quay lại làm việc
     public void ComeBackToWork()
