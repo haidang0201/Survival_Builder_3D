@@ -92,6 +92,14 @@ public class UIManager : Singleton<UIManager>
         if (buildMenu != null) buildMenu.SetActive(false); // Tự động ẩn menu chọn nhà khi đang đi đặt nhà
     }
 
+        if (warningPanel != null)
+            StartCoroutine(FadeOutWarning());
+    }
+
+    void HandleNightStart()
+    {
+        if (buildMenu != null)
+            buildMenu.SetActive(false);
 
     // ================= OLD WARNING LOGIC =================
 

@@ -13,17 +13,17 @@ public class WorkerTasks : MonoBehaviour
     }
 
     // Thực hiện tác vụ của công nhân (Đi làm hoặc về nhà)
-    public void PerformTask()
-    {
-        if (readyForTask)
-        {
-            workerCtrl.MoveToLocation(GetWorkStationPosition());  // Di chuyển công nhân đến công việc
-        }
-        else
-        {
-            workerCtrl.ReturnHome();  // Di chuyển công nhân về nhà
-        }
-    }
+    // public void PerformTask()
+    // {
+    //     if (readyForTask)
+    //     {
+    //         workerCtrl.MoveToLocation(GetWorkStationPosition());  // Di chuyển công nhân đến công việc
+    //     }
+    //     else
+    //     {
+    //         workerCtrl.ReturnHome();  // Di chuyển công nhân về nhà
+    //     }
+    // }
 
     // Lấy vị trí công trình làm việc của công nhân
     private Vector3 GetWorkStationPosition()

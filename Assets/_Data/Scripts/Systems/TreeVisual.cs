@@ -10,14 +10,14 @@ using UnityEngine;
 public class TreeVisual : MonoBehaviour
 {
     [Header("Shake Settings")]
-    public float shakeAngle    = 8f;    // độ nghiêng tối đa khi rung (degree)
-    public float shakeSpeed    = 12f;   // tốc độ rung
-    public float shakeDuration = 0.4f; // thời gian rung
+    public float shakeAngle    = 8f;   // độ nghiêng tối đa khi rung (degree)
+    public float shakeSpeed    = 12f;  // tốc độ rung
+    public float shakeDuration = 0.4f; // thời gian rung (giây)
 
     [Header("Fall Settings")]
-    public float fallAngle    = 90f;   // độ nghiêng khi đổ
-    public float fallDuration = 0.8f;  // thời gian đổ
-    public float fallDelay    = 0.1f;  // delay trước khi đổ (giây)
+    public float fallAngle    = 90f;  // độ nghiêng khi đổ
+    public float fallDuration = 0.8f; // thời gian đổ (giây)
+    public float fallDelay    = 0.1f; // delay trước khi đổ (giây)
 
     [Header("Fall Direction")]
     [Tooltip("Hướng cây đổ. Nếu để (0,0,0) sẽ random mỗi lần.")]
@@ -38,10 +38,11 @@ public class TreeVisual : MonoBehaviour
     {
         // Reset lại khi cây được tái sử dụng từ pool
         StopAllCoroutines();
+        shakeCoroutine = null; // BUG FIX: xóa reference cũ sau StopAllCoroutines
+        fallCoroutine  = null; // BUG FIX: xóa reference cũ sau StopAllCoroutines
+
         transform.localRotation = originalRotation;
         isFalling = false;
-
- 
     }
 
     // ===== PUBLIC API =====
@@ -56,7 +57,6 @@ public class TreeVisual : MonoBehaviour
             StopCoroutine(shakeCoroutine);
 
         shakeCoroutine = StartCoroutine(ShakeRoutine());
-    
     }
 
     /// <summary>Gọi khi cây bị đốn xong (health <= 0).</summary>
@@ -65,14 +65,18 @@ public class TreeVisual : MonoBehaviour
         if (isFalling) return;
         isFalling = true;
 
+        // Dừng shake và reset về thẳng trước khi đổ
         if (shakeCoroutine != null)
         {
             StopCoroutine(shakeCoroutine);
             shakeCoroutine = null;
         }
 
+        // BUG FIX: reset rotation về original trước khi đổ
+        // vì shake có thể đang ở giữa chừng, làm FallRoutine bắt đầu từ góc lệch
+        transform.localRotation = originalRotation;
+
         fallCoroutine = StartCoroutine(FallRoutine(onFallComplete));
-       
     }
 
     // ===== COROUTINES =====
@@ -86,7 +90,7 @@ public class TreeVisual : MonoBehaviour
             elapsed += Time.deltaTime;
 
             float progress = elapsed / shakeDuration;
-            float fade     = 1f - progress;  // giảm dần cuối
+            float fade     = 1f - progress; // biên độ giảm dần về cuối
 
             float angle = Mathf.Sin(elapsed * shakeSpeed) * shakeAngle * fade;
 
@@ -96,22 +100,16 @@ public class TreeVisual : MonoBehaviour
             yield return null;
         }
 
-        // Reset về thẳng
         transform.localRotation = originalRotation;
         shakeCoroutine = null;
     }
 
     IEnumerator FallRoutine(System.Action onFallComplete)
     {
-        // Delay nhỏ trước khi đổ
         yield return new WaitForSeconds(fallDelay);
 
-        // Tính hướng đổ
-        Vector3 axis = GetFallAxis();
-
-        Debug.Log($"[TreeVisual] '{name}' đổ theo hướng: {axis}");
-
-        Quaternion startRot  = transform.localRotation;
+        Vector3    axis      = GetFallAxis();
+        Quaternion startRot  = transform.localRotation; // đã là originalRotation nhờ fix bên trên
         Quaternion targetRot = originalRotation * Quaternion.AngleAxis(fallAngle, axis);
 
         float elapsed = 0f;
@@ -120,8 +118,8 @@ public class TreeVisual : MonoBehaviour
         {
             elapsed += Time.deltaTime;
 
-            // EaseIn: chậm lúc đầu, nhanh dần
-            float t = elapsed / fallDuration;
+            // EaseIn: chậm lúc đầu, nhanh dần (giống cây bị trọng lực kéo)
+            float t      = Mathf.Clamp01(elapsed / fallDuration);
             float smooth = t * t;
 
             transform.localRotation = Quaternion.Slerp(startRot, targetRot, smooth);
@@ -130,10 +128,10 @@ public class TreeVisual : MonoBehaviour
         }
 
         transform.localRotation = targetRot;
+        fallCoroutine           = null;
 
         Debug.Log($"[TreeVisual] '{name}' đã đổ xong.");
 
-        // Callback để Tree.cs tắt cây sau khi animation xong
         onFallComplete?.Invoke();
     }
 
@@ -142,7 +140,7 @@ public class TreeVisual : MonoBehaviour
         if (fallDirection != Vector3.zero)
             return fallDirection.normalized;
 
-        // Random hướng đổ theo XZ plane
+        // Random hướng đổ trên mặt phẳng XZ
         float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
         return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
     }

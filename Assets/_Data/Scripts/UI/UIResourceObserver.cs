@@ -1,5 +1,9 @@
 using UnityEngine;
 
+/*
+ * UIResourceObserver.cs
+ * Đã cập nhật: Theo dõi sự thay đổi của Gỗ, Đá, Lúa (có sức chứa) và Vàng
+ */
 public class UIResourceObserver : MonoBehaviour
 {
     public HUDController hud;
@@ -65,13 +69,12 @@ public class UIResourceObserver : MonoBehaviour
         
         isSubscribed = false;
     }
-
-    void OnGoldChanged(int value)
+    void UpdateUIModeDay()
     {
         if (hud != null) hud.UpdateGold(value);
     }
 
-    void OnWoodChanged(int value)
+    void UpdateUIModeNight()
     {
         if (hud != null) hud.UpdateWood(value);
     }

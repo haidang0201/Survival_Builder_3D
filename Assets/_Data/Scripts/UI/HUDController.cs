@@ -13,7 +13,6 @@ public class HUDController : MonoBehaviour
     public GameObject floatingTextPrefab;
     public Transform floatingTextParent;
 
-    private int currentGold;
     private int currentWood;
     private int currentStone;
 
@@ -25,32 +24,7 @@ public class HUDController : MonoBehaviour
         UpdateStone(0);
     }
 
-    // ================= GOLD =================
-    public void UpdateGold(int value)
-    {
-        int oldValue = currentGold;
-        currentGold = value;
 
-        int delta = value - oldValue;
-
-        AnimateNumber(goldText, oldValue, value);
-
-        if (delta != 0)
-        {
-            ShowFloatingText(delta, goldText.transform.position, Color.yellow);
-
-            if (delta > 0)
-            {
-                goldText.transform.DOScale(1.2f, 0.15f).SetLoops(2, LoopType.Yoyo);
-            }
-            else
-            {
-                goldText.transform.DOShakeScale(0.3f, 0.5f);
-                goldText.DOColor(Color.red, 0.2f)
-                    .OnComplete(() => goldText.DOColor(Color.white, 0.2f));
-            }
-        }
-    }
 
     // ================= WOOD =================
     public void UpdateWood(int value)
@@ -116,6 +90,11 @@ public class HUDController : MonoBehaviour
         {
             text.text = x.ToString();
         }, to, 0.3f);
+    }
+    // Ví dụ mẫu trong HUDController.cs
+    public void UpdateWood(int current, int max)
+    {
+        woodText.text = $"{current} / {max}";
     }
 
     void ShowFloatingText(int amount, Vector3 worldPos, Color color)
