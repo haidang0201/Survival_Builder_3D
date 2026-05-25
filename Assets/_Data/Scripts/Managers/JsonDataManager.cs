@@ -20,8 +20,8 @@ public class JsonDataManager : Singleton<JsonDataManager>
     // ================= EVENTS (Dành cho UI lắng nghe) =================
     public event Action<int> OnGoldChanged;
     public event Action<int, int> OnWoodChanged;   // (Current, MaxCapacity)
-    public event Action<int, int> OnStoneChanged;  
-    public event Action<int, int> OnFoodChanged;   
+    public event Action<int, int> OnStoneChanged;
+    public event Action<int, int> OnFoodChanged;
     public event Action<float> OnHPChanged;
 
     // ================= DATA TÀI NGUYÊN =================
@@ -45,7 +45,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
     }
 
     // ================= LOGIC TÀI NGUYÊN & NÂNG CẤP KHO =================
-    
+
     public void UpdateCapacities(int warehouseLevel)
     {
         if (_loadedConfig == null || _loadedConfig.buildingConfigs == null) return;
@@ -64,7 +64,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
                 OnWoodChanged?.Invoke(wood, maxWood);
                 OnStoneChanged?.Invoke(stone, maxStone);
                 OnFoodChanged?.Invoke(food, maxFood);
-                
+
                 Debug.Log($"[JsonDataManager] Kho đã nâng lên Lvl {warehouseLevel}. Sức chứa Max: {maxWood}");
             }
         }
@@ -139,7 +139,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
         try
         {
             GameSaveData save = JsonUtility.FromJson<GameSaveData>(json);
-            
+
             // Giải nén tài nguyên từ file Save
             if (save.resources != null)
             {
@@ -173,8 +173,8 @@ public class JsonDataManager : Singleton<JsonDataManager>
         float progress = 0f;
         while (progress < 1f)
         {
-            progress += Time.deltaTime * 0.2f;  
-            onProgress?.Invoke(progress);  
+            progress += Time.deltaTime * 0.2f;
+            onProgress?.Invoke(progress);
             yield return null;
         }
     }
@@ -184,7 +184,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
     private void LoadBuildingConfigs()
     {
         string filePath = Path.Combine(Application.streamingAssetsPath, configFileName);
-        
+
         // Tự tạo file config mẫu nếu chưa có
         if (!File.Exists(filePath))
         {
@@ -195,9 +195,9 @@ public class JsonDataManager : Singleton<JsonDataManager>
         {
             string json = File.ReadAllText(filePath);
             _loadedConfig = JsonUtility.FromJson<BuildingConfigRoot>(json);
-            
+
             // Mặc định nạp sức chứa của Warehouse cấp 1 khi game chạy
-            UpdateCapacities(1); 
+            UpdateCapacities(1);
         }
         catch (Exception ex)
         {
@@ -225,7 +225,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
         string json = JsonUtility.ToJson(root, true);
         string directory = Path.GetDirectoryName(path);
         if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
-        
+
         File.WriteAllText(path, json);
     }
 
