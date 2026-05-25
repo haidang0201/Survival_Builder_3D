@@ -1,31 +1,27 @@
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
 using DG.Tweening;
 
 public class HUDController : MonoBehaviour
 {
-    [Header("UI")]
-    //  public TextMeshProUGUI goldText;
+    [Header("Top UI Text (Resources)")]
+    public TextMeshProUGUI goldText;
     public TextMeshProUGUI woodText;
-    public TextMeshProUGUI stoneText; // Kéo Text tương ứng vào đây trong Inspector
-    public TextMeshProUGUI foodText;  // Kéo Text tương ứng vào đây trong Inspector
-    public TextMeshProUGUI healthText;
+    public TextMeshProUGUI stoneText;
 
-
-    public Image healthFill;
-
-    [Header("Floating Text")]
+    [Header("Floating Text FX")]
     public GameObject floatingTextPrefab;
     public Transform floatingTextParent;
 
     private int currentWood;
-    public TMPro.TextMeshProUGUI[] resourceTexts;
+    private int currentStone;
 
     private void Start()
     {
+        // Khởi tạo hiển thị ban đầu với giá trị bằng 0
+        UpdateGold(0);
         UpdateWood(0);
-        UpdateHealth(1f);
+        UpdateStone(0);
     }
 
 
@@ -57,23 +53,39 @@ public class HUDController : MonoBehaviour
         }
     }
 
-    // ================= HEALTH =================
-    public void UpdateHealth(float percent)
+    // ================= STONE =================
+    public void UpdateStone(int value)
     {
-        if (healthFill == null) return;
+        int oldValue = currentStone;
+        currentStone = value;
 
-        healthFill.DOFillAmount(percent, 0.3f);
+        int delta = value - oldValue;
 
-        healthFill.DOColor(Color.red, 0.1f)
-            .OnComplete(() => healthFill.DOColor(Color.white, 0.2f));
+        AnimateNumber(stoneText, oldValue, value);
 
-        healthFill.rectTransform.DOShakeAnchorPos(0.2f, 10f);
+        if (delta != 0)
+        {
+            ShowFloatingText(delta, stoneText.transform.position, Color.gray);
+
+            if (delta > 0)
+            {
+                stoneText.transform.DOScale(1.2f, 0.15f).SetLoops(2, LoopType.Yoyo);
+            }
+            else
+            {
+                stoneText.transform.DOShakeScale(0.3f, 0.5f);
+                stoneText.DOColor(Color.red, 0.2f)
+                    .OnComplete(() => stoneText.DOColor(Color.white, 0.2f));
+            }
+        }
     }
 
-    // ================= SUPPORT =================
+    // ================= SUPPORT FX =================
 
     void AnimateNumber(TextMeshProUGUI text, int from, int to)
     {
+        if (text == null) return;
+        
         DOTween.To(() => from, x =>
         {
             text.text = x.ToString();
@@ -90,41 +102,13 @@ public class HUDController : MonoBehaviour
         if (floatingTextPrefab == null || floatingTextParent == null) return;
 
         GameObject obj = Instantiate(floatingTextPrefab, floatingTextParent);
-
         obj.transform.position = worldPos;
 
         var ft = obj.GetComponent<FloatingText>();
-
-        string prefix = amount > 0 ? "+" : "";
-        ft.Setup(prefix + amount.ToString(), color);
-    }
-    public void UpdateStone(int current, int max)
-    {
-        if (stoneText != null)
+        if (ft != null)
         {
-            stoneText.text = $"{current} / {max}";
+            string prefix = amount > 0 ? "+" : "";
+            ft.Setup(prefix + amount.ToString(), color);
         }
     }
-
-    // Hàm Update Lúa
-    public void UpdateFood(int current, int max)
-    {
-        if (foodText != null)
-        {
-            foodText.text = $"{current} / {max}";
-        }
-    }
-    public void SetTextColor(Color newColor)
-    {
-        foreach (var txt in resourceTexts)
-        {
-            if (txt != null) txt.color = newColor;
-        }
-    }
-
-    // ===== HOOK SYSTEM =====
-    // public void ConnectToSystem(float hpValue)
-    // {
-    //     LoadBehavior.Ins.UI.UpdateHealth(hpValue);
-    // }
 }

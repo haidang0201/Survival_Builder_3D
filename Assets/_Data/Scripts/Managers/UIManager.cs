@@ -3,43 +3,94 @@ using UnityEngine.UI;
 
 public class UIManager : Singleton<UIManager>
 {
-    public GameObject buildMenu;          // Panel chứa nút xây dựng
-    public GameObject warningPanel;       // Panel cảnh báo
-    public Text warningText;              // Text thông báo
-    public float fadeDuration = 0.5f;     // thời gian fade in/out
-
-    private CanvasGroup warningCanvasGroup;
-
+    [Header("Old UI Panels")]
+    [SerializeField] private GameObject buildMenu;
+    [SerializeField] private GameObject warningUI;
     [SerializeField] private GameObject houseSelectionPanel;
     [SerializeField] private GameObject workerStatusPanel;
 
-    protected override void Awake()
-    {
-        base.Awake(); // Singleton logic
+    [Header("Bottom UI Toolbar (Buttons)")]
+    [SerializeField] private Button buildButton;
+    [SerializeField] private Button toolsButton;
+    [SerializeField] private Button settingButton;
 
-        if (warningPanel != null)
-        {
-            warningCanvasGroup = warningPanel.GetComponent<CanvasGroup>();
-            if (warningCanvasGroup == null)
-                warningCanvasGroup = warningPanel.AddComponent<CanvasGroup>();
-
-            warningCanvasGroup.alpha = 0f;
-            warningPanel.SetActive(false);
-        }
-    }
+    [Header("Bottom UI Toolbar (Panels)")]
+    [SerializeField] private GameObject controlHintsGroup; // Bảng hướng dẫn đặt/xoay nhà
+    [SerializeField] private GameObject settingUI;         // Bảng cài đặt riêng biệt
 
     void Start()
     {
-        var manager = DayNightManager.Ins;
+        // Giữ nguyên logic cũ của bạn
+        if (houseSelectionPanel != null) houseSelectionPanel.SetActive(true);
+        if (workerStatusPanel != null) workerStatusPanel.SetActive(true);
 
-        manager.OnDayStart += HandleDayStart;
-        manager.OnNightStart += HandleNightStart;
+        // Mặc định vào game ẩn bảng hướng dẫn và bảng cài đặt đi
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
+        if (settingUI != null) settingUI.SetActive(false);
+
+        // Đăng ký sự kiện Click tự động cho các nút bấm dưới Toolbar
+        if (buildButton != null) buildButton.onClick.AddListener(ToggleBuildMenu);
+        if (toolsButton != null) toolsButton.onClick.AddListener(OnClickToolsButton);
+        if (settingButton != null) settingButton.onClick.AddListener(OnClickSettingButton);
     }
 
-    void HandleDayStart()
+    void Update()
+    {
+        // Nếu đang trong chế độ hành động (bảng hướng dẫn đang hiện)
+        // Mà người chơi bấm CHUỘT PHẢI, ta sẽ hủy chế độ đó và ẩn bảng đi
+        if (controlHintsGroup != null && controlHintsGroup.activeSelf)
+        {
+            if (Input.GetMouseButtonDown(1)) // 1 là Chuột phải
+            {
+                ExitActionModes();
+                // Nếu BuildingSystem của bạn có hàm hủy đặt, bạn gọi thêm ở đây:
+                // BuildingSystem.Ins.CancelPlacing(); 
+                Debug.Log("Đã hủy chế độ xây dựng bằng Chuột Phải.");
+            }
+        }
+    }
+
+    // ================= BOTTOM TOOLBAR LOGIC =================
+
+    // Hàm Bật/Tắt Menu chọn danh mục xây dựng chính
+    public void ToggleBuildMenu()
     {
         if (buildMenu != null)
-            buildMenu.SetActive(true);
+        {
+            buildMenu.SetActive(!buildMenu.activeSelf);
+        }
+    }
+
+    // Hàm bấm vào nút Bộ công cụ
+    public void OnClickToolsButton()
+    {
+        ExitActionModes();
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(true);
+        Debug.Log("Đã chọn bộ công cụ.");
+    }
+
+    // Hàm bấm vào nút Cài đặt
+    public void OnClickSettingButton()
+    {
+        ExitActionModes();
+        if (settingUI != null)
+        {
+            settingUI.SetActive(!settingUI.activeSelf);
+        }
+    }
+
+    // Hàm bổ trợ ẩn bảng hướng dẫn phím tắt
+    public void ExitActionModes()
+    {
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
+    }
+
+    // Hàm dùng để kích hoạt bảng hướng dẫn (gọi nội bộ khi chọn xong công trình cụ thể)
+    private void EnterPlacementMode()
+    {
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(true);
+        if (buildMenu != null) buildMenu.SetActive(false); // Tự động ẩn menu chọn nhà khi đang đi đặt nhà
+    }
 
         if (warningPanel != null)
             StartCoroutine(FadeOutWarning());
@@ -50,66 +101,48 @@ public class UIManager : Singleton<UIManager>
         if (buildMenu != null)
             buildMenu.SetActive(false);
 
-        if (warningPanel != null && warningText != null)
-        {
-            warningText.text = "Trời tối, cấm xây dựng!";
-            StartCoroutine(FadeInWarning());
-        }
+    // ================= OLD WARNING LOGIC =================
+
+    public void ShowWarning(string message)
+    {
+        if (warningUI != null) warningUI.SetActive(true);
     }
 
-    private System.Collections.IEnumerator FadeInWarning()
+    public void HideWarning()
     {
-        warningPanel.SetActive(true);
-        float t = 0f;
-        while (t < fadeDuration)
-        {
-            t += Time.deltaTime;
-            warningCanvasGroup.alpha = Mathf.Clamp01(t / fadeDuration);
-            yield return null;
-        }
-        warningCanvasGroup.alpha = 1f;
+        if (warningUI != null) warningUI.SetActive(false);
     }
 
-    private System.Collections.IEnumerator FadeOutWarning()
-    {
-        float t = 0f;
-        while (t < fadeDuration)
-        {
-            t += Time.deltaTime;
-            warningCanvasGroup.alpha = Mathf.Clamp01(1 - t / fadeDuration);
-            yield return null;
-        }
-        warningCanvasGroup.alpha = 0f;
-        warningPanel.SetActive(false);
-    }
+
+    // ================= BUILDING BUTTONS =================
 
     public void OnClickHouseButton()
     {
-        if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.House);
+        EnterPlacementMode();
+        BuildingSystem.Ins.StartPlacing(BuildingType.House);
     }
 
     public void OnClickForestHutButton()
     {
-        if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
+        EnterPlacementMode();
+        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
     }
 
     public void OnClickSawmillButton()
     {
-        if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
+        EnterPlacementMode();
+        BuildingSystem.Ins.StartPlacing(BuildingType.Sawmill);
     }
 
-    public void OnClickWareHouseButton()
+    public void OnClickWarehouseButton()
     {
-        if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
+        EnterPlacementMode();
+        BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
     }
 
     public void OnClickHouseBuilderButton()
     {
-        if (DayNightManager.Ins.IsDay())
-            BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
+        EnterPlacementMode();
+        BuildingSystem.Ins.StartPlacing(BuildingType.House);
     }
 }
