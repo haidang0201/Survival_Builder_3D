@@ -6,6 +6,7 @@ public class WorkerFindRice : MonoBehaviour
     public NavMeshAgent    agent;
     public WorkerCarryRice carrySystem;
     public Animator        animator;
+    public WorkerStamina   stamina;
 
     public float harvestDistance = 1.5f;
     public float harvestTime     = 1.2f;
@@ -14,12 +15,54 @@ public class WorkerFindRice : MonoBehaviour
     private float harvestTimer            = 0f;
     private bool  hasTriggeredHarvestAnim = false;
 
+    // Dùng để phát hiện khoảnh khắc chuyển sang nghỉ — chỉ reset anim 1 lần
+    private bool wasResting = false;
+
     private float findRiceCooldown         = 0f;
     private const float FIND_RICE_INTERVAL = 0.5f;
+
+    void Start()
+    {
+        if (stamina == null)
+            stamina = GetComponent<WorkerStamina>();
+
+        if (stamina == null)
+            Debug.LogWarning($"[WorkerFindRice] '{name}': Không có WorkerStamina — worker làm không giới hạn.");
+    }
 
     void Update()
     {
         UpdateAnimationSpeed();
+
+        bool isResting = stamina != null && !stamina.CanWork();
+
+        if (isResting)
+        {
+            // Chỉ reset anim đúng 1 lần tại frame chuyển sang nghỉ
+            // BUG FIX: không set Speed=0f mỗi frame vì UpdateAnimationSpeed()
+            // ở trên sẽ ghi đè lại → walk animation không chạy khi đi về RestSpot
+            if (!wasResting)
+            {
+                wasResting = true;
+
+                if (targetRice != null)
+                {
+                    targetRice.Release();
+                    targetRice = null;
+                }
+
+                if (animator != null)
+                    animator.ResetTrigger("Chop"); // xóa trigger pending, không set Speed
+
+                hasTriggeredHarvestAnim = false;
+                harvestTimer            = 0f;
+            }
+
+            return; // nhường agent cho WorkerStamina
+        }
+
+        // Vừa hết nghỉ → reset flag
+        wasResting = false;
 
         if (carrySystem.IsCarrying())
         {
@@ -27,13 +70,9 @@ public class WorkerFindRice : MonoBehaviour
             return;
         }
 
-        // FIX: Sau khi Rice.SetActive(false), targetRice vẫn không null
-        // nhưng gameObject đã inactive → cần clear target để tìm cây mới
+        // Lúa bị tắt từ bên ngoài → tìm lúa mới
         if (targetRice != null && !targetRice.gameObject.activeInHierarchy)
-        {
-            Debug.Log($"[WorkerFindRice] '{name}': Lúa đã bị tắt từ bên ngoài → tìm lúa mới.");
             ReleaseCurrentRice();
-        }
 
         if (targetRice == null)
         {
@@ -141,6 +180,7 @@ public class WorkerFindRice : MonoBehaviour
     void HandleHarvesting()
     {
         agent.isStopped = true;
+        stamina?.SetDraining(true);
 
         if (!hasTriggeredHarvestAnim)
         {
