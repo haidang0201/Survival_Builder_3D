@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 public class UIManager : Singleton<UIManager>
 {
@@ -16,19 +17,18 @@ public class UIManager : Singleton<UIManager>
 
     [Header("Bottom UI Toolbar (Panels)")]
     [SerializeField] private GameObject controlHintsGroup; // Bảng hướng dẫn đặt/xoay nhà
-    [SerializeField] private GameObject settingUI;         // Bảng cài đặt riêng biệt
+    [SerializeField] private GameObject settingUI;            // Bảng cài đặt riêng biệt
+
+    private Coroutine _fadeWarningCoroutine;
 
     void Start()
     {
-        // Giữ nguyên logic cũ của bạn
         if (houseSelectionPanel != null) houseSelectionPanel.SetActive(true);
         if (workerStatusPanel != null) workerStatusPanel.SetActive(true);
 
-        // Mặc định vào game ẩn bảng hướng dẫn và bảng cài đặt đi
         if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
         if (settingUI != null) settingUI.SetActive(false);
 
-        // Đăng ký sự kiện Click tự động cho các nút bấm dưới Toolbar
         if (buildButton != null) buildButton.onClick.AddListener(ToggleBuildMenu);
         if (toolsButton != null) toolsButton.onClick.AddListener(OnClickToolsButton);
         if (settingButton != null) settingButton.onClick.AddListener(OnClickSettingButton);
@@ -36,15 +36,15 @@ public class UIManager : Singleton<UIManager>
 
     void Update()
     {
-        // Nếu đang trong chế độ hành động (bảng hướng dẫn đang hiện)
-        // Mà người chơi bấm CHUỘT PHẢI, ta sẽ hủy chế độ đó và ẩn bảng đi
         if (controlHintsGroup != null && controlHintsGroup.activeSelf)
         {
-            if (Input.GetMouseButtonDown(1)) // 1 là Chuột phải
+            if (Input.GetMouseButtonDown(1)) // Chuột phải
             {
                 ExitActionModes();
-                // Nếu BuildingSystem của bạn có hàm hủy đặt, bạn gọi thêm ở đây:
-                // BuildingSystem.Ins.CancelPlacing(); 
+
+                // Nếu có hàm cancel đặt trong BuildingSystem, bạn có thể gọi ở đây.
+                // BuildingSystem.Ins.CancelPlacing();
+
                 Debug.Log("Đã hủy chế độ xây dựng bằng Chuột Phải.");
             }
         }
@@ -52,16 +52,12 @@ public class UIManager : Singleton<UIManager>
 
     // ================= BOTTOM TOOLBAR LOGIC =================
 
-    // Hàm Bật/Tắt Menu chọn danh mục xây dựng chính
     public void ToggleBuildMenu()
     {
         if (buildMenu != null)
-        {
             buildMenu.SetActive(!buildMenu.activeSelf);
-        }
     }
 
-    // Hàm bấm vào nút Bộ công cụ
     public void OnClickToolsButton()
     {
         ExitActionModes();
@@ -69,52 +65,67 @@ public class UIManager : Singleton<UIManager>
         Debug.Log("Đã chọn bộ công cụ.");
     }
 
-    // Hàm bấm vào nút Cài đặt
     public void OnClickSettingButton()
     {
         ExitActionModes();
-        if (settingUI != null)
-        {
-            settingUI.SetActive(!settingUI.activeSelf);
-        }
+        if (settingUI != null) settingUI.SetActive(!settingUI.activeSelf);
     }
 
-    // Hàm bổ trợ ẩn bảng hướng dẫn phím tắt
     public void ExitActionModes()
     {
         if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
     }
 
-    // Hàm dùng để kích hoạt bảng hướng dẫn (gọi nội bộ khi chọn xong công trình cụ thể)
     private void EnterPlacementMode()
     {
         if (controlHintsGroup != null) controlHintsGroup.SetActive(true);
-        if (buildMenu != null) buildMenu.SetActive(false); // Tự động ẩn menu chọn nhà khi đang đi đặt nhà
+        if (buildMenu != null) buildMenu.SetActive(false); // ẩn menu khi đang đặt nhà
     }
 
-        if (warningPanel != null)
-            StartCoroutine(FadeOutWarning());
-    }
-
-    void HandleNightStart()
-    {
-        if (buildMenu != null)
-            buildMenu.SetActive(false);
-
-    // ================= OLD WARNING LOGIC =================
+    // ================= WARNING UI =================
 
     public void ShowWarning(string message)
     {
-        if (warningUI != null) warningUI.SetActive(true);
+        // Nếu bạn có Text hiển thị message trong warningUI, bạn cần add thêm tham chiếu Text.
+        // Còn trong đoạn bạn gửi, mình chỉ bật panel.
+        if (warningUI != null)
+            warningUI.SetActive(true);
+
+        if (_fadeWarningCoroutine != null)
+        {
+            StopCoroutine(_fadeWarningCoroutine);
+            _fadeWarningCoroutine = null;
+        }
     }
 
     public void HideWarning()
     {
-        if (warningUI != null) warningUI.SetActive(false);
+        if (warningUI != null)
+            warningUI.SetActive(false);
+
+        if (_fadeWarningCoroutine != null)
+        {
+            StopCoroutine(_fadeWarningCoroutine);
+            _fadeWarningCoroutine = null;
+        }
     }
 
+    private IEnumerator FadeOutWarning(float duration = 1.2f)
+    {
+        if (warningUI == null) yield break;
+
+        // Nếu warningUI là Image/Text có alpha riêng thì bạn cần xử lý thêm.
+        // Đoạn này chỉ tắt sau thời gian (an toàn nhất để khỏi phụ thuộc component).
+        yield return new WaitForSeconds(duration);
+        HideWarning();
+    }
+
+    // Nếu bạn vẫn muốn tự fade khi enter placement mode (giống ý code cũ),
+    // bạn có thể gọi ShowWarning rồi bắt đầu FadeOutWarning tại nơi bạn muốn.
+    // Ví dụ: ShowWarning("..."); _fadeWarningCoroutine = StartCoroutine(FadeOutWarning());
 
     // ================= BUILDING BUTTONS =================
+    // Lưu ý: sửa enum theo BuildingType.cs bạn gửi (House, WoodCutter, StoneMine, Warehouse, Kitchen, ...)
 
     public void OnClickHouseButton()
     {
@@ -125,13 +136,15 @@ public class UIManager : Singleton<UIManager>
     public void OnClickForestHutButton()
     {
         EnterPlacementMode();
-        BuildingSystem.Ins.StartPlacing(BuildingType.ForestHut);
+        // Không có ForestHut trong enum -> map tạm theo WoodCutter.
+        BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
     }
 
     public void OnClickSawmillButton()
     {
         EnterPlacementMode();
-        BuildingSystem.Ins.StartPlacing(BuildingType.Sawmill);
+        // Không có Sawmill trong enum -> map tạm theo WoodCutter.
+        BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
     }
 
     public void OnClickWarehouseButton()

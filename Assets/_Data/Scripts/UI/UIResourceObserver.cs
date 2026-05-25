@@ -2,85 +2,143 @@ using UnityEngine;
 
 /*
  * UIResourceObserver.cs
- * Đã cập nhật: Theo dõi sự thay đổi của Gỗ, Đá, Lúa (có sức chứa) và Vàng
+ * Folder: Scripts/UI/
+ * Người làm: VŨ / DŨNG
+ *
+ * Cầu nối giữa JsonDataManager (event) và HUDController (hiển thị).
+ * Observer pattern: subscribe event → nhận giá trị → đẩy lên HUD.
+ *
+ * Luồng:
+ *   JsonDataManager.AddWood()
+ *     → OnWoodChanged(current, max)
+ *       → UIResourceObserver.OnWoodChanged(current, max)
+ *         → HUDController.UpdateWood(current, max)
+ *
+ * Lưu ý: Subscribe trong OnEnable / Unsubscribe trong OnDisable
+ * để tránh memory leak khi object bị tắt.
  */
+
 public class UIResourceObserver : MonoBehaviour
 {
-    public HUDController hud;
-    private bool isSubscribed = false;
+    // ──────────────────────────────────────────────
+    // INSPECTOR
+    // ──────────────────────────────────────────────
 
-    void Start()
+    [Tooltip("Kéo HUDController vào đây")]
+    public HUDController hud;
+
+    // ──────────────────────────────────────────────
+    // PRIVATE
+    // ──────────────────────────────────────────────
+
+    private bool _isSubscribed;
+
+    // ──────────────────────────────────────────────
+    // LIFECYCLE
+    // ──────────────────────────────────────────────
+
+    private void Start()
     {
-        if (JsonDataManager.Ins == null)
+        if (hud == null)
         {
-            Debug.LogError("JsonDataManager.Ins chưa được khởi tạo!");
+            Debug.LogError("[UIResourceObserver] HUDController chưa được gán trong Inspector!");
             return;
         }
 
-        SubscribeEvents();
-
-        // Thêm câu lệnh if này để bảo vệ code:
-        if (hud != null)
+        if (JsonDataManager.Ins == null)
         {
-            hud.UpdateGold(JsonDataManager.Ins.gold);
-            hud.UpdateWood(JsonDataManager.Ins.wood);
-            hud.UpdateStone(JsonDataManager.Ins.stone);
+            Debug.LogError("[UIResourceObserver] JsonDataManager.Ins chưa tồn tại!");
+            return;
         }
-        else
-        {
-            Debug.LogError("Bạn quên chưa kéo thả HUDController vào UIResourceObserver kìa!");
-        }
+
+        Subscribe();
+
+        // Push giá trị hiện tại lên HUD ngay lập tức (tránh HUD hiện 0 khi load game)
+        RefreshHUD();
     }
 
-    void OnEnable()
+    private void OnEnable()
     {
-        // Nếu Object bị tắt đi bật lại sau khi Start đã chạy, ta đăng ký lại
-        if (isSubscribed == false && JsonDataManager.Ins != null)
-        {
-            SubscribeEvents();
-        }
+        // Đăng ký lại nếu object bị tắt rồi bật (sau khi Start đã chạy)
+        if (!_isSubscribed && JsonDataManager.Ins != null)
+            Subscribe();
     }
 
-    void OnDisable()
+    private void OnDisable()
     {
-        UnsubscribeEvents();
+        Unsubscribe();
     }
 
-    private void SubscribeEvents()
+    // ──────────────────────────────────────────────
+    // SUBSCRIBE / UNSUBSCRIBE
+    // ──────────────────────────────────────────────
+
+    private void Subscribe()
     {
-        if (isSubscribed) return;
-        
-        var data = JsonDataManager.Ins;
-        data.OnGoldChanged += OnGoldChanged;
-        data.OnWoodChanged += OnWoodChanged;
-        data.OnStoneChanged += OnStoneChanged;
-        
-        isSubscribed = true;
+        if (_isSubscribed) return;
+
+        var dm = JsonDataManager.Ins;
+        dm.OnGoldChanged += OnGoldChanged;
+        dm.OnWoodChanged += OnWoodChanged;
+        dm.OnStoneChanged += OnStoneChanged;
+        dm.OnFoodChanged += OnFoodChanged;
+
+        _isSubscribed = true;
     }
 
-    private void UnsubscribeEvents()
+    private void Unsubscribe()
     {
-        if (!isSubscribed || JsonDataManager.Ins == null) return;
+        if (!_isSubscribed || JsonDataManager.Ins == null) return;
 
-        var data = JsonDataManager.Ins;
-        data.OnGoldChanged -= OnGoldChanged;
-        data.OnWoodChanged -= OnWoodChanged;
-        data.OnStoneChanged -= OnStoneChanged;
-        
-        isSubscribed = false;
-    }
-    void UpdateUIModeDay()
-    {
-        if (hud != null) hud.UpdateGold(value);
+        var dm = JsonDataManager.Ins;
+        dm.OnGoldChanged -= OnGoldChanged;
+        dm.OnWoodChanged -= OnWoodChanged;
+        dm.OnStoneChanged -= OnStoneChanged;
+        dm.OnFoodChanged -= OnFoodChanged;
+
+        _isSubscribed = false;
     }
 
-    void UpdateUIModeNight()
+    // ──────────────────────────────────────────────
+    // EVENT HANDLERS  –  ký hiệu phải khớp JsonDataManager
+    // ──────────────────────────────────────────────
+
+    private void OnGoldChanged(int value)
     {
-        if (hud != null) hud.UpdateWood(value);
+        hud?.UpdateGold(value);
     }
 
-    void OnStoneChanged(int value)
+    private void OnWoodChanged(int current, int max)
     {
-        if (hud != null) hud.UpdateStone(value);
+        hud?.UpdateWood(current, max);
+    }
+
+    private void OnStoneChanged(int current, int max)
+    {
+        hud?.UpdateStone(current, max);
+    }
+
+    private void OnFoodChanged(int current, int max)
+    {
+        hud?.UpdateFood(current, max);
+    }
+
+    // ──────────────────────────────────────────────
+    // HELPERS
+    // ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Push toàn bộ giá trị hiện tại từ JsonDataManager lên HUD.
+    /// Gọi khi vào game / load game để HUD không hiển thị 0.
+    /// </summary>
+    private void RefreshHUD()
+    {
+        if (hud == null || JsonDataManager.Ins == null) return;
+
+        var dm = JsonDataManager.Ins;
+        hud.UpdateGold(dm.gold);
+        hud.UpdateWood(dm.wood, dm.maxWood);
+        hud.UpdateStone(dm.stone, dm.maxStone);
+        hud.UpdateFood(dm.food, dm.maxFood);
     }
 }
