@@ -3,13 +3,14 @@ using UnityEngine;
 public class Tree : MonoBehaviour
 {
     [Header("Tree Settings")]
-    public int health = 3;
+    public int maxHealth = 3;
 
     [Header("Drop Settings")]
     public ObjectPool woodPool;
     public int dropAmount = 3;
 
     // ===== INTERNAL =====
+    private int currentHealth;
     private bool isOccupied = false;
     private TreeVisual treeVisual;
 
@@ -17,13 +18,15 @@ public class Tree : MonoBehaviour
     {
         treeVisual = GetComponent<TreeVisual>();
 
-        if (treeVisual == null);
+        if (treeVisual == null)
+            Debug.LogWarning($"[Tree] '{name}' không có TreeVisual — sẽ không có animation rung/đổ.");
     }
 
     void OnEnable()
     {
-        health     = 3;
-        isOccupied = false;
+        // Dùng maxHealth thay vì hardcode số cứng
+        currentHealth = maxHealth;
+        isOccupied    = false;
     }
 
     // ===== CLAIM / RELEASE =====
@@ -44,19 +47,16 @@ public class Tree : MonoBehaviour
 
     /// <summary>
     /// Trả về mảng gỗ nếu cây chết, null nếu cây còn sống.
-    /// Khi cây chết, cây sẽ play animation đổ TRƯỚC rồi mới tắt.
     /// </summary>
     public WoodPickup[] TakeDamage(int damage)
     {
-        health -= damage;
+        currentHealth -= damage;
 
+        Debug.Log($"[Tree] '{name}' nhận {damage} damage. HP còn lại: {currentHealth}/{maxHealth}");
 
-        if (health <= 0)
-        {
+        if (currentHealth <= 0)
             return DestroyTree();
-        }
 
-        // Cây còn sống → rung
         treeVisual?.PlayShake();
 
         return null;
@@ -72,15 +72,14 @@ public class Tree : MonoBehaviour
 
         if (treeVisual != null)
         {
-            // Đổ cây → tắt GameObject sau khi animation xong
             treeVisual.PlayFall(onFallComplete: () =>
             {
+                Debug.Log($"[Tree] '{name}' tắt sau khi đổ xong.");
                 gameObject.SetActive(false);
             });
         }
         else
         {
-            // Không có visual → tắt ngay
             gameObject.SetActive(false);
         }
 
@@ -91,6 +90,7 @@ public class Tree : MonoBehaviour
     {
         if (woodPool == null)
         {
+            Debug.LogWarning($"[Tree] '{name}' không có woodPool — không rơi gỗ.");
             return null;
         }
 
@@ -111,7 +111,7 @@ public class Tree : MonoBehaviour
             Rigidbody rb = obj.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.isKinematic  = false;
+                rb.isKinematic     = false;
                 rb.linearVelocity  = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
                 rb.AddForce(Vector3.up * 3f + Random.insideUnitSphere, ForceMode.Impulse);
@@ -119,6 +119,9 @@ public class Tree : MonoBehaviour
 
             woods[i] = obj.GetComponent<WoodPickup>();
         }
+
+        Debug.Log($"[Tree] '{name}' rơi {dropAmount} gỗ.");
+
         return woods;
     }
 }

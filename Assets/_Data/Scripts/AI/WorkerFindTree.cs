@@ -3,23 +3,66 @@ using UnityEngine.AI;
 
 public class WorkerFindTree : MonoBehaviour
 {
-    public NavMeshAgent agent;
+    public NavMeshAgent    agent;
     public WorkerCarryItem carrySystem;
-    public Animator animator;
+    public Animator        animator;
+    public WorkerStamina   stamina;
 
     public float chopDistance = 2f;
     public float chopTime     = 2f;
 
-    private Tree targetTree;
-    private float chopTimer          = 0f;
-    private bool hasTriggeredChopAnim = false;
+    private Tree  targetTree;
+    private float chopTimer            = 0f;
+    private bool  hasTriggeredChopAnim = false;
+
+    // Dùng để phát hiện khoảnh khắc chuyển sang nghỉ — chỉ reset anim 1 lần
+    private bool wasResting = false;
 
     private float findTreeCooldown         = 0f;
     private const float FIND_TREE_INTERVAL = 0.5f;
 
+    void Start()
+    {
+        if (stamina == null)
+            stamina = GetComponent<WorkerStamina>();
+
+        if (stamina == null)
+            Debug.LogWarning($"[WorkerFindTree] '{name}': Không có WorkerStamina — worker làm không giới hạn.");
+    }
+
     void Update()
     {
         UpdateAnimationSpeed();
+
+        bool isResting = stamina != null && !stamina.CanWork();
+
+        if (isResting)
+        {
+            // Chỉ reset anim đúng 1 lần tại frame chuyển sang nghỉ
+            // BUG FIX: không set Speed=0f mỗi frame vì UpdateAnimationSpeed()
+            // ở trên sẽ ghi đè lại → walk animation không chạy khi đi về RestSpot
+            if (!wasResting)
+            {
+                wasResting = true;
+
+                if (targetTree != null)
+                {
+                    targetTree.Release();
+                    targetTree = null;
+                }
+
+                if (animator != null)
+                    animator.ResetTrigger("Chop"); // xóa trigger pending, không set Speed
+
+                hasTriggeredChopAnim = false;
+                chopTimer            = 0f;
+            }
+
+            return; // nhường agent cho WorkerStamina
+        }
+
+        // Vừa hết nghỉ → reset flag
+        wasResting = false;
 
         if (carrySystem.IsCarrying())
         {
@@ -30,6 +73,13 @@ public class WorkerFindTree : MonoBehaviour
         if (targetTree == null)
         {
             HandleFindTree();
+            return;
+        }
+
+        // Cây bị tắt từ bên ngoài → tìm cây mới
+        if (!targetTree.gameObject.activeInHierarchy)
+        {
+            ReleaseCurrentTree();
             return;
         }
 
@@ -82,7 +132,7 @@ public class WorkerFindTree : MonoBehaviour
         Tree[] trees = GameObject.FindObjectsOfType<Tree>();
 
         float minDist = Mathf.Infinity;
-        Tree best     = null;
+        Tree  best    = null;
 
         foreach (var tree in trees)
         {
@@ -127,8 +177,8 @@ public class WorkerFindTree : MonoBehaviour
     void HandleChopping()
     {
         agent.isStopped = true;
+        stamina?.SetDraining(true);
 
-        // Trigger animation 1 lần mỗi chu kỳ
         if (!hasTriggeredChopAnim)
         {
             hasTriggeredChopAnim = true;
@@ -139,7 +189,6 @@ public class WorkerFindTree : MonoBehaviour
 
         if (chopTimer < chopTime) return;
 
-        // Hết 1 chu kỳ → apply damage
         chopTimer            = 0f;
         hasTriggeredChopAnim = false;
 
@@ -147,11 +196,9 @@ public class WorkerFindTree : MonoBehaviour
 
         if (woods != null && woods.Length > 0)
         {
-            // Cây đã chết → nhặt gỗ và tìm cây mới
             carrySystem.PickupWood(woods[0]);
             ReleaseCurrentTree();
         }
-        // woods == null → cây chưa chết, tiếp tục chặt
     }
 
     void TriggerChopAnimation()
