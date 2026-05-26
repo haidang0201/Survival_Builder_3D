@@ -5,8 +5,9 @@ using UnityEngine.AI;
 public class EnemyAI : MonoBehaviour
 {
     [Header("References")]
-    public Transform villageCenter;
-    public Transform player; // optional, can be assigned or found by tag "Player"
+    public Transform buildingTarget;
+    public Transform squadLeader;
+    public bool isLeader = false;
     public Animator animator;
 
     [Header("Patrol")]
@@ -15,10 +16,9 @@ public class EnemyAI : MonoBehaviour
     public float repathInterval = 2f;
 
     [Header("Chase")]
-    public float chaseTriggerRange = 6f;
-    public float loseChaseRange = 12f;
     public float patrolSpeed = 2f;
     public float chaseSpeed = 4f;
+    public float followSpeed = 4f;
 
     [Header("Animation")]
     public string attackTrigger = "Attack";
@@ -26,7 +26,7 @@ public class EnemyAI : MonoBehaviour
     [Header("Day / Night")]
     [Tooltip("If true use 'isNight' checkbox to force night for testing. If false, use Sun Light (optional).")]
     public bool useManualNight = true;
-    public bool isNight = true; // inspector tick to test night/day
+    public bool isNight = true;
     public Light sunLight;
     public float nightLightThreshold = 0.2f;
 
@@ -42,9 +42,11 @@ public class EnemyAI : MonoBehaviour
     private bool hasPatrolPoint;
     private float nextRepathTime;
     private Transform chaseTarget;
+    private Vector3 currentAttackPoint;
+    private bool hasCurrentAttackPoint;
     private float nextDebugLogTime;
+    private EnemyAI squadLeaderAI;
 
-    // render/collider list to hide/show on day/night
     private Renderer[] renderers;
     private Collider[] colliders;
     private bool lastNightState = true;
@@ -54,13 +56,10 @@ public class EnemyAI : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         if (agent == null && debugLogs) Debug.LogError("EnemyAI requires a NavMeshAgent");
         if (animator == null) animator = GetComponentInChildren<Animator>();
-        // no dynamic resolution — use moveParam directly
 
-        // cache renderers and colliders for hide/show
         renderers = GetComponentsInChildren<Renderer>(true);
         colliders = GetComponentsInChildren<Collider>(true);
 
-        // try to ensure agent is on NavMesh
         if (agent != null && !agent.isOnNavMesh)
         {
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
@@ -77,25 +76,24 @@ public class EnemyAI : MonoBehaviour
 
     private void Start()
     {
-        if (player == null)
-        {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) player = p.transform;
-        }
+        ResolveSquadLeader();
 
         if (agent != null) agent.speed = patrolSpeed;
-        PickNewPatrolPoint();
-        SetDestination(currentPatrolPoint);
-        UpdateAnimationState();
-
-        // ensure initial visibility according to night state
         lastNightState = GetNightState();
         ApplyNightState(lastNightState);
+
+        if (lastNightState)
+        {
+            RefreshBehaviorForCurrentRole();
+        }
+
+        UpdateAnimationState();
     }
 
     private void Update()
     {
-        // Day/night check
+        ResolveSquadLeader();
+
         bool nightNow = GetNightState();
         if (nightNow != lastNightState)
         {
@@ -106,56 +104,86 @@ public class EnemyAI : MonoBehaviour
 
         if (!nightNow)
         {
-            // if day, skip behavior
             UpdateAnimationState();
             return;
         }
 
-        // Check for chase start
-        if (chaseTarget == null)
+        RefreshBehaviorForCurrentRole();
+        UpdateAnimationState();
+    }
+
+    private void ResolveSquadLeader()
+    {
+        if (squadLeaderAI == null && squadLeader != null)
         {
-            if (player != null && Vector3.Distance(transform.position, player.position) <= chaseTriggerRange)
-            {
-                chaseTarget = player;
-                if (agent != null) agent.speed = chaseSpeed;
-                if (debugLogs) Debug.Log("EnemyAI: start chasing player");
-            }
-            else if (villageCenter != null && Vector3.Distance(transform.position, villageCenter.position) <= chaseTriggerRange)
-            {
-                chaseTarget = villageCenter;
-                if (agent != null) agent.speed = chaseSpeed;
-                if (debugLogs) Debug.Log("EnemyAI: start chasing village");
-            }
+            squadLeaderAI = squadLeader.GetComponent<EnemyAI>();
+        }
+    }
+
+    private void RefreshBehaviorForCurrentRole()
+    {
+        if (isLeader || squadLeaderAI == null)
+        {
+            UpdateLeaderBehavior();
         }
         else
         {
-            float d = Vector3.Distance(transform.position, chaseTarget.position);
-            if (d > loseChaseRange)
-            {
-                // stop chase, resume patrol
-                chaseTarget = null;
-                if (agent != null) agent.speed = patrolSpeed;
-                if (debugLogs) Debug.Log("EnemyAI: lost chase target, resuming patrol");
-                PickNewPatrolPoint();
-                SetDestination(currentPatrolPoint);
-            }
-            else
-            {
-                SetDestination(chaseTarget.position);
-            }
+            UpdateFollowerBehavior();
         }
+    }
 
-        // Patrol behavior when not chasing
-        if (chaseTarget == null)
+    private void UpdateLeaderBehavior()
+    {
+        if (buildingTarget == null)
         {
-            if (!hasPatrolPoint || Time.time >= nextRepathTime || Vector3.Distance(transform.position, currentPatrolPoint) <= pointReachDistance)
-            {
-                PickNewPatrolPoint();
-                SetDestination(currentPatrolPoint);
-            }
+            UpdatePatrolBehavior();
+            return;
         }
 
-        UpdateAnimationState();
+        chaseTarget = buildingTarget;
+        if (agent != null) agent.speed = chaseSpeed;
+
+        currentAttackPoint = GetChaseTargetPosition(buildingTarget);
+        hasCurrentAttackPoint = true;
+        SetDestination(currentAttackPoint);
+    }
+
+    private void UpdateFollowerBehavior()
+    {
+        Vector3 targetPoint;
+        if (squadLeaderAI != null && squadLeaderAI.hasCurrentAttackPoint)
+        {
+            targetPoint = squadLeaderAI.GetCurrentAttackPoint();
+            chaseTarget = squadLeaderAI.transform;
+        }
+        else if (buildingTarget != null)
+        {
+            targetPoint = GetChaseTargetPosition(buildingTarget);
+            chaseTarget = buildingTarget;
+        }
+        else
+        {
+            UpdatePatrolBehavior();
+            return;
+        }
+
+        currentAttackPoint = targetPoint;
+        hasCurrentAttackPoint = true;
+        if (agent != null) agent.speed = followSpeed;
+        SetDestination(targetPoint);
+    }
+
+    private void UpdatePatrolBehavior()
+    {
+        chaseTarget = null;
+
+        if (agent != null) agent.speed = patrolSpeed;
+
+        if (!hasPatrolPoint || Time.time >= nextRepathTime || Vector3.Distance(transform.position, currentPatrolPoint) <= pointReachDistance)
+        {
+            PickNewPatrolPoint();
+            SetDestination(currentPatrolPoint);
+        }
     }
 
     private bool GetNightState()
@@ -166,13 +194,11 @@ public class EnemyAI : MonoBehaviour
         if (sunLight != null)
             return sunLight.intensity <= nightLightThreshold;
 
-        // default to night if no control available
         return true;
     }
 
     private void ApplyNightState(bool night)
     {
-        // show/hide renderers
         if (renderers != null)
         {
             foreach (var r in renderers)
@@ -195,11 +221,10 @@ public class EnemyAI : MonoBehaviour
         {
             agent.isStopped = !night;
             agent.updatePosition = night;
-            // when night begins, reposition to a patrol point and start
+
             if (night)
             {
-                PickNewPatrolPoint();
-                SetDestination(currentPatrolPoint);
+                RefreshBehaviorForCurrentRole();
             }
         }
     }
@@ -212,7 +237,7 @@ public class EnemyAI : MonoBehaviour
 
     private void PickNewPatrolPoint()
     {
-        Vector3 center = villageCenter != null ? villageCenter.position : transform.position;
+        Vector3 center = transform.position;
         for (int i = 0; i < 8; i++)
         {
             Vector3 rand = Random.insideUnitSphere * patrolRadius;
@@ -228,7 +253,6 @@ public class EnemyAI : MonoBehaviour
             }
         }
 
-        // fallback: stay in place
         currentPatrolPoint = transform.position;
         hasPatrolPoint = false;
         if (debugLogs) Debug.LogWarning("EnemyAI: failed to find patrol point on NavMesh");
@@ -237,16 +261,85 @@ public class EnemyAI : MonoBehaviour
     private void SetDestination(Vector3 dest)
     {
         if (agent == null) return;
+
         if (!agent.isOnNavMesh)
         {
             if (NavMesh.SamplePosition(dest, out NavMeshHit hit, 5f, NavMesh.AllAreas))
             {
                 agent.Warp(hit.position);
             }
-            else return;
+            else
+            {
+                return;
+            }
         }
 
         agent.SetDestination(dest);
+    }
+
+    public Vector3 GetCurrentAttackPoint()
+    {
+        if (hasCurrentAttackPoint)
+        {
+            return currentAttackPoint;
+        }
+
+        if (buildingTarget != null)
+        {
+            return GetChaseTargetPosition(buildingTarget);
+        }
+
+        return transform.position;
+    }
+
+    private Vector3 GetChaseTargetPosition(Transform target)
+    {
+        if (target == null)
+        {
+            return transform.position;
+        }
+
+        Collider[] targetColliders = target.GetComponentsInChildren<Collider>(true);
+        if (targetColliders != null && targetColliders.Length > 0)
+        {
+            Collider bestCollider = targetColliders[0];
+            float bestDistance = Vector3.SqrMagnitude(bestCollider.bounds.center - transform.position);
+
+            for (int i = 1; i < targetColliders.Length; i++)
+            {
+                Collider currentCollider = targetColliders[i];
+                float currentDistance = Vector3.SqrMagnitude(currentCollider.bounds.center - transform.position);
+                if (currentDistance < bestDistance)
+                {
+                    bestCollider = currentCollider;
+                    bestDistance = currentDistance;
+                }
+            }
+
+            return bestCollider.bounds.center;
+        }
+
+        Renderer[] targetRenderers = target.GetComponentsInChildren<Renderer>(true);
+        if (targetRenderers != null && targetRenderers.Length > 0)
+        {
+            Renderer bestRenderer = targetRenderers[0];
+            float bestDistance = Vector3.SqrMagnitude(bestRenderer.bounds.center - transform.position);
+
+            for (int i = 1; i < targetRenderers.Length; i++)
+            {
+                Renderer currentRenderer = targetRenderers[i];
+                float currentDistance = Vector3.SqrMagnitude(currentRenderer.bounds.center - transform.position);
+                if (currentDistance < bestDistance)
+                {
+                    bestRenderer = currentRenderer;
+                    bestDistance = currentDistance;
+                }
+            }
+
+            return bestRenderer.bounds.center;
+        }
+
+        return target.position;
     }
 
     private void UpdateAnimationState()
@@ -275,7 +368,8 @@ public class EnemyAI : MonoBehaviour
         {
             nextDebugLogTime = Time.time + debugLogInterval;
             Debug.LogFormat(
-                "[EnemyAI] move={0} chaseTarget={1} hasPath={2} pathPending={3} remainingDistance={4:F2} velocity={5:F2} desiredVelocity={6:F2}",
+                "[EnemyAI] role={0} move={1} chaseTarget={2} hasPath={3} pathPending={4} remainingDistance={5:F2} velocity={6:F2} desiredVelocity={7:F2}",
+                isLeader ? "leader" : (squadLeaderAI != null ? "follower" : "solo"),
                 isMoving,
                 chaseTarget != null ? chaseTarget.name : "none",
                 agent != null && agent.hasPath,
@@ -286,6 +380,5 @@ public class EnemyAI : MonoBehaviour
             );
         }
     }
-
 }
 
