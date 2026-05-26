@@ -1,0 +1,38 @@
+Canvas (UI Canvas)
+ └── Gameplay_Panel_Top (Empty UI Object)              <-- Panel trên cùng
+      ├── LeftGroup (Empty UI Object)                  <-- Góc trái
+      │    ├── TimeGroup (Empty UI Object)
+      │    │    ├── TimeIcon (UI Image)
+      │    │    └── TimeText (TMP Text)
+      │    │
+      │    └── UnitGroup (Empty UI Object)
+      │         ├── UnitIcon (UI Image)
+      │         └── UnitText (TMP Text)
+      │
+      ├── CenterGroup (Empty UI Object)                <-- Chính giữa
+      │    └── DayText (TMP Text)
+      │
+      └── RightGroup (Empty UI Object)                 <-- Góc phải
+           ├── WoodGroup (Empty UI Object)
+           │    ├── WoodIcon (UI Image)
+           │    └── WoodText (TMP Text)
+           │
+           ├── StoneGroup (Empty UI Object)
+           │    ├── StoneIcon (UI Image)
+           │    └── StoneText (TMP Text)
+           │
+           └── WheatGroup (Empty UI Object)
+                ├── WheatIcon (UI Image)
+                └── WheatText (TMP Text)
+ │
+ └── Gameplay_Panel_Bottom (Empty UI Object)         <-- Bấm chuột phải vào Canvas -> Create Empty
+      │
+      ├── MainToolbar (Empty UI Object)              <-- Bấm chuột phải vào Panel_Bottom -> Create Empty
+      │    ├── Build_Btn (UI -> Button - TextMeshPro)                 
+      │    ├── Tools_Btn (UI -> Button - TextMeshPro)                 
+      │    └── Setting_Btn (UI -> Button - TextMeshPro)               
+      │
+      └── ControlHints_Group (Empty UI Object)       <-- Bấm chuột phải vào Panel_Bottom -> Create Empty
+           ├── Hint_Place (UI -> Text - TextMeshPro)   <-- Nội dung: "🖱️ Chuột trái: Đặt công trình"
+           ├── Hint_Cancel (UI -> Text - TextMeshPro)  <-- Nội dung: "🖱️ Chuột phải: Hủy đặt"
+           └── Hint_Rotate (UI -> Text - TextMeshPro)  <-- Nội dung: "⌨️ Phím E / R: Xoay công trình"
