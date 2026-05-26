@@ -9,6 +9,9 @@ public class FadingAutoLight : MonoBehaviour
     [Tooltip("Kéo thả Directional Light (Mặt trời) của scene vào đây")]
     public Transform sunTransform;
 
+    // Shared cached directional light so all lamp instances use the same "sun"
+    private static Light cachedDirectionalSun;
+
     [Header("Cài đặt Ngưỡng Sáng Dần")]
     [Tooltip("Cường độ tối đa khi đêm tối hoàn toàn.")]
     public float maxIntensity = 10f; // Chỉnh giá trị này tùy ý (theo ví dụ trong hình)
@@ -28,6 +31,13 @@ public class FadingAutoLight : MonoBehaviour
     [SerializeField ]
     private float currentIntensity = 0f;  // Hiển thị cường độ hiện tại
 
+    [Header("Particle System (Hiệu ứng hạt)")]
+    [Tooltip("Kéo thả Particle System để phát hiệu ứng khi đèn sáng")]
+    public ParticleSystem particleEffect;
+
+    [Tooltip("Tốc độ phát hạt tối đa (rate over time)")]
+    public float maxEmissionRate = 50f;
+
     void Start()
     {
         // Tự động tìm Point Light nếu chưa kéo thả (tìm trong các object con)
@@ -39,14 +49,23 @@ public class FadingAutoLight : MonoBehaviour
         // Tự động tìm Directional Light nếu chưa kéo thả
         if (sunTransform == null)
         {
-            Light[] lights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
-            foreach (Light l in lights)
+            if (cachedDirectionalSun == null)
             {
-                if (l.type == LightType.Directional)
+                Light[] lights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+                foreach (Light l in lights)
                 {
-                    sunTransform = l.transform;
-                    break;
+                    // Skip lights that belong to this lamp prefab (avoid picking local lights)
+                    if (l.type == LightType.Directional && !l.transform.IsChildOf(this.transform))
+                    {
+                        cachedDirectionalSun = l;
+                        break;
+                    }
                 }
+            }
+
+            if (cachedDirectionalSun != null)
+            {
+                sunTransform = cachedDirectionalSun.transform;
             }
         }
 
@@ -55,6 +74,18 @@ public class FadingAutoLight : MonoBehaviour
         {
             lightToFade.intensity = 0f;
             lightToFade.enabled = false;
+        }
+
+        // Tự động tìm ParticleSystem nếu chưa kéo thả
+        if (particleEffect == null)
+        {
+            particleEffect = GetComponentInChildren<ParticleSystem>();
+        }
+
+        // Tắt/clear particle lúc bắt đầu
+        if (particleEffect != null)
+        {
+            particleEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
     }
 
@@ -74,6 +105,13 @@ public class FadingAutoLight : MonoBehaviour
                 lightToFade.intensity = 0f;
                 currentFadeFactor = 0f;
                 currentIntensity = 0f;
+
+                if (particleEffect != null)
+                {
+                    particleEffect.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                    var emission = particleEffect.emission;
+                    emission.rateOverTime = new ParticleSystem.MinMaxCurve(0f);
+                }
             }
             // 2. Kiểm tra đêm tối hoàn toàn (sáng tối đa)
             else if (sunDirection <= nightThreshold)
@@ -85,6 +123,13 @@ public class FadingAutoLight : MonoBehaviour
                 }
                 currentFadeFactor = 1f;
                 currentIntensity = maxIntensity;
+
+                if (particleEffect != null)
+                {
+                    var emission = particleEffect.emission;
+                    emission.rateOverTime = new ParticleSystem.MinMaxCurve(maxEmissionRate);
+                    if (!particleEffect.isPlaying) particleEffect.Play(true);
+                }
             }
             // 3. Giai đoạn chạng vạng (đèn sáng dần)
             else 
@@ -102,6 +147,14 @@ public class FadingAutoLight : MonoBehaviour
                 // Cập nhật giá trị hiển thị trong Inspector
                 currentFadeFactor = normalizedFactor;
                 currentIntensity = targetIntensity;
+
+                if (particleEffect != null)
+                {
+                    var emission = particleEffect.emission;
+                    float rate = Mathf.Lerp(0f, maxEmissionRate, normalizedFactor);
+                    emission.rateOverTime = new ParticleSystem.MinMaxCurve(rate);
+                    if (!particleEffect.isPlaying) particleEffect.Play(true);
+                }
             }
         }
     }
