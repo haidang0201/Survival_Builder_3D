@@ -22,6 +22,10 @@ public class ResourceTestTool : MonoBehaviour
         {
             JsonDataManager.Ins.AddStone(amount);
         }
+        if (Input.GetKeyDown(KeyCode.Alpha0)) // Phím 0: Reset Tài Nguyên về 0
+        {
+            JsonDataManager.Ins.AddFood(amount); // Reset Thực Phẩm về 0
+        }
 
         // --- PHÍM TRỪ TÀI NGUYÊN (Để test hiệu ứng số nhảy màu đỏ) ---
         if (Input.GetKeyDown(KeyCode.Alpha4)) // Phím 4: Trừ Vàng
