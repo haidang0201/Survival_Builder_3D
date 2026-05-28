@@ -149,7 +149,7 @@ public class UIManager : Singleton<UIManager>
 
     public void OnClickStoneStorageButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
+        BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
     }
 
     public void OnClickFoodStorageButton()
