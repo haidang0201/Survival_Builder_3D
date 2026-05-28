@@ -3,28 +3,15 @@ using UnityEngine;
 /*
  * BuildingSystem.cs
  * Folder: Scripts/Building/
- * Người làm: VŨ (UI gọi) + DŨNG (logic)
+ * Dự án: KHẨN HOANG (PENTA DEV)
+ * Người thực hiện: VŨ (Luồng UI) + DŨNG (Logic Save/Load) + ĐĂNG (Kiến trúc & Tối ưu Ghost)
  *
- * Hệ thống đặt công trình chính thức trong Gameplay.
- * Thay thế hoàn toàn TestBuildingPlacement.
- *
- * Cách dùng từ UI (Vũ):
- *   BuildingSystem.Ins.StartPlacing(BuildingType.House);
- *   BuildingSystem.Ins.CancelPlacing();
- *
- * Cách dùng Save/Load (Dũng):
- *   BuildingSystem.Ins.SaveBuildings();
- *   BuildingSystem.Ins.LoadBuildings();
- *
- * Lưu ý khi thêm BuildingType mới:
- *   1. Thêm vào BuildingType.cs
- *   2. Khai báo ghostXxxPrefab ở đây
- *   3. Thêm case vào GetGhostPrefab()
+ * NHIỆM VỤ: Quản lý vòng đời chế độ xây dựng, sinh/hủy Ghost và đồng bộ trạng thái với UI.
  */
 
 public class BuildingSystem : Singleton<BuildingSystem>
 {
-    // ================= INSPECTOR =================
+    // ================= INSPECTOR (GIỮ NGUYÊN ĐỂ KHÔNG MẤT FILE KÉO THẢ) =================
 
     [Header("Ghost Prefabs – Dân sự")]
     public GameObject ghostHousePrefab;
@@ -45,65 +32,52 @@ public class BuildingSystem : Singleton<BuildingSystem>
     public GameObject ghostBarracksArcherPrefab;
     public GameObject ghostBarracksSpearPrefab;
 
-    // ================= PRIVATE =================
+    // ================= PRIVATE STATE =================
 
     private GhostBuilding currentGhost;
     private bool isPlacing = false;
 
     public bool IsPlacing => isPlacing;
 
-    // ================= LIFECYCLE =================
-
-    private void Update()
-    {
-        if (!isPlacing) return;
-
-        if (Input.GetKeyDown(KeyCode.Escape))
-            CancelPlacing();
-    }
-
-    // ================= PUBLIC – UI GỌI =================
+    // ================= PUBLIC INTERFACE – UI / GAMEPLAY GỌI =================
 
     /// <summary>
-    /// Bắt đầu chế độ đặt công trình – UI button gọi hàm này.
-    /// VD: BuildingSystem.Ins.StartPlacing(BuildingType.House);
+    /// Bắt đầu chế độ đặt công trình. Được gọi từ các nút bấm trên UI.
     /// </summary>
     public void StartPlacing(BuildingType type)
     {
-        if (type == BuildingType.None)
-        {
-            Debug.LogWarning("[BuildingSystem] Không thể đặt BuildingType.None.");
-            return;
-        }
+        if (type == BuildingType.None) return;
 
-        // Huỷ ghost cũ nếu đang có
         CancelPlacing();
 
         GameObject prefab = GetGhostPrefab(type);
-        if (prefab == null)
-        {
-            Debug.LogWarning($"[BuildingSystem] Chưa gán ghost prefab cho: {type}");
-            return;
-        }
+        if (prefab == null) return;
 
         GameObject obj = Instantiate(prefab);
         currentGhost = obj.GetComponent<GhostBuilding>();
 
         if (currentGhost == null)
         {
-            Debug.LogError($"[BuildingSystem] Prefab {type} thiếu component GhostBuilding!");
             Destroy(obj);
             return;
         }
 
         currentGhost.buildingType = type;
-        currentGhost.Show();
+
+        // [THÊM MỚI TẠI ĐÂY]: Ép Ghost cập nhật tọa độ theo chuột ngay lập tức tại Frame 0
+        currentGhost.InstantSnapToMouse();
+
         isPlacing = true;
 
-        // UIManager.Ins?.HideBuildingMenu();
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.EnterPlacementMode();
+        }
     }
 
-    /// <summary>Huỷ đặt công trình hiện tại – gọi khi nhấn ESC hoặc nút Cancel UI.</summary>
+    /// <summary>
+    /// Hủy đặt công trình hiện tại một cách chủ động từ code hệ thống.
+    /// </summary>
     public void CancelPlacing()
     {
         if (currentGhost != null)
@@ -113,30 +87,37 @@ public class BuildingSystem : Singleton<BuildingSystem>
         }
 
         isPlacing = false;
+
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.ExitPlacementMode(true); // Mở lại menu khi bị hủy từ xa
+        }
     }
 
     /// <summary>
-    /// Gọi từ GhostBuilding khi đặt xong (Confirm) hoặc huỷ (Cancel).
-    /// GhostBuilding tự Destroy() trước khi gọi hàm này.
+    /// Hàm nhận callback từ GhostBuilding khi người chơi đã click đặt thành công HOẶC bấm hủy (ESC / Chuột phải).
     /// </summary>
-    public void OnPlacingCompleted()
+    public void OnPlacingCompleted(bool shouldReopenMenu)
     {
         currentGhost = null;
         isPlacing = false;
 
-        // UIManager.Ins?.ShowHUD();
+        // Truyền trạng thái đóng/mở menu sang cho UIManager
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.ExitPlacementMode(shouldReopenMenu);
+        }
     }
 
-    // ================= PUBLIC – SAVE / LOAD =================
+    // ================= PUBLIC – LOGIC SAVE / LOAD (DŨNG CHUẨN HÓA) =================
 
-    /// <summary>Lưu toàn bộ building – gọi khi người chơi save game.</summary>
     public void SaveBuildings()
     {
         var states = BuildingManager.Ins.GetAllStates();
 
         if (states.Count == 0)
         {
-            Debug.LogWarning("[BuildingSystem] Không có công trình nào để lưu!");
+            Debug.LogWarning("[BuildingSystem] Không có công trình nào trong màn chơi để lưu!");
             return;
         }
 
@@ -149,33 +130,30 @@ public class BuildingSystem : Singleton<BuildingSystem>
         };
 
         bool result = JsonDataManager.Ins.SaveGame(saveData);
-        Debug.Log(result
-            ? $"[BuildingSystem] ✅ Đã lưu {states.Count} công trình."
-            : "[BuildingSystem] ❌ Lưu thất bại!");
+        Debug.Log(result ? $"[BuildingSystem] ✅ Đã lưu {states.Count} công trình thành công." : "[BuildingSystem] ❌ Lưu dữ liệu thất bại!");
     }
 
-    /// <summary>Tải building từ save – gọi khi vào game hoặc load scene.</summary>
     public void LoadBuildings()
     {
         var saveData = JsonDataManager.Ins.LoadGame();
 
         if (saveData == null || saveData.buildings == null || saveData.buildings.Count == 0)
         {
-            Debug.Log("[BuildingSystem] Chưa có save hoặc không có công trình.");
+            Debug.Log("[BuildingSystem] Không tìm thấy dữ liệu cũ hoặc không có công trình nào được lưu.");
             return;
         }
 
         BuildingManager.Ins.LoadStates(saveData.buildings);
-        Debug.Log($"[BuildingSystem] ✅ Đã tải {saveData.buildings.Count} công trình.");
+        Debug.Log($"[BuildingSystem] ✅ Đã phục hồi {saveData.buildings.Count} công trình từ File Save.");
     }
 
-    // ================= PRIVATE =================
+    // ================= MAPPER PREFAB (HỖ TRỢ TRỌN BỘ 11 LOẠI NHÀ ĐÚNG ENUM) =================
 
     private GameObject GetGhostPrefab(BuildingType type)
     {
         switch (type)
         {
-            // Dân sự
+            // Nhóm Dân sự
             case BuildingType.House: return ghostHousePrefab;
             case BuildingType.WoodCutter: return ghostWoodCutterPrefab;
             case BuildingType.StoneMine: return ghostStoneMinePrefab;
@@ -184,18 +162,17 @@ public class BuildingSystem : Singleton<BuildingSystem>
             case BuildingType.StoneStorage: return ghostStoneStoragePrefab;
             case BuildingType.Warehouse: return ghostWarehousePrefab;
 
-            // Phòng thủ
+            // Nhóm Phòng thủ
             case BuildingType.WatchTower: return ghostWatchTowerPrefab;
             case BuildingType.ArcherTower: return ghostArcherTowerPrefab;
             case BuildingType.Cannon: return ghostCannonPrefab;
 
-            // Quân sự
+            // Nhóm Quân sự
             case BuildingType.BarracksMelee: return ghostBarracksMeleePrefab;
             case BuildingType.BarracksArcher: return ghostBarracksArcherPrefab;
             case BuildingType.BarracksSpear: return ghostBarracksSpearPrefab;
 
             default:
-                Debug.LogWarning($"[BuildingSystem] Chưa có ghost prefab cho: {type}");
                 return null;
         }
     }

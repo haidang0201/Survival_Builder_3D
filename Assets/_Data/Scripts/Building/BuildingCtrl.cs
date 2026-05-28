@@ -43,18 +43,20 @@ public class BuildingCtrl : MonoBehaviour
 
     private void Start()
     {
-        if (buildingType == BuildingType.None)
+        // Khi nhà thật xuất hiện, lập tức ghi danh vào danh sách quản lý của Dũng
+        if (BuildingManager.Ins != null)
         {
-            Debug.LogError($"[BuildingCtrl] BuildingType chưa được gán trên {gameObject.name}!");
-            return;
+            BuildingManager.Ins.AddBuilding(this);
         }
-
-        BuildingManager.Ins.AddBuilding(this);
     }
 
     private void OnDestroy()
     {
-        BuildingManager.Ins?.RemoveBuilding(this);
+        // Khi nhà bị quái đánh sập hoặc bị bán, xóa tên khỏi danh sách để đất trống xây lại được
+        if (BuildingManager.Ins != null)
+        {
+            BuildingManager.Ins.RemoveBuilding(this);
+        }
     }
 
     // ================= PUBLIC – WORKER =================
