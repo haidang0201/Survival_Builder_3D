@@ -1,10 +1,16 @@
 using UnityEngine;
 using UnityEngine.Events;
 
+/// <summary>
+/// Kho tạm lúa — nơi worker gặt lúa nộp vào.
+/// KHÔNG sync lên UI / JsonDataManager.
+/// WorkerCarrier sẽ lấy từ đây và mang về WarehouseStorage.
+/// Gán tag "RiceStorage" để WorkerCarrier tự tìm.
+/// </summary>
 public class RiceStorage : MonoBehaviour
 {
     [Header("Storage Settings")]
-    public int maxCapacity = 30;
+    public int maxCapacity = 20;
 
     [Header("Events")]
     public UnityEvent      onStorageFull;
@@ -20,44 +26,42 @@ public class RiceStorage : MonoBehaviour
 
     // ===== PUBLIC API =====
 
-    /// <summary>Thêm lúa vào kho. Trả về số thực tế đã thêm.</summary>
     public int AddRice(int amount = 1)
     {
         if (IsFull)
         {
-            Debug.Log($"[RiceStorage] Kho đã đầy! ({currentAmount}/{maxCapacity}) — Không thể thêm lúa.");
+            Debug.Log($"[RiceStorage] '{name}' đã đầy! ({currentAmount}/{maxCapacity})");
             return 0;
         }
 
         int canAdd     = Mathf.Min(amount, maxCapacity - currentAmount);
         currentAmount += canAdd;
 
-        Debug.Log($"[RiceStorage] +{canAdd} lúa → Kho: {currentAmount}/{maxCapacity}");
+        Debug.Log($"[RiceStorage] '{name}' +{canAdd} lúa → {currentAmount}/{maxCapacity}");
 
         onRiceAdded?.Invoke(currentAmount);
 
         if (IsFull)
         {
-            Debug.Log($"[RiceStorage] ✅ Kho lúa đã đầy! ({currentAmount}/{maxCapacity})");
+            Debug.Log($"[RiceStorage] '{name}' ✅ Kho đầy!");
             onStorageFull?.Invoke();
         }
 
         return canAdd;
     }
 
-    /// <summary>Lấy lúa ra khỏi kho. Trả về số thực tế đã lấy.</summary>
     public int TakeRice(int amount = 1)
     {
         if (IsEmpty)
         {
-            Debug.LogWarning($"[RiceStorage] Kho trống! Không thể lấy lúa.");
+            Debug.LogWarning($"[RiceStorage] '{name}' Kho trống!");
             return 0;
         }
 
         int canTake    = Mathf.Min(amount, currentAmount);
         currentAmount -= canTake;
 
-        Debug.Log($"[RiceStorage] -{canTake} lúa → Kho: {currentAmount}/{maxCapacity}");
+        Debug.Log($"[RiceStorage] '{name}' -{canTake} lúa → {currentAmount}/{maxCapacity}");
 
         return canTake;
     }
@@ -65,10 +69,10 @@ public class RiceStorage : MonoBehaviour
     public void ClearStorage()
     {
         currentAmount = 0;
-        Debug.Log($"[RiceStorage] Kho lúa đã được làm trống.");
+        Debug.Log($"[RiceStorage] '{name}' Kho đã làm trống.");
     }
 
-    // ===== GIZMO DEBUG =====
+    // ===== GIZMO =====
     void OnDrawGizmosSelected()
     {
         Gizmos.color = IsFull ? Color.red : Color.yellow;
@@ -77,7 +81,7 @@ public class RiceStorage : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.Handles.Label(
             transform.position + Vector3.up * 2f,
-            $"Rice: {currentAmount}/{maxCapacity}"
+            $"Lúa tạm: {currentAmount}/{maxCapacity}"
         );
 #endif
     }

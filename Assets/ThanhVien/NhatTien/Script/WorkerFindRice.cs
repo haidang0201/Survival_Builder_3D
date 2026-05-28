@@ -103,7 +103,7 @@ public class WorkerFindRice : MonoBehaviour
     // ===== MANG LÚA VỀ KHO =====
     void HandleCarrying()
     {
-        carrySystem.MoveToBarn();
+        carrySystem.MoveToWarehouse();
 
         bool arrived = !agent.pathPending &&
                        agent.remainingDistance <= agent.stoppingDistance + 0.5f;

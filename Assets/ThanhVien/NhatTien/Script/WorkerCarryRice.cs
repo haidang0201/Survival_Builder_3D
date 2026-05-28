@@ -1,15 +1,19 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-
+/// <summary>
+/// Mang lúa về RiceStorage (kho tạm).
+/// KHÔNG cộng UI — để WorkerCarrierRice lo.
+/// Gán tag "RiceStorage" vào kho tạm.
+/// </summary>
 public class WorkerCarryRice : MonoBehaviour
 {
     public Transform    handPoint;
     public NavMeshAgent agent;
-    public Transform    riceBarn;
+    public Transform    riceStoragePoint;   // RiceStorage (kho tạm)
 
-    private RicePickup  currentRice;
-    private RiceStorage riceStorage;
+    private RicePickup   currentRice;
+    private RiceStorage  riceStorage;
 
     void Start()
     {
@@ -17,50 +21,37 @@ public class WorkerCarryRice : MonoBehaviour
 
         if (riceStorage == null)
             Debug.LogError($"[WorkerCarryRice] '{name}': Không tìm thấy RiceStorage! " +
-                           $"Gắn tag 'RiceBarn' vào kho lúa hoặc kéo thả vào Inspector.");
+                           $"Gán tag 'RiceStorage' vào kho tạm.");
         else
-            Debug.Log($"[WorkerCarryRice] '{name}': Tìm thấy RiceStorage trên '{riceStorage.gameObject.name}'.");
+            Debug.Log($"[WorkerCarryRice] '{name}': Tìm thấy RiceStorage '{riceStorage.gameObject.name}'.");
     }
 
     RiceStorage FindRiceStorage()
     {
-        if (riceBarn != null)
+        // 1. Ưu tiên Inspector
+        if (riceStoragePoint != null)
         {
-            RiceStorage rs = riceBarn.GetComponent<RiceStorage>();
-            if (rs != null) return rs;
-
-            rs = riceBarn.GetComponentInParent<RiceStorage>();
-            if (rs != null)
-            {
-                Debug.Log($"[WorkerCarryRice] Tìm thấy RiceStorage trên parent '{rs.gameObject.name}'.");
-                return rs;
-            }
-
-            rs = riceBarn.GetComponentInChildren<RiceStorage>();
-            if (rs != null)
-            {
-                Debug.Log($"[WorkerCarryRice] Tìm thấy RiceStorage trên child '{rs.gameObject.name}'.");
-                return rs;
-            }
-        }
-
-        GameObject barnObj = GameObject.FindWithTag("RiceBarn");
-        if (barnObj != null)
-        {
-            riceBarn = barnObj.transform;
-
-            RiceStorage rs = barnObj.GetComponent<RiceStorage>();
-            if (rs != null) return rs;
-
-            rs = barnObj.GetComponentInChildren<RiceStorage>();
+            RiceStorage rs = riceStoragePoint.GetComponent<RiceStorage>()
+                          ?? riceStoragePoint.GetComponentInParent<RiceStorage>()
+                          ?? riceStoragePoint.GetComponentInChildren<RiceStorage>();
             if (rs != null) return rs;
         }
 
-        RiceStorage fallback = GameObject.FindObjectOfType<RiceStorage>();
+        // 2. Tìm qua tag
+        GameObject obj = GameObject.FindWithTag("RiceStorage");
+        if (obj != null)
+        {
+            riceStoragePoint = obj.transform;
+            RiceStorage rs = obj.GetComponent<RiceStorage>()
+                          ?? obj.GetComponentInChildren<RiceStorage>();
+            if (rs != null) return rs;
+        }
+
+        // 3. Fallback toàn scene
+        RiceStorage fallback = FindObjectOfType<RiceStorage>();
         if (fallback != null)
         {
-            Debug.LogWarning($"[WorkerCarryRice] Dùng fallback — tìm thấy RiceStorage trên " +
-                             $"'{fallback.gameObject.name}'. Nên gắn tag 'RiceBarn' đúng chỗ.");
+            Debug.LogWarning($"[WorkerCarryRice] Dùng fallback RiceStorage '{fallback.gameObject.name}'.");
             return fallback;
         }
 
@@ -82,16 +73,16 @@ public class WorkerCarryRice : MonoBehaviour
 
         agent.ResetPath();
 
-        Debug.Log($"[WorkerCarryRice] '{name}': Nhặt lúa → đang mang về kho.");
+        Debug.Log($"[WorkerCarryRice] '{name}': Nhặt lúa → đang mang về kho tạm.");
     }
 
-    public bool MoveToBarn()
+    public bool MoveToWarehouse()
     {
-        if (currentRice == null || riceBarn == null) return false;
+        if (currentRice == null || riceStoragePoint == null) return false;
         if (!agent.isOnNavMesh) return false;
 
         agent.isStopped = false;
-        agent.SetDestination(riceBarn.position);
+        agent.SetDestination(riceStoragePoint.position);
 
         return !agent.pathPending &&
                agent.remainingDistance <= agent.stoppingDistance + 0.5f;
@@ -101,14 +92,14 @@ public class WorkerCarryRice : MonoBehaviour
     {
         if (currentRice == null) return false;
 
+        // Kiểm tra kho tạm có đầy không
         if (riceStorage != null && riceStorage.IsFull)
         {
-            Debug.Log($"[WorkerCarryRice] '{name}': Kho lúa đầy, không thể nộp!");
+            Debug.Log($"[WorkerCarryRice] '{name}': Kho tạm đầy, không thể nộp!");
             return false;
         }
 
-        // FIX: Lưu pool trước khi null currentRice
-        // Nếu null currentRice trước rồi mới lấy pool → NullReferenceException
+        // Trả object về pool
         ObjectPool pool = currentRice.pool;
 
         if (pool != null)
@@ -116,12 +107,13 @@ public class WorkerCarryRice : MonoBehaviour
         else
             currentRice.gameObject.SetActive(false);
 
-        currentRice = null; // null SAU khi đã dùng xong
+        currentRice = null;
 
+        // Nộp vào kho TẠM — KHÔNG cộng UI, để WorkerCarrierRice lo
         if (riceStorage != null)
             riceStorage.AddRice(1);
         else
-            Debug.LogWarning($"[WorkerCarryRice] '{name}': Không có RiceStorage, lúa bị mất!");
+            Debug.LogWarning($"[WorkerCarryRice] '{name}': Không có RiceStorage — lúa bị mất!");
 
         agent.ResetPath();
 
