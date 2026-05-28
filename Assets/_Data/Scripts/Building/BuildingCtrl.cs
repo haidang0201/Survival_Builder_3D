@@ -30,6 +30,16 @@ public class BuildingCtrl : MonoBehaviour
     [SerializeField] private float buildProgress = 0f;
     [SerializeField] private bool isOccupied = false;
 
+    // // Thêm vào file BuildingCtrl.cs của bạn
+    // public float currentHealth = 100f; 
+    // public float maxHealth = 100f;
+
+    // // Thêm giả lập số lính/thợ hiện tại để UI lấy dữ liệu test
+    // public int currentWorkers = 1;
+    // public int maxWorkers = 4;
+    // public int currentSoldiers = 0;
+    // public int maxSoldiers = 5;
+
     // ================= PROPERTIES =================
 
     public bool IsBuilt => buildProgress >= 1f;
