@@ -133,29 +133,29 @@ public class UIManager : Singleton<UIManager>
         BuildingSystem.Ins.StartPlacing(BuildingType.House);
     }
 
-    public void OnClickForestHutButton()
+    public void OnClickWoodCutterButton()
     {
         EnterPlacementMode();
         // Không có ForestHut trong enum -> map tạm theo WoodCutter.
         BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
     }
 
-    public void OnClickSawmillButton()
+    public void OnClickStoneStorageButton()
     {
         EnterPlacementMode();
         // Không có Sawmill trong enum -> map tạm theo WoodCutter.
-        BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
+        BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
     }
 
-    public void OnClickWarehouseButton()
+    public void OnClickFoodStorageButton()
     {
         EnterPlacementMode();
-        BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
+        BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
     }
 
-    public void OnClickHouseBuilderButton()
-    {
-        EnterPlacementMode();
-        BuildingSystem.Ins.StartPlacing(BuildingType.House);
-    }
+    // public void OnClickHouseBuilderButton()
+    // {
+    //     EnterPlacementMode();
+    //     BuildingSystem.Ins.StartPlacing(BuildingType.House);
+    // }
 }
