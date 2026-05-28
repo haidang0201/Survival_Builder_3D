@@ -49,6 +49,7 @@ public class GhostBuilding : MonoBehaviour
     private float currentYRot = 0f;
 
     private const float ROT_STEP = 90f;
+    private bool isHoveringGround = false;
 
     // ================= LIFECYCLE =================
 
@@ -67,6 +68,67 @@ public class GhostBuilding : MonoBehaviour
         HandleRotateInput();
         HandleConfirmInput();
         HandleCancelInput();
+    }
+
+    private void HandleMoveAndSnap()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        // [ĐÃ SỬA] Tăng từ 100f lên 1000f để phù hợp với tầm nhìn Camera Top-Down
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayer))
+        {
+            Vector3 targetPos = hit.point;
+
+            if (snapStep > 0f)
+            {
+                targetPos.x = Mathf.Round(targetPos.x / snapStep) * snapStep;
+                targetPos.z = Mathf.Round(targetPos.z / snapStep) * snapStep;
+            }
+
+            transform.position = targetPos;
+            isHoveringGround = true; // Xác nhận chuột đang chỉ vào bản đồ
+        }
+        else
+        {
+            isHoveringGround = false; // Chuột chỉ ra ngoài khoảng không hoặc UI, cấm đặt!
+        }
+    }
+
+    private void HandleOverlapCheck()
+    {
+        // [BẢO VỆ MỚI]: Nếu tia Raycast không chạm đất, mặc định không cho xây, chống lỗi (0,0,0)
+        if (!isHoveringGround)
+        {
+            isValid = false;
+            ApplyMaterial(invalidMat); // Chuyển màu đỏ cảnh báo
+            return;
+        }
+
+        if (ghostCollider == null)
+        {
+            isValid = true;
+            return;
+        }
+
+        Vector3 center = ghostCollider.bounds.center;
+        Vector3 halfExtents = ghostCollider.bounds.extents;
+        halfExtents.y = checkYSize / 2f;
+
+        Collider[] colliders = Physics.OverlapBox(center, halfExtents, transform.rotation, buildingLayer);
+        bool noOverlap = colliders.Length == 0;
+
+        bool managerCanBuild = BuildingManager.Ins.CanBuild(transform.position, buildingType, null);
+
+        isValid = noOverlap && managerCanBuild;
+
+        Material targetMat = isValid ? validMat : invalidMat;
+        ApplyMaterial(targetMat);
+    }
+
+    // Thêm hàm Public này vào cuối file GhostBuilding.cs để BuildingSystem gọi kích hoạt nhanh
+    public void InstantSnapToMouse()
+    {
+        HandleMoveAndSnap();
     }
 
     // ================= HIỂN THỊ =================
@@ -184,9 +246,11 @@ public class GhostBuilding : MonoBehaviour
     {
         if (!Input.GetMouseButtonDown(0)) return;
 
+        // [QUAN TRỌNG VÀ BẮT BUỘC]: Nếu vị trí đang không hợp lệ (Màu đỏ), khóa ngay lập tức!
         if (!isValid)
         {
-            Debug.LogWarning("[GhostBuilding] ❌ Vị trí bị chồng, không thể đặt.");
+            Debug.LogWarning($"[GhostBuilding] Vị trí bị chiếm hoặc không hợp lệ! Không thể xây {buildingType}.");
+            // Bạn có thể gọi UIManager.Ins.ShowWarning("Vị trí này đã có công trình!") tại đây để báo cho người chơi.
             return;
         }
 
@@ -201,7 +265,7 @@ public class GhostBuilding : MonoBehaviour
 
     private void ConfirmPlace()
     {
-        Debug.Log($"[GhostBuilding] ✅ Đặt {buildingType} | Pos: {transform.position} | Rot: {currentYRot}°");
+        Debug.Log($"[GhostBuilding] ✅ Đặt {buildingType} | Pos: {transform.position}");
 
         ConstructionManager.Ins.PlaceBuilding(
             buildingType,
@@ -209,14 +273,20 @@ public class GhostBuilding : MonoBehaviour
             Quaternion.Euler(0f, currentYRot, 0f)
         );
 
-        BuildingSystem.Ins.OnPlacingCompleted();
+        // [SỬA TẠI ĐÂY]: Truyền FALSE để TẮT PANEL chọn nhà sau khi đặt thành công
+        BuildingSystem.Ins.OnPlacingCompleted(false);
+
         Destroy(gameObject);
     }
 
     private void CancelPlace()
     {
         Debug.Log($"[GhostBuilding] ❌ Huỷ {buildingType}");
-        BuildingSystem.Ins.OnPlacingCompleted();
+
+        // [SỬA TẠI ĐÂY]: Truyền TRUE để HIỆN LẠI PANEL chọn nhà giúp người chơi chọn lại con khác
+        // Nếu bạn muốn hủy xây cũng TẮT HẲN panel luôn, hãy đổi thành false.
+        BuildingSystem.Ins.OnPlacingCompleted(true);
+
         Destroy(gameObject);
     }
 
