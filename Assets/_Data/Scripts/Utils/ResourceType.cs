@@ -1,9 +1,10 @@
 public enum ResourceType
 {
     Wood,      // Gỗ
+    Gold,      // Vàng
     Stone,     // Đá
+    Iron,      // Sắt
     Water,     // Nước
-    Food,
-    Gold,    // Thực phẩm
+    Food,      // Thực phẩm
     // Thêm các loại tài nguyên khác nếu cần thiết
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using TMPro;
 
 /*
  * UIManager.cs
@@ -29,6 +30,15 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private GameObject settingUI;            // Bảng cài đặt riêng biệt
 
     private Coroutine _fadeWarningCoroutine;
+
+    [Header("Upgrade Panel (Bổ sung)")]
+    [SerializeField] private GameObject upgradePanel;
+    [SerializeField] private TMP_Text buildingNameText;
+    [SerializeField] private TMP_Text levelText;
+    [SerializeField] private Button upgradeButton;
+    [SerializeField] private TMP_Text upgradeButtonText;
+
+    private UpgradeableBuilding selectedBuilding;
 
     void Start()
     {
@@ -149,11 +159,52 @@ public class UIManager : Singleton<UIManager>
 
     public void OnClickStoneStorageButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
+        // Giữ lại StoneStorage theo đúng tên hàm của nút bấm UI
+        BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
     }
 
     public void OnClickFoodStorageButton()
     {
         BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
     }
+
+    public void ShowUpgradePanel(UpgradeableBuilding building)
+    {
+        if (building == null) return;
+        selectedBuilding = building;
+
+        if (upgradePanel != null) upgradePanel.SetActive(true);
+        RefreshUpgradePanel(building);
+    }
+
+    public void RefreshUpgradePanel(UpgradeableBuilding building)
+    {
+        if (building == null) return;
+
+        int displayLevel = building.CurrentLevel + 1;
+        bool isMaxLevel = building.CurrentLevel >= building.MaxLevel - 1;
+
+        if (buildingNameText != null) buildingNameText.text = building.buildingName;
+        if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
+        if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel;
+        if (upgradeButtonText != null) upgradeButtonText.text = isMaxLevel ? "Đã tối đa" : "Nâng cấp";
+    }
+
+    public void HideUpgradePanel()
+    {
+        selectedBuilding = null;
+        if (upgradePanel != null) upgradePanel.SetActive(false);
+    }
+
+    public void OnClickUpgradeButton()
+    {
+        if (selectedBuilding == null)
+        {
+            Debug.LogWarning("[UIManager] Không có building được chọn để nâng cấp!");
+            return;
+        }
+
+        selectedBuilding.NextLevel();
+    }
+
 }
