@@ -3,40 +3,59 @@ using UnityEngine.AI;
 
 public class WorkerCarryItem : MonoBehaviour
 {
-    public Transform handPoint;
+    public Transform    handPoint;
     public NavMeshAgent agent;
-    [HideInInspector] public Transform house; 
+    public Transform    woodStoragePoint;   
 
-    private WoodPickup currentWood;
+    private WoodPickup  currentWood;
     private WoodStorage woodStorage;
 
-    void Start() => woodStorage = FindWoodStorage();
+    void Start()
+    {
+        woodStorage = FindWoodStorage();
+    }
 
     void OnDisable()
     {
         if (currentWood != null)
         {
             ObjectPool pool = currentWood.pool;
-            if (pool != null && currentWood.gameObject.activeInHierarchy) pool.ReturnObject(currentWood.gameObject);
-            else Destroy(currentWood.gameObject);
+            if (pool != null && currentWood.gameObject.activeInHierarchy) 
+                pool.ReturnObject(currentWood.gameObject);
+            else 
+                Destroy(currentWood.gameObject);
+            
             currentWood = null;
         }
     }
 
     WoodStorage FindWoodStorage()
     {
-        if (house != null) return house.GetComponentInChildren<WoodStorage>() ?? house.GetComponentInParent<WoodStorage>();
-
-        // FIX: Thống nhất tìm tag "Storage" theo cấu trúc của WoodStorage.cs thay vì "House"
-        GameObject storageObj = GameObject.FindWithTag("Storage");
-        if (storageObj != null)
+        if (woodStoragePoint != null)
         {
-            house = storageObj.transform;
-            return storageObj.GetComponent<WoodStorage>() ?? storageObj.GetComponentInChildren<WoodStorage>();
+            WoodStorage ws = woodStoragePoint.GetComponent<WoodStorage>() ?? woodStoragePoint.GetComponentInParent<WoodStorage>() ?? woodStoragePoint.GetComponentInChildren<WoodStorage>();
+            if (ws != null) return ws;
         }
 
-        WoodStorage fallback = GameObject.FindObjectOfType<WoodStorage>();
-        if (fallback != null) { house = fallback.transform; return fallback; }
+        GameObject obj = GameObject.FindWithTag("Storage");
+        if (obj != null)
+        {
+            WoodStorage ws = obj.GetComponent<WoodStorage>() ?? obj.GetComponentInChildren<WoodStorage>();
+            if (ws != null)
+            {
+                woodStoragePoint = obj.transform;
+                return ws;
+            }
+        }
+
+        WoodStorage fallback = FindObjectOfType<WoodStorage>();
+        if (fallback != null)
+        {
+            woodStoragePoint = fallback.transform;
+            return fallback;
+        }
+        
+        woodStoragePoint = null;
         return null;
     }
 
@@ -51,25 +70,33 @@ public class WorkerCarryItem : MonoBehaviour
         agent.ResetPath();
     }
 
-    public bool MoveToHouse()
+    public bool MoveToStorage()
     {
-        if (currentWood == null || house == null || !agent.isOnNavMesh) return false;
+        if (currentWood == null || woodStoragePoint == null || !agent.isOnNavMesh) return false;
         agent.isStopped = false;
-        agent.SetDestination(house.position);
+        agent.SetDestination(woodStoragePoint.position);
         return true;
     }
 
     public bool TryDeposit()
     {
         if (currentWood == null) return false;
-        if (woodStorage != null && woodStorage.IsFull) return false;
+        
+        if (woodStorage == null) 
+        {
+            // Đã đổi tên log cho khớp với tên class hiện tại
+            Debug.LogError($"[WorkerCarryItem] {name} KHÔNG tìm thấy WoodStorage trên Map. Hãy kiểm tra Tag 'Storage'!");
+            return false; 
+        }
+
+        if (woodStorage.IsFull) return false;
 
         ObjectPool pool = currentWood.pool;
         if (pool != null) pool.ReturnObject(currentWood.gameObject);
         else currentWood.gameObject.SetActive(false);
 
         currentWood = null;
-        if (woodStorage != null) woodStorage.AddWood(1);
+        woodStorage.AddWood(1);
         return true;
     }
 }
