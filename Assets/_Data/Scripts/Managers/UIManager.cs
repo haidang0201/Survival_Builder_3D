@@ -159,13 +159,15 @@ public class UIManager : Singleton<UIManager>
 
     public void OnClickStoneStorageButton()
     {
-        BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
+        // Giữ lại StoneStorage theo đúng tên hàm của nút bấm UI
+        BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
     }
 
     public void OnClickFoodStorageButton()
     {
         BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
     }
+
     public void ShowUpgradePanel(UpgradeableBuilding building)
     {
         if (building == null) return;
@@ -203,7 +205,6 @@ public class UIManager : Singleton<UIManager>
         }
 
         selectedBuilding.NextLevel();
-        // Refresh panel tự động gọi trong NextLevel()
     }
 
 }
