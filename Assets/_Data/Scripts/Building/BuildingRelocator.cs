@@ -1,70 +1,84 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BuildingRelocator : MonoBehaviour
 {
     [Header("Cấu hình Layer quét chuột")]
-    [Tooltip("Layer của công trình để tia Raycast nhận diện được nhà")]
     public LayerMask buildingLayer;
-    [Tooltip("Layer của mặt đất để nhà trượt lên đó")]
     public LayerMask groundLayer;
 
-    // Các biến lưu trữ trạng thái
+    [Header("Cấu hình Chống xây đè (Overlap)")]
+    [Tooltip("Layer của các vật cản không cho phép đặt nhà đè lên (thường là Building, Tree, Rock...)")]
+    public LayerMask obstacleLayer;
+
+    [Header("Màu sắc báo hiệu")]
+    public Material validMaterial;   // Kéo Material Xanh lá (Transparent) vào đây
+    public Material invalidMaterial; // Kéo Material Đỏ (Transparent) vào đây
+
+    // Biến trạng thái
     private GameObject buildingToMove;
     private bool isRelocating = false;
+    private bool canPlace = true;
+
+    // Dữ liệu hỗ trợ quét va chạm và đổi màu
+    private BoxCollider buildingCollider;
+    private Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
 
     void Update()
     {
-        // 1. NHẤC LÊN: Khi nhấn phím TAB và đang không cầm công trình nào
         if (Input.GetKeyDown(KeyCode.Tab) && !isRelocating)
         {
             TryPickUpBuilding();
         }
 
-        // 2. DI CHUYỂN: Nếu đang cầm công trình trên tay
         if (isRelocating && buildingToMove != null)
         {
             MoveBuildingWithMouse();
+            CheckPlacementValidity();
 
-            // 3. ĐẶT XUỐNG: Khi click chuột trái
+            // Chỉ cho phép đặt xuống (click chuột trái) nếu vị trí hợp lệ
             if (Input.GetMouseButtonDown(0))
             {
-                PlaceBuildingDown();
+                if (canPlace)
+                {
+                    PlaceBuildingDown();
+                }
+                else
+                {
+                    Debug.LogWarning("<color=orange>Vị trí bị trùng lấp, không thể đặt nhà ở đây!</color>");
+                    // Tùy chọn: Thêm code phát âm thanh báo lỗi ở đây
+                }
             }
         }
     }
 
-    /// <summary> Quét chuột tìm công trình và nhấc nó lên </summary>
     private void TryPickUpBuilding()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        // Bắn tia tìm công trình dưới con trỏ chuột
-        if (Physics.Raycast(ray, out hit, 1000f, buildingLayer))
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, buildingLayer))
         {
-            // Lấy Object cao nhất của công trình (để lấy trọn vẹn cả cụm model và script)
             buildingToMove = hit.collider.transform.root.gameObject;
             isRelocating = true;
 
-            // Tạm thời tắt Collider để tia chuột có thể xuyên qua nhà, bắn thẳng xuống đất
+            // 1. Lấy Collider để lát nữa đo kích thước check xây đè
+            buildingCollider = buildingToMove.GetComponentInChildren<BoxCollider>();
+
+            // 2. Lưu lại màu gốc và tắt Collider để tia chuột không bị kẹt
+            SaveOriginalMaterials();
             SetCollidersEnabled(buildingToMove, false);
 
-            Debug.Log($"<color=yellow>Đã nhấc công trình: {buildingToMove.name}</color>");
+            Debug.Log($"Đã nhấc công trình: {buildingToMove.name}");
         }
     }
 
-    /// <summary> Cập nhật tọa độ công trình đi theo chuột </summary>
     private void MoveBuildingWithMouse()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        // Bắn tia xuyên xuống mặt đất để lấy tọa độ XYZ
-        if (Physics.Raycast(ray, out hit, 1000f, groundLayer))
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayer))
         {
             Vector3 targetPosition = hit.point;
 
-            // [TÙY CHỌN] Bật 2 dòng này lên nếu team muốn nhà tự bắt dính vào ô vuông (Snap to Grid)
+            // [Tùy chọn] Ép tọa độ vào lưới grid để xây nhà ngay ngắn
             // targetPosition.x = Mathf.Round(targetPosition.x);
             // targetPosition.z = Mathf.Round(targetPosition.z);
 
@@ -72,20 +86,83 @@ public class BuildingRelocator : MonoBehaviour
         }
     }
 
-    /// <summary> Thả công trình xuống đất và kết thúc di chuyển </summary>
+    /// <summary> Thuật toán quét không gian để xem có bị đè nhà không </summary>
+    private void CheckPlacementValidity()
+    {
+        if (buildingCollider == null) return;
+
+        // Tính toán tâm và kích thước của ngôi nhà
+        Vector3 center = buildingToMove.transform.TransformPoint(buildingCollider.center);
+
+        // Nhân 0.95f để thu nhỏ vùng check một xíu, giúp các nhà đứng sát vách nhau không bị báo lỗi nhầm
+        Vector3 extents = (buildingCollider.size / 2f) * 0.95f;
+
+        // Quét hình hộp xem có đụng vật thể nào thuộc obstacleLayer không
+        canPlace = !Physics.CheckBox(center, extents, buildingToMove.transform.rotation, obstacleLayer);
+
+        // Đổi màu toàn bộ model dựa trên kết quả quét
+        ApplyFeedbackMaterial(canPlace ? validMaterial : invalidMaterial);
+    }
+
     private void PlaceBuildingDown()
     {
-        // Bật lại Collider để nhà nhận tương tác chuột như bình thường
+        // 1. Trả lại màu gốc cho đồ họa
+        RestoreOriginalMaterials();
+
+        // 2. Bật lại Collider để nhà nhận tương tác vật lý như cũ
         SetCollidersEnabled(buildingToMove, true);
 
-        Debug.Log($"<color=green>Đã đặt công trình {buildingToMove.name} xuống vị trí mới!</color>");
+        Debug.Log($"<color=green>Đã đặt công trình xuống thành công!</color>");
 
-        // Xóa dữ liệu và đưa hệ thống về trạng thái nghỉ
         buildingToMove = null;
         isRelocating = false;
     }
 
-    /// <summary> Hàm hỗ trợ bật/tắt toàn bộ Collider của công trình </summary>
+    // ==========================================
+    // CÁC HÀM HỖ TRỢ XỬ LÝ ĐỒ HỌA VÀ VẬT LÝ
+    // ==========================================
+
+    private void SaveOriginalMaterials()
+    {
+        originalMaterials.Clear();
+        Renderer[] renderers = buildingToMove.GetComponentsInChildren<Renderer>();
+        foreach (Renderer ren in renderers)
+        {
+            originalMaterials[ren] = ren.materials;
+        }
+    }
+
+    private void ApplyFeedbackMaterial(Material mat)
+    {
+        foreach (var kvp in originalMaterials)
+        {
+            Renderer ren = kvp.Key;
+            if (ren != null)
+            {
+                // Tạo mảng material mới toàn màu xanh/đỏ đè lên (trường hợp model có nhiều sub-mesh)
+                Material[] feedbackMats = new Material[ren.materials.Length];
+                for (int i = 0; i < feedbackMats.Length; i++)
+                {
+                    feedbackMats[i] = mat;
+                }
+                ren.materials = feedbackMats;
+            }
+        }
+    }
+
+    private void RestoreOriginalMaterials()
+    {
+        foreach (var kvp in originalMaterials)
+        {
+            Renderer ren = kvp.Key;
+            if (ren != null)
+            {
+                ren.materials = kvp.Value;
+            }
+        }
+        originalMaterials.Clear();
+    }
+
     private void SetCollidersEnabled(GameObject obj, bool isEnabled)
     {
         Collider[] colliders = obj.GetComponentsInChildren<Collider>();
