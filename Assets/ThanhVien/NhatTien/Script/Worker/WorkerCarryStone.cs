@@ -5,7 +5,9 @@ public class WorkerCarryStone : MonoBehaviour
 {
     public Transform    handPoint;
     public NavMeshAgent agent;
-    [HideInInspector] public Transform stoneStoragePoint;   
+    
+    // Đã bỏ [HideInInspector] để bạn dễ dàng theo dõi Nợm (Worker) đang nhắm đi đâu
+    public Transform stoneStoragePoint;   
 
     private StonePickup  currentStone;
     private StoneStorage stoneStorage;
@@ -20,8 +22,10 @@ public class WorkerCarryStone : MonoBehaviour
         if (currentStone != null)
         {
             ObjectPool pool = currentStone.pool;
-            if (pool != null && currentStone.gameObject.activeInHierarchy) pool.ReturnObject(currentStone.gameObject);
-            else Destroy(currentStone.gameObject);
+            if (pool != null && currentStone.gameObject.activeInHierarchy) 
+                pool.ReturnObject(currentStone.gameObject);
+            else 
+                Destroy(currentStone.gameObject);
             
             currentStone = null;
         }
@@ -29,27 +33,35 @@ public class WorkerCarryStone : MonoBehaviour
 
     StoneStorage FindStoneStorage()
     {
+        // 1. Kiểm tra điểm gán tay
         if (stoneStoragePoint != null)
         {
             StoneStorage ss = stoneStoragePoint.GetComponent<StoneStorage>() ?? stoneStoragePoint.GetComponentInParent<StoneStorage>() ?? stoneStoragePoint.GetComponentInChildren<StoneStorage>();
             if (ss != null) return ss;
         }
 
-        // Tự động tìm kho đá bằng Tag "StoneStorage"
+        // 2. Tìm tự động bằng Tag "StoneStorage"
         GameObject obj = GameObject.FindWithTag("StoneStorage");
         if (obj != null)
         {
-            stoneStoragePoint = obj.transform;
             StoneStorage ss = obj.GetComponent<StoneStorage>() ?? obj.GetComponentInChildren<StoneStorage>();
-            if (ss != null) return ss;
+            if (ss != null)
+            {
+                stoneStoragePoint = obj.transform;
+                return ss;
+            }
         }
 
+        // 3. Quét toàn map
         StoneStorage fallback = FindObjectOfType<StoneStorage>();
         if (fallback != null)
         {
             stoneStoragePoint = fallback.transform;
             return fallback;
         }
+        
+        // FIX "HỐ ĐEN": Xóa trắng điểm đến nếu không tìm thấy kho, tránh việc AI chạy bậy bạ
+        stoneStoragePoint = null;
         return null;
     }
 
@@ -75,14 +87,22 @@ public class WorkerCarryStone : MonoBehaviour
     public bool TryDeposit()
     {
         if (currentStone == null) return false;
-        if (stoneStorage != null && stoneStorage.IsFull) return false;
+        
+        // FIX "HỐ ĐEN": Chặn ngay lập tức, bắt AI đứng ôm đá chờ đợi thay vì vứt phi tang!
+        if (stoneStorage == null) 
+        {
+            Debug.LogError($"[WorkerCarryStone] {name} KHÔNG tìm thấy StoneStorage (Kho tạm đá) trên Map. Hãy kiểm tra Tag!");
+            return false; 
+        }
+
+        if (stoneStorage.IsFull) return false;
 
         ObjectPool pool = currentStone.pool;
         if (pool != null) pool.ReturnObject(currentStone.gameObject);
         else currentStone.gameObject.SetActive(false);
 
         currentStone = null;
-        if (stoneStorage != null) stoneStorage.AddStone(1);
+        stoneStorage.AddStone(1);
         return true;
     }
 }

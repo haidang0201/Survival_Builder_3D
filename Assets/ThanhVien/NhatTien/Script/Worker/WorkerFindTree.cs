@@ -26,7 +26,6 @@ public class WorkerFindTree : MonoBehaviour
     private float findTreeCooldown     = 0f;
     private const float FIND_TREE_INTERVAL = 0.5f;
 
-    // FIX: Tạo các Flag ngăn chặn việc gọi trùng lệnh di chuyển mỗi frame
     private bool isHeadingToTree    = false;
     private bool isHeadingToDeposit = false;
 
@@ -59,12 +58,12 @@ public class WorkerFindTree : MonoBehaviour
 
         if (carrySystem.IsCarrying())
         {
-            isHeadingToTree = false; // Reset trạng thái đi tìm cây cũ
+            isHeadingToTree = false; 
             HandleCarrying();
             return;
         }
 
-        isHeadingToDeposit = false; // Reset trạng thái đi cất hàng cũ
+        isHeadingToDeposit = false; 
 
         if (targetTree == null)
         {
@@ -96,11 +95,11 @@ public class WorkerFindTree : MonoBehaviour
 
     void HandleCarrying()
     {
-        // FIX: Chỉ gọi SetDestination đi cất hàng 1 lần duy nhất thay vì mỗi frame
         if (!isHeadingToDeposit)
         {
             isHeadingToDeposit = true;
-            carrySystem.MoveToHouse();
+            // FIX: Đã đổi từ MoveToHouse() sang MoveToStorage() cho khớp code
+            carrySystem.MoveToStorage();
         }
 
         bool arrived = !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.5f;
@@ -114,7 +113,7 @@ public class WorkerFindTree : MonoBehaviour
                 if (!success)
                 {
                     depositRetryTimer = 2.5f; 
-                    Debug.LogWarning($"[WorkerFindTree] {name}: Nhà kho đầy gỗ!");
+                    Debug.LogWarning($"[WorkerFindTree] {name}: Kho tạm đầy gỗ!");
                 }
                 else
                 {
@@ -172,13 +171,12 @@ public class WorkerFindTree : MonoBehaviour
             targetTree = best;
             chopTimer = 0f;
             hasTriggeredChopAnim = false;
-            isHeadingToTree = false; // Sẵn sàng kích hoạt lệnh di chuyển mới
+            isHeadingToTree = false; 
         }
     }
 
     void HandleMoveToTree()
     {
-        // FIX: Chỉ kích hoạt SetDestination tìm cây 1 lần duy nhất khi có mục tiêu mới
         if (agent.isOnNavMesh && !isHeadingToTree)
         {
             isHeadingToTree = true;
@@ -191,7 +189,7 @@ public class WorkerFindTree : MonoBehaviour
     void HandleChopping()
     {
         agent.isStopped = true;
-        isHeadingToTree = false; // Đã đến nơi, giải phóng flag đường đi
+        isHeadingToTree = false; 
         stamina?.SetDraining(true);
 
         if (!hasTriggeredChopAnim)

@@ -41,15 +41,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.2
+      value: 7.756363
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.00000024140155
+      value: 2.12
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.42
+      value: -8.540718
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalRotation.w
@@ -57,15 +57,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -99,6 +99,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8787511423028096762}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7028251911890940594}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8305230404701861977}
@@ -150,8 +153,11 @@ MonoBehaviour:
   agent: {fileID: 8305230404701861977}
   carrySystem: {fileID: 8787511423028096762}
   animator: {fileID: 5858714908411763539}
+  stamina: {fileID: 7028251911890940594}
   harvestDistance: 1.8
   harvestTime: 2
+  harvestTriggerName: Harvest
+  stuckTimeout: 2
 --- !u!114 &8787511423028096762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -166,7 +172,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorkerCarryRice
   handPoint: {fileID: 4459002612040652968}
   agent: {fileID: 8305230404701861977}
-  riceBarn: {fileID: 0}
+  riceStoragePoint: {fileID: 0}
+--- !u!114 &7028251911890940594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4184119805880974729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d2ee751f2b79af498f83c5db4b63606, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorkerStamina
+  maxStamina: 100
+  drainPerSecond: 5
+  recoverPerSecond: 20
+  restThreshold: 0
+  resumeThreshold: 100
+  restSpot: {fileID: 0}
+  onStaminaDepleted:
+    m_PersistentCalls:
+      m_Calls: []
+  onStaminaRecovered:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!195 &8305230404701861977
 NavMeshAgent:
   m_ObjectHideFlags: 0
