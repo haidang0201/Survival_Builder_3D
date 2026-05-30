@@ -1,16 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
-using TMPro;
-
-/*
- * UIManager.cs
- * Folder: Scripts/UI/
- * Dự án: KHẨN HOANG (PENTA DEV)
- * Người thực hiện: VŨ (Giao diện UI chính) + ĐĂNG (Đồng bộ luồng đóng mở Panel đặt nhà)
- *
- * NHIỆM VỤ: Quản lý HUD, Menu xây dựng, bảng Hints hướng dẫn phím tắt và tiếp nhận nút bấm xây nhà.
- */
 
 /*
  * UIManager.cs
@@ -39,15 +29,6 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private GameObject settingUI;            // Bảng cài đặt riêng biệt
 
     private Coroutine _fadeWarningCoroutine;
-
-    [Header("Upgrade Panel (Bổ sung)")]
-    [SerializeField] private GameObject upgradePanel;
-    [SerializeField] private TMP_Text buildingNameText;
-    [SerializeField] private TMP_Text levelText;
-    [SerializeField] private Button upgradeButton;
-    [SerializeField] private TMP_Text upgradeButtonText;
-
-    private UpgradeableBuilding selectedBuilding;
 
     void Start()
     {
@@ -168,58 +149,11 @@ public class UIManager : Singleton<UIManager>
 
     public void OnClickStoneStorageButton()
     {
-<<<<<<< HEAD
-        BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
-=======
         BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
->>>>>>> 3061fc65 (MAP)
     }
 
     public void OnClickFoodStorageButton()
     {
         BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
-<<<<<<< HEAD
     }
-    public void ShowUpgradePanel(UpgradeableBuilding building)
-    {
-        if (building == null) return;
-        selectedBuilding = building;
-
-        if (upgradePanel != null) upgradePanel.SetActive(true);
-        RefreshUpgradePanel(building);
-    }
-
-    public void RefreshUpgradePanel(UpgradeableBuilding building)
-    {
-        if (building == null) return;
-
-        int displayLevel = building.CurrentLevel + 1;
-        bool isMaxLevel = building.CurrentLevel >= building.MaxLevel - 1;
-
-        if (buildingNameText != null) buildingNameText.text = building.buildingName;
-        if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
-        if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel;
-        if (upgradeButtonText != null) upgradeButtonText.text = isMaxLevel ? "Đã tối đa" : "Nâng cấp";
-=======
->>>>>>> 3061fc65 (MAP)
-    }
-
-    public void HideUpgradePanel()
-    {
-        selectedBuilding = null;
-        if (upgradePanel != null) upgradePanel.SetActive(false);
-    }
-
-    public void OnClickUpgradeButton()
-    {
-        if (selectedBuilding == null)
-        {
-            Debug.LogWarning("[UIManager] Không có building được chọn để nâng cấp!");
-            return;
-        }
-
-        selectedBuilding.NextLevel();
-        // Refresh panel tự động gọi trong NextLevel()
-    }
-
 }

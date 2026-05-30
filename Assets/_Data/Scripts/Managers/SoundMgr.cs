@@ -146,5 +146,5 @@ public class SoundMgr : Singleton<SoundMgr>
 
         if (sfxSource != null)
             sfxSource.volume = sfxVolume * masterVolume;
-    }  
+    }
 }
