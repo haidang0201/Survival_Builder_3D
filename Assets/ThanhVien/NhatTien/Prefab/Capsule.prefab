@@ -29,8 +29,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2832378080035307227}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.77, y: 0.95, z: -6}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.8584824, y: 3.21, z: -3.44561}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -150,10 +150,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a3cc7c38bcd23b47a4c339acabadfde, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkerCarrier
+  role: 0
   agent: {fileID: 2673420456624440933}
-  storage: {fileID: 0}
-  deliveryPoint: {fileID: 0}
+  handPoint: {fileID: 0}
+  warehousePoint: {fileID: 0}
+  woodPool: {fileID: 0}
+  ricePool: {fileID: 0}
+  stonePool: {fileID: 0}
+  woodStoragePoint: {fileID: 0}
+  riceStoragePoint: {fileID: 0}
+  stoneStoragePoint: {fileID: 0}
+  animator: {fileID: 0}
+  speedParam: Speed
+  carryingParam: IsCarrying
   arriveDistance: 1.5
-  wanderRadius: 5
+  wanderRadius: 4
   wanderInterval: 3
   checkInterval: 1
+  maxCarryCapacity: 10
+  stuckTimeout: 2

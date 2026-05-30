@@ -24,9 +24,23 @@ public class Tree : MonoBehaviour
 
     void OnEnable()
     {
-        // Dùng maxHealth thay vì hardcode số cứng
         currentHealth = maxHealth;
         isOccupied    = false;
+
+        // [NÂNG CẤP]: Tự động đăng ký vào "sổ tay" của AI khi cây mọc lên
+        if (!WorkerFindTree.Registry.Contains(this))
+        {
+            WorkerFindTree.Registry.Add(this);
+        }
+    }
+
+    // [NÂNG CẤP]: Tự động gạch tên khỏi sổ khi cây bị đốn hạ hoặc bị tắt đi
+    void OnDisable()
+    {
+        if (WorkerFindTree.Registry.Contains(this))
+        {
+            WorkerFindTree.Registry.Remove(this);
+        }
     }
 
     // ===== CLAIM / RELEASE =====
@@ -45,9 +59,6 @@ public class Tree : MonoBehaviour
 
     // ===== DAMAGE =====
 
-    /// <summary>
-    /// Trả về mảng gỗ nếu cây chết, null nếu cây còn sống.
-    /// </summary>
     public WoodPickup[] TakeDamage(int damage)
     {
         currentHealth -= damage;
