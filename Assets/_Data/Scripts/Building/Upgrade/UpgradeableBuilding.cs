@@ -5,45 +5,62 @@ public class UpgradeableBuilding : MonoBehaviour
     [Header("Tên công trình")]
     public string buildingName = "Nhà Chính";
 
-    [Header("Mảng chứa các Model Cấp 1, Cấp 2, Cấp 3...")]
-    [Tooltip("Element 0 kéo Model Cấp 1, Element 1 kéo Model Cấp 2...")]
+    [Header("Mảng chứa các Model Cấp 1, 2, 3...")]
     [SerializeField] private GameObject[] visualModels;
 
-    public int CurrentLevel { get; private set; } = 1;
+    public int CurrentLevel { get; private set; } = 0; // Scene instance level
+    public int MaxLevel => visualModels != null ? visualModels.Length : 0;
 
     private void Start()
     {
-        UpdateVisualModel(); // Vào game tự bật Model Cấp 1, ẩn các cấp khác
+        UpdateVisualModel();
     }
 
-    /// <summary> Hàm thực hiện đổi Model 3D khi bấm nút nâng cấp từ UI </summary>
+    /// <summary>
+    /// Nâng cấp lên cấp tiếp theo trên Scene instance.
+    /// </summary>
     public void NextLevel()
     {
-        // Kiểm tra nếu còn Model cấp tiếp theo thì mới cho tăng cấp
-        if (CurrentLevel < visualModels.Length)
+        if (CurrentLevel < MaxLevel - 1)
         {
+            // Ẩn model hiện tại
+            SetActiveModel(CurrentLevel, false);
+
+            // Tăng level
             CurrentLevel++;
-            UpdateVisualModel();
-            Debug.Log($"Đã nâng cấp {buildingName} lên Cấp: {CurrentLevel}");
+
+            // Hiện model mới
+            SetActiveModel(CurrentLevel, true);
+
+            Debug.Log($"[{buildingName}] Nâng cấp lên Level {CurrentLevel + 1}");
+
+            // Cập nhật UI panel (nếu đang mở)
+            UIManager.Ins?.RefreshUpgradePanel(this);
         }
         else
         {
-            Debug.Log($"{buildingName} đã đạt cấp tối đa!");
+            Debug.Log($"[{buildingName}] Đã đạt cấp tối đa!");
         }
     }
 
-    /// <summary> Thuật toán ẩn/hiện Model theo cấp độ </summary>
+    /// <summary>
+    /// Bật/Tắt model theo chỉ số index.
+    /// </summary>
+    private void SetActiveModel(int index, bool active)
+    {
+        if (visualModels == null || index < 0 || index >= visualModels.Length) return;
+        if (visualModels[index] != null)
+            visualModels[index].SetActive(active);
+    }
+
+    /// <summary>
+    /// Đồng bộ trạng thái Scene instance khi Start.
+    /// </summary>
     private void UpdateVisualModel()
     {
-        if (visualModels == null || visualModels.Length == 0) return;
-
-        int targetIndex = CurrentLevel - 1; // Cấp 1 tương ứng phần tử 0 trong mảng
         for (int i = 0; i < visualModels.Length; i++)
         {
-            if (visualModels[i] != null)
-            {
-                visualModels[i].SetActive(i == targetIndex); // Chỉ bật duy nhất Model của cấp hiện tại
-            }
+            SetActiveModel(i, i == CurrentLevel);
         }
     }
 }
