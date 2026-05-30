@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2832378080035307227
+--- !u!1 &1177805794298990
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,49 +8,49 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8610485467420974065}
-  - component: {fileID: 6868124652176419436}
-  - component: {fileID: 8493282682352204544}
-  - component: {fileID: 8525115130820647140}
-  - component: {fileID: 2673420456624440933}
-  - component: {fileID: 2362093985352430450}
-  m_Layer: 0
-  m_Name: Capsule
+  - component: {fileID: 4968621697209238}
+  - component: {fileID: 33025559822413254}
+  - component: {fileID: 23369705968069282}
+  - component: {fileID: -2495149688322485741}
+  - component: {fileID: -4766979657788569796}
+  - component: {fileID: -1138755644516037568}
+  m_Layer: 11
+  m_Name: Model_LV1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8610485467420974065
+--- !u!4 &4968621697209238
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2832378080035307227}
+  m_GameObject: {fileID: 1177805794298990}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.8584824, y: 3.21, z: -3.44561}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &6868124652176419436
+--- !u!33 &33025559822413254
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2832378080035307227}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &8493282682352204544
+  m_GameObject: {fileID: 1177805794298990}
+  m_Mesh: {fileID: 4300000, guid: 4fb286f502c4d194ba7ca3e1256f2a6b, type: 3}
+--- !u!23 &23369705968069282
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2832378080035307227}
+  m_GameObject: {fileID: 1177805794298990}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -69,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: c717fb89e24ff384785039c0f1169eee, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -93,13 +93,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &8525115130820647140
-CapsuleCollider:
+--- !u!114 &-2495149688322485741
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2832378080035307227}
+  m_GameObject: {fileID: 1177805794298990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cef52e85d6b194b4aaa1a0fdaf4ee47f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingCtrl
+  buildingType: 3
+  door: {fileID: 0}
+  buildProgress: 0
+  isOccupied: 0
+--- !u!65 &-4766979657788569796
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1177805794298990}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -111,61 +127,23 @@ CapsuleCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!195 &2673420456624440933
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2832378080035307227}
-  m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
-  avoidancePriority: 50
-  m_AngularSpeed: 120
-  m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 2
-  m_BaseOffset: 1
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
---- !u!114 &2362093985352430450
+  serializedVersion: 3
+  m_Size: {x: 9.86135, y: 13.533149, z: 9.08536}
+  m_Center: {x: -0.15839195, y: 6.766393, z: -0.5376184}
+--- !u!114 &-1138755644516037568
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2832378080035307227}
+  m_GameObject: {fileID: 1177805794298990}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1a3cc7c38bcd23b47a4c339acabadfde, type: 3}
+  m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WorkerCarrier
-  role: 0
-  agent: {fileID: 2673420456624440933}
-  handPoint: {fileID: 0}
-  warehousePoint: {fileID: 0}
-  woodPool: {fileID: 0}
-  ricePool: {fileID: 0}
-  stonePool: {fileID: 0}
-  woodStoragePoint: {fileID: 0}
-  riceStoragePoint: {fileID: 0}
-  stoneStoragePoint: {fileID: 0}
-  animator: {fileID: 0}
-  speedParam: Speed
-  carryingParam: IsCarrying
-  arriveDistance: 1.5
-  wanderRadius: 4
-  wanderInterval: 3
-  checkInterval: 1
-  maxCarryCapacity: 10
-  stuckTimeout: 2
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
+  buildingName: "Nh\xE0 Ch\xEDnh"
+  visualModels:
+  - {fileID: 1177805794298990}
+  - {fileID: 5646288221377940709, guid: 824ea673190f63c4b8d51bda9272548e, type: 3}
+  - {fileID: 1931630641266924, guid: 8eb871b409d6cfc4b80db456dec4e39d, type: 3}
