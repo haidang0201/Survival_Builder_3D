@@ -12,6 +12,15 @@ using TMPro;
  * NHIỆM VỤ: Quản lý HUD, Menu xây dựng, bảng Hints hướng dẫn phím tắt và tiếp nhận nút bấm xây nhà.
  */
 
+/*
+ * UIManager.cs
+ * Folder: Scripts/UI/
+ * Dự án: KHẨN HOANG (PENTA DEV)
+ * Người thực hiện: VŨ (Giao diện UI chính) + ĐĂNG (Đồng bộ luồng đóng mở Panel đặt nhà)
+ *
+ * NHIỆM VỤ: Quản lý HUD, Menu xây dựng, bảng Hints hướng dẫn phím tắt và tiếp nhận nút bấm xây nhà.
+ */
+
 public class UIManager : Singleton<UIManager>
 {
     [Header("Old UI Panels")]
@@ -159,12 +168,17 @@ public class UIManager : Singleton<UIManager>
 
     public void OnClickStoneStorageButton()
     {
+<<<<<<< HEAD
         BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
+=======
+        BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
+>>>>>>> 3061fc65b6316ac55ad11b09713d77537d5141f3
     }
 
     public void OnClickFoodStorageButton()
     {
         BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
+<<<<<<< HEAD
     }
     public void ShowUpgradePanel(UpgradeableBuilding building)
     {
@@ -186,6 +200,8 @@ public class UIManager : Singleton<UIManager>
         if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
         if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel;
         if (upgradeButtonText != null) upgradeButtonText.text = isMaxLevel ? "Đã tối đa" : "Nâng cấp";
+=======
+>>>>>>> 3061fc65b6316ac55ad11b09713d77537d5141f3
     }
 
     public void HideUpgradePanel()
