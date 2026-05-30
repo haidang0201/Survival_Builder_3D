@@ -1,6 +1,16 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using TMPro;
+
+/*
+ * UIManager.cs
+ * Folder: Scripts/UI/
+ * Dự án: KHẨN HOANG (PENTA DEV)
+ * Người thực hiện: VŨ (Giao diện UI chính) + ĐĂNG (Đồng bộ luồng đóng mở Panel đặt nhà)
+ *
+ * NHIỆM VỤ: Quản lý HUD, Menu xây dựng, bảng Hints hướng dẫn phím tắt và tiếp nhận nút bấm xây nhà.
+ */
 
 public class UIManager : Singleton<UIManager>
 {
@@ -16,19 +26,30 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private Button settingButton;
 
     [Header("Bottom UI Toolbar (Panels)")]
-    [SerializeField] private GameObject controlHintsGroup; // Bảng hướng dẫn đặt/xoay nhà
+    [SerializeField] private GameObject controlHintsGroup; // Bảng hướng dẫn đặt/xoay nhà (R / ESC)
     [SerializeField] private GameObject settingUI;            // Bảng cài đặt riêng biệt
 
     private Coroutine _fadeWarningCoroutine;
 
+    [Header("Upgrade Panel (Bổ sung)")]
+    [SerializeField] private GameObject upgradePanel;
+    [SerializeField] private TMP_Text buildingNameText;
+    [SerializeField] private TMP_Text levelText;
+    [SerializeField] private Button upgradeButton;
+    [SerializeField] private TMP_Text upgradeButtonText;
+
+    private UpgradeableBuilding selectedBuilding;
+
     void Start()
     {
+        // Khởi tạo trạng thái giao diện ban đầu khi vào game
         if (houseSelectionPanel != null) houseSelectionPanel.SetActive(true);
         if (workerStatusPanel != null) workerStatusPanel.SetActive(true);
 
         if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
         if (settingUI != null) settingUI.SetActive(false);
 
+        // Đăng ký sự kiện lắng nghe nút bấm từ Toolbar dưới cùng
         if (buildButton != null) buildButton.onClick.AddListener(ToggleBuildMenu);
         if (toolsButton != null) toolsButton.onClick.AddListener(OnClickToolsButton);
         if (settingButton != null) settingButton.onClick.AddListener(OnClickSettingButton);
@@ -36,18 +57,9 @@ public class UIManager : Singleton<UIManager>
 
     void Update()
     {
-        if (controlHintsGroup != null && controlHintsGroup.activeSelf)
-        {
-            if (Input.GetMouseButtonDown(1)) // Chuột phải
-            {
-                ExitActionModes();
-
-                // Nếu có hàm cancel đặt trong BuildingSystem, bạn có thể gọi ở đây.
-                // BuildingSystem.Ins.CancelPlacing();
-
-                Debug.Log("Đã hủy chế độ xây dựng bằng Chuột Phải.");
-            }
-        }
+        // [ĐÃ FIX TRIỆT ĐỂ]: Toàn bộ logic bắt nút Click chuột phải (Hủy chế độ xây) 
+        // đã được giao hoàn toàn cho GhostBuilding tự xử lý qua hệ thống Input độc lập.
+        // Không bắt phím tại đây để tránh lỗi NullReferenceException và xung đột ẩn UI trước Ghost.
     }
 
     // ================= BOTTOM TOOLBAR LOGIC =================
@@ -62,7 +74,7 @@ public class UIManager : Singleton<UIManager>
     {
         ExitActionModes();
         if (controlHintsGroup != null) controlHintsGroup.SetActive(true);
-        Debug.Log("Đã chọn bộ công cụ.");
+        Debug.Log("[UIManager] Đã chọn bộ công cụ.");
     }
 
     public void OnClickSettingButton()
@@ -76,18 +88,34 @@ public class UIManager : Singleton<UIManager>
         if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
     }
 
-    private void EnterPlacementMode()
+    // ================= INTERACTION COUPLING (KẾT NỐI VỚI BUILDING SYSTEM) =================
+
+    /// <summary>
+    /// Kích hoạt giao diện chế độ đặt công trình (Ẩn Menu chính để tránh vướng, hiện bảng phím tắt).
+    /// </summary>
+    public void EnterPlacementMode()
     {
         if (controlHintsGroup != null) controlHintsGroup.SetActive(true);
-        if (buildMenu != null) buildMenu.SetActive(false); // ẩn menu khi đang đặt nhà
+        if (buildMenu != null) buildMenu.SetActive(false);
     }
 
-    // ================= WARNING UI =================
+    /// <summary>
+    /// Kết thúc giao diện chế độ đặt công trình (Tắt bảng phím tắt, hiện lại Menu chính/HUD).
+    /// </summary>
+    public void ExitPlacementMode(bool shouldReopenMenu)
+    {
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(false); // Luôn tắt bảng hướng dẫn (R/ESC)
+
+        if (buildMenu != null)
+        {
+            buildMenu.SetActive(shouldReopenMenu); // Nhận lệnh tắt/mở linh hoạt từ hệ thống
+        }
+    }
+
+    // ================= WARNING UI LOGIC =================
 
     public void ShowWarning(string message)
     {
-        // Nếu bạn có Text hiển thị message trong warningUI, bạn cần add thêm tham chiếu Text.
-        // Còn trong đoạn bạn gửi, mình chỉ bật panel.
         if (warningUI != null)
             warningUI.SetActive(true);
 
@@ -113,49 +141,69 @@ public class UIManager : Singleton<UIManager>
     private IEnumerator FadeOutWarning(float duration = 1.2f)
     {
         if (warningUI == null) yield break;
-
-        // Nếu warningUI là Image/Text có alpha riêng thì bạn cần xử lý thêm.
-        // Đoạn này chỉ tắt sau thời gian (an toàn nhất để khỏi phụ thuộc component).
         yield return new WaitForSeconds(duration);
         HideWarning();
     }
 
-    // Nếu bạn vẫn muốn tự fade khi enter placement mode (giống ý code cũ),
-    // bạn có thể gọi ShowWarning rồi bắt đầu FadeOutWarning tại nơi bạn muốn.
-    // Ví dụ: ShowWarning("..."); _fadeWarningCoroutine = StartCoroutine(FadeOutWarning());
-
-    // ================= BUILDING BUTTONS =================
-    // Lưu ý: sửa enum theo BuildingType.cs bạn gửi (House, WoodCutter, StoneMine, Warehouse, Kitchen, ...)
+    // ================= ON CLICK BUTTONS (NÚT BẤM GIAO DIỆN XÂY NHÀ) =================
 
     public void OnClickHouseButton()
     {
-        EnterPlacementMode();
         BuildingSystem.Ins.StartPlacing(BuildingType.House);
     }
 
-    public void OnClickForestHutButton()
+    public void OnClickWoodCutterButton()
     {
-        EnterPlacementMode();
-        // Không có ForestHut trong enum -> map tạm theo WoodCutter.
         BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
     }
 
-    public void OnClickSawmillButton()
+    public void OnClickStoneStorageButton()
     {
-        EnterPlacementMode();
-        // Không có Sawmill trong enum -> map tạm theo WoodCutter.
-        BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
+        BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
     }
 
-    public void OnClickWarehouseButton()
+    public void OnClickFoodStorageButton()
     {
-        EnterPlacementMode();
-        BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
+        BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
+    }
+    public void ShowUpgradePanel(UpgradeableBuilding building)
+    {
+        if (building == null) return;
+        selectedBuilding = building;
+
+        if (upgradePanel != null) upgradePanel.SetActive(true);
+        RefreshUpgradePanel(building);
     }
 
-    public void OnClickHouseBuilderButton()
+    public void RefreshUpgradePanel(UpgradeableBuilding building)
     {
-        EnterPlacementMode();
-        BuildingSystem.Ins.StartPlacing(BuildingType.House);
+        if (building == null) return;
+
+        int displayLevel = building.CurrentLevel + 1;
+        bool isMaxLevel = building.CurrentLevel >= building.MaxLevel - 1;
+
+        if (buildingNameText != null) buildingNameText.text = building.buildingName;
+        if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
+        if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel;
+        if (upgradeButtonText != null) upgradeButtonText.text = isMaxLevel ? "Đã tối đa" : "Nâng cấp";
     }
+
+    public void HideUpgradePanel()
+    {
+        selectedBuilding = null;
+        if (upgradePanel != null) upgradePanel.SetActive(false);
+    }
+
+    public void OnClickUpgradeButton()
+    {
+        if (selectedBuilding == null)
+        {
+            Debug.LogWarning("[UIManager] Không có building được chọn để nâng cấp!");
+            return;
+        }
+
+        selectedBuilding.NextLevel();
+        // Refresh panel tự động gọi trong NextLevel()
+    }
+
 }
