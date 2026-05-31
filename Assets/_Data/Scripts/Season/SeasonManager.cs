@@ -5,8 +5,9 @@ public enum SeasonType
 {
     Xuan,
     He,
-    Thu,
-    Lanh
+    Thu,   // Mới thêm
+    Dong,  // Đổi tên từ Lạnh
+    Mua
 }
 
 public class SeasonManager : MonoBehaviour
@@ -16,22 +17,14 @@ public class SeasonManager : MonoBehaviour
     [Header("Mùa hiện tại")]
     public SeasonType currentSeason;
 
-    // Sự kiện phát loa thông báo
     public static event Action<SeasonType> OnSeasonChanged;
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    // Hàm này nhận lệnh từ bộ đếm thời gian và phát loa cho toàn Game
     public void SetSeason(SeasonType newSeason)
     {
         currentSeason = newSeason;

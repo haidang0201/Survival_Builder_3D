@@ -2,11 +2,12 @@ using UnityEngine;
 
 public class SeasonVFX : MonoBehaviour
 {
-    [Header("Kéo các hệ thống Particle (VFX) vào đây")]
-    public GameObject vfxXuan;  // Ví dụ: Lá bay, bồ công anh
-    public GameObject vfxMua;   // Hạt mưa
-    public GameObject vfxHe;    // Ví dụ: Đom đóm, bụi nắng, tia sáng mặt trời
-    public GameObject vfxTuyet; // Hạt tuyết (Lạnh)
+    [Header("Kéo các hiệu ứng Particle (VFX) vào đây")]
+    public GameObject vfxXuan;
+    public GameObject vfxHe;
+    public GameObject vfxThu;   // Thêm slot cho mùa Thu (Lá vàng rơi chẳng hạn)
+    public GameObject vfxDong;  // Mùa Đông (Tuyết)
+    public GameObject vfxMua;   // Mùa Mưa (Hạt mưa)
 
     private void OnEnable()
     {
@@ -20,27 +21,36 @@ public class SeasonVFX : MonoBehaviour
 
     private void DoiHieuUngThoiTiet(SeasonType muaMoi)
     {
-        // 1. Tắt hết mọi hiệu ứng cũ trước khi bật hiệu ứng mới
+        // 1. Tắt toàn bộ VFX cũ
         if (vfxXuan != null) vfxXuan.SetActive(false);
-        if (vfxMua != null) vfxMua.SetActive(false);
         if (vfxHe != null) vfxHe.SetActive(false);
-        if (vfxTuyet != null) vfxTuyet.SetActive(false);
+        if (vfxThu != null) vfxThu.SetActive(false);
+        if (vfxDong != null) vfxDong.SetActive(false);
+        if (vfxMua != null) vfxMua.SetActive(false);
 
-        // 2. Bật hiệu ứng tương ứng với mùa hiện tại
+        // 2. Bật VFX đúng mùa và ép xả hạt (Play)
         switch (muaMoi)
         {
-            case SeasonType.Xuan:
-                if (vfxXuan != null) vfxXuan.SetActive(true);
-                break;
-            case SeasonType.Thu:
-                if (vfxMua != null) vfxMua.SetActive(true);
-                break;
-            case SeasonType.He:
-                if (vfxHe != null) vfxHe.SetActive(true);
-                break;
-            case SeasonType.Lanh:
-                if (vfxTuyet != null) vfxTuyet.SetActive(true);
-                break;
+            case SeasonType.Xuan: KichHoatVFX(vfxXuan); break;
+            case SeasonType.He: KichHoatVFX(vfxHe); break;
+            case SeasonType.Thu: KichHoatVFX(vfxThu); break;
+            case SeasonType.Dong: KichHoatVFX(vfxDong); break;
+            case SeasonType.Mua: KichHoatVFX(vfxMua); break; // <-- Chuyển qua mưa là gọi dòng này
+        }
+    }
+
+    private void KichHoatVFX(GameObject vfx)
+    {
+        if (vfx != null)
+        {
+            vfx.SetActive(true);
+
+            // Tìm và Ép Particle xả hạt ngay lập tức
+            ParticleSystem ps = vfx.GetComponentInChildren<ParticleSystem>();
+            if (ps != null)
+            {
+                ps.Play();
+            }
         }
     }
 }

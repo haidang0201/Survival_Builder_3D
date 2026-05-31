@@ -9,23 +9,17 @@ using System.IO;
  * Folder: Scripts/Managers/
  * Người làm: DŨNG / ĐĂNG
  *
- * Quản lý tài nguyên runtime và Save/Load JSON.
+ * Quản lý tài nguyên runtime và Save/Load JSON. (ĐÃ BỎ MAX CAPACITY)
  *
- * EVENT SIGNATURES (thống nhất toàn dự án):
- *   OnGoldChanged  → Action<int>        (gold, không có max cap)
- *   OnWoodChanged  → Action<int, int>   (current, max)
- *   OnStoneChanged → Action<int, int>   (current, max)
- *   OnFoodChanged  → Action<int, int>   (current, max)
- *
- * Lắng nghe ở: UIResourceObserver → HUDController
+ * EVENT SIGNATURES:
+ * OnGoldChanged  → Action<int>
+ * OnWoodChanged  → Action<int>
+ * OnStoneChanged → Action<int>
+ * OnFoodChanged  → Action<int>
  */
 
 public class JsonDataManager : Singleton<JsonDataManager>
 {
-    // ──────────────────────────────────────────────
-    // INSPECTOR
-    // ──────────────────────────────────────────────
-
     [Header("File Settings")]
     public string saveFileName = "builder.json";
     public string configFileName = "building_config.json";
@@ -35,9 +29,9 @@ public class JsonDataManager : Singleton<JsonDataManager>
     // ──────────────────────────────────────────────
 
     public event Action<int> OnGoldChanged;
-    public event Action<int, int> OnWoodChanged;   // (current, max)
-    public event Action<int, int> OnStoneChanged;  // (current, max)
-    public event Action<int, int> OnFoodChanged;   // (current, max)
+    public event Action<int> OnWoodChanged;
+    public event Action<int> OnStoneChanged;
+    public event Action<int> OnFoodChanged;
 
     // ──────────────────────────────────────────────
     // TÀI NGUYÊN RUNTIME
@@ -48,20 +42,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
     public int stone { get; private set; }
     public int food { get; private set; }
 
-    // Sức chứa tối đa (nạp từ building_config.json)
-    public int maxWood { get; private set; } = 500;
-    public int maxStone { get; private set; } = 500;
-    public int maxFood { get; private set; } = 500;
-
-    // ──────────────────────────────────────────────
-    // PRIVATE
-    // ──────────────────────────────────────────────
-
     private BuildingConfigRoot _loadedConfig;
-
-    // ──────────────────────────────────────────────
-    // LIFECYCLE
-    // ──────────────────────────────────────────────
 
     protected override void Awake()
     {
@@ -70,7 +51,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
     }
 
     // ──────────────────────────────────────────────
-    // THÊM TÀI NGUYÊN  (có clamp theo max)
+    // THÊM TÀI NGUYÊN  (Cộng dồn vô hạn)
     // ──────────────────────────────────────────────
 
     public void AddGold(int amount)
@@ -81,54 +62,30 @@ public class JsonDataManager : Singleton<JsonDataManager>
 
     public void AddWood(int amount)
     {
-        wood = Mathf.Clamp(wood + amount, 0, maxWood);
-        OnWoodChanged?.Invoke(wood, maxWood);
+        wood = Mathf.Max(0, wood + amount);
+        OnWoodChanged?.Invoke(wood);
     }
 
     public void AddStone(int amount)
     {
-        stone = Mathf.Clamp(stone + amount, 0, maxStone);
-        OnStoneChanged?.Invoke(stone, maxStone);
+        stone = Mathf.Max(0, stone + amount);
+        OnStoneChanged?.Invoke(stone);
     }
 
     public void AddFood(int amount)
     {
-        food = Mathf.Clamp(food + amount, 0, maxFood);
-        OnFoodChanged?.Invoke(food, maxFood);
+        food = Mathf.Max(0, food + amount);
+        OnFoodChanged?.Invoke(food);
     }
 
     // ──────────────────────────────────────────────
-    // NÂNG CẤP SỨC CHỨA KHO
+    // NÂNG CẤP SỨC CHỨA KHO (Đã bỏ logic Max, giữ hàm để không lỗi hệ thống khác)
     // ──────────────────────────────────────────────
-
-    /// <summary>
-    /// Gọi khi Warehouse được nâng cấp để cập nhật max capacity.
-    /// </summary>
     public void UpdateCapacities(int warehouseLevel)
     {
-        if (_loadedConfig?.buildingConfigs == null) return;
-
-        var config = _loadedConfig.buildingConfigs.Find(c => c.buildingType == "Warehouse");
-        if (config == null) return;
-
-        var levelData = config.levelConfigs.Find(l => l.level == warehouseLevel);
-        if (levelData == null) return;
-
-        maxWood = levelData.woodCapacity;
-        maxStone = levelData.stoneCapacity;
-        maxFood = levelData.foodCapacity;
-
-        // Clamp tài nguyên hiện tại nếu vượt max mới
-        wood = Mathf.Min(wood, maxWood);
-        stone = Mathf.Min(stone, maxStone);
-        food = Mathf.Min(food, maxFood);
-
-        // Cập nhật UI
-        OnWoodChanged?.Invoke(wood, maxWood);
-        OnStoneChanged?.Invoke(stone, maxStone);
-        OnFoodChanged?.Invoke(food, maxFood);
-
-        Debug.Log($"[JsonDataManager] Kho Lvl {warehouseLevel} → maxWood={maxWood}, maxStone={maxStone}, maxFood={maxFood}");
+        // Hệ thống không còn dùng Max Capacity, hàm này giữ lại để 
+        // các script gọi nâng cấp kho không bị báo lỗi reference.
+        Debug.Log($"[JsonDataManager] Kho Lvl {warehouseLevel} upgraded (Max limits removed).");
     }
 
     // ──────────────────────────────────────────────
@@ -179,16 +136,14 @@ public class JsonDataManager : Singleton<JsonDataManager>
                     switch (res.resourceType)
                     {
                         case "Gold": gold = res.amount; break;
-                        case "Wood": wood = Mathf.Min(res.amount, maxWood); break;
-                        case "Stone": stone = Mathf.Min(res.amount, maxStone); break;
-                        case "Food": food = Mathf.Min(res.amount, maxFood); break;
+                        case "Wood": wood = res.amount; break;
+                        case "Stone": stone = res.amount; break;
+                        case "Food": food = res.amount; break;
                     }
                 }
             }
 
-            // Đẩy toàn bộ lên UI
             BroadcastAllResources();
-
             Debug.Log($"[JsonDataManager] ✅ Loaded ← {saveFileName}");
             return save;
         }
@@ -201,13 +156,12 @@ public class JsonDataManager : Singleton<JsonDataManager>
 
     public bool DeleteSave() => FileIO.Delete(saveFileName);
 
-    /// <summary>Phát toàn bộ event để UI cập nhật sau khi Load hoặc khởi động.</summary>
     public void BroadcastAllResources()
     {
         OnGoldChanged?.Invoke(gold);
-        OnWoodChanged?.Invoke(wood, maxWood);
-        OnStoneChanged?.Invoke(stone, maxStone);
-        OnFoodChanged?.Invoke(food, maxFood);
+        OnWoodChanged?.Invoke(wood);
+        OnStoneChanged?.Invoke(stone);
+        OnFoodChanged?.Invoke(food);
     }
 
     public IEnumerator LoadData(Action<float> onProgress)
@@ -222,7 +176,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
     }
 
     // ──────────────────────────────────────────────
-    // BUILDING CONFIG (sức chứa tĩnh)
+    // BUILDING CONFIG (Giữ nguyên class data để không lỗi JSON cũ)
     // ──────────────────────────────────────────────
 
     private void LoadBuildingConfigs()
@@ -236,7 +190,6 @@ public class JsonDataManager : Singleton<JsonDataManager>
         {
             string json = File.ReadAllText(filePath);
             _loadedConfig = JsonUtility.FromJson<BuildingConfigRoot>(json);
-            UpdateCapacities(1); // Nạp sức chứa mặc định cấp 1
         }
         catch (Exception ex)
         {
@@ -267,49 +220,11 @@ public class JsonDataManager : Singleton<JsonDataManager>
         string directory = Path.GetDirectoryName(path);
         if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
         File.WriteAllText(path, json);
-
-        Debug.Log($"[JsonDataManager] Tạo config mặc định tại: {path}");
     }
 
-    // ──────────────────────────────────────────────
-    // DATA CLASSES
-    // ──────────────────────────────────────────────
-
-    [Serializable]
-    public class GameSaveData
-    {
-        public string sceneName;
-        public long savedAtUnix;
-        public List<BuildingState> buildings;
-        public List<ResourceData> resources;
-    }
-
-    [Serializable]
-    public class ResourceData
-    {
-        public string resourceType;
-        public int amount;
-    }
-
-    [Serializable]
-    public class BuildingConfigRoot
-    {
-        public List<BuildingConfig> buildingConfigs;
-    }
-
-    [Serializable]
-    public class BuildingConfig
-    {
-        public string buildingType;
-        public List<WarehouseLevelData> levelConfigs;
-    }
-
-    [Serializable]
-    public class WarehouseLevelData
-    {
-        public int level;
-        public int woodCapacity;
-        public int stoneCapacity;
-        public int foodCapacity;
-    }
+    [Serializable] public class GameSaveData { public string sceneName; public long savedAtUnix; public List<BuildingState> buildings; public List<ResourceData> resources; }
+    [Serializable] public class ResourceData { public string resourceType; public int amount; }
+    [Serializable] public class BuildingConfigRoot { public List<BuildingConfig> buildingConfigs; }
+    [Serializable] public class BuildingConfig { public string buildingType; public List<WarehouseLevelData> levelConfigs; }
+    [Serializable] public class WarehouseLevelData { public int level; public int woodCapacity; public int stoneCapacity; public int foodCapacity; }
 }

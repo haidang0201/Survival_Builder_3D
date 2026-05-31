@@ -3,11 +3,12 @@ using UnityEngine;
 [RequireComponent(typeof(AudioSource))]
 public class SeasonAudio : MonoBehaviour
 {
-    [Header("Nhạc/Âm thanh nền cho 4 mùa")]
+    [Header("Nhạc/Âm thanh nền cho 5 mùa")]
     public AudioClip nhacXuan;
-    public AudioClip nhacThu;
     public AudioClip nhacHe;
-    public AudioClip nhacLanh;
+    public AudioClip nhacThu;   // Mới thêm slot cho mùa Thu
+    public AudioClip nhacDong;  // Đã đổi tên từ Lạnh thành Đông
+    public AudioClip nhacMua;   // Mùa Mưa
 
     private AudioSource audioSource;
 
@@ -40,18 +41,21 @@ public class SeasonAudio : MonoBehaviour
             case SeasonType.Xuan:
                 audioSource.clip = nhacXuan;
                 break;
-            case SeasonType.Thu:
-                audioSource.clip = nhacThu;
-                break;
             case SeasonType.He:
                 audioSource.clip = nhacHe;
                 break;
-            case SeasonType.Lanh:
-                audioSource.clip = nhacLanh;
+            case SeasonType.Thu:
+                audioSource.clip = nhacThu;
+                break;
+            case SeasonType.Dong:
+                audioSource.clip = nhacDong;
+                break;
+            case SeasonType.Mua:
+                audioSource.clip = nhacMua;
                 break;
         }
 
-        // Phát bài nhạc mới ngay lập tức (nếu bạn đã kéo file vào ô)
+        // Phát bài nhạc mới ngay lập tức (nếu đã kéo file vào ô)
         if (audioSource.clip != null)
         {
             audioSource.Play();
