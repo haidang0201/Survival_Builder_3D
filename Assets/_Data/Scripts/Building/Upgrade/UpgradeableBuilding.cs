@@ -2,11 +2,22 @@ using UnityEngine;
 
 public class UpgradeableBuilding : MonoBehaviour
 {
+    [System.Serializable]
+    public struct UpgradeCost
+    {
+        public int woodCost;
+        public int stoneCost;
+        public int foodCost;
+    }
+
     [Header("Tên công trình")]
     public string buildingName = "Nhà Chính";
 
     [Header("Mảng chứa các Model Cấp 1, 2, 3...")]
     [SerializeField] private GameObject[] visualModels;
+
+    [Header("Cấu hình chi phí nâng cấp (Phần tử 0 là từ Lv1 -> Lv2)")]
+    [SerializeField] private UpgradeCost[] upgradeCosts;
 
     public int CurrentLevel { get; private set; } = 0; // Scene instance level
     public int MaxLevel => visualModels != null ? visualModels.Length : 0;
@@ -14,6 +25,17 @@ public class UpgradeableBuilding : MonoBehaviour
     private void Start()
     {
         UpdateVisualModel();
+    }
+
+    // Hàm lấy chi phí cần thiết để lên cấp tiếp theo
+    public UpgradeCost GetNextUpgradeCost()
+    {
+        if (CurrentLevel < upgradeCosts.Length)
+        {
+            return upgradeCosts[CurrentLevel];
+        }
+        // Trả về số 0 nếu lỡ vượt quá cấu hình hoặc nâng cấp miễn phí
+        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0 }; 
     }
 
     /// <summary>
@@ -43,9 +65,6 @@ public class UpgradeableBuilding : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Bật/Tắt model theo chỉ số index.
-    /// </summary>
     private void SetActiveModel(int index, bool active)
     {
         if (visualModels == null || index < 0 || index >= visualModels.Length) return;
@@ -53,14 +72,13 @@ public class UpgradeableBuilding : MonoBehaviour
             visualModels[index].SetActive(active);
     }
 
-    /// <summary>
-    /// Đồng bộ trạng thái Scene instance khi Start.
-    /// </summary>
-    private void UpdateVisualModel()
+    public void UpdateVisualModel()
     {
+        if (visualModels == null) return;
         for (int i = 0; i < visualModels.Length; i++)
         {
-            SetActiveModel(i, i == CurrentLevel);
+            if (visualModels[i] != null)
+                visualModels[i].SetActive(i == CurrentLevel);
         }
     }
 }

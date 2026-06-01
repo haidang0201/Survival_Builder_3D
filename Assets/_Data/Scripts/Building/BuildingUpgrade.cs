@@ -16,6 +16,12 @@ public class BuildingUpgradeModule : MonoBehaviour
     [SerializeField] private Button upgradeButton;             // Nút nâng cấp
     [SerializeField] private TMP_Text upgradeButtonText;       // Text trên nút
 
+    // ====BỔ SUNG: 3 ô Text hiển thị chi phí yêu cầu nâng cấp===========
+    [Header("Upgrade Costs Text Elements")]
+    [SerializeField] private TMP_Text woodCostText;
+    [SerializeField] private TMP_Text stoneCostText;
+    [SerializeField] private TMP_Text foodCostText;
+    //====================================================================
     private UpgradeableBuilding selectedBuilding;
 
     private void Awake()
@@ -52,17 +58,44 @@ public class BuildingUpgradeModule : MonoBehaviour
         int displayLevel = building.CurrentLevel + 1;
         bool isMaxLevel = building.CurrentLevel >= building.MaxLevel - 1;
 
-        if (buildingNameText != null)
-            buildingNameText.text = building.buildingName;
+        if (buildingNameText != null) buildingNameText.text = building.buildingName;
+        if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
+        if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel;
+        if (upgradeButtonText != null) upgradeButtonText.text = isMaxLevel ? "Đã tối đa" : "Nâng cấp";
 
-        if (levelText != null)
-            levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
+        // ========================================================
+        // XỬ LÝ HIỂN THỊ TÀI NGUYÊN CẦN NÂNG CẤP TẠI ĐÂY
+        // ========================================================
+        if (isMaxLevel)
+        {
+            // Nếu đã đạt cấp tối đa, hiển thị dấu gạch ngang hoặc chữ "Max"
+            if (woodCostText != null) woodCostText.text = "-";
+            if (stoneCostText != null) stoneCostText.text = "-";
+            if (foodCostText != null) foodCostText.text = "-";
+        }
+        else
+        {
+            // Lấy cấu hình chi phí của cấp tiếp theo
+            UpgradeableBuilding.UpgradeCost cost = building.GetNextUpgradeCost();
 
-        if (upgradeButton != null)
-            upgradeButton.interactable = !isMaxLevel;
+            // Hiển thị con số lên UI
+            if (woodCostText != null) woodCostText.text = cost.woodCost.ToString();
+            if (stoneCostText != null) stoneCostText.text = cost.stoneCost.ToString();
+            if (foodCostText != null) foodCostText.text = cost.foodCost.ToString();
 
-        if (upgradeButtonText != null)
-            upgradeButtonText.text = isMaxLevel ? "Đã tối đa" : "Nâng cấp";
+            // TÍNH NĂNG THÊM: Đổi màu chữ (Đỏ nếu thiếu tiền, Trắng nếu đủ tiền)
+            if (JsonDataManager.Ins != null)
+            {
+                if (woodCostText != null) 
+                    woodCostText.color = JsonDataManager.Ins.wood >= cost.woodCost ? Color.white : Color.red;
+
+                if (stoneCostText != null) 
+                    stoneCostText.color = JsonDataManager.Ins.stone >= cost.stoneCost ? Color.white : Color.red;
+
+                if (foodCostText != null) 
+                    foodCostText.color = JsonDataManager.Ins.food >= cost.foodCost ? Color.white : Color.red;
+            }
+        }
     }
 
     /// <summary>
@@ -78,15 +111,38 @@ public class BuildingUpgradeModule : MonoBehaviour
     /// <summary>
     /// Listener nút Upgrade
     /// </summary>
-    private void OnClickUpgradeButton()
+    public void OnClickUpgradeButton()
     {
         if (selectedBuilding == null)
         {
-            Debug.LogWarning("[MyBuildingUpgradeModule] Không có building được chọn!");
+            Debug.LogWarning("[UIManager] Không có building được chọn!");
             return;
         }
 
+        // 1. Kiểm tra xem nhà đã đạt cấp tối đa chưa
+        if (selectedBuilding.CurrentLevel >= selectedBuilding.MaxLevel - 1)
+        {
+            Debug.LogWarning("[UIManager] Công trình đã đạt cấp tối đa!");
+            return;
+        }
+
+        // 2. Lấy chi phí cần để lên cấp tiếp theo
+        UpgradeableBuilding.UpgradeCost cost = selectedBuilding.GetNextUpgradeCost();
+
+        // 3. Sử dụng ResourceManager của bạn để kiểm tra và khấu trừ
+        if (ResourceManager.Instance != null)
+        {
+            if (!ResourceManager.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost))
+            {
+                // Nếu hụt tài nguyên, dừng hàm tại đây (Màn hình không tăng cấp)
+                return; 
+            }
+        }
+
+        // 4. Trừ tài nguyên thành công -> Tiến hành lên cấp hình ảnh (Code cũ của bạn)
         selectedBuilding.NextLevel();
+
+        // 5. Làm mới lại giao diện Panel nâng cấp để cập nhật chữ "Cấp 2/3" chẳng hạn
         RefreshUpgradePanel(selectedBuilding);
     }
 }
