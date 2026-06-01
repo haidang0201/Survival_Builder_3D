@@ -24,8 +24,9 @@ public class StoneStorage : MonoBehaviour
         int canAdd     = Mathf.Min(amount, maxCapacity - currentAmount);
         currentAmount += canAdd;
 
-        onStoneAdded?.Invoke(currentAmount);
+        Debug.Log($"[StoneStorage] '{name}' +{canAdd} đá → {currentAmount}/{maxCapacity}");
 
+        onStoneAdded?.Invoke(currentAmount);
         if (IsFull) onStorageFull?.Invoke();
 
         return canAdd;
@@ -33,10 +34,16 @@ public class StoneStorage : MonoBehaviour
 
     public int TakeStone(int amount = 1)
     {
-        if (IsEmpty) return 0;
+        if (IsEmpty) 
+        {
+            Debug.LogWarning($"[StoneStorage] '{name}' Kho trống!");
+            return 0;
+        }
 
         int canTake    = Mathf.Min(amount, currentAmount);
         currentAmount -= canTake;
+
+        Debug.Log($"[StoneStorage] '{name}' -{canTake} đá → {currentAmount}/{maxCapacity}");
 
         return canTake;
     }

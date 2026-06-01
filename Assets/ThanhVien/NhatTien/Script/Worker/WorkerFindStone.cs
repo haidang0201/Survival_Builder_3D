@@ -12,19 +12,20 @@ public class WorkerFindStone : MonoBehaviour
     public float mineTime     = 1.5f;
 
     [Header("Animation Settings")]
-    public string mineTriggerName = "Mine"; // Trigger cho cuốc đá
+    public string mineTriggerName = "Mine"; 
 
     [Header("Settings Nâng Cấp")]
     public float stuckTimeout = 2.0f;
     private float stuckTimer = 0f;
     private float depositRetryTimer = 0f;
+    private float totalWaitTimer = 0f; 
 
     private Stone targetStone;
     private float mineTimer            = 0f;
     private bool  hasTriggeredMineAnim = false;
     private bool  wasResting           = false;
-    private float findStoneCooldown          = 0f;
-    private const float FIND_STONE_INTERVAL  = 0.5f;
+    private float findStoneCooldown    = 0f;
+    private const float FIND_STONE_INTERVAL = 0.5f;
 
     private bool isHeadingToStone   = false;
     private bool isHeadingToDeposit = false;
@@ -87,7 +88,8 @@ public class WorkerFindStone : MonoBehaviour
     void UpdateAnimationSpeed()
     {
         if (animator == null || agent == null) return;
-        animator.SetFloat("Speed", agent.velocity.magnitude, 0.1f, Time.deltaTime);
+        float speed = agent.isStopped ? 0f : (agent.speed > 0f ? agent.velocity.magnitude / agent.speed : 0f);
+        animator.SetFloat("Speed", speed, 0.05f, Time.deltaTime);
     }
 
     void HandleCarrying()
@@ -103,21 +105,40 @@ public class WorkerFindStone : MonoBehaviour
         {
             agent.isStopped = true;
             depositRetryTimer -= Time.deltaTime;
+            totalWaitTimer += Time.deltaTime; 
+
             if (depositRetryTimer <= 0f)
             {
-                bool success = carrySystem.TryDeposit();
-                if (!success)
+                if (carrySystem.TryDeposit())
                 {
-                    depositRetryTimer = 2.5f; 
+                    depositRetryTimer = 0f;
+                    totalWaitTimer = 0f;
+                    isHeadingToDeposit = false;
                 }
                 else
                 {
-                    depositRetryTimer = 0f;
-                    isHeadingToDeposit = false;
+                    depositRetryTimer = 2.5f; 
+                    
+                    if (totalWaitTimer >= 15f)
+                    {
+                        Debug.LogWarning($"[WorkerFindStone] {name}: Kho đầy quá 15s! Vứt hàng.");
+                        totalWaitTimer = 0f;
+                        depositRetryTimer = 0f;
+                        isHeadingToDeposit = false;
+                        if (agent.isOnNavMesh) agent.isStopped = false;
+
+                        // FIX AN TOÀN: Tắt bật lại riêng Carry Script để dọn rác
+                        carrySystem.enabled = false;
+                        carrySystem.enabled = true;
+                    }
                 }
             }
         }
-        else depositRetryTimer = 0f;
+        else
+        {
+            depositRetryTimer = 0f;
+            totalWaitTimer = 0f;
+        }
     }
 
     void HandleFindStone()
@@ -230,6 +251,7 @@ public class WorkerFindStone : MonoBehaviour
             {
                 stuckTimer = 0f;
                 agent.ResetPath();
+                if (carrySystem.IsCarrying()) carrySystem.MoveToStorage();
                 isHeadingToStone = false;
                 isHeadingToDeposit = false;
             }
