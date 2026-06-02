@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 public class Stone : MonoBehaviour
 {
-    // Đăng ký tĩnh siêu tối ưu hiệu năng
     public static List<Stone> Registry = new List<Stone>();
 
     [Header("Stone Settings")]
@@ -15,18 +15,28 @@ public class Stone : MonoBehaviour
 
     private int  currentHealth;
     private bool isOccupied = false;
+    private Vector3 originalScale;
+
+    void Awake()
+    {
+        originalScale = transform.localScale;
+    }
 
     void OnEnable()
     {
         currentHealth = maxHealth;
         isOccupied    = false;
-
-        if (!Registry.Contains(this)) Registry.Add(this);
+        transform.localScale = originalScale;
+        
+        // Đã xóa Contains, add thẳng O(1)
+        Registry.Add(this);
     }
 
     void OnDisable()
     {
-        if (Registry.Contains(this)) Registry.Remove(this);
+        // FIX: Chặn lỗi văng game do Coroutine thao tác trên object đã bị disable
+        StopAllCoroutines(); 
+        Registry.Remove(this);
     }
 
     public bool TryClaim()
@@ -41,9 +51,18 @@ public class Stone : MonoBehaviour
     public StonePickup[] TakeDamage(int damage)
     {
         currentHealth -= damage;
-        
         if (currentHealth <= 0) return DestroyStone();
+        StartCoroutine(ChippingEffect());
         return null;
+    }
+
+    IEnumerator ChippingEffect()
+    {
+        float healthPercent = (float)currentHealth / maxHealth;
+        Vector3 targetScale = originalScale * Mathf.Lerp(0.6f, 1f, healthPercent);
+        transform.localScale = targetScale * 0.8f; 
+        yield return new WaitForSeconds(0.1f);
+        transform.localScale = targetScale;
     }
 
     StonePickup[] DestroyStone()
@@ -62,10 +81,7 @@ public class Stone : MonoBehaviour
         for (int i = 0; i < dropAmount; i++)
         {
             GameObject obj = stonePool.GetObject();
-            Vector3 dropPos = transform.position + new Vector3(
-                Random.Range(-0.8f, 0.8f), 0.5f, Random.Range(-0.8f, 0.8f)
-            );
-            
+            Vector3 dropPos = transform.position + new Vector3(Random.Range(-0.8f, 0.8f), 0.5f, Random.Range(-0.8f, 0.8f));
             obj.transform.position = dropPos;
 
             Rigidbody rb = obj.GetComponent<Rigidbody>();
