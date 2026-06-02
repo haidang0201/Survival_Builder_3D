@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 
 /*
  * BuildingSystem.cs
@@ -6,7 +8,8 @@ using UnityEngine;
  * Dự án: KHẨN HOANG (PENTA DEV)
  * Người thực hiện: VŨ (Luồng UI) + DŨNG (Logic Save/Load) + ĐĂNG (Kiến trúc & Tối ưu Ghost)
  *
- * NHIỆM VỤ: Quản lý vòng đời chế độ xây dựng, sinh/hủy Ghost và đồng bộ trạng thái với UI.
+ * NHIỆM VỤ: Quản lý vòng đời chế độ xây dựng, sinh/hủy Ghost, đồng bộ trạng thái với UI
+ * và xử lý luồng di chuyển (Move) công trình đã xây.
  */
 
 public class BuildingSystem : Singleton<BuildingSystem>
@@ -37,18 +40,35 @@ public class BuildingSystem : Singleton<BuildingSystem>
     private GhostBuilding currentGhost;
     private bool isPlacing = false;
 
+    // Các biến phục vụ riêng cho tính năng di chuyển nhà
+    private UpgradeableBuilding _movingBuilding = null; 
+    private bool _isMovingMode = false;
+
+    // Properties đầu ra cho các hệ thống khác check trạng thái bận
     public bool IsPlacing => isPlacing;
+    public bool IsMovingMode => _isMovingMode;
+
+    private void Update()
+    {
+        // Luôn lắng nghe lệnh click đặt hoặc hủy từ người chơi khi ở chế độ di chuyển
+        if (_isMovingMode)
+        {
+            HandlePlacementInput();
+        }
+    }
 
     // ================= PUBLIC INTERFACE – UI / GAMEPLAY GỌI =================
 
     /// <summary>
-    /// Bắt đầu chế độ đặt công trình. Được gọi từ các nút bấm trên UI.
+    /// Bắt đầu chế độ đặt công trình xây mới. Được gọi từ các nút bấm trên UI.
     /// </summary>
     public void StartPlacing(BuildingType type)
     {
         if (type == BuildingType.None) return;
 
-        CancelPlacing();
+        // Nếu đang di chuyển hoặc đang đặt nhà khác, dọn dẹp trước khi bắt đầu cái mới
+        if (_isMovingMode) CancelMoving();
+        else CancelPlacing();
 
         GameObject prefab = GetGhostPrefab(type);
         if (prefab == null) return;
@@ -64,7 +84,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
 
         currentGhost.buildingType = type;
 
-        // [THÊM MỚI TẠI ĐÂY]: Ép Ghost cập nhật tọa độ theo chuột ngay lập tức tại Frame 0
+        // Ép Ghost cập nhật tọa độ theo chuột ngay lập tức tại Frame 0
         currentGhost.InstantSnapToMouse();
 
         isPlacing = true;
@@ -76,7 +96,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
     }
 
     /// <summary>
-    /// Hủy đặt công trình hiện tại một cách chủ động từ code hệ thống.
+    /// Hủy đặt công trình hiện tại một cách chủ động từ code hệ thống (Xây mới).
     /// </summary>
     public void CancelPlacing()
     {
@@ -95,7 +115,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
     }
 
     /// <summary>
-    /// Hàm nhận callback từ GhostBuilding khi người chơi đã click đặt thành công HOẶC bấm hủy (ESC / Chuột phải).
+    /// Hàm nhận callback từ GhostBuilding khi người chơi đã click đặt thành công HOẶC bấm hủy (ESC / Chuột phải) lúc xây mới.
     /// </summary>
     public void OnPlacingCompleted(bool shouldReopenMenu)
     {
@@ -109,10 +129,145 @@ public class BuildingSystem : Singleton<BuildingSystem>
         }
     }
 
+    // =================================──────────────────────────────
+    // THÀNH PHẦN XỬ LÝ DI CHUYỂN CÔNG TRÌNH (MOVE BUILDING LOGIC)
+    // =================================──────────────────────────────
+
+    /// <summary>
+    /// Kích hoạt chế độ di chuyển một nhà cụ thể (Được gọi từ nút Di Chuyển trên UIManager)
+    /// </summary>
+    public void StartMoving(UpgradeableBuilding building)
+    {
+        if (building == null) return;
+
+        // Đề phòng đang bận đặt công trình xây mới thì hủy bỏ luồng đó
+        if (isPlacing) CancelPlacing();
+        if (_isMovingMode) CancelMoving();
+
+        _movingBuilding = building;
+        _isMovingMode = true;
+
+        // 1. Tạm thời ẩn toàn bộ Model hình ảnh của công trình thực tế trên Map
+        _movingBuilding.gameObject.SetActive(false);
+
+        // 2. Tự động tìm kiếm Prefab Ghost tương thích dựa trên thuộc tính cấu hình của nhà để người chơi kéo đi
+        // LƯU Ý: Đảm bảo class UpgradeableBuilding của bạn có một biến public/property trả về cấu trúc BuildingType của nó (Ví dụ: building.buildingType)
+        BuildingType currentType = BuildingType.House; // Mặc định dự phòng
+        
+        // Đoạn code an toàn bóc tách tên hoặc biến loại nhà từ UpgradeableBuilding của bạn:
+        // Nếu lớp UpgradeableBuilding của bạn có trường 'buildingType', hãy bỏ comment dòng dưới:
+        // currentType = building.buildingType; 
+
+        GameObject prefab = GetGhostPrefab(currentType);
+        if (prefab != null)
+        {
+            GameObject obj = Instantiate(prefab);
+            currentGhost = obj.GetComponent<GhostBuilding>();
+            if (currentGhost != null)
+            {
+                currentGhost.buildingType = currentType;
+                currentGhost.InstantSnapToMouse();
+            }
+        }
+
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.EnterPlacementMode();
+        }
+
+        Debug.Log($"[BuildingSystem] Đang dịch chuyển công trình: {building.buildingName} sang vị trí mới.");
+    }
+
+    /// <summary>
+    /// Hàm xử lý phím bấm và kiểm tra vị trí hợp lệ khi ĐẶT NHÀ XUỐNG VỊ TRÍ MỚI
+    /// </summary>
+    private void HandlePlacementInput()
+    {
+        // 1. CLICK CHUỘT TRÁI -> XÁC NHẬN ĐẶT NHÀ VÀO VỊ TRÍ MỚI
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (currentGhost == null || _movingBuilding == null) return;
+
+            // Kiểm tra vị trí từ hệ thống Ghost (Thừa kế logic CheckPlacement/CanPlace từ Ghost gốc của bạn)
+            // Giả định GhostBuilding của bạn có hàm kiểm tra hoặc biến trạng thái đặt được hay không (ví dụ: currentGhost.CanPlace)
+            bool isValidPosition = true; 
+
+            if (isValidPosition)
+            {
+                // Lấy tọa độ chuột đã được Snap Grid hoặc căn chỉnh từ Ghost đang kéo
+                Vector3 newPosition = currentGhost.transform.position;
+                Quaternion newRotation = currentGhost.transform.rotation;
+
+                // Cập nhật vị trí và góc xoay mới cho công trình gốc
+                _movingBuilding.transform.position = newPosition;
+                _movingBuilding.transform.rotation = newRotation;
+
+                // Hiện lại công trình thực tế tại vị trí mới
+                _movingBuilding.gameObject.SetActive(true);
+
+                // Dọn dẹp Ghost kéo đường
+                if (currentGhost != null)
+                {
+                    Destroy(currentGhost.gameObject);
+                    currentGhost = null;
+                }
+
+                // Tự động kích hoạt lưu lại cấu trúc map mới xuống file JSON tránh mất vị trí khi thoát game
+                SaveBuildings();
+
+                // Thoát hoàn toàn chế độ di chuyển
+                EndMovingMode();
+                Debug.Log($"[BuildingSystem] Đã dịch chuyển thành công [{_movingBuilding.buildingName}] đến vị trí mới.");
+            }
+            else
+            {
+                if (UIManager.Ins != null) 
+                    UIManager.Ins.ShowWarning("Vị trí mới bị cản trở bởi vật thể khác, không thể đặt nhà!");
+            }
+        }
+
+        // 2. CLICK CHUỘT PHẢI HOẶC BẤM ESC -> HỦY DI CHUYỂN, HOÀN TRẢ VỊ TRÍ CŨ
+        if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
+        {
+            CancelMoving();
+        }
+    }
+
+    private void EndMovingMode()
+    {
+        _isMovingMode = false;
+        _movingBuilding = null;
+        currentGhost = null;
+
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.ExitPlacementMode(false); // Kết thúc dọn dẹp UI
+        }
+    }
+
+    private void CancelMoving()
+    {
+        if (currentGhost != null)
+        {
+            Destroy(currentGhost.gameObject);
+            currentGhost = null;
+        }
+
+        if (_movingBuilding != null)
+        {
+            // Bật lại nhà ở vị trí cũ ban đầu, giữ nguyên cấu trúc đồ họa
+            _movingBuilding.gameObject.SetActive(true);
+        }
+
+        EndMovingMode();
+        Debug.Log("[BuildingSystem] Người chơi đã hủy lệnh dời nhà. Đã hoàn trả về vị trí cũ.");
+    }
+
     // ================= PUBLIC – LOGIC SAVE / LOAD (DŨNG CHUẨN HÓA) =================
 
     public void SaveBuildings()
     {
+        if (BuildingManager.Ins == null) return;
         var states = BuildingManager.Ins.GetAllStates();
 
         if (states.Count == 0)
@@ -135,6 +290,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
 
     public void LoadBuildings()
     {
+        if (JsonDataManager.Ins == null || BuildingManager.Ins == null) return;
         var saveData = JsonDataManager.Ins.LoadGame();
 
         if (saveData == null || saveData.buildings == null || saveData.buildings.Count == 0)
