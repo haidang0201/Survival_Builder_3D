@@ -382,6 +382,8 @@ GameObject:
   - component: {fileID: 7921694885104374740}
   - component: {fileID: 5759530015863470971}
   - component: {fileID: 3305550702312876229}
+  - component: {fileID: 8323226661030771956}
+  - component: {fileID: 8372602381129869034}
   m_Layer: 0
   m_Name: ManagerUI
   m_TagString: Untagged
@@ -425,6 +427,11 @@ MonoBehaviour:
   settingButton: {fileID: 1434623894396634251}
   controlHintsGroup: {fileID: 2224248926157186508}
   settingUI: {fileID: 4523299894155238089}
+  upgradePanel: {fileID: 0}
+  buildingNameText: {fileID: 0}
+  levelText: {fileID: 0}
+  upgradeButton: {fileID: 0}
+  upgradeButtonText: {fileID: 0}
 --- !u!114 &3305550702312876229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -443,6 +450,38 @@ MonoBehaviour:
   foodText: {fileID: 6456775235062728642}
   floatingTextPrefab: {fileID: 7817031495783831696}
   floatingTextParent: {fileID: 3678550437877187383}
+--- !u!114 &8323226661030771956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8375229874886868921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0436b4014b17154292954b6be0a0d0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingUpgradeModule
+  upgradePanel: {fileID: 0}
+  buildingNameText: {fileID: 0}
+  levelText: {fileID: 0}
+  upgradeButton: {fileID: 0}
+  upgradeButtonText: {fileID: 0}
+  woodCostText: {fileID: 0}
+  stoneCostText: {fileID: 0}
+  foodCostText: {fileID: 0}
+--- !u!114 &8372602381129869034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8375229874886868921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aacda935388c9aa4c918f9530a9fe104, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ResourceManager
 --- !u!1001 &5303569787756807882
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -670,6 +709,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 50697776165844318, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
+      propertyPath: m_text
+      value: "Chu\u1ED9t tr\xE1i: \u0110\u1EB7t c\xF4ng tr\xECnh"
+      objectReference: {fileID: 0}
     - target: {fileID: 84578044214902966, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -793,6 +836,10 @@ PrefabInstance:
     - target: {fileID: 1566787976638455452, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1698220651333946323, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
+      propertyPath: m_text
+      value: "Ph\xEDm E / R: Xoay c\xF4ng tr\xECnh"
       objectReference: {fileID: 0}
     - target: {fileID: 2126010129301796305, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
       propertyPath: m_Sprite
@@ -982,6 +1029,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 225178255, guid: e1bb3d016b98068498c006c251619d8c, type: 3}
+    - target: {fileID: 4929031406345119864, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
+      propertyPath: m_text
+      value: "Chu\u1ED9t ph\u1EA3i: H\u1EE7y \u0111\u1EB7t"
+      objectReference: {fileID: 0}
     - target: {fileID: 5051909526233214520, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 0
@@ -1300,7 +1351,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1011416168655748424, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
       insertIndex: 0
       addedObject: {fileID: 3334017441772225821}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8964620656482069893, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2457901508618566805}
   m_SourcePrefab: {fileID: 100100000, guid: a2460fb0c50280a449008fa0f4b8abfe, type: 3}
 --- !u!114 &427011936423636124 stripped
 MonoBehaviour:
