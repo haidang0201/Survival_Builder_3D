@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class UpgradeableBuilding : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class UpgradeableBuilding : MonoBehaviour
         public int woodCost;
         public int stoneCost;
         public int foodCost;
+        public float upgradeDuration; // Thời gian nâng cấp tính bằng giây
     }
 
     [Header("Tên công trình")]
@@ -19,8 +21,11 @@ public class UpgradeableBuilding : MonoBehaviour
     [Header("Cấu hình chi phí nâng cấp (Phần tử 0 là từ Lv1 -> Lv2)")]
     [SerializeField] private UpgradeCost[] upgradeCosts;
 
-    public int CurrentLevel { get; private set; } = 0; // Scene instance level
+    public int CurrentLevel { get; private set; } = 0; // Level hiện tại của công trình
     public int MaxLevel => visualModels != null ? visualModels.Length : 0;
+
+    // Trạng thái kiểm tra xem nhà có đang trong quá trình nâng cấp không
+    public bool IsUpgrading { get; private set; } = false;
 
     private void Start()
     {
@@ -34,14 +39,62 @@ public class UpgradeableBuilding : MonoBehaviour
         {
             return upgradeCosts[CurrentLevel];
         }
-        // Trả về số 0 nếu lỡ vượt quá cấu hình hoặc nâng cấp miễn phí
-        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0 }; 
+        // Trả về mặc định nếu đạt cấp tối đa
+        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0, upgradeDuration = 0f }; 
     }
 
     /// <summary>
-    /// Nâng cấp lên cấp tiếp theo trên Scene instance.
+    /// Kích hoạt tiến trình đếm ngược nâng cấp bằng Coroutine
     /// </summary>
-    public void NextLevel()
+    public void StartUpgradeProcess()
+    {
+        if (IsUpgrading || CurrentLevel >= MaxLevel - 1) return;
+        
+        UpgradeCost nextCost = GetNextUpgradeCost();
+        StartCoroutine(UpgradeRoutine(nextCost.upgradeDuration));
+    }
+
+    private IEnumerator UpgradeRoutine(float duration)
+    {
+        IsUpgrading = true;
+        float timer = 0f;
+
+        // Nếu panel nâng cấp của nhà này đang mở trên UI, hiển thị slider/text thời gian
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.UpdateUpgradeProgress(0f, duration);
+        }
+
+        // Vòng lặp đếm ngược thời gian nâng cấp theo thời gian thực
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            
+            // Cập nhật giá trị hiển thị lên UI liên tục mỗi khung hình
+            if (UIManager.Ins != null)
+            {
+                UIManager.Ins.UpdateUpgradeProgress(timer, duration);
+            }
+            yield return null;
+        }
+
+        // Sau khi chạy hết thời gian chờ -> Tiến hành đổi cấp bậc hình ảnh
+        ExecuteLevelUp();
+
+        IsUpgrading = false;
+
+        // TẮT TEXT VÀ SLIDER THỜI GIAN KHI NÂNG CẤP XONG
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.HideUpgradeProgress();
+            UIManager.Ins.RefreshUpgradePanel(this);
+        }
+    }
+
+    /// <summary>
+    /// Thực hiện thay đổi cấp độ và model thực tế
+    /// </summary>
+    private void ExecuteLevelUp()
     {
         if (CurrentLevel < MaxLevel - 1)
         {
@@ -54,14 +107,7 @@ public class UpgradeableBuilding : MonoBehaviour
             // Hiện model mới
             SetActiveModel(CurrentLevel, true);
 
-            Debug.Log($"[{buildingName}] Nâng cấp lên Level {CurrentLevel + 1}");
-
-            // Cập nhật UI panel (nếu đang mở)
-            UIManager.Ins?.RefreshUpgradePanel(this);
-        }
-        else
-        {
-            Debug.Log($"[{buildingName}] Đã đạt cấp tối đa!");
+            Debug.Log($"[{buildingName}] Đã hoàn tất nâng cấp lên Level {CurrentLevel + 1}");
         }
     }
 
