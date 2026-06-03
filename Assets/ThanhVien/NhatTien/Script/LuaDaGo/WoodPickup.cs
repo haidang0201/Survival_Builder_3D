@@ -21,15 +21,8 @@ public class WoodPickup : MonoBehaviour
         ResetPhysics(kinematic: false, collisions: true);
     }
 
-    public bool IsTaken()
-    {
-        return isTaken;
-    }
-
-    public void MarkTaken()
-    {
-        isTaken = true;
-    }
+    public bool IsTaken() => isTaken;
+    public void MarkTaken() => isTaken = true;
 
     public void Pickup(Transform handPoint)
     {
@@ -39,7 +32,9 @@ public class WoodPickup : MonoBehaviour
 
         transform.SetParent(handPoint);
         transform.localPosition = Vector3.zero;
-        transform.localRotation = Quaternion.identity;
+        
+        // THAY ĐỔI: Đổi Quaternion.identity thành góc xoay Y = 90 độ tại đây
+        transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
     }
 
     public void Drop()
@@ -53,19 +48,12 @@ public class WoodPickup : MonoBehaviour
         if (rb != null)
         {
             // Phải reset velocity TRƯỚC khi set isKinematic = true
-            // vì Unity không cho phép set velocity trên kinematic body
             if (!rb.isKinematic)
             {
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
-
             rb.isKinematic = kinematic;
-            rb.detectCollisions = collisions;
-        }
-
-        if (col != null)
-        {
             col.enabled = collisions;
         }
     }
