@@ -3,56 +3,50 @@ using UnityEngine;
 
 public class ResourceManager : MonoBehaviour
 {
-    // Singleton Instance để mọi script khác gọi tới dễ dàng
-    public static ResourceManager Instance { get; set; }
+    public static ResourceManager Instance { get; private set; }
 
-    [Header("Kho Tài Nguyên Hiện Có")]
-    [SerializeField] private int wood = 100;
-    [SerializeField] private int rice = 100;
-    [SerializeField] private int stone = 100;
+    // ĐÃ LOẠI BỎ: Các biến private wood, rice, stone cũ để tránh trùng lặp dữ liệu
 
-    // Sự kiện (Event) thông báo khi có bất kỳ tài nguyên nào thay đổi
-    // UI chỉ cần "lắng nghe" event này để tự động cập nhật số liệu
-    public static event Action OnResourcesChanged;
-
-    // C# Properties: Đóng gói dữ liệu an toàn, tự động kích hoạt Event và chặn số âm
+    // C# Properties: Trỏ trực tiếp sang JsonDataManager làm gốc
     public int Wood
     {
-        get => wood;
-        set
+        get => JsonDataManager.Ins != null ? JsonDataManager.Ins.wood : 0;
+        set 
         {
-            wood = Mathf.Max(0, value); // Đảm bảo tài nguyên không bao giờ bị < 0
-            OnResourcesChanged?.Invoke();
-        }
-    }
-
-    public int Rice
-    {
-        get => rice;
-        set
-        {
-            rice = Mathf.Max(0, value);
-            OnResourcesChanged?.Invoke();
+            if (JsonDataManager.Ins == null) return;
+            int delta = value - JsonDataManager.Ins.wood;
+            JsonDataManager.Ins.AddWood(delta);
         }
     }
 
     public int Stone
     {
-        get => stone;
-        set
+        get => JsonDataManager.Ins != null ? JsonDataManager.Ins.stone : 0;
+        set 
         {
-            stone = Mathf.Max(0, value);
-            OnResourcesChanged?.Invoke();
+            if (JsonDataManager.Ins == null) return;
+            int delta = value - JsonDataManager.Ins.stone;
+            JsonDataManager.Ins.AddStone(delta);
+        }
+    }
+
+    public int Rice // Map thuộc tính Rice của bạn với thuộc tính Food của JsonDataManager
+    {
+        get => JsonDataManager.Ins != null ? JsonDataManager.Ins.food : 0;
+        set 
+        {
+            if (JsonDataManager.Ins == null) return;
+            int delta = value - JsonDataManager.Ins.food;
+            JsonDataManager.Ins.AddFood(delta);
         }
     }
 
     private void Awake()
     {
-        // Khởi tạo Singleton an toàn
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Giữ kho tài nguyên xuyên suốt các Scene
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -61,40 +55,43 @@ public class ResourceManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Kiểm tra xem người chơi có đủ tài nguyên để xây/nâng cấp không
+    /// Kiểm tra xem người chơi có đủ tài nguyên để xây/nâng cấp không (Đọc từ JsonDataManager)
     /// </summary>
-    public bool CanAfford(int woodCost, int riceCost, int stoneCost)
+    public bool CanAfford(int woodCost, int foodCost, int stoneCost)
     {
-        return wood >= woodCost && rice >= riceCost && stone >= stoneCost;
+        if (JsonDataManager.Ins == null) return false;
+        return JsonDataManager.Ins.wood >= woodCost && 
+               JsonDataManager.Ins.food >= foodCost && 
+               JsonDataManager.Ins.stone >= stoneCost;
     }
 
     /// <summary>
-    /// Trừ tài nguyên khi dùng để xây dựng hoặc nâng cấp công trình
+    /// Trừ tài nguyên trực tiếp vào JsonDataManager bằng giá trị âm
     /// </summary>
-    public bool Consume(int woodCost, int riceCost, int stoneCost)
+    public bool Consume(int woodCost, int foodCost, int stoneCost)
     {
-        if (!CanAfford(woodCost, riceCost, stoneCost))
+        if (!CanAfford(woodCost, foodCost, stoneCost))
         {
-            Debug.LogWarning($"[RESOURCE_SYSTEM] Thất bại! Thiếu tài nguyên. Cần: Gỗ({woodCost}), Lúa({riceCost}), Đá({stoneCost})");
+            Debug.LogWarning($"[RESOURCE_SYSTEM] Thất bại! Thiếu tài nguyên. Cần: Gỗ({woodCost}), Lúa({foodCost}), Đá({stoneCost})");
             return false;
         }
 
-        // Trừ trực tiếp vào các Properties để kích hoạt Event cập nhật UI tự động
-        Wood -= woodCost;
-        Rice -= riceCost;
-        Stone -= stoneCost;
+        // Tác động thẳng vào dữ liệu lõi thông qua hàm Add
+        JsonDataManager.Ins.AddWood(-woodCost);
+        JsonDataManager.Ins.AddFood(-foodCost);
+        JsonDataManager.Ins.AddStone(-stoneCost);
 
-        Debug.Log($"[RESOURCE_SYSTEM] Tiêu thụ thành công! Kho còn: Gỗ({wood}), Lúa({rice}), Đá({stone})");
+        Debug.Log($"[RESOURCE_SYSTEM] Tiêu thụ thành công! Kho còn: Gỗ({Wood}), Lúa({Rice}), Đá({Stone})");
         return true;
     }
 
-    // Tính năng phụ: Tạo nút bấm nạp nhanh tài nguyên ngay trong Unity Editor để bạn tiện test game
     [ContextMenu("Debug/Add 500 All")]
     public void AddDebugResources()
     {
-        Wood += 500;
-        Rice += 500;
-        Stone += 500;
-        Debug.Log("[RESOURCE_SYSTEM] Đã hack thêm 500 mỗi loại để test!");
+        if (JsonDataManager.Ins == null) return;
+        JsonDataManager.Ins.AddWood(500);
+        JsonDataManager.Ins.AddFood(500);
+        JsonDataManager.Ins.AddStone(500);
+        Debug.Log("[RESOURCE_SYSTEM] Đã nạp thêm 500 vào JsonDataManager để test!");
     }
 }

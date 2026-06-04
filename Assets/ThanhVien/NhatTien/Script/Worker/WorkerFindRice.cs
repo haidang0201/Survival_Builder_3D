@@ -21,12 +21,13 @@ public class WorkerFindRice : MonoBehaviour
     public float stuckTimeout = 2.0f;
     private float stuckTimer = 0f;
     private float depositRetryTimer = 0f;
+    private float totalWaitTimer = 0f; 
 
     private Rice  targetRice;
     private float harvestTimer            = 0f;
     private bool  hasTriggeredHarvestAnim = false;
     private bool  wasResting              = false;
-    private float findRiceCooldown         = 0f;
+    private float findRiceCooldown        = 0f;
     private const float FIND_RICE_INTERVAL = 0.5f;
 
     private bool isHeadingToRice    = false;
@@ -90,7 +91,8 @@ public class WorkerFindRice : MonoBehaviour
     void UpdateAnimationSpeed()
     {
         if (animator == null || agent == null) return;
-        animator.SetFloat("Speed", agent.velocity.magnitude, 0.1f, Time.deltaTime);
+        float speed = agent.isStopped ? 0f : (agent.speed > 0f ? agent.velocity.magnitude / agent.speed : 0f);
+        animator.SetFloat("Speed", speed, 0.05f, Time.deltaTime);
     }
 
     void HandleCarrying()
@@ -98,7 +100,6 @@ public class WorkerFindRice : MonoBehaviour
         if (!isHeadingToDeposit)
         {
             isHeadingToDeposit = true;
-            // ĐÃ SỬA THÀNH MoveToStorage() ĐỂ ĐỒNG BỘ VỚI CODE MỚI
             carrySystem.MoveToStorage(); 
         }
 
@@ -107,22 +108,40 @@ public class WorkerFindRice : MonoBehaviour
         {
             agent.isStopped = true;
             depositRetryTimer -= Time.deltaTime;
+            totalWaitTimer += Time.deltaTime; 
+
             if (depositRetryTimer <= 0f)
             {
-                bool success = carrySystem.TryDeposit();
-                if (!success)
+                if (carrySystem.TryDeposit())
                 {
-                    depositRetryTimer = 2.5f; 
-                    Debug.LogWarning($"[WorkerFindRice] {name}: Kho tạm lúa đầy!");
+                    depositRetryTimer = 0f;
+                    totalWaitTimer = 0f;
+                    isHeadingToDeposit = false;
                 }
                 else
                 {
-                    depositRetryTimer = 0f;
-                    isHeadingToDeposit = false;
+                    depositRetryTimer = 2.5f; 
+                    
+                    if (totalWaitTimer >= 15f)
+                    {
+                        Debug.LogWarning($"[WorkerFindRice] {name}: Kho đầy quá 15s! Vứt hàng.");
+                        totalWaitTimer = 0f;
+                        depositRetryTimer = 0f;
+                        isHeadingToDeposit = false;
+                        if (agent.isOnNavMesh) agent.isStopped = false;
+
+                        // FIX AN TOÀN
+                        carrySystem.enabled = false;
+                        carrySystem.enabled = true;
+                    }
                 }
             }
         }
-        else depositRetryTimer = 0f;
+        else 
+        {
+            depositRetryTimer = 0f;
+            totalWaitTimer = 0f;
+        }
     }
 
     void HandleFindRice()
@@ -235,6 +254,7 @@ public class WorkerFindRice : MonoBehaviour
             {
                 stuckTimer = 0f;
                 agent.ResetPath();
+                if (carrySystem.IsCarrying()) carrySystem.MoveToStorage();
                 isHeadingToRice = false;
                 isHeadingToDeposit = false;
             }

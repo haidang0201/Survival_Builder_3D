@@ -18,6 +18,7 @@ public class WorkerFindTree : MonoBehaviour
     public float stuckTimeout = 2.0f;
     private float stuckTimer = 0f;
     private float depositRetryTimer = 0f; 
+    private float totalWaitTimer = 0f; 
 
     private Tree  targetTree;
     private float chopTimer            = 0f;
@@ -90,7 +91,8 @@ public class WorkerFindTree : MonoBehaviour
     void UpdateAnimationSpeed()
     {
         if (animator == null || agent == null) return;
-        animator.SetFloat("Speed", agent.velocity.magnitude, 0.1f, Time.deltaTime);
+        float speed = agent.isStopped ? 0f : (agent.speed > 0f ? agent.velocity.magnitude / agent.speed : 0f);
+        animator.SetFloat("Speed", speed, 0.05f, Time.deltaTime);
     }
 
     void HandleCarrying()
@@ -98,7 +100,6 @@ public class WorkerFindTree : MonoBehaviour
         if (!isHeadingToDeposit)
         {
             isHeadingToDeposit = true;
-            // FIX: Đã đổi từ MoveToHouse() sang MoveToStorage() cho khớp code
             carrySystem.MoveToStorage();
         }
 
@@ -107,24 +108,39 @@ public class WorkerFindTree : MonoBehaviour
         {
             agent.isStopped = true;
             depositRetryTimer -= Time.deltaTime;
+            totalWaitTimer += Time.deltaTime; 
+
             if (depositRetryTimer <= 0f)
             {
-                bool success = carrySystem.TryDeposit();
-                if (!success)
+                if (carrySystem.TryDeposit())
                 {
-                    depositRetryTimer = 2.5f; 
-                    Debug.LogWarning($"[WorkerFindTree] {name}: Kho tạm đầy gỗ!");
+                    depositRetryTimer = 0f;
+                    totalWaitTimer = 0f;
+                    isHeadingToDeposit = false;
                 }
                 else
                 {
-                    depositRetryTimer = 0f;
-                    isHeadingToDeposit = false;
+                    depositRetryTimer = 2.5f; 
+                    
+                    if (totalWaitTimer >= 15f)
+                    {
+                        Debug.LogWarning($"[WorkerFindTree] {name}: Kho đầy quá 15s! Vứt hàng.");
+                        totalWaitTimer = 0f;
+                        depositRetryTimer = 0f;
+                        isHeadingToDeposit = false;
+                        if (agent.isOnNavMesh) agent.isStopped = false;
+
+                        // FIX AN TOÀN
+                        carrySystem.enabled = false;
+                        carrySystem.enabled = true;
+                    }
                 }
             }
         }
         else
         {
             depositRetryTimer = 0f;
+            totalWaitTimer = 0f;
         }
     }
 
@@ -238,6 +254,7 @@ public class WorkerFindTree : MonoBehaviour
             {
                 stuckTimer = 0f;
                 agent.ResetPath();
+                if (carrySystem.IsCarrying()) carrySystem.MoveToStorage();
                 isHeadingToTree = false;
                 isHeadingToDeposit = false;
             }
