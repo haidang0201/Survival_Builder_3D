@@ -40,6 +40,15 @@ public class WorkerFindTree : MonoBehaviour
         UpdateAnimationSpeed();
         CheckStuck(); 
 
+        // 1. ƯU TIÊN TUYỆT ĐỐI: NẾU ĐANG CẦM ĐỒ THÌ PHẢI ĐI CẤT TRƯỚC!
+        if (carrySystem.IsCarrying())
+        {
+            isHeadingToTree = false; 
+            HandleCarrying();
+            return; // Đang đi cất đồ thì bỏ qua mọi lệnh khác
+        }
+
+        // 2. CHẶN THỂ LỰC: Sau khi đã tay không, nếu tới giờ ngủ hoặc mệt thì mới dừng việc.
         if (stamina != null && !stamina.CanWork())
         {
             if (!wasResting)
@@ -56,14 +65,6 @@ public class WorkerFindTree : MonoBehaviour
         }
 
         wasResting = false;
-
-        if (carrySystem.IsCarrying())
-        {
-            isHeadingToTree = false; 
-            HandleCarrying();
-            return;
-        }
-
         isHeadingToDeposit = false; 
 
         if (targetTree == null)
@@ -129,8 +130,7 @@ public class WorkerFindTree : MonoBehaviour
                         depositRetryTimer = 0f;
                         isHeadingToDeposit = false;
                         if (agent.isOnNavMesh) agent.isStopped = false;
-
-                        // FIX AN TOÀN
+                        
                         carrySystem.enabled = false;
                         carrySystem.enabled = true;
                     }
@@ -223,8 +223,8 @@ public class WorkerFindTree : MonoBehaviour
         WoodPickup[] woods = targetTree.TakeDamage(1);
         if (woods != null && woods.Length > 0)
         {
+            ReleaseCurrentTree(); // Release trước khi pickup để tránh conflict
             carrySystem.PickupWood(woods[0]);
-            ReleaseCurrentTree();
         }
     }
 

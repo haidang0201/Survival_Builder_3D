@@ -43,6 +43,15 @@ public class WorkerFindRice : MonoBehaviour
         UpdateAnimationSpeed();
         CheckStuck();
 
+        // 1. ƯU TIÊN TUYỆT ĐỐI: NẾU ĐANG CẦM ĐỒ THÌ PHẢI ĐI CẤT TRƯỚC!
+        if (carrySystem.IsCarrying())
+        {
+            isHeadingToRice = false;
+            HandleCarrying();
+            return;
+        }
+
+        // 2. CHẶN THỂ LỰC
         if (stamina != null && !stamina.CanWork())
         {
             if (!wasResting)
@@ -59,14 +68,6 @@ public class WorkerFindRice : MonoBehaviour
         }
 
         wasResting = false;
-
-        if (carrySystem.IsCarrying())
-        {
-            isHeadingToRice = false;
-            HandleCarrying();
-            return;
-        }
-
         isHeadingToDeposit = false;
 
         if (targetRice != null && !targetRice.gameObject.activeInHierarchy)
@@ -130,7 +131,6 @@ public class WorkerFindRice : MonoBehaviour
                         isHeadingToDeposit = false;
                         if (agent.isOnNavMesh) agent.isStopped = false;
 
-                        // FIX AN TOÀN
                         carrySystem.enabled = false;
                         carrySystem.enabled = true;
                     }

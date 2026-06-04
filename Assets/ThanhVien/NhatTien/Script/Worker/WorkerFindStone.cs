@@ -1,8 +1,11 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
 
 public class WorkerFindStone : MonoBehaviour
 {
+    public static List<Stone> Registry = new List<Stone>(); 
+
     public NavMeshAgent     agent;
     public WorkerCarryStone carrySystem;
     public Animator         animator;
@@ -40,6 +43,15 @@ public class WorkerFindStone : MonoBehaviour
         UpdateAnimationSpeed();
         CheckStuck();
 
+        // 1. ƯU TIÊN TUYỆT ĐỐI: NẾU ĐANG CẦM ĐỒ THÌ PHẢI ĐI CẤT TRƯỚC!
+        if (carrySystem.IsCarrying())
+        {
+            isHeadingToStone = false;
+            HandleCarrying();
+            return;
+        }
+
+        // 2. CHẶN THỂ LỰC
         if (stamina != null && !stamina.CanWork())
         {
             if (!wasResting)
@@ -56,14 +68,6 @@ public class WorkerFindStone : MonoBehaviour
         }
 
         wasResting = false;
-
-        if (carrySystem.IsCarrying())
-        {
-            isHeadingToStone = false;
-            HandleCarrying();
-            return;
-        }
-
         isHeadingToDeposit = false;
 
         if (targetStone != null && !targetStone.gameObject.activeInHierarchy)
@@ -127,7 +131,6 @@ public class WorkerFindStone : MonoBehaviour
                         isHeadingToDeposit = false;
                         if (agent.isOnNavMesh) agent.isStopped = false;
 
-                        // FIX AN TOÀN: Tắt bật lại riêng Carry Script để dọn rác
                         carrySystem.enabled = false;
                         carrySystem.enabled = true;
                     }

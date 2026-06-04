@@ -49,6 +49,7 @@ public class WorkerCarrier : MonoBehaviour
     public float stuckTimeout     = 2f;
 
     // ===== INTERNAL =====
+    private WorkerStamina    stamina;
     private WoodStorage      woodStorage;
     private RiceStorage      riceStorage;
     private StoneStorage     stoneStorage;
@@ -77,6 +78,7 @@ public class WorkerCarrier : MonoBehaviour
     void Start()
     {
         if (agent == null) agent = GetComponent<NavMeshAgent>();
+        stamina = GetComponent<WorkerStamina>();
         FindReferences();
         anchorPosition = transform.position;
         EnterWander();
@@ -86,6 +88,14 @@ public class WorkerCarrier : MonoBehaviour
     {
         UpdateAnimation();
         CheckStuck();
+
+        // Nếu hết thể lực: ưu tiên về kho nếu đang cầm đồ, còn không thì dừng hẳn
+        if (stamina != null && !stamina.CanWork())
+        {
+            if (isCarrying && currentState != State.MoveToWarehouse)
+                EnterMoveToWarehouse();
+            return;
+        }
 
         switch (currentState)
         {
