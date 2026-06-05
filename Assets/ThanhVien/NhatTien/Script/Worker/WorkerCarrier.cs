@@ -1,22 +1,14 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-/// <summary>
-/// Worker vạn năng: Lấy Gỗ, Lúa, hoặc Đá từ các kho tạm mang về WarehouseStorage.
-/// - Cân bằng tải tự động (ưu tiên kho nhiều tồn đọng nhất)
-/// - Phân vai linh hoạt: Universal / WoodOnly / RiceOnly / StoneOnly
-/// - Chống kẹt NavMesh bằng velocity thực tế
-/// - Animation chuẩn hóa 0→1
-/// - Chống tranh giành tài nguyên khi nhiều Carrier cùng hoạt động
-/// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(WorkerStamina))]
 public class WorkerCarrier : MonoBehaviour
 {
     public enum CarrierRole  { Universal, WoodOnly, RiceOnly, StoneOnly }
     public enum ResourceType { None, Wood, Rice, Stone }
 
     [Header("Role Configuration")]
-    [Tooltip("Universal tự động dọn kho đầy nhất. Hoặc khóa cứng vai trò tại đây.")]
     public CarrierRole role = CarrierRole.Universal;
 
     [Header("References")]
@@ -29,7 +21,7 @@ public class WorkerCarrier : MonoBehaviour
     public ObjectPool ricePool;
     public ObjectPool stonePool;
 
-    [Header("Storage Points (Optional — tự tìm qua Tag nếu bỏ trống)")]
+    [Header("Storage Points (Optional)")]
     public Transform woodStoragePoint;
     public Transform riceStoragePoint;
     public Transform stoneStoragePoint;
@@ -45,10 +37,8 @@ public class WorkerCarrier : MonoBehaviour
     public float wanderInterval   = 3f;
     public float checkInterval    = 0.5f;
     public int   maxCarryCapacity = 10;
-    [Tooltip("Thời gian vận tốc = 0 trước khi kích hoạt chống kẹt (giây)")]
     public float stuckTimeout     = 2f;
 
-    // ===== INTERNAL =====
     private WorkerStamina    stamina;
     private WoodStorage      woodStorage;
     private RiceStorage      riceStorage;
@@ -71,14 +61,11 @@ public class WorkerCarrier : MonoBehaviour
     private Transform    targetStoragePoint;
     private ResourceType targetResourceType = ResourceType.None;
 
-    // ===================================================
-    // LIFECYCLE
-    // ===================================================
-
     void Start()
     {
         if (agent == null) agent = GetComponent<NavMeshAgent>();
-        stamina = GetComponent<WorkerStamina>();
+        stamina = GetComponent<WorkerStamina>() ?? GetComponentInChildren<WorkerStamina>() ?? GetComponentInParent<WorkerStamina>();
+        
         FindReferences();
         anchorPosition = transform.position;
         EnterWander();
@@ -87,14 +74,41 @@ public class WorkerCarrier : MonoBehaviour
     void Update()
     {
         UpdateAnimation();
-        CheckStuck();
 
-        // Nếu hết thể lực: ưu tiên về kho nếu đang cầm đồ, còn không thì dừng hẳn
+        bool isNight = DayNightManager.Ins != null && DayNightManager.Ins.CurrentMode == DayNightManager.Mode.Night;
+
+        if (isNight && !isCarrying)
+        {
+            return; 
+        }
+
         if (stamina != null && !stamina.CanWork())
         {
-            if (isCarrying && currentState != State.MoveToWarehouse)
-                EnterMoveToWarehouse();
-            return;
+            if (currentState == State.MoveToWarehouse && isCarrying)
+            {
+                if (agent != null && agent.isOnNavMesh && agent.isStopped && warehousePoint != null)
+                {
+                    agent.isStopped = false;
+                    agent.SetDestination(warehousePoint.position);
+                }
+                CheckStuck();
+            }
+            else
+            {
+                if (!stamina.IsResting)
+                {
+                    if (agent != null && agent.isOnNavMesh && !agent.isStopped)
+                    {
+                        agent.isStopped = true;
+                        agent.ResetPath();
+                    }
+                }
+                return;
+            }
+        }
+        else
+        {
+            CheckStuck();
         }
 
         switch (currentState)
@@ -107,44 +121,32 @@ public class WorkerCarrier : MonoBehaviour
 
     void OnDisable()
     {
-        // Chống rò rỉ tài nguyên: trả đồ về kho tạm nếu bị tắt giữa chừng
         if (isCarrying && carriedType != ResourceType.None)
             ReturnResourcesToStorage();
     }
 
-    // ===================================================
-    // ANIMATION — Normalize 0→1, check isStopped
-    // ===================================================
-
     void UpdateAnimation()
     {
         if (animator == null || agent == null) return;
-
-        // Chuẩn hóa về 0→1 để Blend Tree hoạt động đúng
-        float speed = agent.isStopped ? 0f
-                    : (agent.speed > 0f ? agent.velocity.magnitude / agent.speed : 0f);
-
+        float speed = agent.isStopped ? 0f : (agent.speed > 0f ? agent.velocity.magnitude / agent.speed : 0f);
         animator.SetFloat(speedParam, speed, 0.05f, Time.deltaTime);
         animator.SetBool(carryingParam, isCarrying);
     }
 
-    // ===================================================
-    // STATE: WANDER
-    // ===================================================
-
     void EnterWander()
     {
         currentState       = State.Wander;
-        wanderTimer        = wanderInterval; // Ép chọn điểm đi ngay frame tiếp theo
+        wanderTimer        = wanderInterval;
         targetStoragePoint = null;
         targetResourceType = ResourceType.None;
-        // Mở khóa agent — không gọi ResetPath() để tránh giật animation
-        if (agent != null) agent.isStopped = false;
+        if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
+        
+        // RẢNH RỖI THÌ TẮT TIÊU HAO THỂ LỰC
+        stamina?.SetDraining(false); 
     }
 
     void HandleWander()
     {
-        // 1. Tuần tra ngẫu nhiên quanh anchorPosition
         wanderTimer += Time.deltaTime;
         if (wanderTimer >= wanderInterval)
         {
@@ -156,7 +158,6 @@ public class WorkerCarrier : MonoBehaviour
             }
         }
 
-        // 2. Quét kho mỗi checkInterval — reset timer dù kho rỗng hay không
         checkTimer += Time.deltaTime;
         if (checkTimer >= checkInterval)
         {
@@ -169,7 +170,6 @@ public class WorkerCarrier : MonoBehaviour
         }
     }
 
-    // Thuật toán cân bằng tải: ưu tiên kho tồn đọng nhiều nhất
     bool TrySelectStorageToClear()
     {
         int          maxAmount = 0;
@@ -177,8 +177,7 @@ public class WorkerCarrier : MonoBehaviour
         Transform    bestPoint = null;
 
         if ((role == CarrierRole.Universal || role == CarrierRole.WoodOnly)
-            && woodStorage != null && !woodStorage.IsEmpty
-            && woodStorage.CurrentAmount > maxAmount)
+            && woodStorage != null && !woodStorage.IsEmpty && woodStorage.CurrentAmount > maxAmount)
         {
             maxAmount = woodStorage.CurrentAmount;
             bestType  = ResourceType.Wood;
@@ -186,8 +185,7 @@ public class WorkerCarrier : MonoBehaviour
         }
 
         if ((role == CarrierRole.Universal || role == CarrierRole.RiceOnly)
-            && riceStorage != null && !riceStorage.IsEmpty
-            && riceStorage.CurrentAmount > maxAmount)
+            && riceStorage != null && !riceStorage.IsEmpty && riceStorage.CurrentAmount > maxAmount)
         {
             maxAmount = riceStorage.CurrentAmount;
             bestType  = ResourceType.Rice;
@@ -195,8 +193,7 @@ public class WorkerCarrier : MonoBehaviour
         }
 
         if ((role == CarrierRole.Universal || role == CarrierRole.StoneOnly)
-            && stoneStorage != null && !stoneStorage.IsEmpty
-            && stoneStorage.CurrentAmount > maxAmount)
+            && stoneStorage != null && !stoneStorage.IsEmpty && stoneStorage.CurrentAmount > maxAmount)
         {
             maxAmount = stoneStorage.CurrentAmount;
             bestType  = ResourceType.Stone;
@@ -210,10 +207,6 @@ public class WorkerCarrier : MonoBehaviour
         return true;
     }
 
-    // ===================================================
-    // STATE: MOVE TO STORAGE
-    // ===================================================
-
     void EnterMoveToStorage()
     {
         if (targetStoragePoint == null || !agent.isOnNavMesh)
@@ -224,12 +217,13 @@ public class WorkerCarrier : MonoBehaviour
         currentState    = State.MoveToStorage;
         agent.isStopped = false;
         agent.SetDestination(targetStoragePoint.position);
+
+        // BẬT TIÊU HAO THỂ LỰC KHI ĐI LÀM
+        stamina?.SetDraining(true); 
     }
 
     void HandleMoveToStorage()
     {
-        // FIX RACE (1/2): Carrier khác dọn sạch kho trong lúc đang đi
-        // → Quay đầu ngay, không đi tiếp vô ích đến tận nơi mới biết trống
         if (IsTargetStorageEmpty())
         {
             if (TrySelectStorageToClear()) EnterMoveToStorage();
@@ -249,8 +243,6 @@ public class WorkerCarrier : MonoBehaviour
             case ResourceType.Stone: if (stoneStorage != null) taken = stoneStorage.TakeStone(maxCarryCapacity); break;
         }
 
-        // FIX RACE (2/2): 2 Carrier đến gần cùng lúc, thằng sau vẫn hết hàng dù đã kiểm tra
-        // → Thử tìm kho khác còn hàng, không đứng đờ chờ Wander
         if (taken <= 0)
         {
             if (TrySelectStorageToClear()) EnterMoveToStorage();
@@ -261,13 +253,12 @@ public class WorkerCarrier : MonoBehaviour
         carriedAmount = taken;
         carriedType   = targetResourceType;
         isCarrying    = true;
+
+        if (stamina != null) stamina.isCarryingResources = true;
+
         SpawnCarriedVisual();
         EnterMoveToWarehouse();
     }
-
-    // ===================================================
-    // STATE: MOVE TO WAREHOUSE
-    // ===================================================
 
     void EnterMoveToWarehouse()
     {
@@ -280,10 +271,20 @@ public class WorkerCarrier : MonoBehaviour
         currentState    = State.MoveToWarehouse;
         agent.isStopped = false;
         agent.SetDestination(warehousePoint.position);
+
+        // BẬT TIÊU HAO THỂ LỰC KHI ĐI LÀM
+        stamina?.SetDraining(true); 
     }
 
     void HandleMoveToWarehouse()
     {
+        if (!isCarrying)
+        {
+            if (TrySelectStorageToClear()) EnterMoveToStorage();
+            else EnterWander();
+            return;
+        }
+
         if (!HasArrived()) return;
 
         agent.isStopped = true;
@@ -301,22 +302,20 @@ public class WorkerCarrier : MonoBehaviour
         ReturnVisualToPool();
         ResetCarry();
 
-        // Sau khi nộp xong, rà soát ngay — nếu có việc thì bốc tiếp luôn
-        if (TrySelectStorageToClear()) EnterMoveToStorage();
-        else EnterWander();
-    }
+        stamina?.OnResourcesDeposited();
 
-    // ===================================================
-    // HELPERS
-    // ===================================================
+        if (stamina == null || stamina.CanWork())
+        {
+            if (TrySelectStorageToClear()) EnterMoveToStorage();
+            else EnterWander();
+        }
+    }
 
     bool HasArrived()
     {
-        return !agent.pathPending
-            && agent.remainingDistance <= (agent.stoppingDistance + arriveDistance);
+        return !agent.pathPending && agent.remainingDistance <= (agent.stoppingDistance + arriveDistance);
     }
 
-    // Kiểm tra kho mục tiêu hiện tại có trống không (dùng cho FIX RACE)
     bool IsTargetStorageEmpty()
     {
         switch (targetResourceType)
@@ -328,7 +327,6 @@ public class WorkerCarrier : MonoBehaviour
         }
     }
 
-    // Dùng velocity.sqrMagnitude — chính xác hơn position delta ở mọi FPS
     void CheckStuck()
     {
         if (agent == null || agent.isStopped || !agent.hasPath)
@@ -368,10 +366,6 @@ public class WorkerCarrier : MonoBehaviour
             return hit.position;
         return anchorPosition;
     }
-
-    // ===================================================
-    // VISUAL OBJECT (CẦM TRÊN TAY)
-    // ===================================================
 
     void SpawnCarriedVisual()
     {
@@ -439,72 +433,43 @@ public class WorkerCarrier : MonoBehaviour
         isCarrying    = false;
         carriedAmount = 0;
         carriedType   = ResourceType.None;
+        if (stamina != null) stamina.isCarryingResources = false;
     }
-
-    // ===================================================
-    // FIND REFERENCES
-    // ===================================================
 
     void FindReferences()
     {
         if (agent == null) agent = GetComponent<NavMeshAgent>();
 
-        // Kho chính
         if (warehousePoint == null)
         {
             GameObject wh = GameObject.FindWithTag("Warehouse");
             if (wh != null) warehousePoint = wh.transform;
         }
         if (warehousePoint != null)
-            warehouseStorage = warehousePoint.GetComponent<WarehouseStorage>()
-                            ?? warehousePoint.GetComponentInChildren<WarehouseStorage>()
-                            ?? warehousePoint.GetComponentInParent<WarehouseStorage>();
+            warehouseStorage = warehousePoint.GetComponent<WarehouseStorage>() ?? warehousePoint.GetComponentInChildren<WarehouseStorage>() ?? warehousePoint.GetComponentInParent<WarehouseStorage>();
 
-        if (warehouseStorage == null)
-            Debug.LogError($"[WorkerCarrier] '{name}': Không tìm thấy WarehouseStorage! Kiểm tra Tag 'Warehouse'.");
-
-        // Kho tạm Gỗ
         if (woodStoragePoint == null)
         {
             GameObject obj = GameObject.FindWithTag("Storage");
             if (obj != null) woodStoragePoint = obj.transform;
         }
         if (woodStoragePoint != null)
-            woodStorage = woodStoragePoint.GetComponent<WoodStorage>()
-                       ?? woodStoragePoint.GetComponentInChildren<WoodStorage>()
-                       ?? woodStoragePoint.GetComponentInParent<WoodStorage>();
+            woodStorage = woodStoragePoint.GetComponent<WoodStorage>() ?? woodStoragePoint.GetComponentInChildren<WoodStorage>() ?? woodStoragePoint.GetComponentInParent<WoodStorage>();
 
-        // Kho tạm Lúa
         if (riceStoragePoint == null)
         {
             GameObject obj = GameObject.FindWithTag("RiceStorage");
             if (obj != null) riceStoragePoint = obj.transform;
         }
         if (riceStoragePoint != null)
-            riceStorage = riceStoragePoint.GetComponent<RiceStorage>()
-                       ?? riceStoragePoint.GetComponentInChildren<RiceStorage>()
-                       ?? riceStoragePoint.GetComponentInParent<RiceStorage>();
+            riceStorage = riceStoragePoint.GetComponent<RiceStorage>() ?? riceStoragePoint.GetComponentInChildren<RiceStorage>() ?? riceStoragePoint.GetComponentInParent<RiceStorage>();
 
-        // Kho tạm Đá
         if (stoneStoragePoint == null)
         {
             GameObject obj = GameObject.FindWithTag("StoneStorage");
             if (obj != null) stoneStoragePoint = obj.transform;
         }
         if (stoneStoragePoint != null)
-            stoneStorage = stoneStoragePoint.GetComponent<StoneStorage>()
-                        ?? stoneStoragePoint.GetComponentInChildren<StoneStorage>()
-                        ?? stoneStoragePoint.GetComponentInParent<StoneStorage>();
-    }
-
-    // ===================================================
-    // GIZMOS
-    // ===================================================
-
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.cyan;
-        Vector3 center = Application.isPlaying ? anchorPosition : transform.position;
-        Gizmos.DrawWireSphere(center, wanderRadius);
+            stoneStorage = stoneStoragePoint.GetComponent<StoneStorage>() ?? stoneStoragePoint.GetComponentInChildren<StoneStorage>() ?? stoneStoragePoint.GetComponentInParent<StoneStorage>();
     }
 }

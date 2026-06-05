@@ -17,6 +17,12 @@ public class WorkerFindStone : MonoBehaviour
     [Header("Animation Settings")]
     public string mineTriggerName = "Mine"; 
 
+    [Header("Idle/Wander Settings")]
+    public float wanderRadius = 5f;
+    public float wanderInterval = 3f;
+    private float wanderTimer = 0f;
+    private Vector3 anchorPosition;
+
     [Header("Settings Nâng Cấp")]
     public float stuckTimeout = 2.0f;
     private float stuckTimer = 0f;
@@ -36,6 +42,7 @@ public class WorkerFindStone : MonoBehaviour
     void Start()
     {
         if (stamina == null) stamina = GetComponent<WorkerStamina>();
+        anchorPosition = transform.position; // Đánh dấu khu vực làm việc
     }
 
     void Update()
@@ -43,7 +50,6 @@ public class WorkerFindStone : MonoBehaviour
         UpdateAnimationSpeed();
         CheckStuck();
 
-        // 1. ƯU TIÊN TUYỆT ĐỐI: NẾU ĐANG CẦM ĐỒ THÌ PHẢI ĐI CẤT TRƯỚC!
         if (carrySystem.IsCarrying())
         {
             isHeadingToStone = false;
@@ -51,7 +57,6 @@ public class WorkerFindStone : MonoBehaviour
             return;
         }
 
-        // 2. CHẶN THỂ LỰC
         if (stamina != null && !stamina.CanWork())
         {
             if (!wasResting)
@@ -70,14 +75,23 @@ public class WorkerFindStone : MonoBehaviour
         wasResting = false;
         isHeadingToDeposit = false;
 
-        if (targetStone != null && !targetStone.gameObject.activeInHierarchy)
-            ReleaseCurrentStone();
-
-        if (targetStone == null)
+        // Rảnh rỗi (Không có đá) -> Lang thang và tắt trừ Stamina
+        if (targetStone == null || !targetStone.gameObject.activeInHierarchy)
         {
+            if (targetStone != null) ReleaseCurrentStone();
+            
             HandleFindStone();
-            return;
+            
+            if (targetStone == null)
+            {
+                stamina?.SetDraining(false); 
+                HandleWander();
+                return;
+            }
         }
+
+        // Đang đi đào đá -> Bật trừ Stamina
+        stamina?.SetDraining(true);
 
         float dist = Vector3.Distance(transform.position, targetStone.transform.position);
         if (dist > mineDistance)
@@ -87,6 +101,26 @@ public class WorkerFindStone : MonoBehaviour
         }
 
         HandleMining();
+    }
+
+    void HandleWander()
+    {
+        if (agent == null || !agent.isOnNavMesh) return;
+
+        wanderTimer += Time.deltaTime;
+        if (wanderTimer >= wanderInterval)
+        {
+            wanderTimer = 0f;
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.1f)
+            {
+                Vector3 randDir = Random.insideUnitSphere * wanderRadius + anchorPosition;
+                if (NavMesh.SamplePosition(randDir, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
+                {
+                    agent.isStopped = false;
+                    agent.SetDestination(hit.position);
+                }
+            }
+        }
     }
 
     void UpdateAnimationSpeed()
@@ -122,15 +156,12 @@ public class WorkerFindStone : MonoBehaviour
                 else
                 {
                     depositRetryTimer = 2.5f; 
-                    
                     if (totalWaitTimer >= 15f)
                     {
-                        Debug.LogWarning($"[WorkerFindStone] {name}: Kho đầy quá 15s! Vứt hàng.");
                         totalWaitTimer = 0f;
                         depositRetryTimer = 0f;
                         isHeadingToDeposit = false;
                         if (agent.isOnNavMesh) agent.isStopped = false;
-
                         carrySystem.enabled = false;
                         carrySystem.enabled = true;
                     }
@@ -206,7 +237,6 @@ public class WorkerFindStone : MonoBehaviour
     {
         agent.isStopped = true;
         isHeadingToStone = false; 
-        stamina?.SetDraining(true);
 
         if (!hasTriggeredMineAnim)
         {
@@ -241,11 +271,7 @@ public class WorkerFindStone : MonoBehaviour
     void CheckStuck()
     {
         bool isResting = stamina != null && !stamina.CanWork();
-        if (agent == null || agent.isStopped || !agent.hasPath || isResting)
-        {
-            stuckTimer = 0f;
-            return;
-        }
+        if (agent == null || agent.isStopped || !agent.hasPath || isResting) return;
 
         if (agent.velocity.sqrMagnitude < 0.01f)
         {

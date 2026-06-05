@@ -14,6 +14,12 @@ public class WorkerFindTree : MonoBehaviour
     public float chopDistance = 2f;
     public float chopTime     = 2f;
 
+    [Header("Idle/Wander Settings")]
+    public float wanderRadius = 5f;
+    public float wanderInterval = 3f;
+    private float wanderTimer = 0f;
+    private Vector3 anchorPosition;
+
     [Header("Settings Nâng Cấp")]
     public float stuckTimeout = 2.0f;
     private float stuckTimer = 0f;
@@ -33,6 +39,7 @@ public class WorkerFindTree : MonoBehaviour
     void Start()
     {
         if (stamina == null) stamina = GetComponent<WorkerStamina>();
+        anchorPosition = transform.position; // Đánh dấu khu vực làm việc để rảnh thì lượn lờ quanh đây
     }
 
     void Update()
@@ -40,15 +47,13 @@ public class WorkerFindTree : MonoBehaviour
         UpdateAnimationSpeed();
         CheckStuck(); 
 
-        // 1. ƯU TIÊN TUYỆT ĐỐI: NẾU ĐANG CẦM ĐỒ THÌ PHẢI ĐI CẤT TRƯỚC!
         if (carrySystem.IsCarrying())
         {
             isHeadingToTree = false; 
             HandleCarrying();
-            return; // Đang đi cất đồ thì bỏ qua mọi lệnh khác
+            return; 
         }
 
-        // 2. CHẶN THỂ LỰC: Sau khi đã tay không, nếu tới giờ ngủ hoặc mệt thì mới dừng việc.
         if (stamina != null && !stamina.CanWork())
         {
             if (!wasResting)
@@ -67,17 +72,23 @@ public class WorkerFindTree : MonoBehaviour
         wasResting = false;
         isHeadingToDeposit = false; 
 
-        if (targetTree == null)
+        // Rảnh rỗi (Không có cây) -> Lang thang và tắt trừ Stamina
+        if (targetTree == null || !targetTree.gameObject.activeInHierarchy)
         {
+            if (targetTree != null) ReleaseCurrentTree();
+            
             HandleFindTree();
-            return;
+            
+            if (targetTree == null)
+            {
+                stamina?.SetDraining(false); 
+                HandleWander();
+                return;
+            }
         }
 
-        if (!targetTree.gameObject.activeInHierarchy)
-        {
-            ReleaseCurrentTree();
-            return;
-        }
+        // Đang đi chặt cây -> Bật trừ Stamina
+        stamina?.SetDraining(true);
 
         float dist = Vector3.Distance(transform.position, targetTree.transform.position);
         if (dist > chopDistance)
@@ -87,6 +98,26 @@ public class WorkerFindTree : MonoBehaviour
         }
 
         HandleChopping();
+    }
+
+    void HandleWander()
+    {
+        if (agent == null || !agent.isOnNavMesh) return;
+
+        wanderTimer += Time.deltaTime;
+        if (wanderTimer >= wanderInterval)
+        {
+            wanderTimer = 0f;
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.1f)
+            {
+                Vector3 randDir = Random.insideUnitSphere * wanderRadius + anchorPosition;
+                if (NavMesh.SamplePosition(randDir, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
+                {
+                    agent.isStopped = false;
+                    agent.SetDestination(hit.position);
+                }
+            }
+        }
     }
 
     void UpdateAnimationSpeed()
@@ -122,15 +153,12 @@ public class WorkerFindTree : MonoBehaviour
                 else
                 {
                     depositRetryTimer = 2.5f; 
-                    
                     if (totalWaitTimer >= 15f)
                     {
-                        Debug.LogWarning($"[WorkerFindTree] {name}: Kho đầy quá 15s! Vứt hàng.");
                         totalWaitTimer = 0f;
                         depositRetryTimer = 0f;
                         isHeadingToDeposit = false;
                         if (agent.isOnNavMesh) agent.isStopped = false;
-                        
                         carrySystem.enabled = false;
                         carrySystem.enabled = true;
                     }
@@ -206,7 +234,6 @@ public class WorkerFindTree : MonoBehaviour
     {
         agent.isStopped = true;
         isHeadingToTree = false; 
-        stamina?.SetDraining(true);
 
         if (!hasTriggeredChopAnim)
         {
@@ -217,13 +244,13 @@ public class WorkerFindTree : MonoBehaviour
         chopTimer += Time.deltaTime;
         if (chopTimer < chopTime) return;
 
-        chopTimer            = 0f;
+        chopTimer = 0f;
         hasTriggeredChopAnim = false;
 
         WoodPickup[] woods = targetTree.TakeDamage(1);
         if (woods != null && woods.Length > 0)
         {
-            ReleaseCurrentTree(); // Release trước khi pickup để tránh conflict
+            ReleaseCurrentTree(); 
             carrySystem.PickupWood(woods[0]);
         }
     }
@@ -241,11 +268,7 @@ public class WorkerFindTree : MonoBehaviour
     void CheckStuck()
     {
         bool isResting = stamina != null && !stamina.CanWork();
-        if (agent == null || agent.isStopped || !agent.hasPath || isResting)
-        {
-            stuckTimer = 0f;
-            return;
-        }
+        if (agent == null || agent.isStopped || !agent.hasPath || isResting) return;
 
         if (agent.velocity.sqrMagnitude < 0.01f)
         {
