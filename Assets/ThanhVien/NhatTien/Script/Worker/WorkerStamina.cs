@@ -113,7 +113,6 @@ public class WorkerStamina : MonoBehaviour
                 currentStamina = Mathf.Max(currentStamina, 0f);
                 if (currentStamina <= restThreshold)
                 {
-                    // Nếu đang bê đồ mà cạn thể lực -> Cố nộp xong mới đi ăn/ngủ
                     if (isCarryingResources) isReturnPending = true;
                     else StartResting();
                 }
@@ -270,9 +269,8 @@ public class WorkerStamina : MonoBehaviour
     {
         hasTargetRestPosition = false;
 
-        // BUG FIX: Nếu worker đang ở trong Kitchen khi đêm xuống,
-        // phải thoát ra ngay để HandleResting() có thể gọi HandleHouseLogic()
-        // (trước đây bị kẹt vì isResting == true → return sớm, không thoát kitchen)
+        // BUG FIX: Thoát Kitchen trước khi check isResting
+        // (trước đây isResting == true → return sớm → worker kẹt trong Kitchen suốt đêm)
         if (isInsideKitchen)
         {
             kitchen?.Exit(this);
@@ -286,14 +284,13 @@ public class WorkerStamina : MonoBehaviour
         if (isResting) return; // Đã resting → HandleResting() frame sau sẽ gọi HandleHouseLogic()
 
         if (isCarryingResources)
-            isReturnPending = true; // Trì hoãn đi ngủ chờ giao hàng
+            isReturnPending = true;
         else
             StartResting();
     }
 
     private void HandleDaybreak()
     {
-        // Sáng ra nếu không kẹt giao hàng đêm thì clear lệnh pending
         if (!isCarryingResources) isReturnPending = false;
         
         hasTargetRestPosition = false;
@@ -304,7 +301,10 @@ public class WorkerStamina : MonoBehaviour
             StopResting();
             return;
         }
-        if (!isInsideHouse && currentStamina >= morningForceWakeThreshold)
+
+        // BUG FIX: bỏ điều kiện !isInsideHouse
+        // (trước đây worker ngủ trong House với stamina thấp bị kẹt mãi không thể dậy sáng hôm sau)
+        if (currentStamina >= morningForceWakeThreshold)
             StopResting();
     }
 
@@ -314,7 +314,7 @@ public class WorkerStamina : MonoBehaviour
         if (isReturnPending)
         {
             isReturnPending = false;
-            StartResting(); // Đã giao xong hàng, bắt đầu nghỉ ngơi
+            StartResting();
         }
     }
 

@@ -39,7 +39,7 @@ public class WorkerFindTree : MonoBehaviour
     void Start()
     {
         if (stamina == null) stamina = GetComponent<WorkerStamina>();
-        anchorPosition = transform.position; // Đánh dấu khu vực làm việc để rảnh thì lượn lờ quanh đây
+        anchorPosition = transform.position;
     }
 
     void Update()
@@ -72,7 +72,6 @@ public class WorkerFindTree : MonoBehaviour
         wasResting = false;
         isHeadingToDeposit = false; 
 
-        // Rảnh rỗi (Không có cây) -> Lang thang và tắt trừ Stamina
         if (targetTree == null || !targetTree.gameObject.activeInHierarchy)
         {
             if (targetTree != null) ReleaseCurrentTree();
@@ -87,7 +86,6 @@ public class WorkerFindTree : MonoBehaviour
             }
         }
 
-        // Đang đi chặt cây -> Bật trừ Stamina
         stamina?.SetDraining(true);
 
         float dist = Vector3.Distance(transform.position, targetTree.transform.position);
@@ -250,8 +248,9 @@ public class WorkerFindTree : MonoBehaviour
         WoodPickup[] woods = targetTree.TakeDamage(1);
         if (woods != null && woods.Length > 0)
         {
-            ReleaseCurrentTree(); 
+            // BUG FIX: Pickup trước, Release sau — nhất quán với WorkerFindRice/WorkerFindStone
             carrySystem.PickupWood(woods[0]);
+            ReleaseCurrentTree();
         }
     }
 

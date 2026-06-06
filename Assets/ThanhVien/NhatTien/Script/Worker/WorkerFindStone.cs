@@ -42,7 +42,7 @@ public class WorkerFindStone : MonoBehaviour
     void Start()
     {
         if (stamina == null) stamina = GetComponent<WorkerStamina>();
-        anchorPosition = transform.position; // Đánh dấu khu vực làm việc
+        anchorPosition = transform.position;
     }
 
     void Update()
@@ -75,7 +75,6 @@ public class WorkerFindStone : MonoBehaviour
         wasResting = false;
         isHeadingToDeposit = false;
 
-        // Rảnh rỗi (Không có đá) -> Lang thang và tắt trừ Stamina
         if (targetStone == null || !targetStone.gameObject.activeInHierarchy)
         {
             if (targetStone != null) ReleaseCurrentStone();
@@ -90,7 +89,6 @@ public class WorkerFindStone : MonoBehaviour
             }
         }
 
-        // Đang đi đào đá -> Bật trừ Stamina
         stamina?.SetDraining(true);
 
         float dist = Vector3.Distance(transform.position, targetStone.transform.position);
@@ -190,10 +188,11 @@ public class WorkerFindStone : MonoBehaviour
         float minDist = Mathf.Infinity;
         Stone best = null;
 
-        for (int i = Stone.Registry.Count - 1; i >= 0; i--)
+        // BUG FIX: dùng Registry (của WorkerFindStone) thay vì Stone.Registry (của class Stone)
+        for (int i = Registry.Count - 1; i >= 0; i--)
         {
-            Stone stone = Stone.Registry[i];
-            if (stone == null || !stone.gameObject.activeInHierarchy) { Stone.Registry.RemoveAt(i); continue; }
+            Stone stone = Registry[i];
+            if (stone == null || !stone.gameObject.activeInHierarchy) { Registry.RemoveAt(i); continue; }
             if (!stone.TryClaim()) continue;
 
             float dist = Vector3.Distance(transform.position, stone.transform.position);
@@ -253,6 +252,7 @@ public class WorkerFindStone : MonoBehaviour
         StonePickup[] drops = targetStone.TakeDamage(1);
         if (drops != null && drops.Length > 0)
         {
+            // BUG FIX: Pickup trước, Release sau — nhất quán với WorkerFindRice/WorkerFindTree
             carrySystem.PickupStone(drops[0]);
             ReleaseCurrentStone();
         }
