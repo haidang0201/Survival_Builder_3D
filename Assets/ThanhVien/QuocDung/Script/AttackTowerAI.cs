@@ -12,14 +12,48 @@ public class AttackTowerAI : MonoBehaviour
         [Header("Projectile")]
         public float projectileSpeed = 20f; // speed applied if projectile has Rigidbody
         [Tooltip("Yaw offset (degrees) to apply so projectile model faces correctly. Common: 270")]
-        public float projectileYawOffset = 270f;
+        public float projectileYawOffset = 0f;
         [Tooltip("Vertical spawn height above target for AoE bombs (meters). Lower to reduce high arc.")]
         public float bombSpawnHeight = 6f;
         [Tooltip("Distance forward from the firePoint to spawn the projectile to avoid overlapping the muzzle.")]
         public float muzzleOffset = 0.5f;
 
+    [Header("Cấu hình Nâng cấp (Upgrade)")]
+    public float damageLv1 = 10f;
+    public float damageLv2 = 15f;
+    public float damageLv3 = 20f;
+
+    [Header("Cấu hình Vùng Cháy (Lv3)")]
+    public float burnRadius = 3f;
+    public float burnDamagePerSec = 5f;
+    public float burnDuration = 3f;
+    public GameObject fireVfxPrefab;
+
+    private UpgradeableBuilding upgradeableBuilding;
     private Transform currentTarget;
     private float nextFireTime;
+
+    private void Start()
+    {
+        upgradeableBuilding = GetComponent<UpgradeableBuilding>();
+        if (firePoint == null)
+        {
+            foreach (Transform child in GetComponentsInChildren<Transform>())
+            {
+                string nameLower = child.name.ToLower();
+                if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
+                {
+                    firePoint = child;
+                    break;
+                }
+            }
+            if (firePoint == null)
+            {
+                firePoint = transform;
+                Debug.LogWarning($"[AttackTowerAI] {name}: Không tìm thấy firePoint, tự động dùng chính tháp làm firePoint!");
+            }
+        }
+    }
 
     // Hàm nhận lệnh tấn công do Tháp Canh truyền mục tiêu sang
     public void CommandAttack(Transform target)
@@ -75,48 +109,65 @@ public class AttackTowerAI : MonoBehaviour
             return;
         }
 
-        // Tạo mũi tên tại vị trí đầu nòng cung
-        // Preserve prefab's local rotation by combining firePoint rotation with prefab rotation
-        Quaternion spawnRot = firePoint.rotation * projectilePrefab.transform.rotation;
-        Vector3 spawnPos = firePoint.position + firePoint.forward * muzzleOffset;
-        GameObject arrow = ArrowPool.Instance != null ? ArrowPool.Instance.Spawn(projectilePrefab, spawnPos, spawnRot) : Instantiate(projectilePrefab, spawnPos, spawnRot);
-        Debug.Log($"[AttackTowerAI] Spawned arrow '{projectilePrefab.name}' at {firePoint.position}");
+        int level = upgradeableBuilding != null ? upgradeableBuilding.CurrentLevel : 0;
+        float damage = damageLv1;
+        if (level == 1) damage = damageLv2;
+        else if (level == 2) damage = damageLv3;
 
-        // Try to pass target to Arrow component so it moves smoothly
-        var arrowComp = arrow.GetComponent<Arrow>();
-        if (arrowComp != null && currentTarget != null)
+        if (level == 0)
         {
-            arrowComp.SetTarget(currentTarget, projectileSpeed);
-            arrowComp.AdjustZByHeightAndDistance(firePoint.position, currentTarget.position);
-            arrowComp.AdjustYToFaceTarget(firePoint.position, currentTarget.position, projectileYawOffset);
-            Debug.Log("[AttackTowerAI] Set target on Arrow component");
+            SpawnSingleArrow(currentTarget, 0f, level, damage);
         }
         else
         {
-            // Fallback: apply velocity to Rigidbody if present
-            Vector3 dir = (currentTarget != null) ? (currentTarget.position - firePoint.position).normalized : firePoint.forward;
-            Rigidbody rb = arrow.GetComponent<Rigidbody>();
-            if (rb != null)
+            SpawnSingleArrow(currentTarget, 0f, level, damage);
+            SpawnSingleArrow(null, -15f, level, damage);
+            SpawnSingleArrow(null, 15f, level, damage);
+        }
+    }
+
+    private void SpawnSingleArrow(Transform target, float yawOffset, int level, float damage)
+    {
+        Vector3 dirToTarget = (currentTarget != null) ? (currentTarget.position - firePoint.position) : firePoint.forward;
+        dirToTarget.y = 0f;
+        if (dirToTarget.sqrMagnitude < 0.0001f) dirToTarget = firePoint.forward;
+
+        float baseYaw = Mathf.Atan2(dirToTarget.x, dirToTarget.z) * Mathf.Rad2Deg;
+        float finalYaw = baseYaw + yawOffset + projectileYawOffset;
+        
+        Quaternion spawnRot = Quaternion.Euler(0f, finalYaw, 0f);
+        Vector3 spawnPos = firePoint.position + spawnRot * Vector3.forward * muzzleOffset;
+
+        GameObject arrow = ArrowPool.Instance != null ? ArrowPool.Instance.Spawn(projectilePrefab, spawnPos, spawnRot) : Instantiate(projectilePrefab, spawnPos, spawnRot);
+
+        var arrowComp = arrow.GetComponent<Arrow>();
+        if (arrowComp != null)
+        {
+            arrowComp.SetLauncher(gameObject);
+            arrowComp.SetDamage(damage);
+            
+            if (level == 2 && towerType == AttackTowerType.Archer)
             {
-                rb.linearVelocity = dir * projectileSpeed;
-                Debug.Log("[AttackTowerAI] Applied velocity to arrow Rigidbody (fallback)");
+                arrowComp.SetFireArrow(true, burnRadius, burnDamagePerSec, burnDuration, fireVfxPrefab);
+            }
+
+            if (target != null)
+            {
+                arrowComp.SetTarget(target, projectileSpeed);
+                arrowComp.AdjustZByHeightAndDistance(firePoint.position, target.position);
+                arrowComp.AdjustYToFaceTarget(firePoint.position, target.position, projectileYawOffset);
             }
             else
             {
-                Debug.Log("[AttackTowerAI] Arrow has no Rigidbody and no Arrow component to control movement");
-                // Apply yaw offset to transform so prefab orientation aligns if needed
-                if (currentTarget != null)
-                {
-                    Vector3 dir2 = (currentTarget.position - firePoint.position);
-                    dir2.y = 0f;
-                    if (dir2.sqrMagnitude > 0.0001f)
-                    {
-                        float yaw = Mathf.Atan2(dir2.x, dir2.z) * Mathf.Rad2Deg + projectileYawOffset;
-                        Vector3 e = arrow.transform.localEulerAngles;
-                        e.y = yaw;
-                        arrow.transform.localEulerAngles = e;
-                    }
-                }
+                arrowComp.SetTarget(null, projectileSpeed);
+            }
+        }
+        else
+        {
+            Rigidbody rb = arrow.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = (spawnRot * Vector3.forward) * projectileSpeed;
             }
         }
     }
@@ -128,8 +179,12 @@ public class AttackTowerAI : MonoBehaviour
             Debug.LogWarning("[AttackTowerAI] SpawnAoEBomb aborted: projectilePrefab or currentTarget is null");
             return;
         }
-        // Spawn the bomb at the tower's firePoint (so cannon appears to fire from the muzzle).
-        // If firePoint is missing, fall back to spawning above the target using bombSpawnHeight.
+
+        int level = upgradeableBuilding != null ? upgradeableBuilding.CurrentLevel : 0;
+        float damage = damageLv1;
+        if (level == 1) damage = damageLv2;
+        else if (level == 2) damage = damageLv3;
+
         Vector3 spawnPos;
         Quaternion bombRot;
         if (firePoint != null)
@@ -143,18 +198,28 @@ public class AttackTowerAI : MonoBehaviour
             bombRot = projectilePrefab.transform.rotation;
         }
 
-        // move spawn slightly forward from the firePoint to avoid spawning inside the cannon model
         if (firePoint != null)
             spawnPos += firePoint.forward * muzzleOffset;
 
         GameObject bomb = ArrowPool.Instance != null ? ArrowPool.Instance.Spawn(projectilePrefab, spawnPos, bombRot) : Instantiate(projectilePrefab, spawnPos, bombRot);
         Debug.Log($"[AttackTowerAI] Spawned AoE bomb '{projectilePrefab.name}' at {spawnPos} (firePoint used={(firePoint!=null)})");
 
-        // Nếu prefab có Rigidbody, tính vận tốc ban đầu để bắn theo quỹ đạo trúng mục tiêu
+        var canonComp = bomb.GetComponent<Canon>();
+        if (canonComp != null)
+        {
+            canonComp.SetLauncher(gameObject);
+            canonComp.SetLevel(level + 1);
+            canonComp.SetDamage(damage);
+
+            if (level == 2)
+            {
+                canonComp.SetZoneConfig(burnRadius, burnDamagePerSec, burnDuration, fireVfxPrefab);
+            }
+        }
+
         Rigidbody rb = bomb.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            // Ensure projectile isn't parented and Rigidbody is ready
             bomb.transform.SetParent(null);
             rb.isKinematic = false;
             rb.useGravity = true;
@@ -164,7 +229,7 @@ public class AttackTowerAI : MonoBehaviour
             Vector3 toTarget = currentTarget.position - spawnPos;
             Vector3 toTargetXZ = new Vector3(toTarget.x, 0f, toTarget.z);
             float dx = toTargetXZ.magnitude;
-            float dy = toTarget.y; // relative height from spawnPos to target
+            float dy = toTarget.y;
 
             float v = projectileSpeed;
             float v2 = v * v;
@@ -175,7 +240,6 @@ public class AttackTowerAI : MonoBehaviour
 
             if (underSqrt < 0f)
             {
-                // tốc độ không đủ để bắn trúng ở quỹ đạo tính được -> fallback: ném thẳng theo hướng với velocity v
                 Vector3 vel = (toTarget.normalized) * v;
                 rb.linearVelocity = vel;
                 Debug.LogWarning("[AttackTowerAI] projectileSpeed too low for ballistic solution, using direct velocity fallback");
@@ -183,7 +247,6 @@ public class AttackTowerAI : MonoBehaviour
             else
             {
                 float root = Mathf.Sqrt(underSqrt);
-                // chọn góc thấp hơn để đường đạn phẳng hơn
                 float tanTheta = (v2 - root) / (g * dx);
                 float angle = Mathf.Atan(tanTheta);
 
@@ -192,7 +255,6 @@ public class AttackTowerAI : MonoBehaviour
 
                 Vector3 vel = toTargetXZ.normalized * vx + Vector3.up * vy;
                 rb.linearVelocity = vel;
-                // quay projectile theo vận tốc
                 if (vel.sqrMagnitude > 0.001f)
                     bomb.transform.rotation = Quaternion.LookRotation(vel.normalized);
                 Debug.Log($"[AttackTowerAI] Applied ballistic velocity {vel} to bomb");
@@ -202,8 +264,5 @@ public class AttackTowerAI : MonoBehaviour
         {
             Debug.Log("[AttackTowerAI] Bomb prefab has no Rigidbody; it will simply spawn and fall (add Rigidbody for ballistic behavior)");
         }
-
-        // Gợi ý: Bạn nên gắn một script xử lý Rơi tự do (Rigidbody) hoặc Di chuyển xuống dưới 
-        // lên Prefab quả bom để khi chạm đất nó tạo sát thương lan (AoE Explosion).
     }
 }

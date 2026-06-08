@@ -79,7 +79,11 @@ public class WatchTowerAI : MonoBehaviour
         int alerted = 0;
         foreach (var towerCollider in nearbyTowers)
         {
-            AttackTowerAI attackTower = towerCollider.GetComponent<AttackTowerAI>();
+            AttackTowerAI attackTower = towerCollider.GetComponentInParent<AttackTowerAI>();
+            if (attackTower == null)
+            {
+                attackTower = towerCollider.GetComponentInChildren<AttackTowerAI>();
+            }
             if (attackTower != null)
             {
                 Debug.Log($"[WatchTower] Alerting tower '{towerCollider.name}'");
@@ -88,7 +92,7 @@ public class WatchTowerAI : MonoBehaviour
             }
             else
             {
-                Debug.Log($"[WatchTower] Collider '{towerCollider.name}' has no AttackTowerAI component");
+                Debug.Log($"[WatchTower] Collider '{towerCollider.name}' has no AttackTowerAI component (in parent or children)");
             }
         }
 

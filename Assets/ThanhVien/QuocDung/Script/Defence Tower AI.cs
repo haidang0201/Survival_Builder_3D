@@ -41,8 +41,20 @@ public class DefenceTowerAI : MonoBehaviour
     private Vector3 activeLocalRot;
     private Vector3 inactiveLocalPos;
 
+    [Header("Cấu hình Cấp độ 3 (Knockback)")]
+    public float knockbackInterval = 3f;
+    public float knockbackDistance = 5f;
+    public float knockbackDuration = 0.3f;
+    public float knockbackRadius = 12f;
+
+    private UpgradeableBuilding upgradeableBuilding;
+    private int lastCheckedLevel = -1;
+    private float nextKnockbackTime;
+
     private void Start()
     {
+        upgradeableBuilding = GetComponent<UpgradeableBuilding>();
+
         // 1. Tự động sửa lỗi nếu kéo trực tiếp file Prefab từ Project vào thay vì đối tượng con trong Hierarchy
         HandlePrefabShieldReference();
 
@@ -82,6 +94,10 @@ public class DefenceTowerAI : MonoBehaviour
 
         // 4. Khởi tạo trạng thái ban đầu của khiên là ẩn/hạ xuống
         InitializeShieldState();
+
+        int currentLevel = upgradeableBuilding != null ? upgradeableBuilding.CurrentLevel : 0;
+        lastCheckedLevel = currentLevel;
+        UpdateShieldComponent();
     }
 
     private void HandlePrefabShieldReference()
@@ -150,11 +166,27 @@ public class DefenceTowerAI : MonoBehaviour
         UpdateParamsInEditor();
 #endif
 
+        int currentLevel = upgradeableBuilding != null ? upgradeableBuilding.CurrentLevel : 0;
+        if (currentLevel != lastCheckedLevel)
+        {
+            lastCheckedLevel = currentLevel;
+            UpdateShieldComponent();
+        }
+
         // 1. Quét tìm Enemy định kỳ để tránh quá tải CPU
         if (Time.time >= nextScanTime)
         {
             ScanForEnemies();
             nextScanTime = Time.time + scanInterval;
+        }
+
+        if (currentLevel == 2 && isEnemyNearby)
+        {
+            if (Time.time >= nextKnockbackTime)
+            {
+                PushBackEnemies();
+                nextKnockbackTime = Time.time + knockbackInterval;
+            }
         }
 
         // 2. Chuyển đổi trạng thái khiên mượt mà bằng Lerp
@@ -269,5 +301,87 @@ public class DefenceTowerAI : MonoBehaviour
     {
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, detectRadius);
+    }
+
+    private void UpdateShieldComponent()
+    {
+        int level = upgradeableBuilding != null ? upgradeableBuilding.CurrentLevel : 0;
+        
+        Transform activeShield = null;
+        if (upgradeableBuilding != null && upgradeableBuilding.VisualModels != null && level < upgradeableBuilding.VisualModels.Length)
+        {
+            GameObject activeModel = upgradeableBuilding.VisualModels[level];
+            if (activeModel != null)
+            {
+                Shield sComp = activeModel.GetComponentInChildren<Shield>(true);
+                if (sComp != null)
+                {
+                    activeShield = sComp.transform;
+                }
+                else
+                {
+                    Transform tShield = activeModel.transform.Find("Shield");
+                    if (tShield != null) activeShield = tShield;
+                }
+            }
+        }
+
+        if (activeShield == null)
+        {
+            activeShield = shieldObject;
+        }
+
+        if (activeShield != null)
+        {
+            shieldObject = activeShield;
+
+            Shield shieldComp = activeShield.GetComponent<Shield>();
+            if (shieldComp == null)
+            {
+                shieldComp = activeShield.gameObject.AddComponent<Shield>();
+            }
+
+            shieldComp.Level = level + 1;
+            if (level == 0)
+            {
+                shieldComp.damageReductionPercent = 0.2f;
+                shieldComp.blockChance = 0f;
+            }
+            else if (level == 1)
+            {
+                shieldComp.damageReductionPercent = 0.4f;
+                shieldComp.blockChance = 0.5f; // 50% block chance
+            }
+            else if (level == 2)
+            {
+                shieldComp.damageReductionPercent = 0.6f;
+                shieldComp.blockChance = 0f;
+            }
+
+            Debug.Log($"[DefenceTowerAI] {name}: Cập nhật cấu hình khiên '{activeShield.name}' cho Cấp {level + 1}: giảm {shieldComp.damageReductionPercent * 100}%, né {shieldComp.blockChance * 100}%");
+        }
+    }
+
+    private void PushBackEnemies()
+    {
+        Collider[] colliders = Physics.OverlapSphere(transform.position, knockbackRadius);
+        foreach (var c in colliders)
+        {
+            if (c == null) continue;
+            if (c.CompareTag("Enemy") || c.GetComponentInParent<EnemyHealth>() != null)
+            {
+                var enemyAI = c.GetComponentInParent<EnemyAI>();
+                if (enemyAI != null)
+                {
+                    Vector3 pushDir = (enemyAI.transform.position - transform.position);
+                    pushDir.y = 0f;
+                    if (pushDir.sqrMagnitude < 0.0001f) pushDir = Vector3.forward;
+                    pushDir.Normalize();
+                    
+                    enemyAI.Knockback(pushDir, knockbackDistance, knockbackDuration);
+                    Debug.Log($"[DefenceTowerAI] {name}: Đẩy lùi kẻ địch {enemyAI.name}");
+                }
+            }
+        }
     }
 }

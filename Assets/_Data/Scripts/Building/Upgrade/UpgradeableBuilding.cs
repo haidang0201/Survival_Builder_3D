@@ -12,6 +12,9 @@ public class UpgradeableBuilding : MonoBehaviour
         public float upgradeDuration; // Thời gian nâng cấp tính bằng giây
     }
 
+    [Header("Loại công trình")]
+    public BuildingType buildingType;
+
     [Header("Tên công trình")]
     public string buildingName = "Nhà Chính";
 
@@ -23,13 +26,277 @@ public class UpgradeableBuilding : MonoBehaviour
 
     public int CurrentLevel { get; private set; } = 0; // Level hiện tại của công trình
     public int MaxLevel => visualModels != null ? visualModels.Length : 0;
+    
+    private GameObject[] instantiatedModels;
+    public GameObject[] VisualModels => (instantiatedModels != null && instantiatedModels.Length > 0) ? instantiatedModels : visualModels;
 
     // Trạng thái kiểm tra xem nhà có đang trong quá trình nâng cấp không
     public bool IsUpgrading { get; private set; } = false;
 
+    // Các trường lưu giữ visual gốc phục vụ cơ chế tự tham chiếu không reparent
+    private System.Collections.Generic.List<GameObject> originalChildren = new System.Collections.Generic.List<GameObject>();
+    private MeshRenderer rootRendererComponent;
+    private SkinnedMeshRenderer rootSkinnedRendererComponent;
+    private int selfRefIndex = -1;
+
+    private void Awake()
+    {
+        if (transform.parent != null && transform.parent.GetComponentInParent<UpgradeableBuilding>() != null)
+        {
+            // Tắt các script AI và chính nó trên clone này để tránh bắn đạn trùng lặp hoặc lỗi đệ quy hình ảnh
+            var attackAI = GetComponent<AttackTowerAI>();
+            if (attackAI != null) attackAI.enabled = false;
+            
+            var defenceAI = GetComponent<DefenceTowerAI>();
+            if (defenceAI != null) defenceAI.enabled = false;
+
+            enabled = false;
+        }
+    }
+
+    private static UpgradeableBuilding selectedInstance = null;
+
+    public void SelectThisBuilding()
+    {
+        selectedInstance = this;
+        Debug.Log($"[UpgradeableBuilding] Selected {buildingName} for debug upgrade");
+    }
+
+    private void OnMouseDown()
+    {
+        SelectThisBuilding();
+    }
+
+    private void SaveOriginalVisuals()
+    {
+        if (originalChildren.Count > 0 || rootRendererComponent != null || rootSkinnedRendererComponent != null) return;
+
+        rootRendererComponent = GetComponent<MeshRenderer>();
+        rootSkinnedRendererComponent = GetComponent<SkinnedMeshRenderer>();
+
+        foreach (Transform child in transform)
+        {
+            // Không tính các visual model khác được kéo sẵn vào (nếu có)
+            bool isOtherVisualModel = false;
+            if (visualModels != null)
+            {
+                for (int j = 0; j < visualModels.Length; j++)
+                {
+                    if (visualModels[j] != gameObject && visualModels[j] == child.gameObject)
+                    {
+                        isOtherVisualModel = true;
+                        break;
+                    }
+                }
+            }
+            if (!isOtherVisualModel)
+            {
+                originalChildren.Add(child.gameObject);
+            }
+        }
+    }
+
+    private void SetOriginalLevelActive(bool active)
+    {
+        if (rootRendererComponent != null) rootRendererComponent.enabled = active;
+        if (rootSkinnedRendererComponent != null) rootSkinnedRendererComponent.enabled = active;
+
+        for (int i = 0; i < originalChildren.Count; i++)
+        {
+            if (originalChildren[i] != null)
+            {
+                originalChildren[i].SetActive(active);
+            }
+        }
+    }
+
+    private void UpdateFirePointForLevel()
+    {
+        var attackAI = GetComponent<AttackTowerAI>();
+        if (attackAI == null) return;
+
+        Transform fp = null;
+        if (CurrentLevel == selfRefIndex)
+        {
+            // Tìm trong các visual gốc ban đầu
+            for (int i = 0; i < originalChildren.Count; i++)
+            {
+                if (originalChildren[i] != null)
+                {
+                    fp = FindFirePointRecursive(originalChildren[i].transform);
+                    if (fp != null) break;
+                }
+            }
+        }
+        else
+        {
+            if (instantiatedModels != null && CurrentLevel >= 0 && CurrentLevel < instantiatedModels.Length)
+            {
+                GameObject activeModel = instantiatedModels[CurrentLevel];
+                if (activeModel != null)
+                {
+                    fp = FindFirePointRecursive(activeModel.transform);
+                }
+            }
+        }
+
+        if (fp != null)
+        {
+            attackAI.firePoint = fp;
+            Debug.Log($"[UpgradeableBuilding] Updated attackAI.firePoint to: {fp.name} on Level {CurrentLevel + 1}");
+        }
+    }
+
+    private Transform FindFirePointRecursive(Transform parent)
+    {
+        string nameLower = parent.name.ToLower();
+        if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
+        {
+            return parent;
+        }
+
+        foreach (Transform child in parent)
+        {
+            Transform found = FindFirePointRecursive(child);
+            if (found != null) return found;
+        }
+
+        return null;
+    }
+
+    public void InitializeModels()
+    {
+        if (instantiatedModels != null) return;
+        if (visualModels == null) return;
+
+        instantiatedModels = new GameObject[visualModels.Length];
+
+        // 1. Kiểm tra xem có phần tử nào là tự tham chiếu (self-reference) tới chính gameObject này hay không
+        selfRefIndex = -1;
+        for (int i = 0; i < visualModels.Length; i++)
+        {
+            if (visualModels[i] == gameObject)
+            {
+                selfRefIndex = i;
+                break;
+            }
+        }
+
+        if (selfRefIndex != -1)
+        {
+            // Lưu lại các children gốc hiện tại trước khi sinh bất cứ model mới nào con của nó
+            SaveOriginalVisuals();
+            instantiatedModels[selfRefIndex] = gameObject;
+        }
+
+        // 2. Khởi tạo các phần tử còn lại từ Prefab hoặc Object con khác
+        for (int i = 0; i < visualModels.Length; i++)
+        {
+            if (i == selfRefIndex) continue;
+
+            GameObject modelSource = visualModels[i];
+            if (modelSource == null) continue;
+
+            // Kiểm tra xem modelSource có phải là Prefab ngoài Project hay không (scene của nó không hợp lệ)
+            if (!modelSource.scene.IsValid() || string.IsNullOrEmpty(modelSource.scene.name))
+            {
+                // Instantiate thành gameobject con của building
+                GameObject newInstance = Instantiate(modelSource, transform.position, transform.rotation, transform);
+                newInstance.name = modelSource.name;
+                instantiatedModels[i] = newInstance;
+                newInstance.SetActive(i == CurrentLevel);
+            }
+            else
+            {
+                // Sử dụng luôn gameobject có sẵn trong Scene
+                instantiatedModels[i] = modelSource;
+                modelSource.SetActive(i == CurrentLevel);
+            }
+        }
+
+        // 3. Nếu không có tự tham chiếu, thực hiện ẩn các MeshRenderer gốc ban đầu trên parent tránh chồng lấn
+        if (selfRefIndex == -1)
+        {
+            MeshRenderer rootRenderer = GetComponent<MeshRenderer>();
+            if (rootRenderer != null)
+            {
+                rootRenderer.enabled = false;
+            }
+            SkinnedMeshRenderer rootSkinnedRenderer = GetComponent<SkinnedMeshRenderer>();
+            if (rootSkinnedRenderer != null)
+            {
+                rootSkinnedRenderer.enabled = false;
+            }
+
+            foreach (Transform child in transform)
+            {
+                bool isVisualModel = false;
+                foreach (var im in instantiatedModels)
+                {
+                    if (im == child.gameObject)
+                    {
+                        isVisualModel = true;
+                        break;
+                    }
+                }
+                if (!isVisualModel)
+                {
+                    foreach (var mr in child.GetComponentsInChildren<MeshRenderer>(true))
+                    {
+                        mr.enabled = false;
+                    }
+                    foreach (var smr in child.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    {
+                        smr.enabled = false;
+                    }
+                }
+            }
+        }
+    }
+
     private void Start()
     {
+        Debug.Log($"[UpgradeableBuilding Debug] Start called on '{gameObject.name}'");
+        InitializeModels();
         UpdateVisualModel();
+
+        if (visualModels != null)
+        {
+            Debug.Log($"[UpgradeableBuilding Debug] visualModels count: {visualModels.Length}");
+            for (int i = 0; i < visualModels.Length; i++)
+            {
+                var vm = visualModels[i];
+                Debug.Log($"  - visualModels[{i}]: {(vm != null ? vm.name : "null")} (IsSceneObject: {(vm != null ? vm.scene.IsValid().ToString() : "N/A")})");
+            }
+        }
+        else
+        {
+            Debug.Log("[UpgradeableBuilding Debug] visualModels is null!");
+        }
+
+        if (instantiatedModels != null)
+        {
+            Debug.Log($"[UpgradeableBuilding Debug] instantiatedModels count: {instantiatedModels.Length}");
+            for (int i = 0; i < instantiatedModels.Length; i++)
+            {
+                var im = instantiatedModels[i];
+                Debug.Log($"  - instantiatedModels[{i}]: {(im != null ? im.name : "null")} (ActiveSelf: {(im != null ? im.activeSelf.ToString() : "N/A")})");
+            }
+        }
+        else
+        {
+            Debug.Log("[UpgradeableBuilding Debug] instantiatedModels is null!");
+        }
+
+        // Tự động gán ClickHelper cho tất cả các Collider con để bắt sự kiện click
+        foreach (Collider col in GetComponentsInChildren<Collider>(true))
+        {
+            if (col.gameObject.GetComponent<ClickHelper>() == null)
+            {
+                ClickHelper helper = col.gameObject.AddComponent<ClickHelper>();
+                helper.parentBuilding = this;
+            }
+        }
     }
 
     // Hàm lấy chi phí cần thiết để lên cấp tiếp theo
@@ -94,7 +361,8 @@ public class UpgradeableBuilding : MonoBehaviour
     /// <summary>
     /// Thực hiện thay đổi cấp độ và model thực tế
     /// </summary>
-    private void ExecuteLevelUp()
+    [ContextMenu("⚡ Nâng cấp Tháp này")]
+    public void ExecuteLevelUp()
     {
         if (CurrentLevel < MaxLevel - 1)
         {
@@ -111,20 +379,148 @@ public class UpgradeableBuilding : MonoBehaviour
         }
     }
 
+    [ContextMenu("🔄 Reset level về 1")]
+    public void ResetLevel()
+    {
+        SetActiveModel(CurrentLevel, false);
+        CurrentLevel = 0;
+        SetActiveModel(CurrentLevel, true);
+        Debug.Log($"[{buildingName}] Đã reset về Level 1");
+    }
+
     private void SetActiveModel(int index, bool active)
     {
-        if (visualModels == null || index < 0 || index >= visualModels.Length) return;
-        if (visualModels[index] != null)
-            visualModels[index].SetActive(active);
+        InitializeModels();
+        if (instantiatedModels == null || index < 0 || index >= instantiatedModels.Length) return;
+
+        if (index == selfRefIndex)
+        {
+            SetOriginalLevelActive(active);
+        }
+        else
+        {
+            if (instantiatedModels[index] != null)
+                instantiatedModels[index].SetActive(active);
+        }
+
+        if (active)
+        {
+            UpdateFirePointForLevel();
+        }
     }
 
     public void UpdateVisualModel()
     {
-        if (visualModels == null) return;
-        for (int i = 0; i < visualModels.Length; i++)
+        InitializeModels();
+        if (instantiatedModels == null) return;
+        for (int i = 0; i < instantiatedModels.Length; i++)
         {
-            if (visualModels[i] != null)
-                visualModels[i].SetActive(i == CurrentLevel);
+            if (i == selfRefIndex)
+            {
+                SetOriginalLevelActive(i == CurrentLevel);
+            }
+            else
+            {
+                if (instantiatedModels[i] != null)
+                    instantiatedModels[i].SetActive(i == CurrentLevel);
+            }
+        }
+
+        UpdateFirePointForLevel();
+    }
+
+    private void OnGUI()
+    {
+        if (selectedInstance == this)
+        {
+            GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
+            buttonStyle.fontSize = 18;
+            buttonStyle.fontStyle = FontStyle.Bold;
+            buttonStyle.normal.textColor = Color.white;
+
+            string btnText = $"⚡ NÂNG CẤP: {buildingName} (Lv {CurrentLevel + 1} -> {CurrentLevel + 2})";
+            bool isMax = CurrentLevel >= MaxLevel - 1;
+            if (isMax)
+            {
+                btnText = $"🔄 RESET VỀ LEVEL 1 ({buildingName})";
+            }
+
+            // Vẽ background box
+            GUI.Box(new Rect(10, 10, 480, 80), $"Bảng Nâng Cấp Nhanh - {buildingName} (Đang chọn)");
+
+            if (GUI.Button(new Rect(20, 35, 390, 45), btnText, buttonStyle))
+            {
+                if (!isMax)
+                {
+                    ExecuteLevelUp();
+                }
+                else
+                {
+                    ResetLevel();
+                }
+            }
+
+            // Nút close
+            if (GUI.Button(new Rect(420, 35, 60, 45), "X", buttonStyle))
+            {
+                selectedInstance = null;
+            }
         }
     }
 }
+
+// Lớp trợ giúp bắt sự kiện click cho các collider con
+public class ClickHelper : MonoBehaviour
+{
+    public UpgradeableBuilding parentBuilding;
+    private void OnMouseDown()
+    {
+        if (parentBuilding != null)
+        {
+            parentBuilding.SelectThisBuilding();
+        }
+    }
+}
+
+#if UNITY_EDITOR
+[UnityEditor.CustomEditor(typeof(UpgradeableBuilding))]
+public class UpgradeableBuildingEditor : UnityEditor.Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+
+        UpgradeableBuilding building = (UpgradeableBuilding)target;
+
+        GUILayout.Space(15);
+        GUILayout.Label("⚡ BẢNG ĐIỀU KHIỂN NÂNG CẤP NHANH", UnityEditor.EditorStyles.boldLabel);
+
+        // Hiển thị thông tin level hiện tại
+        UnityEditor.EditorGUILayout.HelpBox($"Cấp độ hiện tại: Level {building.CurrentLevel + 1} / {building.MaxLevel}", UnityEditor.MessageType.Info);
+
+        if (GUILayout.Button("⚡ NÂNG CẤP NGAY", GUILayout.Height(40)))
+        {
+            if (Application.isPlaying)
+            {
+                building.ExecuteLevelUp();
+            }
+            else
+            {
+                UnityEditor.EditorUtility.DisplayDialog("Thông báo", "Vui lòng bấm nút PLAY (Chạy game) trên thanh công cụ Unity trước khi sử dụng nút này!", "OK");
+            }
+        }
+
+        if (GUILayout.Button("🔄 RESET VỀ LEVEL 1", GUILayout.Height(30)))
+        {
+            if (Application.isPlaying)
+            {
+                building.ResetLevel();
+            }
+            else
+            {
+                UnityEditor.EditorUtility.DisplayDialog("Thông báo", "Vui lòng bấm nút PLAY (Chạy game) trên thanh công cụ Unity trước khi sử dụng nút này!", "OK");
+            }
+        }
+    }
+}
+#endif

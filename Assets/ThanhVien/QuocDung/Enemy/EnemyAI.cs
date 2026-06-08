@@ -306,5 +306,40 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    public void Knockback(Vector3 direction, float distance, float duration)
+    {
+        StartCoroutine(KnockbackRoutine(direction, distance, duration));
+    }
+
+    private System.Collections.IEnumerator KnockbackRoutine(Vector3 direction, float distance, float duration)
+    {
+        if (agent != null)
+        {
+            agent.enabled = false;
+        }
+
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = startPos + direction * distance;
+
+        if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, distance, NavMesh.AllAreas))
+        {
+            targetPos = hit.position;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            transform.position = Vector3.Lerp(startPos, targetPos, t);
+            yield return null;
+        }
+
+        if (agent != null)
+        {
+            agent.enabled = true;
+            agent.Warp(transform.position);
+        }
+    }
 }
 

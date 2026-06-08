@@ -13,6 +13,16 @@ public class Canon : MonoBehaviour
     [SerializeField] private GameObject explosionVfx;
     private bool hasHit = false;
 
+    [Header("Cấu hình Cấp độ")]
+    private int level = 1;
+    private GameObject launcher;
+
+    // Cấp độ 3 (Zone config)
+    private float burnRadius = 4f;
+    private float burnDamagePerSec = 10f;
+    private float burnDuration = 3f;
+    private GameObject burnVfxPrefab;
+
     private void OnEnable()
     {
         hasHit = false;
@@ -29,21 +39,53 @@ public class Canon : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (hasHit) return;
+        if (launcher != null && (other.gameObject == launcher || other.transform.IsChildOf(launcher.transform))) return;
         hasHit = true;
 
         Vector3 hitPoint = other.ClosestPoint(transform.position);
-        Explode(hitPoint);
-        CleanupAndRelease();
+        HandleHit(other, hitPoint);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
         if (hasHit) return;
+        Collider other = collision.collider;
+        if (launcher != null && (other.gameObject == launcher || other.transform.IsChildOf(launcher.transform))) return;
         hasHit = true;
 
         Vector3 hitPoint = collision.GetContact(0).point;
-        Explode(hitPoint);
+        HandleHit(other, hitPoint);
+    }
+
+    private void HandleHit(Collider other, Vector3 hitPoint)
+    {
+        if (level == 1)
+        {
+            var dmg = other.GetComponentInParent<IDamageable>();
+            if (dmg != null)
+            {
+                dmg.TakeDamage(damage, hitPoint);
+            }
+        }
+        else
+        {
+            Explode(hitPoint);
+
+            if (level == 3)
+            {
+                SpawnDamageZone(hitPoint);
+            }
+        }
+
         CleanupAndRelease();
+    }
+
+    private void SpawnDamageZone(Vector3 position)
+    {
+        GameObject zoneObj = new GameObject("CannonFireDamageZone");
+        zoneObj.transform.position = position;
+        DamageZone zone = zoneObj.AddComponent<DamageZone>();
+        zone.Setup(burnDamagePerSec, burnRadius, burnDuration, burnVfxPrefab);
     }
 
     private void Explode(Vector3 point)
@@ -117,5 +159,28 @@ public class Canon : MonoBehaviour
         }
 
         return Mathf.Max(0.1f, duration);
+    }
+
+    public void SetLevel(int lv)
+    {
+        level = lv;
+    }
+
+    public void SetDamage(float dmg)
+    {
+        damage = dmg;
+    }
+
+    public void SetZoneConfig(float radius, float dps, float dur, GameObject vfx)
+    {
+        burnRadius = radius;
+        burnDamagePerSec = dps;
+        burnDuration = dur;
+        burnVfxPrefab = vfx;
+    }
+
+    public void SetLauncher(GameObject launcherObj)
+    {
+        launcher = launcherObj;
     }
 }

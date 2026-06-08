@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3872446749206896775
+--- !u!1 &6353257958428102632
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,48 +8,48 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 9144675028190688384}
-  - component: {fileID: 710166460413370054}
-  - component: {fileID: 2975743257516508132}
-  - component: {fileID: 3361645420886339151}
+  - component: {fileID: 3086183130661277588}
+  - component: {fileID: 4324817845914478093}
+  - component: {fileID: 5207569413933061305}
+  - component: {fileID: 2162415292326059075}
+  - component: {fileID: 4275187800778998248}
   m_Layer: 0
-  m_Name: TB_ArcherTower_Lvl1
+  m_Name: Canon2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &9144675028190688384
+--- !u!4 &3086183130661277588
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3872446749206896775}
+  m_GameObject: {fileID: 6353257958428102632}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 69.92, y: 0.019876802, z: 51.2}
+  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 103.1865, y: 0.38052842, z: 33.25672}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 5520342979672813755}
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &710166460413370054
+--- !u!33 &4324817845914478093
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3872446749206896775}
-  m_Mesh: {fileID: 4300000, guid: dd09034417ae03142bd6a821cf15f334, type: 3}
---- !u!23 &2975743257516508132
+  m_GameObject: {fileID: 6353257958428102632}
+  m_Mesh: {fileID: 4300000, guid: be8d15e07e903da42ab630fa5008444d, type: 3}
+--- !u!23 &5207569413933061305
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3872446749206896775}
+  m_GameObject: {fileID: 6353257958428102632}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c717fb89e24ff384785039c0f1169eee, type: 2}
+  - {fileID: 2100000, guid: 71e41e43b459a244abaf5acca76b89ee, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -92,54 +92,41 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &3361645420886339151
+--- !u!64 &2162415292326059075
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6353257958428102632}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 43481288714137970, guid: d6ea435599e5b75478e11eca3cb96660, type: 2}
+--- !u!114 &4275187800778998248
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3872446749206896775}
+  m_GameObject: {fileID: 6353257958428102632}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea7187be5dc69d84597e08b4bd8d5453, type: 3}
+  m_Script: {fileID: 11500000, guid: aaeb367956d36aa4ca533609ad17ff89, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AttackTowerAI
-  towerType: 0
-  fireRate: 1
-  firePoint: {fileID: 5520342979672813755}
-  projectilePrefab: {fileID: 6331797302708242569, guid: 951cf7b677e9f814997ce334d2996fee, type: 3}
-  projectileSpeed: 20
-  projectileYawOffset: 0
-  bombSpawnHeight: 6
-  muzzleOffset: 0.5
---- !u!1 &7113273293160203726
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5520342979672813755}
-  m_Layer: 0
-  m_Name: FirePoint
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5520342979672813755
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7113273293160203726}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4.62, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 9144675028190688384}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::Canon
+  damage: 20
+  explosionRadius: 3
+  explosionForce: 300
+  explosionVfx: {fileID: 868468853075218060, guid: 1088de5662f7a1346b1d36be122c094a, type: 3}

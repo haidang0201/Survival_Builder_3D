@@ -7,6 +7,10 @@ public class Shield : MonoBehaviour, IDamageable
     [Range(0f, 1f)]
     public float damageReductionPercent = 0.2f;
 
+    [Header("Cấu hình Cấp độ (Upgrade)")]
+    public float blockChance = 0f;
+    public int Level { get; set; } = 1;
+
     [Header("Cấu hình Máu độc lập (Nếu không tìm thấy máu của công trình mẹ)")]
     [SerializeField] private float defaultMaxHealth = 100f;
     private float currentHealth;
@@ -71,6 +75,12 @@ public class Shield : MonoBehaviour, IDamageable
 
     public void TakeDamage(float amount, Vector3 hitPoint)
     {
+        if (blockChance > 0f && Random.value < blockChance)
+        {
+            Debug.Log($"[Shield] {name}: Cản phá thành công (Né tránh 100% sát thương)! Sát thương nhận: 0");
+            return;
+        }
+
         float reducedAmount = amount * (1f - damageReductionPercent);
         Debug.Log($"[Shield] {name}: Khiên đã đỡ đòn! Sát thương gốc: {amount}, Sát thương sau giảm (giảm {(damageReductionPercent * 100f)}%): {reducedAmount}");
 

@@ -5,6 +5,14 @@ using UnityEngine;
 public class Arrow : MonoBehaviour
 {
     [SerializeField] private float damage = 5f;
+
+    [Header("Cấu hình Cấp độ 3 (Fire Arrow)")]
+    private bool isFireArrow = false;
+    private float burnRadius = 2f;
+    private float burnDamagePerSec = 5f;
+    private float burnDuration = 3f;
+    private GameObject burnVfxPrefab;
+
     [Header("Movement")]
     [SerializeField] private float speed = 20f;
     // Orientation removed: Arrow will not change rotation at runtime
@@ -14,6 +22,7 @@ public class Arrow : MonoBehaviour
     private Vector3 targetPosition;
     private float lifeTime = 6f;
     private float lifeTimer;
+    private GameObject launcher;
     [Header("Collision")]
     [SerializeField] private float hitRadius = 0.1f;
 
@@ -24,6 +33,11 @@ public class Arrow : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+    }
+
+    public void SetLauncher(GameObject launcherObj)
+    {
+        launcher = launcherObj;
     }
 
     void Update()
@@ -42,13 +56,65 @@ public class Arrow : MonoBehaviour
 
         if (target != null)
         {
-            // Move toward the recorded target position (so arrow isn't jittery if target moves)
+            if (target.gameObject.activeInHierarchy)
+            {
+                targetPosition = target.position;
+            }
+            else
+            {
+                target = null;
+            }
+
+            // If we are using Rigidbody physics, let physics handle the movement!
+            if (rb != null && !rb.isKinematic)
+            {
+                Vector3 direction = (targetPosition - transform.position).normalized;
+                rb.linearVelocity = direction * speed;
+                
+                // Rotate to face velocity
+                if (rb.linearVelocity.sqrMagnitude > 0.001f)
+                {
+                    transform.rotation = Quaternion.LookRotation(rb.linearVelocity.normalized);
+                }
+                return;
+            }
+
+            // Rotate arrow to face the target position dynamically during flight
+            Vector3 dirToTarget = targetPosition - transform.position;
+            if (dirToTarget.sqrMagnitude > 0.001f)
+            {
+                transform.rotation = Quaternion.LookRotation(dirToTarget.normalized);
+            }
+
             float step = speed * Time.deltaTime;
             Vector3 dir = (targetPosition - transform.position);
             Vector3 move;
             if (dir.sqrMagnitude <= step * step)
             {
                 move = targetPosition - transform.position;
+                transform.position = targetPosition;
+
+                // Check final hit at targetPosition
+                if (move.sqrMagnitude > 0f)
+                {
+                    RaycastHit[] hits = Physics.SphereCastAll(currentPos, hitRadius, move.normalized, move.magnitude);
+                    System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+                    foreach (var h in hits)
+                    {
+                        if (h.collider == null) continue;
+                        if (h.collider.gameObject == gameObject) continue;
+                        if (launcher != null && (h.collider.gameObject == launcher || h.collider.transform.IsChildOf(launcher.transform))) continue;
+                        HandleHit(h.collider, h.point);
+                        return;
+                    }
+                }
+
+                // Vanish / release immediately to prevent floating in mid-air
+                if (ArrowPool.Instance != null)
+                    ArrowPool.Instance.Release(gameObject);
+                else
+                    Destroy(gameObject);
+                return;
             }
             else
             {
@@ -64,6 +130,7 @@ public class Arrow : MonoBehaviour
                 {
                     if (h.collider == null) continue;
                     if (h.collider.gameObject == gameObject) continue;
+                    if (launcher != null && (h.collider.gameObject == launcher || h.collider.transform.IsChildOf(launcher.transform))) continue;
                     // ignore trigger colliders that are not meant for collisions
                     // process first valid hit
                     HandleHit(h.collider, h.point);
@@ -72,8 +139,6 @@ public class Arrow : MonoBehaviour
             }
 
             transform.position = transform.position + move;
-
-            // No rotation change: keep prefab orientation while flying toward target
         }
         else
         {
@@ -89,6 +154,7 @@ public class Arrow : MonoBehaviour
                 {
                     if (h.collider == null) continue;
                     if (h.collider.gameObject == gameObject) continue;
+                    if (launcher != null && (h.collider.gameObject == launcher || h.collider.transform.IsChildOf(launcher.transform))) continue;
                     HandleHit(h.collider, h.point);
                     return;
                 }
@@ -101,20 +167,23 @@ public class Arrow : MonoBehaviour
 
     public void SetTarget(Transform t, float moveSpeed)
     {
-        if (t == null) return;
-        target = t;
-        targetPosition = t.position;
         speed = moveSpeed;
-
-        // If Rigidbody present and non-kinematic, apply velocity once
-        if (rb != null && !rb.isKinematic)
+        target = t;
+        if (t != null)
         {
-            Vector3 dir = (targetPosition - transform.position).normalized;
-            rb.linearVelocity = dir * speed;
+            targetPosition = t.position;
+            if (rb != null && !rb.isKinematic)
+            {
+                Vector3 dir = (targetPosition - transform.position).normalized;
+                rb.linearVelocity = dir * speed;
+            }
         }
         else
         {
-            // No rotation change on SetTarget
+            if (rb != null && !rb.isKinematic)
+            {
+                rb.linearVelocity = transform.forward * speed;
+            }
         }
         lifeTimer = 0f;
     }
@@ -163,18 +232,56 @@ public class Arrow : MonoBehaviour
         HandleHit(other, hitPoint);
     }
 
+    public void SetDamage(float newDamage)
+    {
+        damage = newDamage;
+    }
+
+    public void SetFireArrow(bool isFire, float radius, float dps, float dur, GameObject vfx)
+    {
+        isFireArrow = isFire;
+        burnRadius = radius;
+        burnDamagePerSec = dps;
+        burnDuration = dur;
+        burnVfxPrefab = vfx;
+    }
+
+    private void SpawnDamageZone(Vector3 position)
+    {
+        GameObject zoneObj = new GameObject("ArrowFireDamageZone");
+        zoneObj.transform.position = position;
+        DamageZone zone = zoneObj.AddComponent<DamageZone>();
+        zone.Setup(burnDamagePerSec, burnRadius, burnDuration, burnVfxPrefab);
+    }
+
     private void HandleHit(Collider other, Vector3 hitPoint)
     {
+        if (launcher != null && (other.gameObject == launcher || other.transform.IsChildOf(launcher.transform)))
+        {
+            return; // Ignore launcher and its children
+        }
+
+        bool hitEnemy = other.CompareTag("Enemy") || other.name.ToLower().Contains("enemy") || other.GetComponentInParent<EnemyHealth>() != null;
+
         // Prefer applying damage to IDamageable components if present
         IDamageable damageable = other.GetComponentInParent<IDamageable>();
         if (damageable != null)
         {
             Debug.Log($"[Arrow] Dealing {damage} damage to {other.name}");
             damageable.TakeDamage(damage, hitPoint);
+
+            if (isFireArrow && hitEnemy)
+            {
+                SpawnDamageZone(hitPoint);
+            }
         }
         else
         {
             Debug.Log($"[Arrow] Hit collider '{other.name}' (no IDamageable). Destroying arrow.");
+            if (isFireArrow && hitEnemy)
+            {
+                SpawnDamageZone(hitPoint);
+            }
         }
 
         if (ArrowPool.Instance != null)

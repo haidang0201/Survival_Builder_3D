@@ -228,4 +228,16 @@ public class UIManager : Singleton<UIManager>
         // Ẩn panel thông tin đi để màn hình thoáng khi di chuyển
         HideUpgradePanel();
     }
+
+    private void OnGUI()
+    {
+        if (selectedBuilding != null && upgradePanel != null && upgradePanel.activeSelf)
+        {
+            if (GUI.Button(new Rect(20, 150, 250, 50), "⚡ DEBUG: Nâng Cấp Không Tốn Tài Nguyên"))
+            {
+                selectedBuilding.StartUpgradeProcess();
+                RefreshUpgradePanel(selectedBuilding);
+            }
+        }
+    }
 }
