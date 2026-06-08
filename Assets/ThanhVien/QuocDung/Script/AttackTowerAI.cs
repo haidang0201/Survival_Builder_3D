@@ -120,15 +120,65 @@ public class AttackTowerAI : MonoBehaviour
         }
         else
         {
-            SpawnSingleArrow(currentTarget, 0f, level, damage);
-            SpawnSingleArrow(null, -15f, level, damage);
-            SpawnSingleArrow(null, 15f, level, damage);
+            // Tìm các kẻ địch trong tầm bắn
+            System.Collections.Generic.List<Transform> enemiesInRange = new System.Collections.Generic.List<Transform>();
+            if (currentTarget != null) enemiesInRange.Add(currentTarget);
+
+            // Quét các collider trong phạm vi 25m xung quanh tháp
+            float checkRadius = 25f;
+            Collider[] colls = Physics.OverlapSphere(transform.position, checkRadius);
+            foreach (var col in colls)
+            {
+                if (col == null || !col.gameObject.activeInHierarchy) continue;
+                
+                bool isEnemy = col.CompareTag("Enemy") || col.name.ToLower().Contains("enemy") || col.GetComponentInParent<EnemyHealth>() != null;
+                if (isEnemy)
+                {
+                    var health = col.GetComponentInParent<EnemyHealth>();
+                    Transform enemyTrans = (health != null) ? health.transform : col.transform;
+                    if (!enemiesInRange.Contains(enemyTrans))
+                    {
+                        enemiesInRange.Add(enemyTrans);
+                    }
+                }
+            }
+
+            // Sắp xếp các kẻ địch theo khoảng cách tới tháp Archer
+            enemiesInRange.Sort((a, b) => {
+                if (a == currentTarget) return -1;
+                if (b == currentTarget) return 1;
+                float distA = (a.position - transform.position).sqrMagnitude;
+                float distB = (b.position - transform.position).sqrMagnitude;
+                return distA.CompareTo(distB);
+            });
+
+            // Bắn 3 mũi tên vào các mục tiêu khác nhau nếu có
+            if (enemiesInRange.Count > 0)
+            {
+                // Mũi tên 1: Nhắm mục tiêu 0 (currentTarget)
+                SpawnSingleArrow(enemiesInRange[0], 0f, level, damage);
+
+                // Mũi tên 2: Nhắm mục tiêu 1 (nếu có, không thì nhắm mục tiêu 0)
+                Transform target2 = enemiesInRange.Count > 1 ? enemiesInRange[1] : enemiesInRange[0];
+                SpawnSingleArrow(target2, -15f, level, damage);
+
+                // Mũi tên 3: Nhắm mục tiêu 2 (nếu có, không thì nhắm mục tiêu 0 hoặc 1)
+                Transform target3 = enemiesInRange.Count > 2 ? enemiesInRange[2] : (enemiesInRange.Count > 1 ? enemiesInRange[0] : enemiesInRange[0]);
+                SpawnSingleArrow(target3, 15f, level, damage);
+            }
+            else
+            {
+                // Dự phòng nếu không tìm thấy kẻ địch nào
+                SpawnSingleArrow(currentTarget, 0f, level, damage);
+                SpawnSingleArrow(null, -15f, level, damage);
+                SpawnSingleArrow(null, 15f, level, damage);
+            }
         }
     }
 
     private void SpawnSingleArrow(Transform target, float yawOffset, int level, float damage)
     {
-        Vector3 dirToTarget = (currentTarget != null) ? (currentTarget.position - firePoint.position) : firePoint.forward;
+        Vector3 dirToTarget = (target != null) ? (target.position - firePoint.position) : firePoint.forward;
         dirToTarget.y = 0f;
         if (dirToTarget.sqrMagnitude < 0.0001f) dirToTarget = firePoint.forward;
 

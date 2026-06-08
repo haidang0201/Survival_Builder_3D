@@ -104,6 +104,7 @@ public class Arrow : MonoBehaviour
                         if (h.collider == null) continue;
                         if (h.collider.gameObject == gameObject) continue;
                         if (launcher != null && (h.collider.gameObject == launcher || h.collider.transform.IsChildOf(launcher.transform))) continue;
+                        if (h.collider.GetComponent<Arrow>() != null) continue; // Bỏ qua các mũi tên khác
                         HandleHit(h.collider, h.point);
                         return;
                     }
@@ -131,6 +132,7 @@ public class Arrow : MonoBehaviour
                     if (h.collider == null) continue;
                     if (h.collider.gameObject == gameObject) continue;
                     if (launcher != null && (h.collider.gameObject == launcher || h.collider.transform.IsChildOf(launcher.transform))) continue;
+                    if (h.collider.GetComponent<Arrow>() != null) continue; // Bỏ qua các mũi tên khác
                     // ignore trigger colliders that are not meant for collisions
                     // process first valid hit
                     HandleHit(h.collider, h.point);
@@ -155,6 +157,7 @@ public class Arrow : MonoBehaviour
                     if (h.collider == null) continue;
                     if (h.collider.gameObject == gameObject) continue;
                     if (launcher != null && (h.collider.gameObject == launcher || h.collider.transform.IsChildOf(launcher.transform))) continue;
+                    if (h.collider.GetComponent<Arrow>() != null) continue; // Bỏ qua các mũi tên khác
                     HandleHit(h.collider, h.point);
                     return;
                 }
@@ -259,6 +262,12 @@ public class Arrow : MonoBehaviour
         if (launcher != null && (other.gameObject == launcher || other.transform.IsChildOf(launcher.transform)))
         {
             return; // Ignore launcher and its children
+        }
+
+        // Bỏ qua nếu va chạm với các mũi tên khác để tránh việc 3 mũi tên tự phá nhau khi bắn ra cùng lúc ở cấp 2/3
+        if (other.gameObject == gameObject || other.GetComponent<Arrow>() != null)
+        {
+            return;
         }
 
         bool hitEnemy = other.CompareTag("Enemy") || other.name.ToLower().Contains("enemy") || other.GetComponentInParent<EnemyHealth>() != null;
