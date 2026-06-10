@@ -156,7 +156,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
         
         // Đoạn code an toàn bóc tách tên hoặc biến loại nhà từ UpgradeableBuilding của bạn:
         // Nếu lớp UpgradeableBuilding của bạn có trường 'buildingType', hãy bỏ comment dòng dưới:
-        // currentType = building.buildingType; 
+        currentType = building.buildingType; 
 
         GameObject prefab = GetGhostPrefab(currentType);
         if (prefab != null)

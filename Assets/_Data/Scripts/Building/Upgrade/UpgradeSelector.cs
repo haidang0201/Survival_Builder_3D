@@ -33,22 +33,36 @@ public class UpgradeSelector : MonoBehaviour
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
-        // NẾU BUILDING SYSTEM ĐANG TRONG CHẾ ĐỘ DI CHUYỂN HOẶC ĐẶT NHÀ -> KHÔNG CHO CLICK CHỌN NHÀ KHÁC
-        // (Bạn có thể map với biến kiểm tra trạng thái bận của BuildingSystem)
-        // if (BuildingSystem.Ins.IsBusy) return;
-
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, buildingLayerMask))
+        RaycastHit hit = default;
+        bool hasHit = false;
+
+        // 1. Thử quét với LayerMask cấu hình sẵn trong Inspector
+        if (buildingLayerMask.value != 0)
+        {
+            hasHit = Physics.Raycast(ray, out hit, maxRayDistance, buildingLayerMask);
+        }
+
+        // 2. Dự phòng: Nếu không trúng, quét toàn bộ các Layer trong Scene
+        if (!hasHit)
+        {
+            hasHit = Physics.Raycast(ray, out hit, maxRayDistance);
+        }
+
+        if (hasHit)
         {
             UpgradeableBuilding building = hit.collider.GetComponentInParent<UpgradeableBuilding>();
-            if (building != null && upgradeModule != null)
+            if (building != null)
             {
-                // Chỉ mở panel nếu nhà đó đang hoạt động (không bị tạm ẩn để di chuyển)
-                if (building.gameObject.activeSelf)
+                // Luôn chọn building cho debug screen button
+                building.SelectThisBuilding();
+
+                UIManager manager = upgradeModule != null ? upgradeModule : UIManager.Ins;
+                if (manager != null && building.gameObject.activeSelf)
                 {
-                    upgradeModule.ShowUpgradePanel(building);
-                    return;
+                    manager.ShowUpgradePanel(building);
                 }
+                return;
             }
         }
     }
