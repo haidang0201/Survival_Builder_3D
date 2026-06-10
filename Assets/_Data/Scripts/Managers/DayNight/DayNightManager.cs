@@ -10,7 +10,7 @@ public class DayNightManager : Singleton<DayNightManager>
     public event Action OnNightStart;
 
     public float DayDuration = 15f;  // Thời gian ban ngày (giây)
-    public float NightDuration = 12f; // Thời gian ban đêm (giây)
+    public float NightDuration = 30f; // Thời gian ban đêm (giây)
 
     private float timer;
 

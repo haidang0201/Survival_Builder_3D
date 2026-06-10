@@ -5,89 +5,97 @@ using UnityEngine.Events;
 public class WorkerStamina : MonoBehaviour
 {
     [Header("Stamina Settings")]
-    public float maxStamina       = 100f;
-    public float drainPerSecond   = 5f;
+    public float maxStamina = 100f;
+    public float drainPerSecond = 5f;
     public float recoverPerSecond = 20f;
-    public float restThreshold    = 0f;
-    public float resumeThreshold  = 100f;
+    public float restThreshold = 20f;
+    public float resumeThreshold = 80f;
+    public float morningForceWakeThreshold = 30f;
 
-    [Header("Kitchen Settings")]
-    [Tooltip("Nhà bếp để worker vào nghỉ. Tự tìm qua Tag 'Kitchen' nếu bỏ trống.")]
+    [Header("Locations Settings")]
     public Kitchen kitchen;
+    public House house;
+    [Range(0f, 1f)] public float hungryRecoverMultiplier = 0.3f;
 
-    [Tooltip("Tỉ lệ phục hồi stamina khi đói (hết lúa hoặc bếp đầy). 0.3 = chậm gấp 3 lần.")]
-    [Range(0f, 1f)]
-    public float hungryRecoverMultiplier = 0.3f;
-
-    [Tooltip("Model của worker để ẩn khi vào bếp. Gán object chứa Renderer của worker.")]
+    [Header("Visual Settings")]
     public GameObject workerModel;
-
-    [Tooltip("Danh sách các object cần ẩn theo (Cuốc, Rìu, Liềm, HandPoint đang cầm đồ...).")]
     public GameObject[] extraModelsToHide;
-
-    [Tooltip("Bán kính nhận diện cửa bếp. Vừa đến khoảng cách này là ẩn luôn, đỡ chen lấn.")]
-    public float kitchenInteractionRadius = 2.0f;
-
-    [Tooltip("Bán kính tản ra đứng đợi ngoài sân khi bếp đầy chỗ.")]
+    public float interactionRadius = 2.0f;
     public float waitingScatterRadius = 2.5f;
-
-    [Header("Rest Spot (Fallback nếu không có Kitchen)")]
     public Transform restSpot;
 
     [Header("Events")]
     public UnityEvent onStaminaDepleted;
     public UnityEvent onStaminaRecovered;
 
-    // ===== INTERNAL =====
-    private float        currentStamina;
+    [HideInInspector] public bool isCarryingResources = false;
+    
+    private bool isReturnPending = false;
+
+    private Vector3 targetRestPosition;
+    private bool hasTargetRestPosition = false;
+    private float currentStamina;
     private NavMeshAgent agent;
-    private bool         isResting          = false;
+    private bool isResting = false;
+    private bool isDraining = false;
+    private bool isInsideKitchen = false;
+    private bool isInsideHouse = false;
+    private bool isHungryInside = false;
+    private Vector3 personalOffset = Vector3.zero;
+    private bool _hasPersonalOffset = false;
 
-    // FIX: isDraining phải được reset về false mỗi frame.
-    // Nếu không reset, worker drain mãi ngay cả khi không làm gì
-    // (WorkerFindTree chỉ gọi SetDraining(true) khi chặt cây, không gọi SetDraining(false))
-    private bool         isDraining         = false;
-
-    private bool         isInsideKitchen    = false;
-    private bool         isHungryInside     = false;
-    private Vector3      personalOffset     = Vector3.zero;
-    private bool         _hasPersonalOffset = false;
-
-    public float CurrentStamina  => currentStamina;
-    public float MaxStamina      => maxStamina;
-    public bool  IsResting       => isResting;
-    public float StaminaPercent  => maxStamina > 0 ? currentStamina / maxStamina : 0f;
-
-    // ===== LIFECYCLE =====
+    public float CurrentStamina => currentStamina;
+    public float MaxStamina => maxStamina;
+    public bool IsResting => isResting;
 
     void Awake()
     {
-        agent          = GetComponent<NavMeshAgent>();
+        agent = GetComponent<NavMeshAgent>();
         currentStamina = maxStamina;
     }
 
     void Start()
     {
         FindKitchen();
-        FindRestSpot(); // FIX: bản cũ thiếu FindRestSpot() → restSpot không bao giờ tự tìm được
+        FindHouse();
+        FindRestSpot();
     }
 
-    // FIX: OnEnable / OnDisable phải có để tránh slot leak trong Kitchen
-    // khi worker bị disable (vd: chết, pool trả về) mà không gọi Exit()
     void OnEnable()
     {
+        if (isInsideKitchen) kitchen?.Exit(this);
+        if (isInsideHouse) house?.Exit(this);
+
         ShowModel();
         isInsideKitchen = false;
-        isHungryInside  = false;
+        isInsideHouse = false;
+        isHungryInside = false;
+        hasTargetRestPosition = false;
+        isDraining = false;
+
+        DayNightManager dm = DayNightManager.Ins;
+        if (dm == null) dm = FindObjectOfType<DayNightManager>();
+        if (dm != null)
+        {
+            dm.OnNightStart -= HandleNightfall;
+            dm.OnDayStart -= HandleDaybreak;
+            dm.OnNightStart += HandleNightfall;
+            dm.OnDayStart += HandleDaybreak;
+
+            if (dm.CurrentMode == DayNightManager.Mode.Night && !isResting && !isCarryingResources)
+                StartResting();
+        }
     }
 
     void OnDisable()
     {
-        // FIX: nếu bị disable khi đang trong bếp → trả slot về, tránh bếp bị chiếm mãi
-        if (isInsideKitchen)
+        if (isInsideKitchen) kitchen?.Exit(this);
+        if (isInsideHouse) house?.Exit(this);
+        DayNightManager dm = DayNightManager.Ins ?? FindObjectOfType<DayNightManager>();
+        if (dm != null)
         {
-            kitchen?.Exit(this);
-            isInsideKitchen = false;
+            dm.OnNightStart -= HandleNightfall;
+            dm.OnDayStart -= HandleDaybreak;
         }
     }
 
@@ -99,160 +107,329 @@ public class WorkerStamina : MonoBehaviour
         }
         else
         {
-            if (isDraining)
+            if (isDraining && !isReturnPending)
             {
                 currentStamina -= drainPerSecond * Time.deltaTime;
-                currentStamina  = Mathf.Max(currentStamina, 0f);
-                if (currentStamina <= restThreshold) StartResting();
+                currentStamina = Mathf.Max(currentStamina, 0f);
+                if (currentStamina <= restThreshold)
+                {
+                    if (isCarryingResources) isReturnPending = true;
+                    else StartResting();
+                }
             }
-
-            // FIX: reset isDraining mỗi frame — worker scripts gọi SetDraining(true)
-            // mỗi frame khi đang làm việc, nếu frame đó không gọi thì hiểu là đang nghỉ
-            isDraining = false;
         }
     }
 
-    /// <summary>
-    /// Gọi mỗi frame khi worker đang làm việc nặng (chặt cây, gặt lúa...).
-    /// Không gọi frame nào = frame đó không drain.
-    /// </summary>
     public void SetDraining(bool drain)
     {
-        if (isResting) return;
+        if (isResting) { isDraining = false; return; }
         isDraining = drain;
     }
 
-    public bool CanWork() => !isResting;
-
-    // ===== HANDLE RESTING =====
-
-    void HandleResting()
+    public bool CanWork()
     {
-        // Không có bếp lẫn restSpot → hồi tại chỗ
-        if (kitchen == null && restSpot == null)
-        {
-            currentStamina = Mathf.Min(currentStamina + recoverPerSecond * Time.deltaTime, maxStamina);
-            if (currentStamina >= resumeThreshold) StopResting();
-            return;
-        }
+        return !isResting && !isReturnPending;
+    }
 
-        if (kitchen != null)
+    private void HandleResting()
+    {
+        bool isNight = DayNightManager.Ins != null && DayNightManager.Ins.CurrentMode == DayNightManager.Mode.Night;
+
+        if (isNight)
         {
-            // CASE 1: Đã vào trong bếp → hồi stamina theo trạng thái đói/no
             if (isInsideKitchen)
             {
-                float multiplier = isHungryInside ? hungryRecoverMultiplier : 1f;
-                currentStamina = Mathf.Min(
-                    currentStamina + recoverPerSecond * multiplier * Time.deltaTime,
-                    maxStamina
-                );
-                if (currentStamina >= resumeThreshold) StopResting();
+                kitchen?.Exit(this);
+                isInsideKitchen = false;
+                isHungryInside = false;
+                hasTargetRestPosition = false;
+                ShowModel();
+            }
+            HandleHouseLogic();
+        }
+        else 
+        {
+            if (isInsideHouse)
+            {
+                currentStamina = Mathf.Min(currentStamina + recoverPerSecond * Time.deltaTime, maxStamina);
+                if (CanStopResting()) StopResting(); 
                 return;
             }
+            HandleKitchenLogic();
+        }
+    }
 
-            // CASE 2: Bếp đang đầy → đứng chờ ngoài sân, hồi chậm
-            if (kitchen.IsFull)
-            {
-                if (!_hasPersonalOffset)
-                {
-                    Vector2 rand       = Random.insideUnitCircle * waitingScatterRadius;
-                    if (rand.magnitude < 1f) rand = rand.normalized;
-                    personalOffset     = new Vector3(rand.x, 0f, rand.y);
-                    _hasPersonalOffset = true;
-                }
-
-                Vector3 waitPos = kitchen.GetRestPosition() + personalOffset;
-                MoveToPosition(waitPos);
-
-                // Hồi chậm khi đứng yên ngoài sân
-                bool isStanding = agent == null || agent.velocity.sqrMagnitude < 0.01f;
-                if (isStanding)
-                {
-                    currentStamina = Mathf.Min(
-                        currentStamina + recoverPerSecond * hungryRecoverMultiplier * Time.deltaTime,
-                        maxStamina
-                    );
-                }
-
-                if (currentStamina >= resumeThreshold) StopResting();
-                return;
-            }
-
-            // CASE 3: Bếp còn chỗ → đi thẳng đến cửa bếp
-            if (_hasPersonalOffset)
-            {
-                personalOffset     = Vector3.zero;
-                _hasPersonalOffset = false;
-            }
-
-            MoveToPosition(kitchen.EntrancePosition);
-
-            float distToKitchen = Vector3.Distance(transform.position, kitchen.EntrancePosition);
-            if (distToKitchen <= kitchenInteractionRadius)
-            {
-                // FIX: dùng out consumedFood từ Kitchen.Enter()
-                // Bản cũ kiểm tra kitchen.HasFood SAU KHI Enter() đã ConsumeRice
-                // → nếu lúa vừa hết thì HasFood = false dù worker vừa được ăn → isHungryInside sai
-                bool enterSuccess = kitchen.Enter(this, out bool consumedFood);
-                if (enterSuccess)
-                {
-                    isInsideKitchen = true;
-                    isHungryInside  = !consumedFood; // đúng: dựa vào kết quả thực tế
-                    HideModel();
-                    if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
-                }
-            }
+    private void HandleKitchenLogic()
+    {
+        if (kitchen == null) FindKitchen();
+        if (kitchen == null)
+        {
+            HandleFallback();
             return;
         }
 
-        // FALLBACK: Không có Kitchen → đi về restSpot hồi stamina
-        if (restSpot != null)
+        if (isInsideKitchen)
         {
-            float distToRest = Vector3.Distance(transform.position, restSpot.position);
-            if (distToRest > (agent != null ? agent.stoppingDistance : 0f) + 0.5f)
-            {
-                MoveToPosition(restSpot.position);
-                return;
-            }
-            if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+            float multiplier = isHungryInside ? hungryRecoverMultiplier : 1f;
+            currentStamina = Mathf.Min(currentStamina + recoverPerSecond * multiplier * Time.deltaTime, maxStamina);
+            if (CanStopResting()) StopResting();
+            return;
         }
 
+        if (kitchen.IsFull)
+        {
+            MoveToWaitingArea(kitchen.EntrancePosition);
+            currentStamina = Mathf.Min(currentStamina + recoverPerSecond * hungryRecoverMultiplier * Time.deltaTime, maxStamina);
+            if (CanStopResting()) StopResting();
+            return;
+        }
+
+        ClearOffset();
+        if (!hasTargetRestPosition)
+        {
+            targetRestPosition = kitchen.GetRestPosition();
+            hasTargetRestPosition = true;
+        }
+
+        MoveToPosition(targetRestPosition);
+        if (Vector3.Distance(transform.position, targetRestPosition) <= interactionRadius)
+        {
+            if (kitchen.Enter(this, out bool consumedFood))
+            {
+                isInsideKitchen = true;
+                isHungryInside = !consumedFood;
+                hasTargetRestPosition = false;
+                HideModel();
+                if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+            }
+        }
+    }
+
+    private void HandleHouseLogic()
+    {
+        if (house == null) FindHouse();
+        if (house == null)
+        {
+            HandleFallback();
+            return;
+        }
+
+        if (isInsideHouse)
+        {
+            currentStamina = Mathf.Min(currentStamina + recoverPerSecond * Time.deltaTime, maxStamina);
+            return; 
+        }
+
+        if (house.IsFull)
+        {
+            MoveToWaitingArea(house.EntrancePosition);
+            currentStamina = Mathf.Min(currentStamina + recoverPerSecond * hungryRecoverMultiplier * Time.deltaTime, maxStamina);
+            return;
+        }
+
+        ClearOffset();
+        if (!hasTargetRestPosition)
+        {
+            targetRestPosition = house.EntrancePosition;
+            hasTargetRestPosition = true;
+        }
+
+        MoveToPosition(targetRestPosition);
+        if (Vector3.Distance(transform.position, targetRestPosition) <= interactionRadius)
+        {
+            if (house.Enter(this))
+            {
+                isInsideHouse = true;
+                hasTargetRestPosition = false;
+                HideModel();
+                if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+            }
+        }
+    }
+
+    private void HandleFallback()
+    {
+        if (restSpot != null)
+        {
+            MoveToPosition(restSpot.position);
+            float stopDist = (agent != null ? agent.stoppingDistance : 0.5f) + 0.5f;
+            if (Vector3.Distance(transform.position, restSpot.position) <= stopDist)
+                if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+        }
         currentStamina = Mathf.Min(currentStamina + recoverPerSecond * Time.deltaTime, maxStamina);
-        if (currentStamina >= resumeThreshold) StopResting();
+        
+        bool isNight = DayNightManager.Ins != null && DayNightManager.Ins.CurrentMode == DayNightManager.Mode.Night;
+        if (!isNight && CanStopResting()) 
+        {
+            StopResting();
+        }
     }
 
-    // ===== START / STOP RESTING =====
-
-    void StartResting()
+    private void HandleNightfall()
     {
-        if (isResting) return;
-        isResting  = true;
-        isDraining = false;
-        onStaminaDepleted?.Invoke();
-    }
+        hasTargetRestPosition = false;
 
-    void StopResting()
-    {
-        ShowModel();
-
+        // BUG FIX: Thoát Kitchen trước khi check isResting
+        // (trước đây isResting == true → return sớm → worker kẹt trong Kitchen suốt đêm)
         if (isInsideKitchen)
         {
             kitchen?.Exit(this);
             isInsideKitchen = false;
-            isHungryInside  = false;
+            isHungryInside = false;
+            hasTargetRestPosition = false;
+            ShowModel();
+            if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
         }
 
-        isResting          = false;
-        personalOffset     = Vector3.zero;
-        _hasPersonalOffset = false;
+        if (isResting) return; // Đã resting → HandleResting() frame sau sẽ gọi HandleHouseLogic()
 
+        if (isCarryingResources)
+            isReturnPending = true;
+        else
+            StartResting();
+    }
+
+    private void HandleDaybreak()
+    {
+        if (!isCarryingResources) isReturnPending = false;
+        
+        hasTargetRestPosition = false;
+        if (!isResting) return;
+
+        if (currentStamina >= resumeThreshold)
+        {
+            StopResting();
+            return;
+        }
+
+        // BUG FIX: bỏ điều kiện !isInsideHouse
+        // (trước đây worker ngủ trong House với stamina thấp bị kẹt mãi không thể dậy sáng hôm sau)
+        if (currentStamina >= morningForceWakeThreshold)
+            StopResting();
+    }
+
+    public void OnResourcesDeposited()
+    {
+        isCarryingResources = false;
+        if (isReturnPending)
+        {
+            isReturnPending = false;
+            StartResting();
+        }
+    }
+
+    private bool CanStopResting()
+    {
+        if (currentStamina < resumeThreshold) return false;
+        if (DayNightManager.Ins != null && DayNightManager.Ins.CurrentMode == DayNightManager.Mode.Night)
+            return false;
+        return true;
+    }
+
+    private void StartResting()
+    {
+        if (isResting) return;
+        isResting = true;
+        isDraining = false;
+        hasTargetRestPosition = false;
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+        onStaminaDepleted?.Invoke();
+    }
+
+    private void StopResting()
+    {
+        ShowModel();
+        if (isInsideKitchen)
+        {
+            kitchen?.Exit(this);
+            isInsideKitchen = false;
+            isHungryInside = false;
+        }
+        if (isInsideHouse)
+        {
+            house?.Exit(this);
+            isInsideHouse = false;
+        }
+        isResting = false;
+        isDraining = false;
+        hasTargetRestPosition = false;
+        ClearOffset();
         if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
         onStaminaRecovered?.Invoke();
     }
 
-    // ===== HELPERS =====
+    private void FindKitchen()
+    {
+        // Nếu đã gắn sẵn trong Inspector thì dùng luôn, không tự tìm
+        if (kitchen != null) return;
 
-    void MoveToPosition(Vector3 pos)
+        GameObject[] kitchens = GameObject.FindGameObjectsWithTag("Kitchen");
+        float closestDist = Mathf.Infinity;
+        Kitchen best = null;
+        foreach (var obj in kitchens)
+        {
+            Kitchen k = obj.GetComponent<Kitchen>();
+            if (k != null && !k.IsFull)
+            {
+                float d = Vector3.Distance(transform.position, obj.transform.position);
+                if (d < closestDist) { closestDist = d; best = k; }
+            }
+        }
+        kitchen = best != null ? best : (kitchens.Length > 0 ? kitchens[0].GetComponent<Kitchen>() : null);
+    }
+
+    private void FindHouse()
+    {
+        // Nếu đã gắn sẵn trong Inspector thì dùng luôn, không tự tìm
+        if (house != null) return;
+
+        GameObject[] houses = GameObject.FindGameObjectsWithTag("House");
+        float closestDist = Mathf.Infinity;
+        House best = null;
+        foreach (var obj in houses)
+        {
+            House h = obj.GetComponent<House>();
+            if (h != null && !h.IsFull)
+            {
+                float d = Vector3.Distance(transform.position, obj.transform.position);
+                if (d < closestDist) { closestDist = d; best = h; }
+            }
+        }
+        house = best != null ? best : (houses.Length > 0 ? houses[0].GetComponent<House>() : null);
+    }
+
+    private void FindRestSpot()
+    {
+        if (restSpot != null) return;
+        GameObject obj = GameObject.FindWithTag("RestSpot");
+        if (obj != null) restSpot = obj.transform;
+    }
+
+    private void MoveToWaitingArea(Vector3 center)
+    {
+        if (!_hasPersonalOffset)
+        {
+            Vector2 rand = Random.insideUnitCircle * waitingScatterRadius;
+            personalOffset = new Vector3(rand.x, 0f, rand.y);
+            _hasPersonalOffset = true;
+        }
+        MoveToPosition(center + personalOffset);
+    }
+
+    private void ClearOffset()
+    {
+        if (_hasPersonalOffset)
+        {
+            personalOffset = Vector3.zero;
+            _hasPersonalOffset = false;
+        }
+    }
+
+    private void MoveToPosition(Vector3 pos)
     {
         if (agent != null && agent.isOnNavMesh)
         {
@@ -261,36 +438,17 @@ public class WorkerStamina : MonoBehaviour
         }
     }
 
-    void ShowModel()
+    private void ShowModel()
     {
         if (workerModel != null) workerModel.SetActive(true);
-
         if (extraModelsToHide != null)
-            foreach (var obj in extraModelsToHide)
-                if (obj != null) obj.SetActive(true);
+            foreach (var obj in extraModelsToHide) if (obj != null) obj.SetActive(true);
     }
 
-    void HideModel()
+    private void HideModel()
     {
         if (workerModel != null) workerModel.SetActive(false);
-
         if (extraModelsToHide != null)
-            foreach (var obj in extraModelsToHide)
-                if (obj != null) obj.SetActive(false);
-    }
-
-    void FindKitchen()
-    {
-        if (kitchen != null) return;
-        GameObject obj = GameObject.FindWithTag("Kitchen");
-        if (obj != null) kitchen = obj.GetComponent<Kitchen>();
-    }
-
-    // FIX: bản cũ thiếu method này → restSpot không bao giờ được tự tìm
-    void FindRestSpot()
-    {
-        if (restSpot != null) return;
-        GameObject obj = GameObject.FindWithTag("RestSpot");
-        if (obj != null) restSpot = obj.transform;
+            foreach (var obj in extraModelsToHide) if (obj != null) obj.SetActive(false);
     }
 }

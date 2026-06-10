@@ -228,16 +228,45 @@ public class UIManager : Singleton<UIManager>
         // Ẩn panel thông tin đi để màn hình thoáng khi di chuyển
         HideUpgradePanel();
     }
+    // ================= BỔ SUNG CÁC HÀM TẮT WINDOWS / PANELS =================
 
-    private void OnGUI()
+    /// <summary>
+    /// Đóng hoàn toàn Panel Nâng cấp và Di chuyển nhà
+    /// </summary>
+    public void CloseUpgradePanel()
     {
-        if (selectedBuilding != null && upgradePanel != null && upgradePanel.activeSelf)
+        selectedBuilding = null;
+        if (upgradePanel != null)
         {
-            if (GUI.Button(new Rect(20, 150, 250, 50), "⚡ DEBUG: Nâng Cấp Không Tốn Tài Nguyên"))
-            {
-                selectedBuilding.StartUpgradeProcess();
-                RefreshUpgradePanel(selectedBuilding);
-            }
+            upgradePanel.SetActive(false);
+            Debug.Log("[UIManager] ❌ Đã đóng Cửa sổ Nâng cấp / Di chuyển công trình.");
         }
+    }
+
+    /// <summary>
+    /// Đóng Menu Xây dựng (Build Menu)
+    /// </summary>
+    public void CloseBuildMenu()
+    {
+        if (buildMenu != null)
+        {
+            buildMenu.SetActive(false);
+            Debug.Log("[UIManager] ❌ Đã đóng Menu Xây dựng.");
+        }
+    }
+
+    /// <summary>
+    /// Hàm tắt nhanh tất cả các Panel đang mở trên màn hình (Phục vụ nút bấm ESC hoặc hủy trạng thái)
+    /// </summary>
+    public void CloseAllActiveWindows()
+    {
+        if (upgradePanel != null) upgradePanel.SetActive(false);
+        if (buildMenu != null) buildMenu.SetActive(false);
+        if (settingUI != null) settingUI.SetActive(false);
+        if (houseSelectionPanel != null) houseSelectionPanel.SetActive(false);
+        if (workerStatusPanel != null) workerStatusPanel.SetActive(false);
+        
+        selectedBuilding = null;
+        Debug.Log("[UIManager] 🧹 Đã dọn dẹp và ẩn toàn bộ giao diện cửa sổ popup.");
     }
 }

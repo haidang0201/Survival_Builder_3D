@@ -42,6 +42,14 @@ public class JsonDataManager : Singleton<JsonDataManager>
     public int stone { get; private set; }
     public int food { get; private set; }
 
+    // ──────────────────────────────────────────────
+    // BỔ SUNG: TÀI NGUYÊN TÍCH LŨY SUỐT TRẬN ĐẤU (Phục vụ EndGameUI)
+    // ──────────────────────────────────────────────
+    public int TotalWoodCollected { get; private set; }
+    public int TotalStoneCollected { get; private set; }
+    public int TotalFoodCollected { get; private set; }
+    public int TotalGoldCollected { get; private set; }
+
     private BuildingConfigRoot _loadedConfig;
 
     protected override void Awake()
@@ -54,30 +62,33 @@ public class JsonDataManager : Singleton<JsonDataManager>
     // THÊM TÀI NGUYÊN  (Cộng dồn vô hạn)
     // ──────────────────────────────────────────────
 
-    public void AddGold(int amount)
-    {
-        gold = Mathf.Max(0, gold + amount);
-        OnGoldChanged?.Invoke(gold);
-    }
-
     public void AddWood(int amount)
     {
-        wood = Mathf.Max(0, wood + amount);
+        wood += amount;
+        if (amount > 0) TotalWoodCollected += amount; // Cộng dồn tích lũy khi nhặt được
         OnWoodChanged?.Invoke(wood);
     }
 
     public void AddStone(int amount)
     {
-        stone = Mathf.Max(0, stone + amount);
+        stone += amount;
+        if (amount > 0) TotalStoneCollected += amount; // Cộng dồn tích lũy khi nhặt được
         OnStoneChanged?.Invoke(stone);
     }
 
     public void AddFood(int amount)
     {
-        food = Mathf.Max(0, food + amount);
+        food += amount;
+        if (amount > 0) TotalFoodCollected += amount; // Cộng dồn tích lũy khi nhặt được
         OnFoodChanged?.Invoke(food);
     }
 
+    public void AddGold(int amount)
+    {
+        gold += amount;
+        if (amount > 0) TotalGoldCollected += amount; // Cộng dồn tích lũy khi nhặt được
+        OnGoldChanged?.Invoke(gold);
+    }
     // ──────────────────────────────────────────────
     // NÂNG CẤP SỨC CHỨA KHO (Đã bỏ logic Max, giữ hàm để không lỗi hệ thống khác)
     // ──────────────────────────────────────────────
@@ -220,6 +231,41 @@ public class JsonDataManager : Singleton<JsonDataManager>
         string directory = Path.GetDirectoryName(path);
         if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
         File.WriteAllText(path, json);
+    }
+    // Thêm vào cuối class JsonDataManager.cs để các script khác dễ dàng ghi nhận thành tích
+    public static void RegisterStat_ResourceCollected(string resourceType, int amount)
+    {
+        if (amount <= 0) return;
+        string key = "Stat_Total_" + resourceType; // Ví dụ: Stat_Total_Wood
+        int currentTotal = PlayerPrefs.GetInt(key, 0);
+        PlayerPrefs.SetInt(key, currentTotal + amount);
+        PlayerPrefs.Save();
+    }
+
+    public static void RegisterStat_BuildingConstructed()
+    {
+        int currentTotal = PlayerPrefs.GetInt("Stat_Total_Buildings", 0);
+        PlayerPrefs.SetInt("Stat_Total_Buildings", currentTotal + 1);
+        PlayerPrefs.Save();
+    }
+
+    public static void RegisterStat_DaysSurvived(int days)
+    {
+        // Cập nhật số ngày sống sót cao nhất hoặc hiện tại
+        PlayerPrefs.SetInt("Stat_Survival_Days", days);
+        PlayerPrefs.Save();
+    }
+
+    // Hàm dọn dẹp data cũ khi bấm nút Chơi Lại (Restart)
+    public static void ResetEndGameStats()
+    {
+        PlayerPrefs.DeleteKey("Stat_Total_Wood");
+        PlayerPrefs.DeleteKey("Stat_Total_Stone");
+        PlayerPrefs.DeleteKey("Stat_Total_Food");
+        PlayerPrefs.DeleteKey("Stat_Total_Gold");
+        PlayerPrefs.DeleteKey("Stat_Total_Buildings");
+        PlayerPrefs.DeleteKey("Stat_Survival_Days");
+        PlayerPrefs.Save();
     }
 
     [Serializable] public class GameSaveData { public string sceneName; public long savedAtUnix; public List<BuildingState> buildings; public List<ResourceData> resources; }
