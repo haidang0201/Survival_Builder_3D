@@ -5,16 +5,16 @@ public class WorkerCarryStone : MonoBehaviour
 {
     public Transform    handPoint;
     public NavMeshAgent agent;
-    
-    // Đã bỏ [HideInInspector] để bạn dễ dàng theo dõi Nợm (Worker) đang nhắm đi đâu
     public Transform stoneStoragePoint;   
 
     private StonePickup  currentStone;
     private StoneStorage stoneStorage;
+    private WorkerStamina workerStamina;
 
     void Start()
     {
         stoneStorage = FindStoneStorage();
+        workerStamina = GetComponent<WorkerStamina>();
     }
 
     void OnDisable()
@@ -33,14 +33,12 @@ public class WorkerCarryStone : MonoBehaviour
 
     StoneStorage FindStoneStorage()
     {
-        // 1. Kiểm tra điểm gán tay
         if (stoneStoragePoint != null)
         {
             StoneStorage ss = stoneStoragePoint.GetComponent<StoneStorage>() ?? stoneStoragePoint.GetComponentInParent<StoneStorage>() ?? stoneStoragePoint.GetComponentInChildren<StoneStorage>();
             if (ss != null) return ss;
         }
 
-        // 2. Tìm tự động bằng Tag "StoneStorage"
         GameObject obj = GameObject.FindWithTag("StoneStorage");
         if (obj != null)
         {
@@ -52,7 +50,6 @@ public class WorkerCarryStone : MonoBehaviour
             }
         }
 
-        // 3. Quét toàn map
         StoneStorage fallback = FindObjectOfType<StoneStorage>();
         if (fallback != null)
         {
@@ -60,7 +57,6 @@ public class WorkerCarryStone : MonoBehaviour
             return fallback;
         }
         
-        // FIX "HỐ ĐEN": Xóa trắng điểm đến nếu không tìm thấy kho, tránh việc AI chạy bậy bạ
         stoneStoragePoint = null;
         return null;
     }
@@ -74,6 +70,8 @@ public class WorkerCarryStone : MonoBehaviour
         currentStone = stone;
         currentStone.Pickup(handPoint);
         agent.ResetPath();
+
+        if (workerStamina != null) workerStamina.isCarryingResources = true;
     }
 
     public bool MoveToStorage()
@@ -88,7 +86,6 @@ public class WorkerCarryStone : MonoBehaviour
     {
         if (currentStone == null) return false;
         
-        // FIX "HỐ ĐEN": Chặn ngay lập tức, bắt AI đứng ôm đá chờ đợi thay vì vứt phi tang!
         if (stoneStorage == null) 
         {
             Debug.LogError($"[WorkerCarryStone] {name} KHÔNG tìm thấy StoneStorage (Kho tạm đá) trên Map. Hãy kiểm tra Tag!");
@@ -103,6 +100,9 @@ public class WorkerCarryStone : MonoBehaviour
 
         currentStone = null;
         stoneStorage.AddStone(1);
+
+        if (workerStamina != null) workerStamina.OnResourcesDeposited();
+
         return true;
     }
 }

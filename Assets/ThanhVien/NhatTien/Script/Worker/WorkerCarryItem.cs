@@ -9,10 +9,12 @@ public class WorkerCarryItem : MonoBehaviour
 
     private WoodPickup  currentWood;
     private WoodStorage woodStorage;
+    private WorkerStamina workerStamina; // Thêm tham chiếu
 
     void Start()
     {
         woodStorage = FindWoodStorage();
+        workerStamina = GetComponent<WorkerStamina>(); // Lấy tham chiếu
     }
 
     void OnDisable()
@@ -68,6 +70,9 @@ public class WorkerCarryItem : MonoBehaviour
         currentWood = wood;
         currentWood.Pickup(handPoint);
         agent.ResetPath();
+
+        // Báo cho Stamina biết đã cầm đồ
+        if (workerStamina != null) workerStamina.isCarryingResources = true; 
     }
 
     public bool MoveToStorage()
@@ -84,7 +89,6 @@ public class WorkerCarryItem : MonoBehaviour
         
         if (woodStorage == null) 
         {
-            // Đã đổi tên log cho khớp với tên class hiện tại
             Debug.LogError($"[WorkerCarryItem] {name} KHÔNG tìm thấy WoodStorage trên Map. Hãy kiểm tra Tag 'Storage'!");
             return false; 
         }
@@ -97,6 +101,10 @@ public class WorkerCarryItem : MonoBehaviour
 
         currentWood = null;
         woodStorage.AddWood(1);
+
+        // Báo cho Stamina biết đã nộp đồ xong
+        if (workerStamina != null) workerStamina.OnResourcesDeposited(); 
+
         return true;
     }
 }

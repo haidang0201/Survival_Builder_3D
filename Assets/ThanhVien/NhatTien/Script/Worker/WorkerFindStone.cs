@@ -1,8 +1,11 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
 
 public class WorkerFindStone : MonoBehaviour
 {
+    public static List<Stone> Registry = new List<Stone>(); 
+
     public NavMeshAgent     agent;
     public WorkerCarryStone carrySystem;
     public Animator         animator;
@@ -13,6 +16,12 @@ public class WorkerFindStone : MonoBehaviour
 
     [Header("Animation Settings")]
     public string mineTriggerName = "Mine"; 
+
+    [Header("Idle/Wander Settings")]
+    public float wanderRadius = 5f;
+    public float wanderInterval = 3f;
+    private float wanderTimer = 0f;
+    private Vector3 anchorPosition;
 
     [Header("Settings Nâng Cấp")]
     public float stuckTimeout = 2.0f;
@@ -33,12 +42,20 @@ public class WorkerFindStone : MonoBehaviour
     void Start()
     {
         if (stamina == null) stamina = GetComponent<WorkerStamina>();
+        anchorPosition = transform.position;
     }
 
     void Update()
     {
         UpdateAnimationSpeed();
         CheckStuck();
+
+        if (carrySystem.IsCarrying())
+        {
+            isHeadingToStone = false;
+            HandleCarrying();
+            return;
+        }
 
         if (stamina != null && !stamina.CanWork())
         {
@@ -56,24 +73,23 @@ public class WorkerFindStone : MonoBehaviour
         }
 
         wasResting = false;
-
-        if (carrySystem.IsCarrying())
-        {
-            isHeadingToStone = false;
-            HandleCarrying();
-            return;
-        }
-
         isHeadingToDeposit = false;
 
-        if (targetStone != null && !targetStone.gameObject.activeInHierarchy)
-            ReleaseCurrentStone();
-
-        if (targetStone == null)
+        if (targetStone == null || !targetStone.gameObject.activeInHierarchy)
         {
+            if (targetStone != null) ReleaseCurrentStone();
+            
             HandleFindStone();
-            return;
+            
+            if (targetStone == null)
+            {
+                stamina?.SetDraining(false); 
+                HandleWander();
+                return;
+            }
         }
+
+        stamina?.SetDraining(true);
 
         float dist = Vector3.Distance(transform.position, targetStone.transform.position);
         if (dist > mineDistance)
@@ -83,6 +99,26 @@ public class WorkerFindStone : MonoBehaviour
         }
 
         HandleMining();
+    }
+
+    void HandleWander()
+    {
+        if (agent == null || !agent.isOnNavMesh) return;
+
+        wanderTimer += Time.deltaTime;
+        if (wanderTimer >= wanderInterval)
+        {
+            wanderTimer = 0f;
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.1f)
+            {
+                Vector3 randDir = Random.insideUnitSphere * wanderRadius + anchorPosition;
+                if (NavMesh.SamplePosition(randDir, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
+                {
+                    agent.isStopped = false;
+                    agent.SetDestination(hit.position);
+                }
+            }
+        }
     }
 
     void UpdateAnimationSpeed()
@@ -118,16 +154,12 @@ public class WorkerFindStone : MonoBehaviour
                 else
                 {
                     depositRetryTimer = 2.5f; 
-                    
                     if (totalWaitTimer >= 15f)
                     {
-                        Debug.LogWarning($"[WorkerFindStone] {name}: Kho đầy quá 15s! Vứt hàng.");
                         totalWaitTimer = 0f;
                         depositRetryTimer = 0f;
                         isHeadingToDeposit = false;
                         if (agent.isOnNavMesh) agent.isStopped = false;
-
-                        // FIX AN TOÀN: Tắt bật lại riêng Carry Script để dọn rác
                         carrySystem.enabled = false;
                         carrySystem.enabled = true;
                     }
@@ -156,10 +188,11 @@ public class WorkerFindStone : MonoBehaviour
         float minDist = Mathf.Infinity;
         Stone best = null;
 
-        for (int i = Stone.Registry.Count - 1; i >= 0; i--)
+        // BUG FIX: dùng Registry (của WorkerFindStone) thay vì Stone.Registry (của class Stone)
+        for (int i = Registry.Count - 1; i >= 0; i--)
         {
-            Stone stone = Stone.Registry[i];
-            if (stone == null || !stone.gameObject.activeInHierarchy) { Stone.Registry.RemoveAt(i); continue; }
+            Stone stone = Registry[i];
+            if (stone == null || !stone.gameObject.activeInHierarchy) { Registry.RemoveAt(i); continue; }
             if (!stone.TryClaim()) continue;
 
             float dist = Vector3.Distance(transform.position, stone.transform.position);
@@ -203,7 +236,6 @@ public class WorkerFindStone : MonoBehaviour
     {
         agent.isStopped = true;
         isHeadingToStone = false; 
-        stamina?.SetDraining(true);
 
         if (!hasTriggeredMineAnim)
         {
@@ -220,6 +252,7 @@ public class WorkerFindStone : MonoBehaviour
         StonePickup[] drops = targetStone.TakeDamage(1);
         if (drops != null && drops.Length > 0)
         {
+            // BUG FIX: Pickup trước, Release sau — nhất quán với WorkerFindRice/WorkerFindTree
             carrySystem.PickupStone(drops[0]);
             ReleaseCurrentStone();
         }
@@ -238,11 +271,7 @@ public class WorkerFindStone : MonoBehaviour
     void CheckStuck()
     {
         bool isResting = stamina != null && !stamina.CanWork();
-        if (agent == null || agent.isStopped || !agent.hasPath || isResting)
-        {
-            stuckTimer = 0f;
-            return;
-        }
+        if (agent == null || agent.isStopped || !agent.hasPath || isResting) return;
 
         if (agent.velocity.sqrMagnitude < 0.01f)
         {

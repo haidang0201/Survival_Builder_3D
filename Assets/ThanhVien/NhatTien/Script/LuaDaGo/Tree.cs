@@ -11,6 +11,7 @@ public class Tree : MonoBehaviour
 
     private int currentHealth;
     private bool isOccupied = false;
+    private bool isFalling  = false; // Chặn TakeDamage kép trong lúc animation đổ cây
     private TreeVisual treeVisual;
 
     void Awake()
@@ -23,6 +24,7 @@ public class Tree : MonoBehaviour
     {
         currentHealth = maxHealth;
         isOccupied    = false;
+        isFalling     = false;
         WorkerFindTree.Registry.Add(this);
     }
 
@@ -42,6 +44,8 @@ public class Tree : MonoBehaviour
 
     public WoodPickup[] TakeDamage(int damage)
     {
+        if (isFalling) return null; // Đang đổ rồi, bỏ qua
+
         currentHealth -= damage;
         Debug.Log($"[Tree] '{name}' nhận {damage} damage. HP còn lại: {currentHealth}/{maxHealth}");
 
@@ -52,8 +56,10 @@ public class Tree : MonoBehaviour
 
     WoodPickup[] DestroyTree()
     {
+        isFalling  = true;  // Khóa, không nhận damage nữa
+        isOccupied = false; // Nhả claim ngay để worker khác không chờ vô ích
+
         WoodPickup[] woods = DropWood();
-        isOccupied = false;
 
         if (treeVisual != null)
         {
