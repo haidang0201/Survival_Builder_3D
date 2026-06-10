@@ -222,7 +222,7 @@ public class WorkerStamina : MonoBehaviour
 
         if (house.IsFull)
         {
-            MoveToWaitingArea(house.transform.position);
+            MoveToWaitingArea(house.EntrancePosition);
             currentStamina = Mathf.Min(currentStamina + recoverPerSecond * hungryRecoverMultiplier * Time.deltaTime, maxStamina);
             return;
         }
@@ -230,7 +230,7 @@ public class WorkerStamina : MonoBehaviour
         ClearOffset();
         if (!hasTargetRestPosition)
         {
-            targetRestPosition = house.GetRestPosition();
+            targetRestPosition = house.EntrancePosition;
             hasTargetRestPosition = true;
         }
 
@@ -364,6 +364,9 @@ public class WorkerStamina : MonoBehaviour
 
     private void FindKitchen()
     {
+        // Nếu đã gắn sẵn trong Inspector thì dùng luôn, không tự tìm
+        if (kitchen != null) return;
+
         GameObject[] kitchens = GameObject.FindGameObjectsWithTag("Kitchen");
         float closestDist = Mathf.Infinity;
         Kitchen best = null;
@@ -381,6 +384,9 @@ public class WorkerStamina : MonoBehaviour
 
     private void FindHouse()
     {
+        // Nếu đã gắn sẵn trong Inspector thì dùng luôn, không tự tìm
+        if (house != null) return;
+
         GameObject[] houses = GameObject.FindGameObjectsWithTag("House");
         float closestDist = Mathf.Infinity;
         House best = null;

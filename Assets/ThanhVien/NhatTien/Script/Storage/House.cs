@@ -8,14 +8,18 @@ public class House : MonoBehaviour
     public int maxCapacity = 4;
 
     [Header("References")]
+    [Tooltip("Vị trí cửa nhà để Worker đi tới. Nếu bỏ trống sẽ tự động lấy tâm của House.")]
+    public Transform entrancePoint;
+
     [Tooltip("Các vị trí giường ngủ hoặc slot đứng trong nhà để tránh trùng tọa độ.")]
     public Transform[] restSlots;
 
     private List<WorkerStamina> workersInside = new List<WorkerStamina>();
     private int _nextSlotIndex = 0;
 
-    public int  WorkerCount => workersInside.Count;
-    public bool IsFull      => workersInside.Count >= maxCapacity;
+    public int     WorkerCount      => workersInside.Count;
+    public bool    IsFull           => workersInside.Count >= maxCapacity;
+    public Vector3 EntrancePosition => entrancePoint != null ? entrancePoint.position : transform.position;
 
     public bool Enter(WorkerStamina worker)
     {
@@ -58,6 +62,13 @@ public class House : MonoBehaviour
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, 2.5f);
+        Gizmos.DrawWireSphere(EntrancePosition, 2.5f);
+
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(
+            EntrancePosition + Vector3.up * 2.5f,
+            $"Nhà: {workersInside.Count}/{maxCapacity}"
+        );
+#endif
     }
 }
