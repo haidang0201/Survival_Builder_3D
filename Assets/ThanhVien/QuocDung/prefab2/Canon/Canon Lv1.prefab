@@ -127,6 +127,7 @@ GameObject:
   - component: {fileID: 3084298458501944788}
   - component: {fileID: 6402464722327007131}
   - component: {fileID: -7636250480985751170}
+  - component: {fileID: 5490868277580300845}
   m_Layer: 0
   m_Name: Canon Lv1
   m_TagString: Untagged
@@ -262,6 +263,8 @@ MonoBehaviour:
   burnDamagePerSec: 5
   burnDuration: 3
   fireVfxPrefab: {fileID: 0}
+  animator: {fileID: 5490868277580300845}
+  attackParamName: IsAttack
 --- !u!114 &-7636250480985751170
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,6 +284,28 @@ MonoBehaviour:
   - {fileID: 970716139476267917, guid: d1f532869ba23024b8fcbb04a936f7f6, type: 3}
   - {fileID: 6721075531389115540, guid: 8fa22f5b5d43ff1449ac220a2a443752, type: 3}
   upgradeCosts: []
+--- !u!95 &5490868277580300845
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658031086135343822}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: a780a63a0fa4e3e43b98a501ed3ff697, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &2406723649338239675
 GameObject:
   m_ObjectHideFlags: 0

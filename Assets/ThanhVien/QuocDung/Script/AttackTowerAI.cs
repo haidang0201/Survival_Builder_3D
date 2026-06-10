@@ -28,6 +28,9 @@ public class AttackTowerAI : MonoBehaviour
     public float burnDamagePerSec = 5f;
     public float burnDuration = 3f;
     public GameObject fireVfxPrefab;
+    [Header("Cấu hình Animation")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private string attackParamName = "IsAttack";
 
     private UpgradeableBuilding upgradeableBuilding;
     private Transform currentTarget;
@@ -36,6 +39,7 @@ public class AttackTowerAI : MonoBehaviour
     private void Start()
     {
         upgradeableBuilding = GetComponent<UpgradeableBuilding>();
+        UpdateAnimatorReference();
         if (firePoint == null)
         {
             foreach (Transform child in GetComponentsInChildren<Transform>())
@@ -87,6 +91,8 @@ public class AttackTowerAI : MonoBehaviour
         // Kiểm tra lại xem mục tiêu còn sống/tồn tại không trước khi bắn
         if (currentTarget == null) { Debug.Log("[AttackTowerAI] ExecuteAttack called but currentTarget is null"); return; }
 
+        PlayAttackAnimation();
+
         if (towerType == AttackTowerType.Archer)
         {
             Debug.Log($"[ArcherTower] 🏹 Bắn cung vào mục tiêu: {currentTarget.name} (Tọa độ: {currentTarget.position})");
@@ -99,6 +105,105 @@ public class AttackTowerAI : MonoBehaviour
         }
 
         // Note: currentTarget is intentionally kept so tower can continue firing until target dies
+    }
+
+    private void PlayAttackAnimation()
+    {
+        UpdateAnimatorReference();
+        if (animator == null)
+        {
+            Debug.LogWarning($"[AttackTowerAI] {name}: Animator component is missing/null!");
+            return;
+        }
+        if (!animator.enabled)
+        {
+            Debug.LogWarning($"[AttackTowerAI] {name}: Animator component is disabled!");
+            return;
+        }
+        StartCoroutine(TriggerAttackAnimationRoutine());
+    }
+
+    private void UpdateAnimatorReference()
+    {
+        if (upgradeableBuilding != null)
+        {
+            int currentLevel = upgradeableBuilding.CurrentLevel;
+            var visualModels = upgradeableBuilding.VisualModels;
+            if (visualModels != null && currentLevel >= 0 && currentLevel < visualModels.Length)
+            {
+                GameObject activeModel = visualModels[currentLevel];
+                if (activeModel != null)
+                {
+                    Animator activeModelAnimator = activeModel.GetComponent<Animator>();
+                    if (activeModelAnimator == null)
+                    {
+                        activeModelAnimator = activeModel.GetComponentInChildren<Animator>();
+                    }
+
+                    if (activeModelAnimator != null)
+                    {
+                        animator = activeModelAnimator;
+                        return;
+                    }
+                }
+            }
+        }
+
+        Animator rootAnimator = GetComponent<Animator>();
+        if (rootAnimator != null)
+        {
+            animator = rootAnimator;
+            return;
+        }
+
+        Animator activeChildAnimator = GetComponentInChildren<Animator>(false);
+        if (activeChildAnimator != null)
+        {
+            animator = activeChildAnimator;
+        }
+    }
+
+    private System.Collections.IEnumerator TriggerAttackAnimationRoutine()
+    {
+        AnimatorControllerParameter param = GetParameter(animator, attackParamName);
+        if (param != null)
+        {
+            if (param.type == AnimatorControllerParameterType.Trigger)
+            {
+                animator.SetTrigger(attackParamName);
+                Debug.Log($"[AttackTowerAI] {name}: Set Animator Trigger parameter '{attackParamName}'.");
+            }
+            else if (param.type == AnimatorControllerParameterType.Bool)
+            {
+                animator.SetBool(attackParamName, true);
+                Debug.Log($"[AttackTowerAI] {name}: Set Animator bool parameter '{attackParamName}' to true.");
+                yield return new WaitForSeconds(0.2f);
+                if (animator != null)
+                {
+                    animator.SetBool(attackParamName, false);
+                    Debug.Log($"[AttackTowerAI] {name}: Set Animator bool parameter '{attackParamName}' to false.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[AttackTowerAI] {name}: Parameter '{attackParamName}' is of type {param.type}, which is not supported (only Bool or Trigger are supported).");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"[AttackTowerAI] {name}: Parameter '{attackParamName}' was NOT found in the Animator Controller!");
+        }
+        yield break;
+    }
+
+    private AnimatorControllerParameter GetParameter(Animator anim, string paramName)
+    {
+        if (anim == null) return null;
+        foreach (AnimatorControllerParameter param in anim.parameters)
+        {
+            if (param.name == paramName) return param;
+        }
+        return null;
     }
 
     private void SpawnArrow()

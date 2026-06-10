@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4332338227735076299}
   - component: {fileID: 4828531503456949716}
   - component: {fileID: 1909309545747709099}
+  - component: {fileID: 7002132004006255410}
   m_Layer: 0
   m_Name: WatchTower
   m_TagString: Untagged
@@ -117,6 +118,27 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: dae064a6cf777df49a8984fbc47404ac, type: 3}
+--- !u!114 &7002132004006255410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1354021103751014317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a60823099fcb2047bda04f8ed6bf38e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WatchTowerAI
+  detectRadius: 30
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 4096
+  alertRadius: 15
+  towerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  scanInterval: 0.2
 --- !u!1 &2936633381406691193
 GameObject:
   m_ObjectHideFlags: 0

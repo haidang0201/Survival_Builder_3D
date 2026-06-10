@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6191925113403679459}
   - component: {fileID: -2704835024462683365}
   - component: {fileID: 4313301691516315754}
+  - component: {fileID: 7498053903583894804}
   m_Layer: 0
   m_Name: CanonLv2
   m_TagString: Untagged
@@ -30,7 +31,7 @@ Transform:
   m_GameObject: {fileID: 970716139476267917}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 150.0935, y: 0.000002052706, z: 67.19227}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -165,6 +166,30 @@ MonoBehaviour:
   burnDamagePerSec: 5
   burnDuration: 3
   fireVfxPrefab: {fileID: 0}
+  animator: {fileID: 7498053903583894804}
+  attackParamName: IsAttack
+--- !u!95 &7498053903583894804
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 970716139476267917}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: b0edd4e31d9ff2e499717e81824f0597, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1379011712304250957
 GameObject:
   m_ObjectHideFlags: 0

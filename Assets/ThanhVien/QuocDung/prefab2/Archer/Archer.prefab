@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1174638339445322069}
   - component: {fileID: 5158542152128961450}
   - component: {fileID: 6991864832464680616}
+  - component: {fileID: 6226318869517812505}
   m_Layer: 0
   m_Name: SM_Wep_Ballista_Mobile_Bolt_01
   m_TagString: Untagged
@@ -27,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 2283128918011225735}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.0022539324, y: 1.0617404, z: 0.64050347}
+  m_LocalPosition: {x: -0.002253932, y: 1.06174, z: 0.64050347}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -90,6 +91,28 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!95 &6226318869517812505
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2283128918011225735}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4bfd44fa0da4e30438fb723f7bf99e83, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &3305062427163196632
 GameObject:
   m_ObjectHideFlags: 0
@@ -495,6 +518,7 @@ GameObject:
   - component: {fileID: 3921808831597946352}
   - component: {fileID: 6911117920321829390}
   - component: {fileID: -4448974062800983725}
+  - component: {fileID: 5807661066353932725}
   m_Layer: 0
   m_Name: Archer
   m_TagString: Untagged
@@ -630,6 +654,8 @@ MonoBehaviour:
   burnDamagePerSec: 5
   burnDuration: 3
   fireVfxPrefab: {fileID: 0}
+  animator: {fileID: 0}
+  attackParamName: IsAttack
 --- !u!114 &-4448974062800983725
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -649,6 +675,28 @@ MonoBehaviour:
   - {fileID: 2086203743534257054, guid: 7c7a3a6c8512d554d8eac43ef8b5adc2, type: 3}
   - {fileID: 3609327848608022778, guid: 7e43670d742d0604ca4b5984242b6802, type: 3}
   upgradeCosts: []
+--- !u!95 &5807661066353932725
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7736553044894252102}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 3a1d80245130f2945ab14ebaaae9462b, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &8691504505096296483
 GameObject:
   m_ObjectHideFlags: 0
