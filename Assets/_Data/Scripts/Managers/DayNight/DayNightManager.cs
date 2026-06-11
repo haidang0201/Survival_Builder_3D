@@ -9,27 +9,39 @@ public class DayNightManager : Singleton<DayNightManager>
     public event Action OnDayStart;
     public event Action OnNightStart;
 
-    public float DayDuration = 15f;  // Thời gian ban ngày (giây)
-    public float NightDuration = 30f; // Thời gian ban đêm (giây)
+    [Header("Cài đặt Thời gian (Giây)")]
+    public float DayDuration = 15f;  // Thời gian ban ngày 
+    public float NightDuration = 30f; // Thời gian ban đêm 
 
-    private float timer;
+    [Header("Đồng hồ đếm ngược (Chỉ xem, đừng sửa)")]
+    [SerializeField] private float timer; // <--- THÊM [SerializeField] VÀO ĐÂY ĐỂ HIỆN LÊN INSPECTOR
 
-    // ================= PHẦN CẬP NHẬT MỚI CHO UI =================
-    public int CurrentDay { get; private set; } = 0; // Bộ đếm ngày (Bắt đầu từ Day 0 theo UI nhóm)
-    public float CurrentTimer => timer;              // Đẩy thời gian đếm ngược ra cho UI đọc
+    [Header("Thông tin UI (Không chỉnh sửa)")]
+    public int CurrentDay = 0;
+    public float CurrentTimer => timer;
 
     protected override void Awake()
     {
-        base.Awake(); // Gọi Singleton.MakeSingleton
+        base.Awake(); // Gọi Singleton
+
         timer = DayDuration;
         CurrentMode = Mode.Day;
-        CurrentDay = 0; // Khởi đầu game ở Ngày 0
+        CurrentDay = 0;
+
+        Debug.Log($"[DayNightManager] Đã khởi tạo thành công! Bắt đầu Ngày {CurrentDay} - Thời lượng: {DayDuration}s");
     }
 
     private void Update()
     {
-        timer -= Time.deltaTime;
-        if (timer <= 0)
+        // Đảm bảo chỉ có Manager chính mới chạy
+        if (Ins != this) return;
+
+        // Đếm ngược thời gian
+        if (timer > 0)
+        {
+            timer -= Time.deltaTime;
+        }
+        else
         {
             SwitchMode();
         }
@@ -39,20 +51,19 @@ public class DayNightManager : Singleton<DayNightManager>
     {
         if (CurrentMode == Mode.Day)
         {
-            // CHUYỂN SANG BAN ĐÊM: Đếm ngược theo thời lượng ban đêm
             CurrentMode = Mode.Night;
             timer = NightDuration;
+
+            Debug.Log($"[DayNightManager] ---> ĐÃ CHUYỂN SANG ĐÊM! Bắt đầu đếm ngược: {NightDuration}s");
             OnNightStart?.Invoke();
         }
         else
         {
-            // CHUYỂN SANG BAN NGÀY: Đếm ngược theo thời lượng ban ngày
             CurrentMode = Mode.Day;
             timer = DayDuration;
-
-            // ĐẶC BIỆT: Sang ngày mới -> Tự động tăng số ngày lên 1 (Day 0 -> Day 1 -> Day 2...)
             CurrentDay++;
 
+            Debug.Log($"[DayNightManager] ---> ĐÃ CHUYỂN SANG NGÀY {CurrentDay}! Bắt đầu đếm ngược: {DayDuration}s");
             OnDayStart?.Invoke();
         }
     }

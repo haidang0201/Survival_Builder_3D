@@ -17,16 +17,28 @@ public class EnvironmentVisualController : MonoBehaviour
 
     private Coroutine transitionCoroutine;
 
-    void OnEnable()
+    // SỬ DỤNG START THAY VÌ ONENABLE ĐỂ TRÁNH LỖI KHỞI TẠO SINGLETON TỪ MANAGER
+    private void Start()
     {
-        DayNightManager.Ins.OnDayStart += SetDayMode;
-        DayNightManager.Ins.OnNightStart += SetNightMode;
+        if (DayNightManager.Ins != null)
+        {
+            DayNightManager.Ins.OnDayStart += SetDayMode;
+            DayNightManager.Ins.OnNightStart += SetNightMode;
 
-        if (DayNightManager.Ins.IsDay()) SetDayModeInstant();
-        else SetNightModeInstant();
+            // Thiết lập màu sắc tức thì khi vừa vào game
+            if (DayNightManager.Ins.IsDay()) SetDayModeInstant();
+            else SetNightModeInstant();
+
+            Debug.Log("[EnvironmentVisual] Đã kết nối thành công với DayNightManager!");
+        }
+        else
+        {
+            Debug.LogError("[EnvironmentVisual] BÁO LỖI: Không tìm thấy DayNightManager trong Scene!");
+        }
     }
 
-    void OnDisable()
+    // DÙNG ONDESTROY SẼ AN TOÀN HƠN ONDISABLE
+    private void OnDestroy()
     {
         if (DayNightManager.Ins != null)
         {
