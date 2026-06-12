@@ -8,7 +8,7 @@ using TMPro;
  * Folder: Scripts/UI/
  * Dự án: KHẨN HOANG (PENTA DEV)
  * Người thực hiện: VŨ + ĐĂNG
- * HỢP NHẤT: Quản lý HUD, Menu xây dựng, Panel nâng cấp, và tích hợp chức năng Di Chuyển Nhà.
+ * ĐÃ TỐI ƯU: Bóc tách thành công Upgrade Timer UI sang cấu phần World Space riêng biệt.
  */
 
 public class UIManager : Singleton<UIManager>
@@ -36,16 +36,16 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private TMP_Text levelText;
     [SerializeField] private Button upgradeButton;
     [SerializeField] private TMP_Text upgradeButtonText;
-    [SerializeField] private Button moveButton; // <--- BỔ SUNG NÚT DI CHUYỂN TRÊN INSPECTOR
+    [SerializeField] private Button moveButton; 
 
     [Header("Upgrade Costs Text Elements")]
     [SerializeField] private TMP_Text woodCostText;
     [SerializeField] private TMP_Text stoneCostText;
     [SerializeField] private TMP_Text foodCostText;
 
-    [Header("Upgrade Timer UI Elements")]
-    [SerializeField] private Slider upgradeProgressBar;       
-    [SerializeField] private TMP_Text upgradeTimerText;       
+    // ─────────────────────────────────────────────────────────────────
+    // [ĐÃ LOẠI BỎ]: Các biến Slider và Text Timer cũ ở đây để tránh rác Code!
+    // ─────────────────────────────────────────────────────────────────
 
     private UpgradeableBuilding selectedBuilding;
 
@@ -62,8 +62,6 @@ public class UIManager : Singleton<UIManager>
         if (settingButton != null) settingButton.onClick.AddListener(OnClickSettingButton);
 
         if (upgradeButton != null) upgradeButton.onClick.AddListener(OnClickUpgradeButton);
-        
-        // Đăng ký sự kiện cho nút Di Chuyển
         if (moveButton != null) moveButton.onClick.AddListener(OnClickMoveButton);
     }
 
@@ -131,7 +129,6 @@ public class UIManager : Singleton<UIManager>
         selectedBuilding = building;
         if (upgradePanel != null) upgradePanel.SetActive(true);
         
-        if (!building.IsUpgrading) HideUpgradeProgress();
         RefreshUpgradePanel(building);
     }
 
@@ -147,7 +144,6 @@ public class UIManager : Singleton<UIManager>
         if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
         
         if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel && !isCurrentlyUpgrading;
-        // Đang nâng cấp thì không cho phép vừa di chuyển vừa nâng cấp để tránh lỗi Desync tọa độ
         if (moveButton != null) moveButton.interactable = !isCurrentlyUpgrading;
         
         if (upgradeButtonText != null)
@@ -172,28 +168,10 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
-    public void UpdateUpgradeProgress(float currentTimer, float totalDuration)
-    {
-        if (upgradeProgressBar != null && !upgradeProgressBar.gameObject.activeSelf) upgradeProgressBar.gameObject.SetActive(true);
-        if (upgradeTimerText != null && !upgradeTimerText.gameObject.activeSelf) upgradeTimerText.gameObject.SetActive(true);
-
-        if (upgradeProgressBar != null)
-        {
-            upgradeProgressBar.maxValue = totalDuration;
-            upgradeProgressBar.value = currentTimer;
-        }
-        if (upgradeTimerText != null)
-        {
-            float timeLeft = Mathf.Max(0f, totalDuration - currentTimer);
-            upgradeTimerText.text = $"{timeLeft:F1}s";
-        }
-    }
-
-    public void HideUpgradeProgress()
-    {
-        if (upgradeProgressBar != null) upgradeProgressBar.gameObject.SetActive(false);
-        if (upgradeTimerText != null) upgradeTimerText.gameObject.SetActive(false);
-    }
+    // ─────────────────────────────────────────────────────────────────
+    // [ĐÃ XÓA]: Hàm UpdateUpgradeProgress và HideUpgradeProgress cũ 
+    // Logic này giờ sẽ được gọi trực tiếp thông qua BuildingProgressBarUI của từng nhà!
+    // ─────────────────────────────────────────────────────────────────
 
     public void HideUpgradePanel()
     {
@@ -212,27 +190,20 @@ public class UIManager : Singleton<UIManager>
         RefreshUpgradePanel(selectedBuilding);
     }
 
-    /// <summary>
-    /// Xử lý khi nhấn nút Di Chuyển
-    /// </summary>
     public void OnClickMoveButton()
     {
         if (selectedBuilding == null) return;
 
-        // Gọi BuildingSystem chuyển sang trạng thái di chuyển nhà này
         if (BuildingSystem.Ins != null)
         {
             BuildingSystem.Ins.StartMoving(selectedBuilding);
         }
 
-        // Ẩn panel thông tin đi để màn hình thoáng khi di chuyển
         HideUpgradePanel();
     }
+
     // ================= BỔ SUNG CÁC HÀM TẮT WINDOWS / PANELS =================
 
-    /// <summary>
-    /// Đóng hoàn toàn Panel Nâng cấp và Di chuyển nhà
-    /// </summary>
     public void CloseUpgradePanel()
     {
         selectedBuilding = null;
@@ -243,9 +214,6 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
-    /// <summary>
-    /// Đóng Menu Xây dựng (Build Menu)
-    /// </summary>
     public void CloseBuildMenu()
     {
         if (buildMenu != null)
@@ -255,9 +223,6 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
-    /// <summary>
-    /// Hàm tắt nhanh tất cả các Panel đang mở trên màn hình (Phục vụ nút bấm ESC hoặc hủy trạng thái)
-    /// </summary>
     public void CloseAllActiveWindows()
     {
         if (upgradePanel != null) upgradePanel.SetActive(false);
