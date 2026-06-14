@@ -114,12 +114,26 @@ public class UIManager : Singleton<UIManager>
         if (warningUI != null) warningUI.SetActive(false);
     }
 
-    // ================= ON CLICK BUTTONS =================
+    // ================= ON CLICK BUTTONS (ĐỒNG BỘ ĐỦ 11 LOẠI CÔNG TRÌNH) =================
 
+    // Nhóm Dân sự
     public void OnClickHouseButton() => BuildingSystem.Ins.StartPlacing(BuildingType.House);
     public void OnClickWoodCutterButton() => BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
-    public void OnClickStoneStorageButton() => BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
+    public void OnClickStoneMineButton() => BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
+    public void OnClickKitchenButton() => BuildingSystem.Ins.StartPlacing(BuildingType.Kitchen);
     public void OnClickFoodStorageButton() => BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
+    public void OnClickStoneStorageButton() => BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
+    public void OnClickWarehouseButton() => BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
+
+    // Nhóm Phòng thủ
+    public void OnClickWatchTowerButton() => BuildingSystem.Ins.StartPlacing(BuildingType.WatchTower);
+    public void OnClickArcherTowerButton() => BuildingSystem.Ins.StartPlacing(BuildingType.ArcherTower);
+    public void OnClickCannonButton() => BuildingSystem.Ins.StartPlacing(BuildingType.Cannon);
+
+    // Nhóm Quân sự
+    public void OnClickBarracksMeleeButton() => BuildingSystem.Ins.StartPlacing(BuildingType.BarracksMelee);
+    public void OnClickBarracksArcherButton() => BuildingSystem.Ins.StartPlacing(BuildingType.BarracksArcher);
+    public void OnClickBarracksSpearButton() => BuildingSystem.Ins.StartPlacing(BuildingType.BarracksSpear);
 
     // ================= UPGRADE & MOVE PANEL LOGIC =================
 
