@@ -14,6 +14,10 @@ public class WorkerFindTree : MonoBehaviour
     public float chopDistance = 2f;
     public float chopTime     = 2f;
 
+    [Header("VFX Settings")]
+    public float chopImpactRatio = 0.5f; // % thời gian chop khi rìu chạm cây
+    private bool hasPlayedImpactVFX = false;
+
     [Header("Idle/Wander Settings")]
     public float wanderRadius = 5f;
     public float wanderInterval = 3f;
@@ -236,10 +240,19 @@ public class WorkerFindTree : MonoBehaviour
         if (!hasTriggeredChopAnim)
         {
             hasTriggeredChopAnim = true;
+            hasPlayedImpactVFX = false; // reset cho lần chop mới
             if (animator != null) { animator.ResetTrigger("Chop"); animator.SetTrigger("Chop"); }
         }
 
         chopTimer += Time.deltaTime;
+
+        // Bắn VFX vụn gỗ đúng lúc rìu chạm cây
+        if (!hasPlayedImpactVFX && chopTimer >= chopTime * chopImpactRatio)
+        {
+            hasPlayedImpactVFX = true;
+            targetTree.PlayChopHitVFX();
+        }
+
         if (chopTimer < chopTime) return;
 
         chopTimer = 0f;
