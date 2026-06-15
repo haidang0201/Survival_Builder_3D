@@ -143,7 +143,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1658031086135343822}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 80.61664, y: -0.008103013, z: 55.66005}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -263,6 +263,7 @@ MonoBehaviour:
   burnDamagePerSec: 5
   burnDuration: 3
   fireVfxPrefab: {fileID: 0}
+  shootVfxPrefab: {fileID: 0}
   animator: {fileID: 5490868277580300845}
   attackParamName: IsAttack
 --- !u!114 &-7636250480985751170
@@ -277,7 +278,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
-  buildingType: 0
+  buildingType: 10
   buildingName: "Nh\xE0 Ch\xEDnh"
   visualModels:
   - {fileID: 1658031086135343822}

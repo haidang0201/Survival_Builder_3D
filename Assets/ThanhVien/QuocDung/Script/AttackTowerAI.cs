@@ -28,6 +28,10 @@ public class AttackTowerAI : MonoBehaviour
     public float burnDamagePerSec = 5f;
     public float burnDuration = 3f;
     public GameObject fireVfxPrefab;
+
+    [Header("Cấu hình Particle")]
+    public GameObject shootVfxPrefab;    // Particle khi đạn rời khỏi nòng súng
+
     [Header("Cấu hình Animation")]
     [SerializeField] private Animator animator;
     [SerializeField] private string attackParamName = "IsAttack";
@@ -40,23 +44,8 @@ public class AttackTowerAI : MonoBehaviour
     {
         upgradeableBuilding = GetComponent<UpgradeableBuilding>();
         UpdateAnimatorReference();
-        if (firePoint == null)
-        {
-            foreach (Transform child in GetComponentsInChildren<Transform>())
-            {
-                string nameLower = child.name.ToLower();
-                if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
-                {
-                    firePoint = child;
-                    break;
-                }
-            }
-            if (firePoint == null)
-            {
-                firePoint = transform;
-                Debug.LogWarning($"[AttackTowerAI] {name}: Không tìm thấy firePoint, tự động dùng chính tháp làm firePoint!");
-            }
-        }
+        UpdateSettingsFromActiveModel();
+        UpdateFirePointReference();
     }
 
     // Hàm nhận lệnh tấn công do Tháp Canh truyền mục tiêu sang
@@ -91,7 +80,10 @@ public class AttackTowerAI : MonoBehaviour
         // Kiểm tra lại xem mục tiêu còn sống/tồn tại không trước khi bắn
         if (currentTarget == null) { Debug.Log("[AttackTowerAI] ExecuteAttack called but currentTarget is null"); return; }
 
+        UpdateSettingsFromActiveModel();
+        UpdateFirePointReference();
         PlayAttackAnimation();
+        PlayShootVfx();
 
         if (towerType == AttackTowerType.Archer)
         {
@@ -105,6 +97,103 @@ public class AttackTowerAI : MonoBehaviour
         }
 
         // Note: currentTarget is intentionally kept so tower can continue firing until target dies
+    }
+
+    private void PlayShootVfx()
+    {
+        // 1. Nếu có Prefab cấu hình riêng biệt, tiến hành tạo thực thể
+        if (shootVfxPrefab != null && firePoint != null)
+        {
+            GameObject vfx = Instantiate(shootVfxPrefab, firePoint.position, firePoint.rotation);
+            Destroy(vfx, 2f); // Hủy sau 2 giây để tránh rác bộ nhớ
+        }
+
+        // 2. Nếu ở các cấp độ (level 2, level 3...) đã gắn sẵn ParticleSystem vào firePoint trong Prefab
+        if (firePoint != null)
+        {
+            ParticleSystem ps = firePoint.GetComponent<ParticleSystem>();
+            if (ps == null) ps = firePoint.GetComponentInChildren<ParticleSystem>();
+            if (ps != null)
+            {
+                ps.Play();
+            }
+        }
+    }
+
+    private void UpdateFirePointReference()
+    {
+        // Nếu có hệ thống nâng cấp, luôn tìm firePoint của mô hình (Visual Model) đang hoạt động ở cấp hiện tại
+        if (upgradeableBuilding != null)
+        {
+            int currentLevel = upgradeableBuilding.CurrentLevel;
+            var visualModels = upgradeableBuilding.VisualModels;
+            if (visualModels != null && currentLevel >= 0 && currentLevel < visualModels.Length)
+            {
+                GameObject activeModel = visualModels[currentLevel];
+                if (activeModel != null)
+                {
+                    foreach (Transform child in activeModel.GetComponentsInChildren<Transform>(true))
+                    {
+                        string nameLower = child.name.ToLower();
+                        if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
+                        {
+                            firePoint = child;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Dự phòng nếu không tìm thấy trong active model, hoặc không có hệ thống nâng cấp
+        if (firePoint == null)
+        {
+            foreach (Transform child in GetComponentsInChildren<Transform>(true))
+            {
+                if (child == transform) continue;
+                string nameLower = child.name.ToLower();
+                if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
+                {
+                    firePoint = child;
+                    break;
+                }
+            }
+            if (firePoint == null)
+            {
+                firePoint = transform;
+            }
+        }
+    }
+
+    private void UpdateSettingsFromActiveModel()
+    {
+        if (upgradeableBuilding != null)
+        {
+            int currentLevel = upgradeableBuilding.CurrentLevel;
+            var visualModels = upgradeableBuilding.VisualModels;
+            if (visualModels != null && currentLevel >= 0 && currentLevel < visualModels.Length)
+            {
+                GameObject activeModel = visualModels[currentLevel];
+                // Chỉ đồng bộ khi activeModel khác với chính GameObject của script root này
+                if (activeModel != null && activeModel != gameObject)
+                {
+                    AttackTowerAI modelAI = activeModel.GetComponent<AttackTowerAI>();
+                    if (modelAI == null) modelAI = activeModel.GetComponentInChildren<AttackTowerAI>(true);
+
+                    if (modelAI != null)
+                    {
+                        // Đồng bộ particle vfx khi bắn
+                        shootVfxPrefab = modelAI.shootVfxPrefab;
+
+                        // Đồng bộ thêm các thông số cấu hình khác từ prefab
+                        if (modelAI.projectilePrefab != null) projectilePrefab = modelAI.projectilePrefab;
+                        if (modelAI.fireRate > 0) fireRate = modelAI.fireRate;
+                        if (modelAI.projectileSpeed > 0) projectileSpeed = modelAI.projectileSpeed;
+                        if (modelAI.muzzleOffset > 0) muzzleOffset = modelAI.muzzleOffset;
+                    }
+                }
+            }
+        }
     }
 
     private void PlayAttackAnimation()
@@ -320,6 +409,11 @@ public class AttackTowerAI : MonoBehaviour
         else
         {
             Rigidbody rb = arrow.GetComponent<Rigidbody>();
+            if (rb == null)
+            {
+                rb = arrow.AddComponent<Rigidbody>();
+                Debug.LogWarning($"[AttackTowerAI] Arrow prefab '{projectilePrefab.name}' thiếu component Rigidbody. Đã tự động thêm Rigidbody để đạn có thể bay!");
+            }
             if (rb != null)
             {
                 rb.linearVelocity = (spawnRot * Vector3.forward) * projectileSpeed;
@@ -373,6 +467,12 @@ public class AttackTowerAI : MonoBehaviour
         }
 
         Rigidbody rb = bomb.GetComponent<Rigidbody>();
+        if (rb == null)
+        {
+            rb = bomb.AddComponent<Rigidbody>();
+            Debug.LogWarning($"[AttackTowerAI] Bomb prefab '{projectilePrefab.name}' thiếu component Rigidbody. Đã tự động thêm Rigidbody để đạn có thể bay!");
+        }
+
         if (rb != null)
         {
             bomb.transform.SetParent(null);
