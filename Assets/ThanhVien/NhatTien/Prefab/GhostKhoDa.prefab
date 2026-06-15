@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 7802574668721500578}
   - component: {fileID: 3607658447535210812}
   - component: {fileID: 4765378117561428449}
-  - component: {fileID: 7557015301310405286}
+  - component: {fileID: 1338179857103486270}
   m_Layer: 8
-  m_Name: KhoDa
+  m_Name: GhostKhoDa
   m_TagString: StoneStorage
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -141,7 +141,7 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 43285485026646238, guid: c0455346219b8944e8be5f4c6bcdb896, type: 2}
---- !u!114 &7557015301310405286
+--- !u!114 &1338179857103486270
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -150,16 +150,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 1100123789311764426}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 167f0aa3c49821146a541a1e145d07bc, type: 3}
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StoneStorage
-  maxCapacity: 20
-  onStorageFull:
-    m_PersistentCalls:
-      m_Calls: []
-  onStoneAdded:
-    m_PersistentCalls:
-      m_Calls: []
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  buildingType: 6
+  validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
+  invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  snapStep: 1
+  checkYSize: 2
 --- !u!1 &7353649418810007598
 GameObject:
   m_ObjectHideFlags: 0

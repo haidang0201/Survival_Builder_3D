@@ -44,9 +44,9 @@ GameObject:
   - component: {fileID: 7713354948168940023}
   - component: {fileID: 9219109227357755398}
   - component: {fileID: 7146682409156481946}
-  - component: {fileID: 2994924875704405522}
+  - component: {fileID: 1766387942063982450}
   m_Layer: 8
-  m_Name: KhoGo
+  m_Name: GhostKhoGo
   m_TagString: Storage
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -170,7 +170,7 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 43285485026646238, guid: c0455346219b8944e8be5f4c6bcdb896, type: 2}
---- !u!114 &2994924875704405522
+--- !u!114 &1766387942063982450
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -179,16 +179,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 9068629112016285022}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
-  maxCapacity: 20
-  onStorageFull:
-    m_PersistentCalls:
-      m_Calls: []
-  onWoodAdded:
-    m_PersistentCalls:
-      m_Calls: []
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  buildingType: 2
+  validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
+  invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  snapStep: 1
+  checkYSize: 2
 --- !u!1001 &5481681204703294503
 PrefabInstance:
   m_ObjectHideFlags: 0

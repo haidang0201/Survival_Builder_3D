@@ -44,9 +44,9 @@ GameObject:
   - component: {fileID: 6358188506847533693}
   - component: {fileID: 8738421066996542301}
   - component: {fileID: 3605715197516376912}
-  - component: {fileID: 1511283183772167501}
+  - component: {fileID: -5717076264255308539}
   m_Layer: 8
-  m_Name: KhoLua
+  m_Name: GhostKhoLua
   m_TagString: RiceStorage
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -181,7 +181,7 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 43285485026646238, guid: c0455346219b8944e8be5f4c6bcdb896, type: 2}
---- !u!114 &1511283183772167501
+--- !u!114 &-5717076264255308539
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -190,16 +190,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 3372033079561069851}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f75451aa42dd624aaf867772feb046d, type: 3}
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RiceStorage
-  maxCapacity: 2
-  onStorageFull:
-    m_PersistentCalls:
-      m_Calls: []
-  onRiceAdded:
-    m_PersistentCalls:
-      m_Calls: []
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  buildingType: 5
+  validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
+  invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  snapStep: 1
+  checkYSize: 2
 --- !u!1001 &67014088655766283
 PrefabInstance:
   m_ObjectHideFlags: 0
