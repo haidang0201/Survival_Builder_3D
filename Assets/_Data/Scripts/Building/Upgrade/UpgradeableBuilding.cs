@@ -33,11 +33,27 @@ public class UpgradeableBuilding : MonoBehaviour
     // Trạng thái kiểm tra xem nhà có đang trong quá trình nâng cấp không
     public bool IsUpgrading { get; private set; } = false;
 
+    // ====================================================================
+    // --- HAI BẠN THÊM ĐOẠN NÀY VÀO ĐỂ QUẢN LÝ CODE CÁC CẤP ĐỘ ---
+    [Header("Quản lý Code AI của từng Cấp độ (Kéo các Script tương ứng vào đây)")]
+    [SerializeField] private AttackTowerAI[] towerLevelScripts;
+
+    // Cổng public để UIManager hoặc hệ thống khác đứng ngoài lấy danh sách code
+    public AttackTowerAI[] TowerLevelScripts => towerLevelScripts;
+    // ====================================================================
+
     // Các trường lưu giữ visual gốc phục vụ cơ chế tự tham chiếu không reparent
     private System.Collections.Generic.List<GameObject> originalChildren = new System.Collections.Generic.List<GameObject>();
     private MeshRenderer rootRendererComponent;
     private SkinnedMeshRenderer rootSkinnedRendererComponent;
     private int selfRefIndex = -1;
+
+    // --- CHÈN THÊM ĐOẠN NÀY VÀO ---
+    [Header("Mảng chứa các Icon hiển thị trên UI tương ứng từng Cấp")]
+    [SerializeField] private Sprite[] buildingIcons;
+
+    public Sprite[] BuildingIcons => buildingIcons;
+    // --------------------------------
 
     private void Awake()
     {
