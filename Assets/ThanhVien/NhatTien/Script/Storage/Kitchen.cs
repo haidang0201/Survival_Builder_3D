@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Events;
 
 /// <summary>
 /// Nhà bếp — nơi Worker vào nghỉ ngơi và tiêu thụ lúa từ WarehouseStorage.
@@ -15,6 +16,17 @@ public class Kitchen : MonoBehaviour
     [Tooltip("Số worker tối đa được vào bếp cùng lúc")]
     public int maxCapacity = 3;
 
+    [Header("Penta Dev - Civil Workers Setup")]
+    [Tooltip("Cấu hình số lượng worker tối đa nghỉ ngơi hoặc làm việc tăng cấp qua từng level")]
+    public int[] maxWorkersLevels = new int[] { 3, 5, 8 };
+    public int currentWorkersCount = 0;
+
+    [Header("Spawn Settings")]
+    public GameObject workerPrefab;
+    public Transform spawnPoint;
+    [Tooltip("Số lượng đầu bếp / worker sẽ sinh ra khi nâng cấp các level tương ứng")]
+    public int[] spawnAmountPerLevel = new int[] { 1, 1, 2 };
+
     [Header("Food Settings")]
     [Tooltip("Số lúa tiêu thụ mỗi lần worker vào bếp nghỉ")]
     public int foodPerWorkerRest = 1;
@@ -29,8 +41,12 @@ public class Kitchen : MonoBehaviour
     [Tooltip("Các vị trí đứng bên ngoài bếp (tùy chọn). Chống việc bị kẹt tụ tập một chỗ.")]
     public Transform[] restSlots;
 
+    [Header("Events UI Connection")]
+    public UnityEvent<int, int> onWorkersChanged; // truyền số lượng hiện tại, max worker
+
     private List<WorkerStamina> workersInside = new List<WorkerStamina>();
     private int _nextSlotIndex = 0;
+    private int currentLevelIndex = 0;
 
     public int  WorkerCount      => workersInside.Count;
     public bool IsFull           => workersInside.Count >= maxCapacity;
@@ -54,6 +70,44 @@ public class Kitchen : MonoBehaviour
     }
 
     /// <summary>
+    /// Hàm nhận diện nâng cấp đồng bộ cấu trúc cho công trình dân sự từ UpgradeableBuilding
+    /// </summary>
+    public void SetupLevel(int levelIndex)
+    {
+        currentLevelIndex = levelIndex;
+
+        // Đồng bộ biến maxCapacity của logic nghỉ ngơi với giá trị cấu hình mảng tùy chỉnh
+        if (maxWorkersLevels != null && levelIndex < maxWorkersLevels.Length)
+        {
+            maxCapacity = maxWorkersLevels[levelIndex];
+            onWorkersChanged?.Invoke(currentWorkersCount, maxCapacity);
+        }
+
+        SpawnWorkersForLevel(levelIndex);
+    }
+
+    private void SpawnWorkersForLevel(int levelIndex)
+    {
+        if (workerPrefab == null || spawnAmountPerLevel == null || levelIndex >= spawnAmountPerLevel.Length) return;
+
+        int amountToSpawn = spawnAmountPerLevel[levelIndex];
+        Transform point = spawnPoint != null ? spawnPoint : transform;
+
+        for (int i = 0; i < amountToSpawn; i++)
+        {
+            // Kiểm tra tránh vượt quá giới hạn cấp hiện hành
+            if (currentWorkersCount >= maxCapacity) break;
+
+            GameObject newWorker = Instantiate(workerPrefab, point.position, point.rotation);
+            currentWorkersCount++;
+            
+            Debug.Log($"[Kitchen Spawn] Đã tạo thành công worker mới: {newWorker.name} tại Cấp {levelIndex + 1}");
+        }
+
+        onWorkersChanged?.Invoke(currentWorkersCount, maxCapacity);
+    }
+
+    /// <summary>
     /// Worker xin vào bếp.
     /// FIX: thêm out consumedFood để WorkerStamina biết chính xác worker có ăn được không,
     /// tránh bug kiểm tra HasFood SAU KHI đã ConsumeRice (kết quả sai khi lúa vừa hết).
@@ -61,21 +115,18 @@ public class Kitchen : MonoBehaviour
     public bool Enter(WorkerStamina worker, out bool consumedFood)
     {
         consumedFood = false;
-
         if (worker == null) return false;
         if (workersInside.Contains(worker)) return true;
         if (IsFull) return false;
 
         workersInside.Add(worker);
 
-        // FIX: kiểm tra HasFood TRƯỚC rồi mới ConsumeRice
-        // (nếu kiểm tra sau thì lúa vừa hết → HasFood = false dù worker đã ăn)
         if (HasFood)
         {
             warehouseStorage.ConsumeRice(foodPerWorkerRest);
             consumedFood = true;
-            Debug.Log($"[Kitchen] {worker.name} vào bếp nghỉ ✅ ĂN {foodPerWorkerRest} lúa. " +
-                      $"Kho lúa còn: {warehouseStorage.CurrentRice}");
+            Debug.Log($"[Kitchen] {worker.name} vào bếp nghỉ ngơi (đã ăn lúa). " +
+                      $"Slot: {workersInside.Count}/{maxCapacity}");
         }
         else
         {
@@ -117,12 +168,5 @@ public class Kitchen : MonoBehaviour
     {
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireSphere(EntrancePosition, 2f);
-
-#if UNITY_EDITOR
-        UnityEditor.Handles.Label(
-            EntrancePosition + Vector3.up * 2.5f,
-            $"Bếp: {workersInside.Count}/{maxCapacity}\nLúa: {(warehouseStorage != null ? warehouseStorage.CurrentRice.ToString() : "?")}"
-        );
-#endif
     }
 }

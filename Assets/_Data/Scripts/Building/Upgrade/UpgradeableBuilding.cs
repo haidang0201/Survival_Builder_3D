@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
 
 public class UpgradeableBuilding : MonoBehaviour
@@ -34,18 +33,39 @@ public class UpgradeableBuilding : MonoBehaviour
     // Trạng thái kiểm tra xem nhà có đang trong quá trình nâng cấp không
     public bool IsUpgrading { get; private set; } = false;
 
-    [Header("Upgrade World Space UI")]
-    [SerializeField] private GameObject upgradeSliderPrefab; // Prefab slider tùy chọn từ Editor
-    [SerializeField] private Vector3 sliderOffset = new Vector3(0f, 4f, 0f); // Khoảng cách offset hiển thị slider trên đầu
+    // ====================================================================
+    // --- HAI BẠN THÊM ĐOẠN NÀY VÀO ĐỂ QUẢ LÝ CODE CÁC CẤP ĐỘ ---
+    [Header("Quản lý Code AI của từng Cấp độ (Kéo các Script tương ứng vào đây)")]
+    [SerializeField] private AttackTowerAI[] towerLevelScripts;
 
-    private GameObject activeWorldSliderInstance;
-    private UnityEngine.UI.Slider activeWorldSlider;
+    // Cổng public để UIManager hoặc hệ thống khác đứng ngoài lấy danh sách code
+    public AttackTowerAI[] TowerLevelScripts => towerLevelScripts;
+    // ====================================================================
+
+    [Header("Penta Dev - Quản lý Cấp độ Công trình Dân sự")]
+    [SerializeField] private WoodStorage[] woodStorageLevels;
+    [SerializeField] private StoneStorage[] stoneStorageLevels;
+    [SerializeField] private RiceStorage[] riceStorageLevels;
+    [SerializeField] private Kitchen[] kitchenLevels;
+
+    public WoodStorage[] WoodStorageLevels => woodStorageLevels;
+    public StoneStorage[] StoneStorageLevels => stoneStorageLevels;
+    public RiceStorage[] RiceStorageLevels => riceStorageLevels;
+    public Kitchen[] KitchenLevels => kitchenLevels;
+    // ====================================================================
 
     // Các trường lưu giữ visual gốc phục vụ cơ chế tự tham chiếu không reparent
     private System.Collections.Generic.List<GameObject> originalChildren = new System.Collections.Generic.List<GameObject>();
     private MeshRenderer rootRendererComponent;
     private SkinnedMeshRenderer rootSkinnedRendererComponent;
     private int selfRefIndex = -1;
+
+    // --- CHÈN THÊM ĐOẠN NÀY VÀO ---
+    [Header("Mảng chứa các Icon hiển thị trên UI tương ứng từng Cấp")]
+    [SerializeField] private Sprite[] buildingIcons;
+
+    public Sprite[] BuildingIcons => buildingIcons;
+    // --------------------------------
 
     private void Awake()
     {
@@ -305,12 +325,13 @@ public class UpgradeableBuilding : MonoBehaviour
                 helper.parentBuilding = this;
             }
         }
+        UpdateCivilianBuildingData();
     }
 
     // Hàm lấy chi phí cần thiết để lên cấp tiếp theo
     public UpgradeCost GetNextUpgradeCost()
     {
-        if (CurrentLevel < upgradeCosts.Length)
+        if (upgradeCosts != null && CurrentLevel < upgradeCosts.Length)
         {
             return upgradeCosts[CurrentLevel];
         }
@@ -326,28 +347,13 @@ public class UpgradeableBuilding : MonoBehaviour
         if (IsUpgrading || CurrentLevel >= MaxLevel - 1) return;
         
         UpgradeCost nextCost = GetNextUpgradeCost();
-        float duration = nextCost.upgradeDuration;
-        
-        // Nếu nâng cấp từ Level 1 lên Level 2 (CurrentLevel = 0 lên 1)
-        if (CurrentLevel == 0)
-        {
-            duration = 5f;
-        }
-        else if (duration <= 0f)
-        {
-            duration = 5f; // Dự phòng mặc định 5s cho các cấp độ khác
-        }
-
-        StartCoroutine(UpgradeRoutine(duration));
+        StartCoroutine(UpgradeRoutine(nextCost.upgradeDuration));
     }
 
     private IEnumerator UpgradeRoutine(float duration)
     {
         IsUpgrading = true;
         float timer = 0f;
-
-        // Tạo thanh slider tiến trình nâng cấp trên đầu công trình
-        CreateWorldUpgradeSlider();
 
         // Nếu panel nâng cấp của nhà này đang mở trên UI, hiển thị slider/text thời gian
         if (UIManager.Ins != null)
@@ -360,12 +366,6 @@ public class UpgradeableBuilding : MonoBehaviour
         {
             timer += Time.deltaTime;
             
-            // Cập nhật giá trị hiển thị lên slider thế giới (World Space UI)
-            if (activeWorldSlider != null)
-            {
-                activeWorldSlider.value = Mathf.Clamp01(timer / duration);
-            }
-
             // Cập nhật giá trị hiển thị lên UI liên tục mỗi khung hình
             if (UIManager.Ins != null)
             {
@@ -379,134 +379,11 @@ public class UpgradeableBuilding : MonoBehaviour
 
         IsUpgrading = false;
 
-        // Hủy thanh slider tiến trình sau khi nâng cấp xong
-        if (activeWorldSliderInstance != null)
-        {
-            Destroy(activeWorldSliderInstance);
-        }
-
         // TẮT TEXT VÀ SLIDER THỜI GIAN KHI NÂNG CẤP XONG
         if (UIManager.Ins != null)
         {
             UIManager.Ins.HideUpgradeProgress();
             UIManager.Ins.RefreshUpgradePanel(this);
-        }
-    }
-
-    private void CreateWorldUpgradeSlider()
-    {
-        if (activeWorldSliderInstance != null)
-        {
-            Destroy(activeWorldSliderInstance);
-        }
-
-        if (upgradeSliderPrefab != null)
-        {
-            activeWorldSliderInstance = Instantiate(upgradeSliderPrefab, transform.position + sliderOffset, Quaternion.identity, transform);
-            activeWorldSlider = activeWorldSliderInstance.GetComponentInChildren<UnityEngine.UI.Slider>();
-            return;
-        }
-
-        // Tạo Canvas World Space động
-        GameObject canvasObj = new GameObject("UpgradeProgressCanvas");
-        canvasObj.transform.SetParent(transform, false);
-        canvasObj.transform.position = transform.position + sliderOffset;
-
-        Canvas canvas = canvasObj.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-
-        // Tạo RectTransform cho Canvas
-        RectTransform canvasRect = canvasObj.GetComponent<RectTransform>();
-        canvasRect.sizeDelta = new Vector2(150f, 20f);
-        canvasRect.localScale = new Vector3(0.015f, 0.015f, 0.015f);
-
-        // Tạo Background Image
-        GameObject bgObj = new GameObject("Background");
-        bgObj.transform.SetParent(canvasObj.transform, false);
-        Image bgImage = bgObj.AddComponent<Image>();
-        bgImage.color = new Color(0f, 0f, 0f, 0.6f);
-
-        RectTransform bgRect = bgObj.GetComponent<RectTransform>();
-        bgRect.anchorMin = Vector2.zero;
-        bgRect.anchorMax = Vector2.one;
-        bgRect.sizeDelta = Vector2.zero;
-        bgRect.localScale = Vector3.one;
-
-        // Tạo Slider GameObject
-        GameObject sliderObj = new GameObject("Slider");
-        sliderObj.transform.SetParent(canvasObj.transform, false);
-        UnityEngine.UI.Slider slider = sliderObj.AddComponent<UnityEngine.UI.Slider>();
-
-        RectTransform sliderRect = sliderObj.GetComponent<RectTransform>();
-        sliderRect.anchorMin = new Vector2(0.05f, 0.15f);
-        sliderRect.anchorMax = new Vector2(0.95f, 0.85f);
-        sliderRect.sizeDelta = Vector2.zero;
-        sliderRect.localScale = Vector3.one;
-
-        // Tạo Fill Area
-        GameObject fillAreaObj = new GameObject("Fill Area");
-        fillAreaObj.transform.SetParent(sliderObj.transform, false);
-        RectTransform fillAreaRect = fillAreaObj.AddComponent<RectTransform>();
-        fillAreaRect.anchorMin = Vector2.zero;
-        fillAreaRect.anchorMax = Vector2.one;
-        fillAreaRect.sizeDelta = Vector2.zero;
-        fillAreaRect.localScale = Vector3.one;
-
-        // Tạo Fill Image
-        GameObject fillObj = new GameObject("Fill");
-        fillObj.transform.SetParent(fillAreaObj.transform, false);
-        Image fillImage = fillObj.AddComponent<Image>();
-        fillImage.color = new Color(0.2f, 0.8f, 0.3f, 1f); // Màu xanh lục tươi sáng
-
-        RectTransform fillRect = fillObj.GetComponent<RectTransform>();
-        fillRect.anchorMin = Vector2.zero;
-        fillRect.anchorMax = new Vector2(0f, 1f);
-        fillRect.sizeDelta = Vector2.zero;
-        fillRect.localScale = Vector3.one;
-
-        // Cấu hình Slider
-        slider.targetGraphic = bgImage;
-        slider.fillRect = fillRect;
-        slider.minValue = 0f;
-        slider.maxValue = 1f;
-        slider.value = 0f;
-
-        canvas.sortingOrder = 100; // Hiển thị trên các vật thể khác
-
-        activeWorldSliderInstance = canvasObj;
-        activeWorldSlider = slider;
-
-        // Đồng bộ Layer của toàn bộ Canvas với công trình để Camera hiển thị chính xác
-        SetLayerRecursive(canvasObj, gameObject.layer);
-    }
-
-    private void SetLayerRecursive(GameObject obj, int layer)
-    {
-        obj.layer = layer;
-        foreach (Transform child in obj.transform)
-        {
-            SetLayerRecursive(child.gameObject, layer);
-        }
-    }
-
-    private void LateUpdate()
-    {
-        if (activeWorldSliderInstance != null)
-        {
-            Camera mainCam = Camera.main;
-            if (mainCam != null)
-            {
-                activeWorldSliderInstance.transform.LookAt(activeWorldSliderInstance.transform.position + mainCam.transform.rotation * Vector3.forward,
-                    mainCam.transform.rotation * Vector3.up);
-            }
-        }
-    }
-
-    private void OnDestroy()
-    {
-        if (activeWorldSliderInstance != null)
-        {
-            Destroy(activeWorldSliderInstance);
         }
     }
 
@@ -516,18 +393,23 @@ public class UpgradeableBuilding : MonoBehaviour
     [ContextMenu("⚡ Nâng cấp Tháp này")]
     public void ExecuteLevelUp()
     {
-        if (activeWorldSliderInstance != null)
-        {
-            Destroy(activeWorldSliderInstance);
-        }
-
         if (CurrentLevel < MaxLevel - 1)
         {
             // Ẩn model hiện tại
             SetActiveModel(CurrentLevel, false);
 
-            // Tăng level
-            CurrentLevel++;
+            CurrentLevel++; // Tăng cấp độ hiện tại lên
+
+            // Cập nhật chỉ số và tự gọi SetupLevel cho công trình dân sự mới
+            UpdateCivilianBuildingData();
+
+            // Làm mới Panel nâng cấp để đẩy text lên UI ngay lập tức
+            if (UIManager.Ins != null)
+            {
+                UIManager.Ins.RefreshUpgradePanel(this);
+            }
+            
+            Debug.Log($"[UpgradeableBuilding] {buildingName} đã nâng lên Level {CurrentLevel + 1}");
 
             // Hiện model mới
             SetActiveModel(CurrentLevel, true);
@@ -539,14 +421,10 @@ public class UpgradeableBuilding : MonoBehaviour
     [ContextMenu("🔄 Reset level về 1")]
     public void ResetLevel()
     {
-        if (activeWorldSliderInstance != null)
-        {
-            Destroy(activeWorldSliderInstance);
-        }
-
         SetActiveModel(CurrentLevel, false);
         CurrentLevel = 0;
         SetActiveModel(CurrentLevel, true);
+        UpdateCivilianBuildingData();
         Debug.Log($"[{buildingName}] Đã reset về Level 1");
     }
 
@@ -602,12 +480,7 @@ public class UpgradeableBuilding : MonoBehaviour
 
             string btnText = $"⚡ NÂNG CẤP: {buildingName} (Lv {CurrentLevel + 1} -> {CurrentLevel + 2})";
             bool isMax = CurrentLevel >= MaxLevel - 1;
-
-            if (IsUpgrading)
-            {
-                btnText = $"⏳ ĐANG NÂNG CẤP {buildingName}...";
-            }
-            else if (isMax)
+            if (isMax)
             {
                 btnText = $"🔄 RESET VỀ LEVEL 1 ({buildingName})";
             }
@@ -617,16 +490,13 @@ public class UpgradeableBuilding : MonoBehaviour
 
             if (GUI.Button(new Rect(20, 35, 390, 45), btnText, buttonStyle))
             {
-                if (!IsUpgrading)
+                if (!isMax)
                 {
-                    if (!isMax)
-                    {
-                        StartUpgradeProcess();
-                    }
-                    else
-                    {
-                        ResetLevel();
-                    }
+                    ExecuteLevelUp();
+                }
+                else
+                {
+                    ResetLevel();
                 }
             }
 
@@ -635,6 +505,34 @@ public class UpgradeableBuilding : MonoBehaviour
             {
                 selectedInstance = null;
             }
+        }
+    }
+
+    // --- KHU VỰC ĐỒNG BỘ DÂN SỰ CỦA VỦ VÀ ĐĂNG (GIỮ LẠI BẢN GETCOMPONENTINCHILDREN TỐI ƯU) ---
+    private void UpdateCivilianBuildingData()
+    {
+        // Khi nhà nâng cấp, Model mới được bật lên. Chúng ta cần lấy đúng Script dân sự nằm trên Model đó hoặc trên chính Object này.
+        switch (buildingType)
+        {
+            case BuildingType.WoodCutter: // Sửa lại đúng tên Enum loại kho gỗ của các bạn
+                WoodStorage ws = GetComponentInChildren<WoodStorage>();
+                if (ws != null) ws.SetupLevel(CurrentLevel);
+                break;
+
+            case BuildingType.StoneStorage:
+                StoneStorage ss = GetComponentInChildren<StoneStorage>();
+                if (ss != null) ss.SetupLevel(CurrentLevel);
+                break;
+
+            case BuildingType.FoodStorage: // Sửa lại đúng tên Enum loại kho lúa của các bạn
+                RiceStorage rs = GetComponentInChildren<RiceStorage>();
+                if (rs != null) rs.SetupLevel(CurrentLevel);
+                break;
+
+            case BuildingType.Kitchen:
+                Kitchen kc = GetComponentInChildren<Kitchen>();
+                if (kc != null) kc.SetupLevel(CurrentLevel);
+                break;
         }
     }
 }
@@ -666,22 +564,13 @@ public class UpgradeableBuildingEditor : UnityEditor.Editor
         GUILayout.Label("⚡ BẢNG ĐIỀU KHIỂN NÂNG CẤP NHANH", UnityEditor.EditorStyles.boldLabel);
 
         // Hiển thị thông tin level hiện tại
-        string statusText = building.IsUpgrading ? $"Đang nâng cấp..." : $"Cấp độ hiện tại: Level {building.CurrentLevel + 1} / {building.MaxLevel}";
-        UnityEditor.EditorGUILayout.HelpBox(statusText, UnityEditor.MessageType.Info);
+        UnityEditor.EditorGUILayout.HelpBox($"Cấp độ hiện tại: Level {building.CurrentLevel + 1} / {building.MaxLevel}", UnityEditor.MessageType.Info);
 
-        if (building.IsUpgrading)
-        {
-            UnityEditor.EditorGUILayout.HelpBox("Đang trong quá trình nâng cấp, vui lòng chờ...", UnityEditor.MessageType.Warning);
-        }
-
-        if (GUILayout.Button(building.IsUpgrading ? "⏳ ĐANG NÂNG CẤP..." : "⚡ BẮT ĐẦU NÂNG CẤP (5s)", GUILayout.Height(40)))
+        if (GUILayout.Button("⚡ NÂNG CẤP NGAY", GUILayout.Height(40)))
         {
             if (Application.isPlaying)
             {
-                if (!building.IsUpgrading)
-                {
-                    building.StartUpgradeProcess();
-                }
+                building.ExecuteLevelUp();
             }
             else
             {

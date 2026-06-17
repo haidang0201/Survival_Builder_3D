@@ -1,5 +1,14 @@
 using UnityEngine;
 
+/*
+ * AttackTowerAI.cs
+ * Folder: Scripts/AI/
+ * Dự án: KHẨN HOANG (PENTA DEV)
+ * Người thực hiện: VŨ + ĐĂNG
+ * CHỨC NĂNG: Điều khiển tháp tấn công (Cung, Pháo) bắn quái, tính toán quỹ đạo ném bom ballistic,
+ * đồng thời mở cổng property "AttackRange" để UIManager.cs bóc tách dữ liệu UI chuẩn xác.
+ */
+
 public enum AttackTowerType { Archer, Cannon }
 
 public class AttackTowerAI : MonoBehaviour
@@ -9,14 +18,15 @@ public class AttackTowerAI : MonoBehaviour
     public float fireRate = 1f;          // Tốc độ bắn (số phát / giây)
     public Transform firePoint;          // Kéo Object trống ở đầu nòng/họng pháo vào đây
     public GameObject projectilePrefab;  // Prefab Mũi tên (Arrow) hoặc Quả bom (Bomb)
-        [Header("Projectile")]
-        public float projectileSpeed = 20f; // speed applied if projectile has Rigidbody
-        [Tooltip("Yaw offset (degrees) to apply so projectile model faces correctly. Common: 270")]
-        public float projectileYawOffset = 0f;
-        [Tooltip("Vertical spawn height above target for AoE bombs (meters). Lower to reduce high arc.")]
-        public float bombSpawnHeight = 6f;
-        [Tooltip("Distance forward from the firePoint to spawn the projectile to avoid overlapping the muzzle.")]
-        public float muzzleOffset = 0.5f;
+    
+    [Header("Projectile")]
+    public float projectileSpeed = 20f; // speed applied if projectile has Rigidbody
+    [Tooltip("Yaw offset (degrees) to apply so projectile model faces correctly. Common: 270")]
+    public float projectileYawOffset = 0f;
+    [Tooltip("Vertical spawn height above target for AoE bombs (meters). Lower to reduce high arc.")]
+    public float bombSpawnHeight = 6f;
+    [Tooltip("Distance forward from the firePoint to spawn the projectile to avoid overlapping the muzzle.")]
+    public float muzzleOffset = 0.5f;
 
     [Header("Cấu hình Nâng cấp (Upgrade)")]
     public float damageLv1 = 10f;
@@ -29,12 +39,15 @@ public class AttackTowerAI : MonoBehaviour
     public float burnDuration = 3f;
     public GameObject fireVfxPrefab;
 
-    [Header("Cấu hình Particle")]
-    public GameObject shootVfxPrefab;    // Particle khi đạn rời khỏi nòng súng
-
     [Header("Cấu hình Animation")]
     [SerializeField] private Animator animator;
     [SerializeField] private string attackParamName = "IsAttack";
+
+    [Header("Hệ thống nhắm mục tiêu (Targeting)")]
+    [SerializeField] private float attackRange = 8f; 
+
+    // --- CỔNG KẾT NỐI PUBLIC ĐỂ UIManager ĐỌC DỮ LIỆU (KHÔNG LÀM MẤT PRIVATE BIẾN GỐC) ---
+    public float AttackRange => attackRange;
 
     private UpgradeableBuilding upgradeableBuilding;
     private Transform currentTarget;
@@ -44,15 +57,30 @@ public class AttackTowerAI : MonoBehaviour
     {
         upgradeableBuilding = GetComponent<UpgradeableBuilding>();
         UpdateAnimatorReference();
-        UpdateSettingsFromActiveModel();
-        UpdateFirePointReference();
+        if (firePoint == null)
+        {
+            foreach (Transform child in GetComponentsInChildren<Transform>())
+            {
+                string nameLower = child.name.ToLower();
+                if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
+                {
+                    firePoint = child;
+                    break;
+                }
+            }
+            if (firePoint == null)
+            {
+                firePoint = transform;
+                Debug.LogWarning($"[AttackTowerAI] {name}: Không tìm thấy firePoint, tự động dùng chính tháp làm firePoint!");
+            }
+        }
     }
 
     // Hàm nhận lệnh tấn công do Tháp Canh truyền mục tiêu sang
     public void CommandAttack(Transform target)
     {
         currentTarget = target;
-        Debug.Log($"[AttackTowerAI] CommandAttack received. Target={(target==null?"null":target.name)}");
+        Debug.Log($"[AttackTowerAI] CommandAttack received. Target={(target == null ? "null" : target.name)}");
     }
 
     private void Update()
@@ -80,10 +108,7 @@ public class AttackTowerAI : MonoBehaviour
         // Kiểm tra lại xem mục tiêu còn sống/tồn tại không trước khi bắn
         if (currentTarget == null) { Debug.Log("[AttackTowerAI] ExecuteAttack called but currentTarget is null"); return; }
 
-        UpdateSettingsFromActiveModel();
-        UpdateFirePointReference();
         PlayAttackAnimation();
-        PlayShootVfx();
 
         if (towerType == AttackTowerType.Archer)
         {
@@ -94,105 +119,6 @@ public class AttackTowerAI : MonoBehaviour
         {
             Debug.Log($"[Cannon] 💣 Dội bom/Pháo kích vào vị trí: {currentTarget.position}");
             SpawnAoEBomb();
-        }
-
-        // Note: currentTarget is intentionally kept so tower can continue firing until target dies
-    }
-
-    private void PlayShootVfx()
-    {
-        // 1. Nếu có Prefab cấu hình riêng biệt, tiến hành tạo thực thể
-        if (shootVfxPrefab != null && firePoint != null)
-        {
-            GameObject vfx = Instantiate(shootVfxPrefab, firePoint.position, firePoint.rotation);
-            Destroy(vfx, 2f); // Hủy sau 2 giây để tránh rác bộ nhớ
-        }
-
-        // 2. Nếu ở các cấp độ (level 2, level 3...) đã gắn sẵn ParticleSystem vào firePoint trong Prefab
-        if (firePoint != null)
-        {
-            ParticleSystem ps = firePoint.GetComponent<ParticleSystem>();
-            if (ps == null) ps = firePoint.GetComponentInChildren<ParticleSystem>();
-            if (ps != null)
-            {
-                ps.Play();
-            }
-        }
-    }
-
-    private void UpdateFirePointReference()
-    {
-        // Nếu có hệ thống nâng cấp, luôn tìm firePoint của mô hình (Visual Model) đang hoạt động ở cấp hiện tại
-        if (upgradeableBuilding != null)
-        {
-            int currentLevel = upgradeableBuilding.CurrentLevel;
-            var visualModels = upgradeableBuilding.VisualModels;
-            if (visualModels != null && currentLevel >= 0 && currentLevel < visualModels.Length)
-            {
-                GameObject activeModel = visualModels[currentLevel];
-                if (activeModel != null)
-                {
-                    foreach (Transform child in activeModel.GetComponentsInChildren<Transform>(true))
-                    {
-                        string nameLower = child.name.ToLower();
-                        if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
-                        {
-                            firePoint = child;
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Dự phòng nếu không tìm thấy trong active model, hoặc không có hệ thống nâng cấp
-        if (firePoint == null)
-        {
-            foreach (Transform child in GetComponentsInChildren<Transform>(true))
-            {
-                if (child == transform) continue;
-                string nameLower = child.name.ToLower();
-                if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
-                {
-                    firePoint = child;
-                    break;
-                }
-            }
-            if (firePoint == null)
-            {
-                firePoint = transform;
-            }
-        }
-    }
-
-    private void UpdateSettingsFromActiveModel()
-    {
-        if (upgradeableBuilding != null)
-        {
-            int currentLevel = upgradeableBuilding.CurrentLevel;
-            var visualModels = upgradeableBuilding.VisualModels;
-            if (visualModels != null && currentLevel >= 0 && currentLevel < visualModels.Length)
-            {
-                GameObject activeModel = visualModels[currentLevel];
-                // Chỉ đồng bộ khi activeModel khác với chính GameObject của script root này
-                if (activeModel != null && activeModel != gameObject)
-                {
-                    AttackTowerAI modelAI = activeModel.GetComponent<AttackTowerAI>();
-                    if (modelAI == null) modelAI = activeModel.GetComponentInChildren<AttackTowerAI>(true);
-
-                    if (modelAI != null)
-                    {
-                        // Đồng bộ particle vfx khi bắn
-                        shootVfxPrefab = modelAI.shootVfxPrefab;
-
-                        // Đồng bộ thêm các thông số cấu hình khác từ prefab
-                        if (modelAI.projectilePrefab != null) projectilePrefab = modelAI.projectilePrefab;
-                        if (modelAI.fireRate > 0) fireRate = modelAI.fireRate;
-                        if (modelAI.projectileSpeed > 0) projectileSpeed = modelAI.projectileSpeed;
-                        if (modelAI.muzzleOffset > 0) muzzleOffset = modelAI.muzzleOffset;
-                    }
-                }
-            }
         }
     }
 
@@ -282,7 +208,6 @@ public class AttackTowerAI : MonoBehaviour
         {
             Debug.LogWarning($"[AttackTowerAI] {name}: Parameter '{attackParamName}' was NOT found in the Animator Controller!");
         }
-        yield break;
     }
 
     private AnimatorControllerParameter GetParameter(Animator anim, string paramName)
@@ -314,11 +239,9 @@ public class AttackTowerAI : MonoBehaviour
         }
         else
         {
-            // Tìm các kẻ địch trong tầm bắn
             System.Collections.Generic.List<Transform> enemiesInRange = new System.Collections.Generic.List<Transform>();
             if (currentTarget != null) enemiesInRange.Add(currentTarget);
 
-            // Quét các collider trong phạm vi 25m xung quanh tháp
             float checkRadius = 25f;
             Collider[] colls = Physics.OverlapSphere(transform.position, checkRadius);
             foreach (var col in colls)
@@ -337,7 +260,6 @@ public class AttackTowerAI : MonoBehaviour
                 }
             }
 
-            // Sắp xếp các kẻ địch theo khoảng cách tới tháp Archer
             enemiesInRange.Sort((a, b) => {
                 if (a == currentTarget) return -1;
                 if (b == currentTarget) return 1;
@@ -346,23 +268,18 @@ public class AttackTowerAI : MonoBehaviour
                 return distA.CompareTo(distB);
             });
 
-            // Bắn 3 mũi tên vào các mục tiêu khác nhau nếu có
             if (enemiesInRange.Count > 0)
             {
-                // Mũi tên 1: Nhắm mục tiêu 0 (currentTarget)
                 SpawnSingleArrow(enemiesInRange[0], 0f, level, damage);
 
-                // Mũi tên 2: Nhắm mục tiêu 1 (nếu có, không thì nhắm mục tiêu 0)
                 Transform target2 = enemiesInRange.Count > 1 ? enemiesInRange[1] : enemiesInRange[0];
                 SpawnSingleArrow(target2, -15f, level, damage);
 
-                // Mũi tên 3: Nhắm mục tiêu 2 (nếu có, không thì nhắm mục tiêu 0 hoặc 1)
                 Transform target3 = enemiesInRange.Count > 2 ? enemiesInRange[2] : (enemiesInRange.Count > 1 ? enemiesInRange[0] : enemiesInRange[0]);
                 SpawnSingleArrow(target3, 15f, level, damage);
             }
             else
             {
-                // Dự phòng nếu không tìm thấy kẻ địch nào
                 SpawnSingleArrow(currentTarget, 0f, level, damage);
                 SpawnSingleArrow(null, -15f, level, damage);
                 SpawnSingleArrow(null, 15f, level, damage);
@@ -409,11 +326,6 @@ public class AttackTowerAI : MonoBehaviour
         else
         {
             Rigidbody rb = arrow.GetComponent<Rigidbody>();
-            if (rb == null)
-            {
-                rb = arrow.AddComponent<Rigidbody>();
-                Debug.LogWarning($"[AttackTowerAI] Arrow prefab '{projectilePrefab.name}' thiếu component Rigidbody. Đã tự động thêm Rigidbody để đạn có thể bay!");
-            }
             if (rb != null)
             {
                 rb.linearVelocity = (spawnRot * Vector3.forward) * projectileSpeed;
@@ -451,7 +363,6 @@ public class AttackTowerAI : MonoBehaviour
             spawnPos += firePoint.forward * muzzleOffset;
 
         GameObject bomb = ArrowPool.Instance != null ? ArrowPool.Instance.Spawn(projectilePrefab, spawnPos, bombRot) : Instantiate(projectilePrefab, spawnPos, bombRot);
-        Debug.Log($"[AttackTowerAI] Spawned AoE bomb '{projectilePrefab.name}' at {spawnPos} (firePoint used={(firePoint!=null)})");
 
         var canonComp = bomb.GetComponent<Canon>();
         if (canonComp != null)
@@ -467,12 +378,6 @@ public class AttackTowerAI : MonoBehaviour
         }
 
         Rigidbody rb = bomb.GetComponent<Rigidbody>();
-        if (rb == null)
-        {
-            rb = bomb.AddComponent<Rigidbody>();
-            Debug.LogWarning($"[AttackTowerAI] Bomb prefab '{projectilePrefab.name}' thiếu component Rigidbody. Đã tự động thêm Rigidbody để đạn có thể bay!");
-        }
-
         if (rb != null)
         {
             bomb.transform.SetParent(null);
@@ -491,13 +396,11 @@ public class AttackTowerAI : MonoBehaviour
             float g = Mathf.Abs(Physics.gravity.y);
 
             float underSqrt = v2 * v2 - g * (g * dx * dx + 2f * dy * v2);
-            Debug.Log($"[AttackTowerAI] Ballistics debug: dx={dx:F2}, dy={dy:F2}, v={v:F2}, underSqrt={underSqrt:F4}");
 
             if (underSqrt < 0f)
             {
                 Vector3 vel = (toTarget.normalized) * v;
                 rb.linearVelocity = vel;
-                Debug.LogWarning("[AttackTowerAI] projectileSpeed too low for ballistic solution, using direct velocity fallback");
             }
             else
             {
@@ -512,12 +415,7 @@ public class AttackTowerAI : MonoBehaviour
                 rb.linearVelocity = vel;
                 if (vel.sqrMagnitude > 0.001f)
                     bomb.transform.rotation = Quaternion.LookRotation(vel.normalized);
-                Debug.Log($"[AttackTowerAI] Applied ballistic velocity {vel} to bomb");
             }
-        }
-        else
-        {
-            Debug.Log("[AttackTowerAI] Bomb prefab has no Rigidbody; it will simply spawn and fall (add Rigidbody for ballistic behavior)");
         }
     }
 }
