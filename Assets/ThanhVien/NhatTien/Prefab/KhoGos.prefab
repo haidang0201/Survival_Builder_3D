@@ -82,7 +82,17 @@ MonoBehaviour:
     foodCost: 20
     upgradeDuration: 5
   towerLevelScripts: []
-  buildingIcons: []
+  woodStorageLevels:
+  - {fileID: 3824196134105340924}
+  - {fileID: 6240254949610455693}
+  - {fileID: 6736977212832975262}
+  stoneStorageLevels: []
+  riceStorageLevels: []
+  kitchenLevels: []
+  buildingIcons:
+  - {fileID: 1165255449, guid: 8db0aa9a1b20a2140b6dd474ad1626cb, type: 3}
+  - {fileID: -1377644736, guid: f08e7cb13e2f6124db0b5d6aaef1c64e, type: 3}
+  - {fileID: -314779987, guid: 71caefa6df072fc4983e7f5b6177df5b, type: 3}
 --- !u!65 &6921839730028787767
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -438,6 +448,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 9068629112016285022, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
       propertyPath: m_Name
       value: KhoGo
@@ -452,6 +470,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
   m_PrefabInstance: {fileID: 2054303687690606062}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &3824196134105340924 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2994924875704405522, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+  m_PrefabInstance: {fileID: 2054303687690606062}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7014466855736572080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
 --- !u!1 &7014466855736572080 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9068629112016285022, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
@@ -675,6 +704,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 9068629112016285022, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
       propertyPath: m_Name
       value: KhoGo 2
@@ -693,6 +730,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 9068629112016285022, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
   m_PrefabInstance: {fileID: 8425831769656788876}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6736977212832975262 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2994924875704405522, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+  m_PrefabInstance: {fileID: 8425831769656788876}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 663347988129065682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
 --- !u!4 &7803880789637036272 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
@@ -746,6 +794,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: 'maxWorkersLevels.Array.data[0]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 9068629112016285022, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
       propertyPath: m_Name
       value: KhoGo 1
@@ -764,6 +824,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 9068629112016285022, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
   m_PrefabInstance: {fileID: 9154070501758340255}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6240254949610455693 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+  m_PrefabInstance: {fileID: 9154070501758340255}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203775512815804865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
 --- !u!4 &7470257920876704739 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}

@@ -82,6 +82,10 @@ MonoBehaviour:
     foodCost: 20
     upgradeDuration: 5
   towerLevelScripts: []
+  woodStorageLevels: []
+  stoneStorageLevels: []
+  riceStorageLevels: []
+  kitchenLevels: []
   buildingIcons: []
 --- !u!65 &8011120998058280505
 BoxCollider:
@@ -348,7 +352,35 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
       propertyPath: maxCapacity
-      value: 8
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
+      propertyPath: 'maxWorkersLevels.Array.data[0]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
+      propertyPath: 'maxWorkersLevels.Array.data[1]'
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
+      propertyPath: 'maxWorkersLevels.Array.data[2]'
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
+      propertyPath: 'spawnAmountPerLevel.Array.data[0]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
+      propertyPath: 'spawnAmountPerLevel.Array.data[2]'
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3372033079561069851, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
       propertyPath: m_Name
@@ -423,7 +455,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1511283183772167501, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
       propertyPath: maxCapacity
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
+      propertyPath: 'maxWorkersLevels.Array.data[0]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
+      propertyPath: 'maxWorkersLevels.Array.data[1]'
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3372033079561069851, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
       propertyPath: m_Name
@@ -496,6 +544,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3645763046130114396}
     m_Modifications:
+    - target: {fileID: 1511283183772167501, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
+      propertyPath: maxCapacity
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1511283183772167501, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 3372033079561069851, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
       propertyPath: m_Name
       value: KhoLua

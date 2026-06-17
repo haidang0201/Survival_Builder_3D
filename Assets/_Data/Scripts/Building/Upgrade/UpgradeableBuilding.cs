@@ -34,12 +34,24 @@ public class UpgradeableBuilding : MonoBehaviour
     public bool IsUpgrading { get; private set; } = false;
 
     // ====================================================================
-    // --- HAI BẠN THÊM ĐOẠN NÀY VÀO ĐỂ QUẢN LÝ CODE CÁC CẤP ĐỘ ---
+    // --- HAI BẠN THÊM ĐOẠN NÀY VÀO ĐỂ QUẢ LÝ CODE CÁC CẤP ĐỘ ---
     [Header("Quản lý Code AI của từng Cấp độ (Kéo các Script tương ứng vào đây)")]
     [SerializeField] private AttackTowerAI[] towerLevelScripts;
 
     // Cổng public để UIManager hoặc hệ thống khác đứng ngoài lấy danh sách code
     public AttackTowerAI[] TowerLevelScripts => towerLevelScripts;
+    // ====================================================================
+
+    [Header("Penta Dev - Quản lý Cấp độ Công trình Dân sự")]
+    [SerializeField] private WoodStorage[] woodStorageLevels;
+    [SerializeField] private StoneStorage[] stoneStorageLevels;
+    [SerializeField] private RiceStorage[] riceStorageLevels;
+    [SerializeField] private Kitchen[] kitchenLevels;
+
+    public WoodStorage[] WoodStorageLevels => woodStorageLevels;
+    public StoneStorage[] StoneStorageLevels => stoneStorageLevels;
+    public RiceStorage[] RiceStorageLevels => riceStorageLevels;
+    public Kitchen[] KitchenLevels => kitchenLevels;
     // ====================================================================
 
     // Các trường lưu giữ visual gốc phục vụ cơ chế tự tham chiếu không reparent
@@ -313,12 +325,13 @@ public class UpgradeableBuilding : MonoBehaviour
                 helper.parentBuilding = this;
             }
         }
+        UpdateCivilianBuildingData();
     }
 
     // Hàm lấy chi phí cần thiết để lên cấp tiếp theo
     public UpgradeCost GetNextUpgradeCost()
     {
-        if (CurrentLevel < upgradeCosts.Length)
+        if (upgradeCosts != null && CurrentLevel < upgradeCosts.Length)
         {
             return upgradeCosts[CurrentLevel];
         }
@@ -385,8 +398,18 @@ public class UpgradeableBuilding : MonoBehaviour
             // Ẩn model hiện tại
             SetActiveModel(CurrentLevel, false);
 
-            // Tăng level
-            CurrentLevel++;
+            CurrentLevel++; // Tăng cấp độ hiện tại lên
+
+            // Cập nhật chỉ số và tự gọi SetupLevel cho công trình dân sự mới
+            UpdateCivilianBuildingData();
+
+            // Làm mới Panel nâng cấp để đẩy text lên UI ngay lập tức
+            if (UIManager.Ins != null)
+            {
+                UIManager.Ins.RefreshUpgradePanel(this);
+            }
+            
+            Debug.Log($"[UpgradeableBuilding] {buildingName} đã nâng lên Level {CurrentLevel + 1}");
 
             // Hiện model mới
             SetActiveModel(CurrentLevel, true);
@@ -401,6 +424,7 @@ public class UpgradeableBuilding : MonoBehaviour
         SetActiveModel(CurrentLevel, false);
         CurrentLevel = 0;
         SetActiveModel(CurrentLevel, true);
+        UpdateCivilianBuildingData();
         Debug.Log($"[{buildingName}] Đã reset về Level 1");
     }
 
@@ -481,6 +505,34 @@ public class UpgradeableBuilding : MonoBehaviour
             {
                 selectedInstance = null;
             }
+        }
+    }
+
+    // --- KHU VỰC ĐỒNG BỘ DÂN SỰ CỦA VỦ VÀ ĐĂNG (GIỮ LẠI BẢN GETCOMPONENTINCHILDREN TỐI ƯU) ---
+    private void UpdateCivilianBuildingData()
+    {
+        // Khi nhà nâng cấp, Model mới được bật lên. Chúng ta cần lấy đúng Script dân sự nằm trên Model đó hoặc trên chính Object này.
+        switch (buildingType)
+        {
+            case BuildingType.WoodCutter: // Sửa lại đúng tên Enum loại kho gỗ của các bạn
+                WoodStorage ws = GetComponentInChildren<WoodStorage>();
+                if (ws != null) ws.SetupLevel(CurrentLevel);
+                break;
+
+            case BuildingType.StoneStorage:
+                StoneStorage ss = GetComponentInChildren<StoneStorage>();
+                if (ss != null) ss.SetupLevel(CurrentLevel);
+                break;
+
+            case BuildingType.FoodStorage: // Sửa lại đúng tên Enum loại kho lúa của các bạn
+                RiceStorage rs = GetComponentInChildren<RiceStorage>();
+                if (rs != null) rs.SetupLevel(CurrentLevel);
+                break;
+
+            case BuildingType.Kitchen:
+                Kitchen kc = GetComponentInChildren<Kitchen>();
+                if (kc != null) kc.SetupLevel(CurrentLevel);
+                break;
         }
     }
 }

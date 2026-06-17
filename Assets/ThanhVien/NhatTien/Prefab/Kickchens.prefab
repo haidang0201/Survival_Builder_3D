@@ -81,6 +81,12 @@ MonoBehaviour:
     stoneCost: 20
     foodCost: 20
     upgradeDuration: 5
+  towerLevelScripts: []
+  woodStorageLevels: []
+  stoneStorageLevels: []
+  riceStorageLevels: []
+  kitchenLevels: []
+  buildingIcons: []
 --- !u!65 &4620375690299724751
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -378,7 +384,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 686541185277320091, guid: 56b1579b5d9023b44bbf08275d2fc8b2, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: 56b1579b5d9023b44bbf08275d2fc8b2, type: 3}
+      propertyPath: maxCapacity
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: 56b1579b5d9023b44bbf08275d2fc8b2, type: 3}
+      propertyPath: entrancePoint
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: 56b1579b5d9023b44bbf08275d2fc8b2, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: 56b1579b5d9023b44bbf08275d2fc8b2, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -446,6 +468,22 @@ PrefabInstance:
     - target: {fileID: 686541185277320091, guid: d8c5a9411a639704aaf418fb0349d13d, type: 3}
       propertyPath: m_Name
       value: Kickchen
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: d8c5a9411a639704aaf418fb0349d13d, type: 3}
+      propertyPath: maxCapacity
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: d8c5a9411a639704aaf418fb0349d13d, type: 3}
+      propertyPath: entrancePoint
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: d8c5a9411a639704aaf418fb0349d13d, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: d8c5a9411a639704aaf418fb0349d13d, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -516,7 +554,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 686541185277320091, guid: c96bfcd32c326d74d8c81266104fb81e, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: c96bfcd32c326d74d8c81266104fb81e, type: 3}
+      propertyPath: maxCapacity
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: c96bfcd32c326d74d8c81266104fb81e, type: 3}
+      propertyPath: entrancePoint
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: c96bfcd32c326d74d8c81266104fb81e, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8750175760792632183, guid: c96bfcd32c326d74d8c81266104fb81e, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

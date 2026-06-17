@@ -157,10 +157,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StoneStorage
   maxCapacity: 20
+  maxWorkersLevels: 020000000400000006000000
+  currentWorkersCount: 0
+  workerPrefab: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  spawnAmountPerLevel: 010000000100000002000000
   onStorageFull:
     m_PersistentCalls:
       m_Calls: []
   onStoneAdded:
+    m_PersistentCalls:
+      m_Calls: []
+  onWorkersChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onCapacityChanged:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &5768689060084174128
@@ -562,11 +573,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7065795440137485022, guid: 9dcacd0d91fbcd84ab1a1e24ff5eda63, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.85
+      value: -2.49
       objectReference: {fileID: 0}
     - target: {fileID: 7065795440137485022, guid: 9dcacd0d91fbcd84ab1a1e24ff5eda63, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.31
+      value: -0.72
       objectReference: {fileID: 0}
     - target: {fileID: 7065795440137485022, guid: 9dcacd0d91fbcd84ab1a1e24ff5eda63, type: 3}
       propertyPath: m_LocalPosition.z
@@ -632,7 +643,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7065795440137485022, guid: 9dcacd0d91fbcd84ab1a1e24ff5eda63, type: 3}
       propertyPath: m_LocalScale.y
-      value: 3.29
+      value: 3.87
       objectReference: {fileID: 0}
     - target: {fileID: 7065795440137485022, guid: 9dcacd0d91fbcd84ab1a1e24ff5eda63, type: 3}
       propertyPath: m_LocalScale.z
@@ -644,7 +655,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7065795440137485022, guid: 9dcacd0d91fbcd84ab1a1e24ff5eda63, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.31
+      value: -1.06
       objectReference: {fileID: 0}
     - target: {fileID: 7065795440137485022, guid: 9dcacd0d91fbcd84ab1a1e24ff5eda63, type: 3}
       propertyPath: m_LocalPosition.z
