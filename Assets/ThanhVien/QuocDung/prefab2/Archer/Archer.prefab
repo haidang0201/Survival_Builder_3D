@@ -519,9 +519,10 @@ GameObject:
   - component: {fileID: 6911117920321829390}
   - component: {fileID: -4448974062800983725}
   - component: {fileID: 5807661066353932725}
+  - component: {fileID: 8842015158073378861}
   m_Layer: 0
   m_Name: Archer
-  m_TagString: Untagged
+  m_TagString: Tower
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
@@ -654,6 +655,7 @@ MonoBehaviour:
   burnDamagePerSec: 5
   burnDuration: 3
   fireVfxPrefab: {fileID: 0}
+  shootVfxPrefab: {fileID: 0}
   animator: {fileID: 0}
   attackParamName: IsAttack
 --- !u!114 &-4448974062800983725
@@ -668,13 +670,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
-  buildingType: 0
+  buildingType: 12
   buildingName: "Nh\xE0 Ch\xEDnh"
   visualModels:
   - {fileID: 7736553044894252102}
   - {fileID: 2086203743534257054, guid: 7c7a3a6c8512d554d8eac43ef8b5adc2, type: 3}
   - {fileID: 3609327848608022778, guid: 7e43670d742d0604ca4b5984242b6802, type: 3}
   upgradeCosts: []
+  upgradeSliderPrefab: {fileID: 0}
+  sliderOffset: {x: 0, y: 4, z: 0}
 --- !u!95 &5807661066353932725
 Animator:
   serializedVersion: 7
@@ -697,6 +701,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &8842015158073378861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7736553044894252102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb66dc95d9299a6498dcf8d9d7757b9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HPTower
+  maxHealth: 200
+  destroyVFXPrefab: {fileID: 0}
 --- !u!1 &8691504505096296483
 GameObject:
   m_ObjectHideFlags: 0

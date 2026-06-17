@@ -58,7 +58,8 @@ public class Arrow : MonoBehaviour
         {
             if (target.gameObject.activeInHierarchy)
             {
-                targetPosition = target.position;
+                Collider targetCollider = target.GetComponentInChildren<Collider>();
+                targetPosition = targetCollider != null ? targetCollider.bounds.center : target.position + Vector3.up * 1f;
             }
             else
             {
@@ -174,7 +175,8 @@ public class Arrow : MonoBehaviour
         target = t;
         if (t != null)
         {
-            targetPosition = t.position;
+            Collider targetCollider = t.GetComponentInChildren<Collider>();
+            targetPosition = targetCollider != null ? targetCollider.bounds.center : t.position + Vector3.up * 1f;
             if (rb != null && !rb.isKinematic)
             {
                 Vector3 dir = (targetPosition - transform.position).normalized;

@@ -13,9 +13,10 @@ GameObject:
   - component: {fileID: 4828531503456949716}
   - component: {fileID: 1909309545747709099}
   - component: {fileID: 7002132004006255410}
+  - component: {fileID: 1299433096291259578}
   m_Layer: 0
   m_Name: WatchTower
-  m_TagString: Untagged
+  m_TagString: Main
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -28,7 +29,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1354021103751014317}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 150.99829, y: 0.0000011211912, z: 78.12309}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -139,6 +140,20 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   scanInterval: 0.2
+--- !u!114 &1299433096291259578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1354021103751014317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb66dc95d9299a6498dcf8d9d7757b9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HPTower
+  maxHealth: 200
+  destroyVFXPrefab: {fileID: 0}
 --- !u!1 &2936633381406691193
 GameObject:
   m_ObjectHideFlags: 0
