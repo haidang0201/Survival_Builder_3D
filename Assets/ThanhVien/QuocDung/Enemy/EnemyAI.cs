@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -6,10 +7,9 @@ public class EnemyAI : MonoBehaviour
 {
     [Header("References")]
     public Transform villageCenter;
-    public Transform player; // optional, can be assigned or found by tag "Player"
     public Animator animator;
 
-    [Header("Patrol")]
+    [Header("Patrol (Deprecated)")]
     public float patrolRadius = 8f;
     public float pointReachDistance = 1f;
     public float repathInterval = 2f;
@@ -19,20 +19,33 @@ public class EnemyAI : MonoBehaviour
     public float loseChaseRange = 12f;
     public float patrolSpeed = 2f;
     public float chaseSpeed = 4f;
+    public float attackRange = 2f;
+
+    public enum EnemyAttackType { Melee, Ranged }
+
+    [Header("Combat")]
+    public EnemyAttackType attackType = EnemyAttackType.Melee;
+    public float attackDamage = 10f;
+    public float attackRate = 1.5f;
+    private float nextAttackTime;
+
+    [Header("Ranged Config")]
+    public GameObject projectilePrefab;
+    public Transform firePoint;
+    public float projectileSpeed = 15f;
+    public float rangedAttackRange = 8f;
+
+    public float CurrentAttackRange => (attackType == EnemyAttackType.Ranged) ? rangedAttackRange : attackRange;
 
     [Header("Animation")]
-    public string attackTrigger = "Attack";
-
-    [Header("Day / Night")]
-    [Tooltip("If true use 'isNight' checkbox to force night for testing. If false, use Sun Light (optional).")]
-    public bool useManualNight = true;
-    public bool isNight = true; // inspector tick to test night/day
-    public Light sunLight;
-    public float nightLightThreshold = 0.2f;
+    public string moveBoolParam = "IsMove";
+    public string attackBoolParam = "IsAttack";
+    public string shootBoolParam = "IsShoot";
 
     [Header("Debug")]
     public bool debugLogs = true;
     public float debugLogInterval = 1f;
+    public bool attackMainDirectly = false; // Checkbox để test đánh trực tiếp Main
 
     [Header("Move Animation")]
     public float moveThreshold = 0.1f;
@@ -43,22 +56,21 @@ public class EnemyAI : MonoBehaviour
     private float nextRepathTime;
     private Transform chaseTarget;
     private float nextDebugLogTime;
+    private Vector3 targetClosestPoint;
+    private Transform lastChaseTarget;
+    private float nextTargetClosestPointUpdateTime;
 
-    // render/collider list to hide/show on day/night
-    private Renderer[] renderers;
-    private Collider[] colliders;
-    private bool lastNightState = true;
+    // Static variables for group coordination and target sharing
+    private static List<EnemyAI> activeEnemies = new List<EnemyAI>();
+    private static Dictionary<Transform, EnemyAI> targetAssignments = new Dictionary<Transform, EnemyAI>();
+    private float myNextScanTime;
+    private static float scanInterval = 0.2f;
 
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         if (agent == null && debugLogs) Debug.LogError("EnemyAI requires a NavMeshAgent");
         if (animator == null) animator = GetComponentInChildren<Animator>();
-        // no dynamic resolution — use moveParam directly
-
-        // cache renderers and colliders for hide/show
-        renderers = GetComponentsInChildren<Renderer>(true);
-        colliders = GetComponentsInChildren<Collider>(true);
 
         // try to ensure agent is on NavMesh
         if (agent != null && !agent.isOnNavMesh)
@@ -75,182 +87,698 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        if (!activeEnemies.Contains(this))
+        {
+            activeEnemies.Add(this);
+        }
+    }
+
+    private void OnDisable()
+    {
+        activeEnemies.Remove(this);
+        // Clear target assignment for this enemy
+        List<Transform> keys = new List<Transform>(targetAssignments.Keys);
+        foreach (var key in keys)
+        {
+            if (targetAssignments[key] == this)
+            {
+                targetAssignments.Remove(key);
+            }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        activeEnemies.Remove(this);
+        // Clear target assignment for this enemy
+        List<Transform> keys = new List<Transform>(targetAssignments.Keys);
+        foreach (var key in keys)
+        {
+            if (targetAssignments[key] == this)
+            {
+                targetAssignments.Remove(key);
+            }
+        }
+    }
+
     private void Start()
     {
-        if (player == null)
+        if (agent != null)
         {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) player = p.transform;
+            agent.speed = chaseSpeed;
+            agent.stoppingDistance = 0.1f;
+            agent.angularSpeed = 360f;
         }
-
-        if (agent != null) agent.speed = patrolSpeed;
-        if (villageCenter != null)
+        
+        // Register this enemy to start marching
+        if (!activeEnemies.Contains(this))
         {
-            chaseTarget = villageCenter;
-            if (agent != null) agent.speed = chaseSpeed;
-            SetDestination(villageCenter.position);
-        }
-        else
-        {
-            PickNewPatrolPoint();
-            SetDestination(currentPatrolPoint);
+            activeEnemies.Add(this);
         }
 
         UpdateAnimationState();
-
-        // ensure initial visibility according to night state
-        lastNightState = GetNightState();
-        ApplyNightState(lastNightState);
     }
 
     private void Update()
     {
-        // Day/night check
-        bool nightNow = GetNightState();
-        if (nightNow != lastNightState)
-        {
-            lastNightState = nightNow;
-            if (debugLogs) Debug.LogFormat("[EnemyAI] Night state changed: {0}", nightNow);
-            ApplyNightState(nightNow);
-        }
+        // Keep list clean of destroyed objects
+        activeEnemies.RemoveAll(e => e == null);
 
-        if (!nightNow)
-        {
-            // if day, skip behavior
-            UpdateAnimationState();
-            return;
-        }
+        if (activeEnemies.Count == 0) return;
 
-        // Check for chase start
-        if (chaseTarget == null)
+        // Auto-find villageCenter using tag "Main" if null
+        if (villageCenter == null)
         {
-            if (villageCenter != null && Vector3.Distance(transform.position, villageCenter.position) <= chaseTriggerRange)
+            GameObject mainObj = GameObject.FindGameObjectWithTag("Main");
+            if (mainObj != null)
             {
-                chaseTarget = villageCenter;
-                if (agent != null) agent.speed = chaseSpeed;
-                if (debugLogs) Debug.Log("EnemyAI: start chasing village");
+                villageCenter = mainObj.transform;
             }
-            else if (player != null && Vector3.Distance(transform.position, player.position) <= chaseTriggerRange)
+        }
+
+        // Each enemy scans for its target individually (seqential list index)
+        FindIndividualTarget();
+
+        // Target to move/attack
+        Transform target = chaseTarget;
+
+        if (target != null)
+        {
+            // Kiểm soát tần số cập nhật điểm tiếp cận để tránh chạy vòng tròn quanh công trình tĩnh
+            bool needUpdatePoint = false;
+            if (target != lastChaseTarget)
             {
-                chaseTarget = player;
-                if (agent != null) agent.speed = chaseSpeed;
-                if (debugLogs) Debug.Log("EnemyAI: start chasing player");
+                lastChaseTarget = target;
+                needUpdatePoint = true;
+            }
+            else if (IsSoldier(target.gameObject))
+            {
+                needUpdatePoint = true; // Soldier di động cập nhật liên tục
+            }
+            else if (Time.time >= nextTargetClosestPointUpdateTime)
+            {
+                needUpdatePoint = true; // Công trình tĩnh cập nhật mỗi 1.0s
+                nextTargetClosestPointUpdateTime = Time.time + 1.0f;
+            }
+
+            if (needUpdatePoint)
+            {
+                UpdateTargetClosestPoint(target);
+            }
+
+            int myIndex = activeEnemies.IndexOf(this);
+            if (myIndex < 0) myIndex = 0;
+
+            Vector3 dest = GetFormationPosition(target, myIndex);
+            
+            // Calculate distance to boundary of target collider
+            float distToTarget = GetDistanceToCollider(target.gameObject);
+
+            if (agent != null)
+            {
+                agent.speed = chaseSpeed;
+                
+                // Determine if in range based on target type
+                float actualAttackRange = CurrentAttackRange;
+                if (attackType == EnemyAttackType.Melee && 
+                    (target.CompareTag("Main") || IsMainHouse(target.gameObject) || target.CompareTag("Tower") || IsTower(target.gameObject)))
+                {
+                    // Stand closer to Main house or Tower (1.0m is very close, right at the boundary)
+                    actualAttackRange = 1.0f;
+                }
+
+                // If close to actual target, stop and attack
+                if (distToTarget <= actualAttackRange)
+                {
+                    agent.isStopped = true;
+                    
+                    // Rotate towards target when attacking (very fast rotation speed using RotateTowards)
+                    Vector3 lookDir = (target.position - transform.position);
+                    lookDir.y = 0f;
+                    if (lookDir.sqrMagnitude > 0.001f)
+                    {
+                        Quaternion targetRot = Quaternion.LookRotation(lookDir);
+                        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
+                    }
+                    
+                    if (Time.time >= nextAttackTime)
+                    {
+                        ExecuteAttack(target);
+                        nextAttackTime = Time.time + attackRate;
+                    }
+                }
+                else
+                {
+                    agent.isStopped = false;
+                    SetDestination(dest);
+                }
             }
         }
         else
         {
-            float d = Vector3.Distance(transform.position, chaseTarget.position);
-            if (d > loseChaseRange)
-            {
-                // stop chase, resume patrol
-                chaseTarget = null;
-                if (agent != null) agent.speed = patrolSpeed;
-                if (debugLogs) Debug.Log("EnemyAI: lost chase target, resuming patrol");
-                PickNewPatrolPoint();
-                SetDestination(currentPatrolPoint);
-            }
-            else
-            {
-                SetDestination(chaseTarget.position);
-            }
-        }
-
-        // Patrol behavior when not chasing
-        if (chaseTarget == null)
-        {
-            if (!hasPatrolPoint || Time.time >= nextRepathTime || Vector3.Distance(transform.position, currentPatrolPoint) <= pointReachDistance)
-            {
-                PickNewPatrolPoint();
-                SetDestination(currentPatrolPoint);
-            }
+            if (agent != null) agent.isStopped = true;
         }
 
         UpdateAnimationState();
     }
 
-    private bool GetNightState()
+    private static void CleanupTargetAssignments()
     {
-        if (useManualNight)
-            return isNight;
-
-        if (sunLight != null)
-            return sunLight.intensity <= nightLightThreshold;
-
-        // default to night if no control available
-        return true;
+        List<Transform> toRemove = new List<Transform>();
+        foreach (var kvp in targetAssignments)
+        {
+            if (kvp.Value == null || kvp.Key == null || !kvp.Key.gameObject.activeInHierarchy)
+            {
+                toRemove.Add(kvp.Key);
+                continue;
+            }
+            IDamageable damageable = kvp.Key.GetComponentInParent<IDamageable>();
+            if (damageable != null && damageable.CurrentHealth <= 0f)
+            {
+                toRemove.Add(kvp.Key);
+            }
+        }
+        foreach (var key in toRemove)
+        {
+            targetAssignments.Remove(key);
+        }
     }
 
-    private void ApplyNightState(bool night)
+    private void AssignTarget(Transform newTarget)
     {
-        // show/hide renderers
-        if (renderers != null)
+        // Clear this enemy's old target assignment
+        List<Transform> keys = new List<Transform>(targetAssignments.Keys);
+        foreach (var key in keys)
         {
-            foreach (var r in renderers)
+            if (targetAssignments[key] == this)
             {
-                if (r != null) r.enabled = night;
+                targetAssignments.Remove(key);
             }
         }
 
-        if (colliders != null)
+        // Assign new target (except if it's the main house/villageCenter, multiple enemies CAN target Main)
+        if (newTarget != null && newTarget != villageCenter && !newTarget.CompareTag("Main"))
         {
-            foreach (var c in colliders)
+            targetAssignments[newTarget] = this;
+        }
+    }
+
+    private void FindIndividualTarget()
+    {
+        // 1. Giữ mục tiêu hiện tại (đánh đến cùng) cho đến khi mục tiêu chết hoặc biến mất
+        if (chaseTarget != null && chaseTarget.gameObject.activeInHierarchy)
+        {
+            bool isCurrentTargetMain = chaseTarget.CompareTag("Main") || chaseTarget == villageCenter || IsMainHouse(chaseTarget.gameObject);
+            
+            // Nếu muốn test đánh trực tiếp Main nhưng target hiện tại không phải Main, ta bỏ qua stickiness để quét lại
+            if (!attackMainDirectly || isCurrentTargetMain)
             {
-                if (c != null) c.enabled = night;
+                IDamageable damageable = chaseTarget.GetComponentInParent<IDamageable>();
+                bool isAlive = damageable == null || damageable.CurrentHealth > 0f;
+
+                if (isAlive)
+                {
+                    // Vẫn giữ gán mục tiêu
+                    AssignTarget(chaseTarget);
+                    return;
+                }
             }
         }
 
-        if (animator != null) animator.enabled = night;
+        if (Time.time < myNextScanTime) return;
+        myNextScanTime = Time.time + scanInterval;
 
-        if (agent != null)
+        CleanupTargetAssignments();
+
+        float searchRadius = chaseTriggerRange * 3f;
+        Collider[] colliders = Physics.OverlapSphere(transform.position, searchRadius);
+
+        Transform selected = null;
+
+        // Nếu người dùng bật tùy chọn test đánh thẳng Main
+        if (attackMainDirectly)
         {
-            agent.isStopped = !night;
-            agent.updatePosition = night;
-            // when night begins, reposition to a patrol point and start
-            if (night)
+            Transform bestMain = null;
+            float minMainDist = float.MaxValue;
+
+            foreach (var col in colliders)
+            {
+                if (col == null || !col.gameObject.activeInHierarchy) continue;
+                GameObject go = col.gameObject;
+
+                if (IsMainHouse(go))
+                {
+                    IDamageable damageable = go.GetComponentInParent<IDamageable>();
+                    if (damageable != null && damageable.CurrentHealth <= 0f) continue;
+
+                    Transform t = GetEntityRoot(go, "Main");
+                    if (t == null) continue;
+
+                    float dist = GetDistanceToCollider(go);
+                    if (dist < minMainDist)
+                    {
+                        minMainDist = dist;
+                        bestMain = t;
+                    }
+                }
+            }
+
+            if (bestMain != null)
+            {
+                selected = bestMain;
+            }
+            else
             {
                 if (villageCenter != null)
                 {
-                    chaseTarget = villageCenter;
-                    agent.speed = chaseSpeed;
-                    SetDestination(villageCenter.position);
+                    selected = villageCenter;
                 }
-                else
+            }
+
+            AssignTarget(selected);
+            chaseTarget = selected;
+            return;
+        }
+
+        // --- Tìm kiếm theo thứ tự ưu tiên tuyệt đối ---
+
+        // Bước 1: Quét và phân loại tất cả mục tiêu hợp lệ còn sống trong tầm
+        List<Transform> aliveSoldiers = new List<Transform>();
+        List<Transform> aliveTowers = new List<Transform>();
+        Transform bestMainInScan = null;
+        float minMainDistInScan = float.MaxValue;
+
+        foreach (var col in colliders)
+        {
+            if (col == null || !col.gameObject.activeInHierarchy) continue;
+            GameObject go = col.gameObject;
+
+            // Kiểm tra xem mục tiêu có còn sống không
+            IDamageable damageable = go.GetComponentInParent<IDamageable>();
+            if (damageable != null && damageable.CurrentHealth <= 0f) continue;
+
+            if (IsSoldier(go))
+            {
+                Transform t = GetEntityRoot(go, "Soldier");
+                if (t != null && !aliveSoldiers.Contains(t))
                 {
-                    PickNewPatrolPoint();
-                    SetDestination(currentPatrolPoint);
+                    aliveSoldiers.Add(t);
+                }
+            }
+            else if (IsTower(go))
+            {
+                Transform t = GetEntityRoot(go, "Tower");
+                if (t != null && !aliveTowers.Contains(t))
+                {
+                    aliveTowers.Add(t);
+                }
+            }
+            else if (IsMainHouse(go))
+            {
+                Transform t = GetEntityRoot(go, "Main");
+                if (t != null)
+                {
+                    float dist = GetDistanceToCollider(go);
+                    if (dist < minMainDistInScan)
+                    {
+                        minMainDistInScan = dist;
+                        bestMainInScan = t;
+                    }
                 }
             }
         }
+
+        // Bước 2: Chọn mục tiêu dựa trên các danh sách đã lọc
+        
+        // A. Nếu còn bất kỳ Soldier nào sống, CHỈ chọn Soldier
+        if (aliveSoldiers.Count > 0)
+        {
+            // Tìm Soldier trống gần nhất
+            Transform bestUnoccupiedSoldier = null;
+            float minUnoccupiedSoldierDist = float.MaxValue;
+
+            foreach (var soldier in aliveSoldiers)
+            {
+                if (targetAssignments.TryGetValue(soldier, out EnemyAI assignedEnemy) && assignedEnemy != this)
+                    continue; // Đã bị chiếm
+
+                float dist = GetDistanceToCollider(soldier.gameObject);
+                if (dist < minUnoccupiedSoldierDist)
+                {
+                    minUnoccupiedSoldierDist = dist;
+                    bestUnoccupiedSoldier = soldier;
+                }
+            }
+
+            if (bestUnoccupiedSoldier != null)
+            {
+                selected = bestUnoccupiedSoldier;
+            }
+            else
+            {
+                // Dư lính: Chọn Soldier bất kỳ gần nhất (đã bị gán)
+                float minAnySoldierDist = float.MaxValue;
+                foreach (var soldier in aliveSoldiers)
+                {
+                    float dist = GetDistanceToCollider(soldier.gameObject);
+                    if (dist < minAnySoldierDist)
+                    {
+                        minAnySoldierDist = dist;
+                        selected = soldier;
+                    }
+                }
+            }
+        }
+        // B. Nếu hết Soldier nhưng còn bất kỳ Tower nào sống, CHỈ chọn Tower
+        else if (aliveTowers.Count > 0)
+        {
+            // Tìm Tower trống gần nhất
+            Transform bestUnoccupiedTower = null;
+            float minUnoccupiedTowerDist = float.MaxValue;
+
+            foreach (var tower in aliveTowers)
+            {
+                if (targetAssignments.TryGetValue(tower, out EnemyAI assignedEnemy) && assignedEnemy != this)
+                    continue; // Đã bị chiếm
+
+                float dist = GetDistanceToCollider(tower.gameObject);
+                if (dist < minUnoccupiedTowerDist)
+                {
+                    minUnoccupiedTowerDist = dist;
+                    bestUnoccupiedTower = tower;
+                }
+            }
+
+            if (bestUnoccupiedTower != null)
+            {
+                selected = bestUnoccupiedTower;
+            }
+            else
+            {
+                // Dư lính: Chọn Tower bất kỳ gần nhất (đã bị gán)
+                float minAnyTowerDist = float.MaxValue;
+                foreach (var tower in aliveTowers)
+                {
+                    float dist = GetDistanceToCollider(tower.gameObject);
+                    if (dist < minAnyTowerDist)
+                    {
+                        minAnyTowerDist = dist;
+                        selected = tower;
+                    }
+                }
+            }
+        }
+        // C. Nếu không còn Soldier và Tower nào, tiến hành đánh thẳng vào Main
+        else
+        {
+            if (bestMainInScan != null)
+            {
+                selected = bestMainInScan;
+            }
+            else
+            {
+                // Fallback cuối cùng về villageCenter
+                if (villageCenter == null)
+                {
+                    GameObject mainObj = GameObject.FindGameObjectWithTag("Main");
+                    if (mainObj != null)
+                    {
+                        villageCenter = mainObj.transform;
+                    }
+                }
+
+                if (villageCenter != null)
+                {
+                    IDamageable damageable = villageCenter.GetComponentInParent<IDamageable>();
+                    if (damageable == null || damageable.CurrentHealth > 0f)
+                    {
+                        selected = villageCenter;
+                    }
+                }
+            }
+        }
+
+        AssignTarget(selected);
+        chaseTarget = selected;
+    }
+
+    private void ExecuteAttack(Transform target)
+    {
+        PlayAttackAnimation();
+
+        if (attackType == EnemyAttackType.Melee)
+        {
+            IDamageable damageable = target.GetComponentInParent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(attackDamage, target.position);
+            }
+        }
+        else if (attackType == EnemyAttackType.Ranged)
+        {
+            if (projectilePrefab != null)
+            {
+                Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position + Vector3.up * 1.5f;
+                Collider targetCollider = target.GetComponentInChildren<Collider>();
+                Vector3 targetCenter = targetCollider != null ? targetCollider.bounds.center : target.position + Vector3.up * 1f;
+                Vector3 direction = (targetCenter - spawnPos).normalized;
+                Quaternion spawnRot = Quaternion.LookRotation(direction);
+
+                GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
+                
+                Arrow arrowComp = proj.GetComponent<Arrow>();
+                if (arrowComp != null)
+                {
+                    arrowComp.SetLauncher(gameObject);
+                    arrowComp.SetDamage(attackDamage);
+                    arrowComp.SetTarget(target, projectileSpeed);
+                }
+                else
+                {
+                    Rigidbody rb = proj.GetComponent<Rigidbody>();
+                    if (rb == null) rb = proj.AddComponent<Rigidbody>();
+                    rb.linearVelocity = direction * projectileSpeed;
+                }
+            }
+            else
+            {
+                IDamageable damageable = target.GetComponentInParent<IDamageable>();
+                if (damageable != null)
+                {
+                    damageable.TakeDamage(attackDamage, target.position);
+                }
+            }
+        }
+    }
+
+    private bool IsSoldier(GameObject go)
+    {
+        if (go == null) return false;
+        return GetEntityRoot(go, "Soldier") != null;
+    }
+
+    private bool IsTower(GameObject go)
+    {
+        if (go == null) return false;
+        return GetEntityRoot(go, "Tower") != null;
+    }
+
+    private bool IsMainHouse(GameObject go)
+    {
+        if (go == null) return false;
+        return GetEntityRoot(go, "Main") != null;
+    }
+
+    private Transform GetEntityRoot(GameObject go, string tag)
+    {
+        if (go == null) return null;
+        Transform curr = go.transform;
+        while (curr != null)
+        {
+            if (curr.CompareTag(tag))
+                return curr;
+            curr = curr.parent;
+        }
+        return null;
+    }
+
+    private void UpdateTargetClosestPoint(Transform target)
+    {
+        if (target == null) return;
+
+        if (IsSoldier(target.gameObject))
+        {
+            targetClosestPoint = target.position;
+            return;
+        }
+
+        Vector3 basePosition = target.position;
+        Collider[] colliders = target.GetComponentsInChildren<Collider>();
+        if (colliders != null && colliders.Length > 0)
+        {
+            float minDistance = float.MaxValue;
+            Vector3 bestPoint = target.position;
+            Vector3 flatSelf = new Vector3(transform.position.x, 0f, transform.position.z);
+
+            foreach (var c in colliders)
+            {
+                if (c == null || !c.enabled || !c.gameObject.activeInHierarchy || c.isTrigger) continue;
+
+                Vector3 closestPoint;
+                MeshCollider meshCol = c as MeshCollider;
+                if (meshCol != null && !meshCol.convex)
+                {
+                    closestPoint = c.bounds.ClosestPoint(transform.position);
+                }
+                else
+                {
+                    closestPoint = c.ClosestPoint(transform.position);
+                }
+
+                Vector3 flatClosest = new Vector3(closestPoint.x, 0f, closestPoint.z);
+                float dist = Vector3.Distance(flatSelf, flatClosest);
+                if (dist < minDistance)
+                {
+                    minDistance = dist;
+                    bestPoint = closestPoint;
+                }
+            }
+
+            if (minDistance != float.MaxValue)
+            {
+                basePosition = bestPoint;
+            }
+        }
+
+        targetClosestPoint = basePosition;
+    }
+
+    private float GetDistanceToCollider(GameObject targetGo)
+    {
+        if (targetGo == null) return float.MaxValue;
+        
+        Collider[] colliders = targetGo.GetComponentsInChildren<Collider>();
+        if (colliders == null || colliders.Length == 0)
+        {
+            Vector3 fSelf = new Vector3(transform.position.x, 0f, transform.position.z);
+            Vector3 fTarget = new Vector3(targetGo.transform.position.x, 0f, targetGo.transform.position.z);
+            return Vector3.Distance(fSelf, fTarget);
+        }
+
+        Vector3 flatSelf = new Vector3(transform.position.x, 0f, transform.position.z);
+        float minDistance = float.MaxValue;
+
+        foreach (var col in colliders)
+        {
+            if (col == null || !col.enabled || !col.gameObject.activeInHierarchy) continue;
+            if (col.isTrigger) continue; // Bỏ qua các trigger zone
+
+            Vector3 closestPoint;
+            MeshCollider meshCol = col as MeshCollider;
+            if (meshCol != null && !meshCol.convex)
+            {
+                // Fallback cho MeshCollider không convex (vì Unity không hỗ trợ ClosestPoint)
+                closestPoint = col.bounds.ClosestPoint(transform.position);
+            }
+            else
+            {
+                closestPoint = col.ClosestPoint(transform.position);
+            }
+
+            Vector3 flatClosest = new Vector3(closestPoint.x, 0f, closestPoint.z);
+            float dist = Vector3.Distance(flatSelf, flatClosest);
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+            }
+        }
+
+        if (minDistance == float.MaxValue)
+        {
+            Vector3 fSelf = new Vector3(transform.position.x, 0f, transform.position.z);
+            Vector3 fTarget = new Vector3(targetGo.transform.position.x, 0f, targetGo.transform.position.z);
+            return Vector3.Distance(fSelf, fTarget);
+        }
+
+        return minDistance;
+    }
+
+    private Vector3 GetFormationPosition(Transform target, int index)
+    {
+        if (target == null) return transform.position;
+
+        // Sử dụng điểm gần nhất tĩnh đã được tính toán sẵn
+        Vector3 basePosition = targetClosestPoint;
+
+        // Grid formation: 3 columns, spacing 1.5m
+        int columns = 3;
+        float spacing = 1.5f;
+        int row = index / columns;
+        int col = index % columns;
+
+        float offsetX = (col - (columns - 1) * 0.5f) * spacing;
+        float offsetZ = -row * spacing; // Đứng lùi về phía sau hướng tiếp cận
+
+        Vector3 dir = (basePosition - transform.position);
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.001f)
+        {
+            dir.Normalize();
+        }
+        else
+        {
+            dir = Vector3.forward;
+        }
+
+        Quaternion rotation = Quaternion.LookRotation(dir);
+        Vector3 localOffset = new Vector3(offsetX, 0f, offsetZ);
+        Vector3 worldOffset = rotation * localOffset;
+
+        Vector3 targetPos = basePosition + worldOffset;
+
+        // Tăng bán kính sample lên 3f để chắc chắn tìm thấy điểm NavMesh sát rìa tháp/nhà
+        if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
+        {
+            return hit.position;
+        }
+        return targetPos;
     }
 
     public void PlayAttackAnimation()
     {
-        if (animator == null || string.IsNullOrWhiteSpace(attackTrigger)) return;
-        animator.SetTrigger(attackTrigger);
-    }
+        if (animator == null) return;
 
-    private void PickNewPatrolPoint()
-    {
-        Vector3 center = villageCenter != null ? villageCenter.position : transform.position;
-        for (int i = 0; i < 8; i++)
+        string paramToSet = (attackType == EnemyAttackType.Ranged) ? shootBoolParam : attackBoolParam;
+        if (!string.IsNullOrWhiteSpace(paramToSet))
         {
-            Vector3 rand = Random.insideUnitSphere * patrolRadius;
-            rand.y = 0f;
-            Vector3 candidate = center + rand;
-            if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            if (HasAnimatorParameter(animator, paramToSet, AnimatorControllerParameterType.Trigger))
             {
-                currentPatrolPoint = hit.position;
-                hasPatrolPoint = true;
-                nextRepathTime = Time.time + repathInterval;
-                if (debugLogs) Debug.Log("EnemyAI: new patrol point " + currentPatrolPoint);
-                return;
+                animator.SetTrigger(paramToSet);
+            }
+            else
+            {
+                StartCoroutine(TriggerBoolAnimation(paramToSet));
             }
         }
+    }
 
-        // fallback: stay in place
-        currentPatrolPoint = transform.position;
-        hasPatrolPoint = false;
-        if (debugLogs) Debug.LogWarning("EnemyAI: failed to find patrol point on NavMesh");
+    private bool HasAnimatorParameter(Animator anim, string paramName, AnimatorControllerParameterType type)
+    {
+        foreach (AnimatorControllerParameter param in anim.parameters)
+        {
+            if (param.name == paramName && param.type == type)
+                return true;
+        }
+        return false;
+    }
+
+    private System.Collections.IEnumerator TriggerBoolAnimation(string paramName)
+    {
+        animator.SetBool(paramName, true);
+        yield return new WaitForSeconds(0.1f);
+        animator.SetBool(paramName, false);
     }
 
     private void SetDestination(Vector3 dest)
@@ -265,7 +793,11 @@ public class EnemyAI : MonoBehaviour
             else return;
         }
 
-        agent.SetDestination(dest);
+        // Chỉ set destination khi điểm đích mới khác biệt đáng kể (>0.25m) so với điểm đích hiện tại
+        if (Vector3.Distance(agent.destination, dest) > 0.25f)
+        {
+            agent.SetDestination(dest);
+        }
     }
 
     private void UpdateAnimationState()
@@ -278,17 +810,17 @@ public class EnemyAI : MonoBehaviour
         {
             if (agent.isOnNavMesh)
             {
-                bool hasMeaningfulPath = agent.hasPath && !agent.pathPending && agent.remainingDistance > agent.stoppingDistance + moveThreshold;
-                bool hasMeaningfulVelocity = agent.velocity.sqrMagnitude > moveThreshold * moveThreshold;
+                bool hasMeaningfulPath = !agent.isStopped && agent.hasPath && !agent.pathPending && agent.remainingDistance > agent.stoppingDistance + moveThreshold;
+                bool hasMeaningfulVelocity = !agent.isStopped && agent.velocity.sqrMagnitude > moveThreshold * moveThreshold;
                 isMoving = hasMeaningfulPath || hasMeaningfulVelocity;
             }
             else
             {
-                isMoving = agent.desiredVelocity.sqrMagnitude > moveThreshold * moveThreshold;
+                isMoving = !agent.isStopped && agent.desiredVelocity.sqrMagnitude > moveThreshold * moveThreshold;
             }
         }
 
-        animator.SetBool("isMove", isMoving);
+        animator.SetBool(moveBoolParam, isMoving);
 
         if (debugLogs && Time.time >= nextDebugLogTime)
         {
