@@ -8,7 +8,8 @@ using TMPro;
  * Folder: Scripts/UI/
  * Dự án: KHẨN HOANG (PENTA DEV)
  * Người thực hiện: VŨ + ĐĂNG
- * HỢP NHẤT: Quản lý HUD, Menu xây dựng, Panel nâng cấp, và tích hợp chức năng Di Chuyển Nhà.
+ * CHỨC NĂNG: Kết nối dữ liệu từ AttackTowerAI và WatchTowerAI, bóc tách cấu trúc
+ * chiso_hientai và chiso_nangcap chứa các Image + Text con để đổ thông số chuẩn xác.
  */
 
 public class UIManager : Singleton<UIManager>
@@ -36,18 +37,45 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private TMP_Text levelText;
     [SerializeField] private Button upgradeButton;
     [SerializeField] private TMP_Text upgradeButtonText;
-    [SerializeField] private Button moveButton; // <--- BỔ SUNG NÚT DI CHUYỂN TRÊN INSPECTOR
+    [SerializeField] private Button moveButton; 
+
+    [Header("New Features – Preview UI Elements")]
+    [SerializeField] private Image currentBuildingPreviewImage;  
+    [SerializeField] private Image nextBuildingPreviewImage;     
+    
+    [Header("Cấu trúc Cửa sổ Chỉ Số (chiso_panel)")]
+    [SerializeField] private GameObject chiso_panel;          // Panel tổng quản lý hiển thị chỉ số
+    
+    [Space(10)]
+    [Header("--- Cấu Phần Con Của chiso_hientai ---")]
+    [SerializeField] private GameObject chiso_hientai_obj;    // Object cụm Hiện Tại để ẩn/hiện
+    [SerializeField] private TMP_Text txt_SatThuong_HienTai;  // Text chứa chỉ số Sát thương hiện tại / Hoặc đổi thành Tên chỉ số 1 dân sự
+    [SerializeField] private TMP_Text txt_TamBan_HienTai;     // Text chứa chỉ số Tầm bắn hiện tại / Hoặc đổi thành Tên chỉ số 2 dân sự
+    [SerializeField] private TMP_Text txt_TocDo_HienTai;      // Text chứa chỉ số Tốc độ hiện tại
+
+    [Space(10)]
+    [Header("--- Cấu Phần Con Của chiso_nangcap ---")]
+    [SerializeField] private GameObject chiso_nangcap_obj;   // Object cụm Nâng Cấp để ẩn/hiện (hoặc ẩn khi MAX)
+    [SerializeField] private TMP_Text txt_SatThuong_NangCap;  // Text chứa chỉ số Sát thương cấp tiếp theo
+    [SerializeField] private TMP_Text txt_TamBan_NangCap;     // Text chứa chỉ số Tầm bắn cấp tiếp theo
+    [SerializeField] private TMP_Text txt_TocDo_NangCap;      // Text chứa chỉ số Tốc độ cấp tiếp theo
+    [SerializeField] private TMP_Text txt_MaxLevelNotice;     // Text phụ xuất hiện chữ "MAX" hoặc "ĐÃ TỐI ĐA" khi hết cấp
+
+    [Header("Penta Dev - Thêm UI Cho Chỉ Số Dân Sự (Tái sử dụng hoặc tạo riêng)")]
+    // Bạn có thể dùng chung cụm txt_SatThuong, txt_TamBan ở trên hoặc gán riêng các Text chuyên dụng dưới đây vào Inspector:
+    [SerializeField] private TMP_Text txt_Label_ChiSo1;       // Ví dụ: hiển thị chữ "Dân lao động:" hoặc "Sát thương:"
+    [SerializeField] private TMP_Text txt_Label_ChiSo2;       // Ví dụ: hiển thị chữ "Kho tạm chứa:" hoặc "Tầm bắn:"
+    [SerializeField] private TMP_Text txt_Label_ChiSo3;       // Ví dụ: hiển thị chữ "Tốc độ:" hoặc ẩn đi khi dùng cho dân sự
 
     [Header("Upgrade Costs Text Elements")]
     [SerializeField] private TMP_Text woodCostText;
     [SerializeField] private TMP_Text stoneCostText;
     [SerializeField] private TMP_Text foodCostText;
 
-    [Header("Upgrade Timer UI Elements")]
-    [SerializeField] private Slider upgradeProgressBar;       
-    [SerializeField] private TMP_Text upgradeTimerText;       
-
     private UpgradeableBuilding selectedBuilding;
+
+    // --- BIẾN ĐẾM SỐ LẦN ẤN NÚT NÂNG CẤP ĐƯỢC THÊM VÀO ---
+    private int upgradeClickCount = 0;
 
     void Start()
     {
@@ -62,8 +90,6 @@ public class UIManager : Singleton<UIManager>
         if (settingButton != null) settingButton.onClick.AddListener(OnClickSettingButton);
 
         if (upgradeButton != null) upgradeButton.onClick.AddListener(OnClickUpgradeButton);
-        
-        // Đăng ký sự kiện cho nút Di Chuyển
         if (moveButton != null) moveButton.onClick.AddListener(OnClickMoveButton);
     }
 
@@ -120,8 +146,19 @@ public class UIManager : Singleton<UIManager>
 
     public void OnClickHouseButton() => BuildingSystem.Ins.StartPlacing(BuildingType.House);
     public void OnClickWoodCutterButton() => BuildingSystem.Ins.StartPlacing(BuildingType.WoodCutter);
-    public void OnClickStoneStorageButton() => BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
+    public void OnClickStoneMineButton() => BuildingSystem.Ins.StartPlacing(BuildingType.StoneMine);
+    public void OnClickKitchenButton() => BuildingSystem.Ins.StartPlacing(BuildingType.Kitchen);
     public void OnClickFoodStorageButton() => BuildingSystem.Ins.StartPlacing(BuildingType.FoodStorage);
+    public void OnClickStoneStorageButton() => BuildingSystem.Ins.StartPlacing(BuildingType.StoneStorage);
+    public void OnClickWarehouseButton() => BuildingSystem.Ins.StartPlacing(BuildingType.Warehouse);
+
+    public void OnClickWatchTowerButton() => BuildingSystem.Ins.StartPlacing(BuildingType.WatchTower);
+    public void OnClickArcherTowerButton() => BuildingSystem.Ins.StartPlacing(BuildingType.ArcherTower);
+    public void OnClickCannonButton() => BuildingSystem.Ins.StartPlacing(BuildingType.Cannon);
+
+    public void OnClickBarracksMeleeButton() => BuildingSystem.Ins.StartPlacing(BuildingType.BarracksMelee);
+    public void OnClickBarracksArcherButton() => BuildingSystem.Ins.StartPlacing(BuildingType.BarracksArcher);
+    public void OnClickBarracksSpearButton() => BuildingSystem.Ins.StartPlacing(BuildingType.BarracksSpear);
 
     // ================= UPGRADE & MOVE PANEL LOGIC =================
 
@@ -131,7 +168,9 @@ public class UIManager : Singleton<UIManager>
         selectedBuilding = building;
         if (upgradePanel != null) upgradePanel.SetActive(true);
         
-        if (!building.IsUpgrading) HideUpgradeProgress();
+        // Reset lại số lần bấm về 0 khi chọn công trình mới
+        upgradeClickCount = 0;
+        
         RefreshUpgradePanel(building);
     }
 
@@ -139,7 +178,8 @@ public class UIManager : Singleton<UIManager>
     {
         if (building == null) return;
 
-        int displayLevel = building.CurrentLevel + 1;
+        int currentLevelIdx = building.CurrentLevel; 
+        int displayLevel = currentLevelIdx + 1;       
         bool isMaxLevel = building.CurrentLevel >= building.MaxLevel - 1;
         bool isCurrentlyUpgrading = building.IsUpgrading;
 
@@ -147,16 +187,70 @@ public class UIManager : Singleton<UIManager>
         if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
         
         if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel && !isCurrentlyUpgrading;
-        // Đang nâng cấp thì không cho phép vừa di chuyển vừa nâng cấp để tránh lỗi Desync tọa độ
         if (moveButton != null) moveButton.interactable = !isCurrentlyUpgrading;
         
         if (upgradeButtonText != null)
         {
             if (isMaxLevel) upgradeButtonText.text = "Đã tối đa";
             else if (isCurrentlyUpgrading) upgradeButtonText.text = "Đang nâng cấp...";
-            else upgradeButtonText.text = "Nâng cấp";
+            // Đổi chữ nút nâng cấp dựa theo trạng thái click
+            else upgradeButtonText.text = (upgradeClickCount == 0) ? "Nâng cấp" : "Xác nhận";
         }
 
+        // --- LUỒNG XỬ LÝ HÌNH ẢNH PREVIEW ---
+        if (building.BuildingIcons != null)
+        {
+            if (currentBuildingPreviewImage != null && currentLevelIdx < building.BuildingIcons.Length)
+            {
+                currentBuildingPreviewImage.sprite = building.BuildingIcons[currentLevelIdx];
+                currentBuildingPreviewImage.gameObject.SetActive(true);
+            }
+
+            if (nextBuildingPreviewImage != null)
+            {
+                if (!isMaxLevel && (currentLevelIdx + 1) < building.BuildingIcons.Length)
+                {
+                    nextBuildingPreviewImage.sprite = building.BuildingIcons[currentLevelIdx + 1];
+                    nextBuildingPreviewImage.gameObject.SetActive(true);
+                }
+                else
+                {
+                    nextBuildingPreviewImage.gameObject.SetActive(false); 
+                }
+            }
+        }
+
+        // --- LUỒNG HIỂN THỊ CHỈ SỐ (QUÂN SỰ & DÂN SỰ) ---
+        bool isDefenseTower = building.buildingType == BuildingType.WatchTower || 
+                              building.buildingType == BuildingType.ArcherTower || 
+                              building.buildingType == BuildingType.Cannon;
+
+        // Chỉ hiển thị thông số chi tiết khi đã đạt Max cấp HOẶC khi người chơi nhấn nút Nâng cấp lần 1
+        if (isMaxLevel || upgradeClickCount == 1)
+        {
+            if (chiso_panel != null) chiso_panel.SetActive(true);
+
+            if (isDefenseTower)
+            {
+                // Reset text nhãn về mặc định của Tháp phòng thủ
+                ResetStatLabels("Sát thương", "Tầm bắn", "Tốc độ");
+                if (txt_Label_ChiSo3 != null) txt_Label_ChiSo3.gameObject.SetActive(true);
+                if (txt_TocDo_HienTai != null) txt_TocDo_HienTai.gameObject.SetActive(true);
+
+                UpdateDetailedTowerStats(building, currentLevelIdx, isMaxLevel);
+            }
+            else
+            {
+                // Xử lý đổ dữ liệu cho các công trình Dân sự
+                HandleCivilianBuildingUI(building, isMaxLevel);
+            }
+        }
+        else
+        {
+            if (chiso_panel != null) chiso_panel.SetActive(false);
+        }
+
+        // --- LUỒNG HIỂN THỊ CHI PHÍ ---
         if (isMaxLevel)
         {
             if (woodCostText != null) woodCostText.text = "-";
@@ -166,38 +260,263 @@ public class UIManager : Singleton<UIManager>
         else
         {
             UpgradeableBuilding.UpgradeCost cost = building.GetNextUpgradeCost();
-            if (woodCostText != null) woodCostText.text = cost.woodCost.ToString();
-            if (stoneCostText != null) stoneCostText.text = cost.stoneCost.ToString();
-            if (foodCostText != null) foodCostText.text = cost.foodCost.ToString();
+            if (woodCostText != null) woodCostText.text = MathUtility_FormatCost(cost.woodCost);
+            if (stoneCostText != null) stoneCostText.text = MathUtility_FormatCost(cost.stoneCost);
+            if (foodCostText != null) foodCostText.text = MathUtility_FormatCost(cost.foodCost);
         }
     }
 
-    public void UpdateUpgradeProgress(float currentTimer, float totalDuration)
+    // Helper đổi tên nhãn tiêu đề chỉ số bên trái panel trực quan
+    private void ResetStatLabels(string label1, string label2, string label3 = "")
     {
-        if (upgradeProgressBar != null && !upgradeProgressBar.gameObject.activeSelf) upgradeProgressBar.gameObject.SetActive(true);
-        if (upgradeTimerText != null && !upgradeTimerText.gameObject.activeSelf) upgradeTimerText.gameObject.SetActive(true);
-
-        if (upgradeProgressBar != null)
+        if (txt_Label_ChiSo1 != null) txt_Label_ChiSo1.text = label1;
+        if (txt_Label_ChiSo2 != null) txt_Label_ChiSo2.text = label2;
+        if (txt_Label_ChiSo3 != null)
         {
-            upgradeProgressBar.maxValue = totalDuration;
-            upgradeProgressBar.value = currentTimer;
-        }
-        if (upgradeTimerText != null)
-        {
-            float timeLeft = Mathf.Max(0f, totalDuration - currentTimer);
-            upgradeTimerText.text = $"{timeLeft:F1}s";
+            if (string.IsNullOrEmpty(label3)) txt_Label_ChiSo3.gameObject.SetActive(false);
+            else
+            {
+                txt_Label_ChiSo3.gameObject.SetActive(true);
+                txt_Label_ChiSo3.text = label3;
+            }
         }
     }
 
-    public void HideUpgradeProgress()
+    private void HandleCivilianBuildingUI(UpgradeableBuilding building, bool isMax)
     {
-        if (upgradeProgressBar != null) upgradeProgressBar.gameObject.SetActive(false);
-        if (upgradeTimerText != null) upgradeTimerText.gameObject.SetActive(false);
+        int lv = building.CurrentLevel;
+        if (chiso_hientai_obj != null) chiso_hientai_obj.SetActive(true);
+
+        // Ẩn bớt hàng thông số thứ 3 (vì dân sự thường chỉ cần Worker và Kho)
+        if (txt_Label_ChiSo3 != null) txt_Label_ChiSo3.gameObject.SetActive(false);
+        if (txt_TocDo_HienTai != null) txt_TocDo_HienTai.gameObject.SetActive(false);
+        if (txt_TocDo_NangCap != null) txt_TocDo_NangCap.text = "";
+
+        // Xử lý khối hiển thị MAX cấp cho cụm Nâng Cấp
+        if (isMax)
+        {
+            if (chiso_nangcap_obj != null) chiso_nangcap_obj.SetActive(false);
+            if (txt_MaxLevelNotice != null)
+            {
+                txt_MaxLevelNotice.gameObject.SetActive(true);
+                txt_MaxLevelNotice.text = "CẤP TỐI ĐA";
+            }
+        }
+        else
+        {
+            if (chiso_nangcap_obj != null) chiso_nangcap_obj.SetActive(true);
+            if (txt_MaxLevelNotice != null) txt_MaxLevelNotice.gameObject.SetActive(false);
+        }
+
+        switch (building.buildingType)
+        {
+            case BuildingType.WoodCutter:
+                if (building.WoodStorageLevels != null && lv < building.WoodStorageLevels.Length && building.WoodStorageLevels[lv] != null)
+                {
+                    ResetStatLabels("Thợ chặt gỗ", "Sức chứa kho");
+                    var curScript = building.WoodStorageLevels[lv];
+
+                    // Điền thông số Hiện Tại
+                    if (txt_SatThuong_HienTai != null) txt_SatThuong_HienTai.text = $"{curScript.currentWorkersCount}/{curScript.MaxWorkers}";
+                    if (txt_TamBan_HienTai != null) txt_TamBan_HienTai.text = $"{curScript.CurrentAmount}/{curScript.MaxCapacity}";
+
+                    // Điền thông số Nâng Cấp tiếp theo nếu chưa Max
+                    if (!isMax && (lv + 1) < building.WoodStorageLevels.Length && building.WoodStorageLevels[lv + 1] != null)
+                    {
+                        var nxtScript = building.WoodStorageLevels[lv + 1];
+                        if (txt_SatThuong_NangCap != null) 
+                            txt_SatThuong_NangCap.text = nxtScript.MaxWorkers > curScript.MaxWorkers ? $"<color=green>{nxtScript.MaxWorkers} Max</color>" : $"{nxtScript.MaxWorkers} Max";
+                        if (txt_TamBan_NangCap != null) 
+                            txt_TamBan_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity}</color>" : $"{nxtScript.maxCapacity}";
+                    }
+                }
+                break;
+
+            case BuildingType.StoneStorage:
+                if (building.StoneStorageLevels != null && lv < building.StoneStorageLevels.Length && building.StoneStorageLevels[lv] != null)
+                {
+                    ResetStatLabels("Thợ khai thác", "Sức chứa kho");
+                    var curScript = building.StoneStorageLevels[lv];
+
+                    if (txt_SatThuong_HienTai != null) txt_SatThuong_HienTai.text = $"{curScript.currentWorkersCount}/{curScript.MaxWorkers}";
+                    if (txt_TamBan_HienTai != null) txt_TamBan_HienTai.text = $"{curScript.CurrentAmount}/{curScript.MaxCapacity}";
+
+                    if (!isMax && (lv + 1) < building.StoneStorageLevels.Length && building.StoneStorageLevels[lv + 1] != null)
+                    {
+                        var nxtScript = building.StoneStorageLevels[lv + 1];
+                        if (txt_SatThuong_NangCap != null) 
+                            txt_SatThuong_NangCap.text = nxtScript.MaxWorkers > curScript.MaxWorkers ? $"<color=green>{nxtScript.MaxWorkers} Max</color>" : $"{nxtScript.MaxWorkers} Max";
+                        if (txt_TamBan_NangCap != null) 
+                            txt_TamBan_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity}</color>" : $"{nxtScript.maxCapacity}";
+                    }
+                }
+                break;
+
+            case BuildingType.FoodStorage:
+                if (building.RiceStorageLevels != null && lv < building.RiceStorageLevels.Length && building.RiceStorageLevels[lv] != null)
+                {
+                    ResetStatLabels("Nông dân ruộng", "Sức chứa kho");
+                    var curScript = building.RiceStorageLevels[lv];
+
+                    if (txt_SatThuong_HienTai != null) txt_SatThuong_HienTai.text = $"{curScript.currentWorkersCount}/{curScript.MaxWorkers}";
+                    if (txt_TamBan_HienTai != null) txt_TamBan_HienTai.text = $"{curScript.CurrentAmount}/{curScript.MaxCapacity}";
+
+                    if (!isMax && (lv + 1) < building.RiceStorageLevels.Length && building.RiceStorageLevels[lv + 1] != null)
+                    {
+                        var nxtScript = building.RiceStorageLevels[lv + 1];
+                        if (txt_SatThuong_NangCap != null) 
+                            txt_SatThuong_NangCap.text = nxtScript.MaxWorkers > curScript.MaxWorkers ? $"<color=green>{nxtScript.MaxWorkers} Max</color>" : $"{nxtScript.MaxWorkers} Max";
+                        if (txt_TamBan_NangCap != null) 
+                            txt_TamBan_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity}</color>" : $"{nxtScript.maxCapacity}";
+                    }
+                }
+                break;
+
+            case BuildingType.Kitchen:
+                if (building.KitchenLevels != null && lv < building.KitchenLevels.Length && building.KitchenLevels[lv] != null)
+                {
+                    ResetStatLabels("Đầu bếp / Thợ", "Sức chứa bếp");
+                    var curScript = building.KitchenLevels[lv];
+
+                    if (txt_SatThuong_HienTai != null) txt_SatThuong_HienTai.text = $"{curScript.currentWorkersCount}/{curScript.maxCapacity}"; // Tạm thời dùng maxCapacity làm maxWorkers vì là chỗ nghỉ
+                    if (txt_TamBan_HienTai != null) txt_TamBan_HienTai.text = $"{curScript.WorkerCount}/{curScript.maxCapacity}";
+
+                    if (!isMax && (lv + 1) < building.KitchenLevels.Length && building.KitchenLevels[lv + 1] != null)
+                    {
+                        var nxtScript = building.KitchenLevels[lv + 1];
+                        if (txt_SatThuong_NangCap != null) 
+                            txt_SatThuong_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity} Slot</color>" : $"{nxtScript.maxCapacity} Slot";
+                        if (txt_TamBan_NangCap != null) 
+                            txt_TamBan_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity}</color>" : $"{nxtScript.maxCapacity}";
+                    }
+                }
+                break;
+            default:
+                if (chiso_panel != null) chiso_panel.SetActive(false);
+                break;
+        }
+    }
+
+    private string MathUtility_FormatCost(int rawCost)
+    {
+        return rawCost.ToString();
+    }
+
+    /// <summary>
+    /// Bóc tách thông số tháp phòng thủ và điền chuẩn xác vào từng thành phần TMP_Text con bên trong panel chỉ số
+    /// </summary>
+    private void UpdateDetailedTowerStats(UpgradeableBuilding building, int currentLv, bool isMax)
+    {
+        float curDamage = 0, nxtDamage = 0;
+        float curRange = 0, nxtRange = 0; 
+        float curSpeed = 0, nxtSpeed = 0;
+
+        AttackTowerAI currentAttackAI = null;
+        if (building.TowerLevelScripts != null && currentLv >= 0 && currentLv < building.TowerLevelScripts.Length)
+        {
+            currentAttackAI = building.TowerLevelScripts[currentLv];
+        }
+
+        WatchTowerAI watchAI = building.GetComponent<WatchTowerAI>();
+
+        if (chiso_hientai_obj != null) chiso_hientai_obj.SetActive(true);
+
+        if (currentAttackAI != null)
+        {
+            curSpeed = currentAttackAI.fireRate;
+            curRange = currentAttackAI.AttackRange; 
+
+            if (currentLv == 0) curDamage = currentAttackAI.damageLv1;
+            else if (currentLv == 1) curDamage = currentAttackAI.damageLv2;
+            else curDamage = currentAttackAI.damageLv3;
+
+            if (txt_SatThuong_HienTai != null) txt_SatThuong_HienTai.text = curDamage.ToString();
+            if (txt_TamBan_HienTai != null) txt_TamBan_HienTai.text = $"{curRange}m";
+            if (txt_TocDo_HienTai != null) txt_TocDo_HienTai.text = $"{curSpeed}/s";
+
+            if (isMax)
+            {
+                if (chiso_nangcap_obj != null) chiso_nangcap_obj.SetActive(false);
+                if (txt_MaxLevelNotice != null)
+                {
+                    txt_MaxLevelNotice.gameObject.SetActive(true);
+                    txt_MaxLevelNotice.text = "CẤP TỐI ĐA";
+                }
+            }
+            else
+            {
+                if (chiso_nangcap_obj != null) chiso_nangcap_obj.SetActive(true);
+                if (txt_MaxLevelNotice != null) txt_MaxLevelNotice.gameObject.SetActive(false);
+
+                int nextLv = currentLv + 1;
+                AttackTowerAI nextAttackAI = null;
+
+                if (building.TowerLevelScripts != null && nextLv < building.TowerLevelScripts.Length)
+                {
+                    nextAttackAI = building.TowerLevelScripts[nextLv];
+                }
+
+                if (nextAttackAI != null)
+                {
+                    nxtSpeed = nextAttackAI.fireRate;
+                    nxtRange = nextAttackAI.AttackRange;
+
+                    if (nextLv == 1) nxtDamage = nextAttackAI.damageLv2;
+                    else nxtDamage = nextAttackAI.damageLv3;
+                }
+                else
+                {
+                    nxtDamage = curDamage;
+                    nxtRange = curRange;
+                    nxtSpeed = curSpeed;
+                }
+
+                if (txt_SatThuong_NangCap != null) 
+                    txt_SatThuong_NangCap.text = nxtDamage > curDamage ? $"<color=green>{nxtDamage}</color>" : nxtDamage.ToString();
+                
+                if (txt_TamBan_NangCap != null) 
+                    txt_TamBan_NangCap.text = nxtRange > curRange ? $"<color=green>{nxtRange}m</color>" : $"{nxtRange}m";
+                
+                if (txt_TocDo_NangCap != null) 
+                    txt_TocDo_NangCap.text = nxtSpeed > curSpeed ? $"<color=green>{nxtSpeed}/s</color>" : $"{nxtSpeed}/s";
+            }
+        }
+        else if (watchAI != null)
+        {
+            curRange = watchAI.detectRadius;
+            curSpeed = watchAI.scanInterval;
+
+            if (txt_SatThuong_HienTai != null) txt_SatThuong_HienTai.text = "-";
+            if (txt_TamBan_HienTai != null) txt_TamBan_HienTai.text = $"{curRange}m";
+            if (txt_TocDo_HienTai != null) txt_TocDo_HienTai.text = $"{curSpeed}s";
+
+            if (isMax)
+            {
+                if (chiso_nangcap_obj != null) chiso_nangcap_obj.SetActive(false);
+                if (txt_MaxLevelNotice != null)
+                {
+                    txt_MaxLevelNotice.gameObject.SetActive(true);
+                    txt_MaxLevelNotice.text = "CẤP TỐI ĐA";
+                }
+            }
+            else
+            {
+                if (chiso_nangcap_obj != null) chiso_nangcap_obj.SetActive(true);
+                if (txt_MaxLevelNotice != null) txt_MaxLevelNotice.gameObject.SetActive(false);
+
+                float nxtWatchRange = curRange + 5f; 
+
+                if (txt_SatThuong_NangCap != null) txt_SatThuong_NangCap.text = "-";
+                if (txt_TamBan_NangCap != null) txt_TamBan_NangCap.text = $"<color=green>{nxtWatchRange}m</color>";
+                if (txt_TocDo_NangCap != null) txt_TocDo_NangCap.text = $"{curSpeed}s";
+            }
+        }
     }
 
     public void HideUpgradePanel()
     {
         selectedBuilding = null;
+        upgradeClickCount = 0; 
         if (upgradePanel != null) upgradePanel.SetActive(false);
     }
 
@@ -205,37 +524,37 @@ public class UIManager : Singleton<UIManager>
     {
         if (selectedBuilding == null || selectedBuilding.IsUpgrading) return;
 
+        if (upgradeClickCount == 0)
+        {
+            upgradeClickCount = 1;
+            RefreshUpgradePanel(selectedBuilding); 
+            return;
+        }
+
         UpgradeableBuilding.UpgradeCost cost = selectedBuilding.GetNextUpgradeCost();
         if (ResourceManager.Instance != null && !ResourceManager.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost)) return;
 
         selectedBuilding.StartUpgradeProcess();
+        upgradeClickCount = 0; 
         RefreshUpgradePanel(selectedBuilding);
     }
 
-    /// <summary>
-    /// Xử lý khi nhấn nút Di Chuyển
-    /// </summary>
     public void OnClickMoveButton()
     {
         if (selectedBuilding == null) return;
 
-        // Gọi BuildingSystem chuyển sang trạng thái di chuyển nhà này
         if (BuildingSystem.Ins != null)
         {
             BuildingSystem.Ins.StartMoving(selectedBuilding);
         }
 
-        // Ẩn panel thông tin đi để màn hình thoáng khi di chuyển
         HideUpgradePanel();
     }
-    // ================= BỔ SUNG CÁC HÀM TẮT WINDOWS / PANELS =================
 
-    /// <summary>
-    /// Đóng hoàn toàn Panel Nâng cấp và Di chuyển nhà
-    /// </summary>
     public void CloseUpgradePanel()
     {
         selectedBuilding = null;
+        upgradeClickCount = 0; 
         if (upgradePanel != null)
         {
             upgradePanel.SetActive(false);
@@ -243,9 +562,6 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
-    /// <summary>
-    /// Đóng Menu Xây dựng (Build Menu)
-    /// </summary>
     public void CloseBuildMenu()
     {
         if (buildMenu != null)
@@ -255,9 +571,6 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
-    /// <summary>
-    /// Hàm tắt nhanh tất cả các Panel đang mở trên màn hình (Phục vụ nút bấm ESC hoặc hủy trạng thái)
-    /// </summary>
     public void CloseAllActiveWindows()
     {
         if (upgradePanel != null) upgradePanel.SetActive(false);
@@ -267,6 +580,7 @@ public class UIManager : Singleton<UIManager>
         if (workerStatusPanel != null) workerStatusPanel.SetActive(false);
         
         selectedBuilding = null;
+        upgradeClickCount = 0; 
         Debug.Log("[UIManager] 🧹 Đã dọn dẹp và ẩn toàn bộ giao diện cửa sổ popup.");
     }
 }
