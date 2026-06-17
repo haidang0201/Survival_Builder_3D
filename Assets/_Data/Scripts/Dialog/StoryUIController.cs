@@ -36,7 +36,7 @@ public class StoryUIController : MonoBehaviour
     void Start()
     {
         continueButton.onClick.AddListener(OnContinue);
-        skipButton.onClick.AddListener(SkipAllStory);
+        //skipButton.onClick.AddListener(SkipAllStory);
 
         if (storyLines.Length > 0)
         {
@@ -106,11 +106,11 @@ public class StoryUIController : MonoBehaviour
         }
     }
 
-    public void SkipAllStory()
-    {
-        if (typingCoroutine != null) StopCoroutine(typingCoroutine);
-        EndStory();
-    }
+    // public void SkipAllStory()
+    // {
+    //     if (typingCoroutine != null) StopCoroutine(typingCoroutine);
+    //     EndStory();
+    // }
 
     void EndStory()
     {

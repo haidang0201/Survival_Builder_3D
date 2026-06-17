@@ -34,6 +34,8 @@ public class GuidePanelUI : MonoBehaviour
                 guideText.text =
 @"W / A / S / D : Di chuyển camera
 Chuột trái     : Chọn công trình
+lăn chuột trên: zoom out
+lăn chuột dưới: zoom in
 ESC            : Hủy thao tác";
 
                 //SetSelected(tabStart);
