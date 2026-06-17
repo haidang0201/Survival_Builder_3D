@@ -17,6 +17,11 @@ public class WarehouseStorage : MonoBehaviour
     [Header("Events")]
     public UnityEvent onWarehouseFull;
 
+    [Header("UI Events")]
+    public UnityEvent<int> onWoodChanged;
+    public UnityEvent<int> onRiceChanged;
+    public UnityEvent<int> onStoneChanged;
+
     private int currentWood  = 0;
     private int currentRice  = 0;
     private int currentStone = 0;
@@ -48,6 +53,7 @@ public class WarehouseStorage : MonoBehaviour
         currentWood += canAdd;
 
         SyncWoodToManager(canAdd);
+        onWoodChanged?.Invoke(currentWood);
         CheckAllFull();
 
         Debug.Log($"[WarehouseStorage] +{canAdd} gỗ → {currentWood}/{maxWood}");
@@ -66,6 +72,7 @@ public class WarehouseStorage : MonoBehaviour
         currentRice += canAdd;
 
         SyncRiceToManager(canAdd);
+        onRiceChanged?.Invoke(currentRice);
         CheckAllFull();
 
         Debug.Log($"[WarehouseStorage] +{canAdd} lúa → {currentRice}/{maxRice}");
@@ -84,6 +91,7 @@ public class WarehouseStorage : MonoBehaviour
         currentStone += canAdd;
 
         SyncStoneToManager(canAdd);
+        onStoneChanged?.Invoke(currentStone);
         CheckAllFull();
 
         Debug.Log($"[WarehouseStorage] +{canAdd} đá → {currentStone}/{maxStone}");
@@ -92,7 +100,6 @@ public class WarehouseStorage : MonoBehaviour
 
     // ===== CONSUME (Kitchen lấy ra, xây dựng tốn nguyên liệu, v.v.) =====
 
-    /// <summary>Tiêu thụ lúa. Trả về số lúa thực tế đã lấy ra.</summary>
     public int ConsumeRice(int amount = 1)
     {
         if (IsRiceEmpty)
@@ -104,12 +111,12 @@ public class WarehouseStorage : MonoBehaviour
         int canTake  = Mathf.Min(amount, currentRice);
         currentRice -= canTake;
 
-        SyncRiceToManager(-canTake); // trừ UI
+        SyncRiceToManager(-canTake);
+        onRiceChanged?.Invoke(currentRice);
         Debug.Log($"[WarehouseStorage] -{canTake} lúa (tiêu thụ) → {currentRice}/{maxRice}");
         return canTake;
     }
 
-    /// <summary>Tiêu thụ gỗ. Trả về số gỗ thực tế đã lấy ra.</summary>
     public int ConsumeWood(int amount = 1)
     {
         if (IsWoodEmpty)
@@ -122,11 +129,11 @@ public class WarehouseStorage : MonoBehaviour
         currentWood -= canTake;
 
         SyncWoodToManager(-canTake);
+        onWoodChanged?.Invoke(currentWood);
         Debug.Log($"[WarehouseStorage] -{canTake} gỗ (tiêu thụ) → {currentWood}/{maxWood}");
         return canTake;
     }
 
-    /// <summary>Tiêu thụ đá. Trả về số đá thực tế đã lấy ra.</summary>
     public int ConsumeStone(int amount = 1)
     {
         if (IsStoneEmpty)
@@ -139,6 +146,7 @@ public class WarehouseStorage : MonoBehaviour
         currentStone -= canTake;
 
         SyncStoneToManager(-canTake);
+        onStoneChanged?.Invoke(currentStone);
         Debug.Log($"[WarehouseStorage] -{canTake} đá (tiêu thụ) → {currentStone}/{maxStone}");
         return canTake;
     }
@@ -183,6 +191,10 @@ public class WarehouseStorage : MonoBehaviour
         currentWood  = 0;
         currentRice  = 0;
         currentStone = 0;
+
+        onWoodChanged?.Invoke(currentWood);
+        onRiceChanged?.Invoke(currentRice);
+        onStoneChanged?.Invoke(currentStone);
 
         Debug.Log("[WarehouseStorage] Kho chính đã được làm trống và đồng bộ UI.");
     }

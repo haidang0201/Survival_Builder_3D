@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
-[RequireComponent(typeof(WorkerStamina))]
 public class WorkerCarrier : MonoBehaviour
 {
     public enum CarrierRole  { Universal, WoodOnly, RiceOnly, StoneOnly }
@@ -54,6 +53,7 @@ public class WorkerCarrier : MonoBehaviour
     private float   checkTimer     = 0f;
     private Vector3 anchorPosition;
     private float   stuckTimer     = 0f;
+    private bool    wasResting     = false;
 
     private enum State { Wander, MoveToStorage, MoveToWarehouse }
     private State currentState = State.Wander;
@@ -75,47 +75,43 @@ public class WorkerCarrier : MonoBehaviour
     {
         UpdateAnimation();
 
-        bool isNight = DayNightManager.Ins != null && DayNightManager.Ins.CurrentMode == DayNightManager.Mode.Night;
-
-        if (isNight && !isCarrying)
+        // 1. ƯU TIÊN 1: NẾU ĐANG ÔM HÀNG MÀ GẶP LỆNH CHỜ (Trời tối/Kiệt sức) -> CỐ MÀ NỘP CHO XONG!
+        if (isCarrying)
         {
+            wasResting = false;
+            if (currentState != State.MoveToWarehouse) EnterMoveToWarehouse();
+            HandleMoveToWarehouse();
+            return; // Khóa không cho nhận lệnh gì khác cho đến khi nộp xong
+        }
+
+        // 2. ƯU TIÊN 2: KIỂM TRA QUYỀN LÀM VIỆC TỪ STAMINA
+        // Nếu thể lực yếu hoặc trời đã tối (CanWork == false) -> Dừng mọi hoạt động, nhường quyền điều khiển NavMesh cho Stamina
+        if (stamina != null && !stamina.CanWork())
+        {
+            if (!wasResting)
+            {
+                wasResting = true;
+                ResetCarry(); // Vứt bỏ dự định lấy hàng
+                currentState = State.Wander; // Reset state về cơ bản để hôm sau dậy tính tiếp
+                // TUYỆT ĐỐI KHÔNG DÙNG agent.isStopped = true Ở ĐÂY để Stamina còn dắt nó về nhà!
+            }
             return; 
         }
 
-        if (stamina != null && !stamina.CanWork())
+        // 3. ƯU TIÊN 3: KHỞI ĐỘNG LẠI KHI NGỦ DẬY
+        if (wasResting)
         {
-            if (currentState == State.MoveToWarehouse && isCarrying)
-            {
-                if (agent != null && agent.isOnNavMesh && agent.isStopped && warehousePoint != null)
-                {
-                    agent.isStopped = false;
-                    agent.SetDestination(warehousePoint.position);
-                }
-                CheckStuck();
-            }
-            else
-            {
-                if (!stamina.IsResting)
-                {
-                    if (agent != null && agent.isOnNavMesh && !agent.isStopped)
-                    {
-                        agent.isStopped = true;
-                        agent.ResetPath();
-                    }
-                }
-                return;
-            }
-        }
-        else
-        {
-            CheckStuck();
+            wasResting = false;
+            if (agent != null && agent.isOnNavMesh) agent.ResetPath();
+            EnterWander();
         }
 
+        // 4. ƯU TIÊN 4: VÒNG LẶP CÔNG VIỆC BÌNH THƯỜNG (Ban ngày, Khỏe mạnh, Tay không)
+        CheckStuck();
         switch (currentState)
         {
             case State.Wander:          HandleWander();          break;
             case State.MoveToStorage:   HandleMoveToStorage();   break;
-            case State.MoveToWarehouse: HandleMoveToWarehouse(); break;
         }
     }
 
@@ -141,7 +137,6 @@ public class WorkerCarrier : MonoBehaviour
         targetResourceType = ResourceType.None;
         if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
         
-        // RẢNH RỖI THÌ TẮT TIÊU HAO THỂ LỰC
         stamina?.SetDraining(false); 
     }
 
@@ -197,7 +192,9 @@ public class WorkerCarrier : MonoBehaviour
         {
             maxAmount = stoneStorage.CurrentAmount;
             bestType  = ResourceType.Stone;
-            bestPoint = stoneStoragePoint;
+            
+            // ĐÃ SỬA LỖI Ở DÒNG NÀY: bestPoint = stoneStoragePoint (thay vì riceStoragePoint)
+            bestPoint = stoneStoragePoint; 
         }
 
         if (bestType == ResourceType.None) return false;
@@ -218,7 +215,6 @@ public class WorkerCarrier : MonoBehaviour
         agent.isStopped = false;
         agent.SetDestination(targetStoragePoint.position);
 
-        // BẬT TIÊU HAO THỂ LỰC KHI ĐI LÀM
         stamina?.SetDraining(true); 
     }
 
@@ -272,18 +268,12 @@ public class WorkerCarrier : MonoBehaviour
         agent.isStopped = false;
         agent.SetDestination(warehousePoint.position);
 
-        // BẬT TIÊU HAO THỂ LỰC KHI ĐI LÀM
         stamina?.SetDraining(true); 
     }
 
     void HandleMoveToWarehouse()
     {
-        if (!isCarrying)
-        {
-            if (TrySelectStorageToClear()) EnterMoveToStorage();
-            else EnterWander();
-            return;
-        }
+        CheckStuck(); // Cần kiểm tra kẹt khi đang nộp hàng
 
         if (!HasArrived()) return;
 
@@ -302,8 +292,11 @@ public class WorkerCarrier : MonoBehaviour
         ReturnVisualToPool();
         ResetCarry();
 
-        stamina?.OnResourcesDeposited();
+        // Báo cho Stamina biết đã nộp hàng xong. 
+        // Nếu trời đang đêm, Stamina sẽ ngay lập tức chiếm quyền dắt nó về nhà ngủ!
+        if (stamina != null) stamina.OnResourcesDeposited();
 
+        // Chỉ khi Stamina cho phép làm việc tiếp thì mới đi tìm kho để dọn, nếu không thì đứng chờ Stamina ra lệnh
         if (stamina == null || stamina.CanWork())
         {
             if (TrySelectStorageToClear()) EnterMoveToStorage();
@@ -313,6 +306,7 @@ public class WorkerCarrier : MonoBehaviour
 
     bool HasArrived()
     {
+        if (agent == null || !agent.isOnNavMesh) return false;
         return !agent.pathPending && agent.remainingDistance <= (agent.stoppingDistance + arriveDistance);
     }
 
