@@ -68,6 +68,9 @@ public class UIManager : Singleton<UIManager>
 
     private UpgradeableBuilding selectedBuilding;
 
+    // --- BIẾN ĐẾM SỐ LẦN ẤN NÚT NÂNG CẤP ĐƯỢC THÊM VÀO ---
+    private int upgradeClickCount = 0;
+
     void Start()
     {
         if (houseSelectionPanel != null) houseSelectionPanel.SetActive(true);
@@ -159,6 +162,9 @@ public class UIManager : Singleton<UIManager>
         selectedBuilding = building;
         if (upgradePanel != null) upgradePanel.SetActive(true);
         
+        // Reset lại số lần bấm về 0 khi chọn công trình mới
+        upgradeClickCount = 0;
+        
         RefreshUpgradePanel(building);
     }
 
@@ -181,7 +187,8 @@ public class UIManager : Singleton<UIManager>
         {
             if (isMaxLevel) upgradeButtonText.text = "Đã tối đa";
             else if (isCurrentlyUpgrading) upgradeButtonText.text = "Đang nâng cấp...";
-            else upgradeButtonText.text = "Nâng cấp";
+            // Đổi chữ nút nâng cấp dựa theo trạng thái click
+            else upgradeButtonText.text = (upgradeClickCount == 0) ? "Nâng cấp" : "Xác nhận";
         }
 
         // --- LUỒNG XỬ LÝ HÌNH ẢNH PREVIEW ---
@@ -214,8 +221,16 @@ public class UIManager : Singleton<UIManager>
 
         if (isDefenseTower)
         {
-            if (chiso_panel != null) chiso_panel.SetActive(true);
-            UpdateDetailedTowerStats(building, currentLevelIdx, isMaxLevel);
+            // Chỉ hiện chiso_panel khi tháp đã Max cấp HOẶC khi người chơi bấm nút Nâng cấp lần 1 (upgradeClickCount == 1)
+            if (isMaxLevel || upgradeClickCount == 1)
+            {
+                if (chiso_panel != null) chiso_panel.SetActive(true);
+                UpdateDetailedTowerStats(building, currentLevelIdx, isMaxLevel);
+            }
+            else
+            {
+                if (chiso_panel != null) chiso_panel.SetActive(false);
+            }
         }
         else
         {
@@ -368,6 +383,7 @@ public class UIManager : Singleton<UIManager>
     public void HideUpgradePanel()
     {
         selectedBuilding = null;
+        upgradeClickCount = 0; // Đảm bảo luôn reset đếm khi đóng
         if (upgradePanel != null) upgradePanel.SetActive(false);
     }
 
@@ -375,10 +391,20 @@ public class UIManager : Singleton<UIManager>
     {
         if (selectedBuilding == null || selectedBuilding.IsUpgrading) return;
 
+        // --- LẦN ẤN NÚT ĐẦU TIÊN: CHỈ HIỂN THỊ PANEL CHỈ SỐ ---
+        if (upgradeClickCount == 0)
+        {
+            upgradeClickCount = 1;
+            RefreshUpgradePanel(selectedBuilding); // Gọi hàm để bật chiso_panel lên và đổi chữ thành "Xác nhận"
+            return;
+        }
+
+        // --- LẦN ẤN NÚT THỨ HAI: THỰC HIỆN TIẾN TRÌNH NÂNG CẤP THẬT ---
         UpgradeableBuilding.UpgradeCost cost = selectedBuilding.GetNextUpgradeCost();
         if (ResourceManager.Instance != null && !ResourceManager.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost)) return;
 
         selectedBuilding.StartUpgradeProcess();
+        upgradeClickCount = 0; // Thực hiện xong thì reset về 0
         RefreshUpgradePanel(selectedBuilding);
     }
 
@@ -397,6 +423,7 @@ public class UIManager : Singleton<UIManager>
     public void CloseUpgradePanel()
     {
         selectedBuilding = null;
+        upgradeClickCount = 0; // Reset số lần click khi bấm X tắt panel
         if (upgradePanel != null)
         {
             upgradePanel.SetActive(false);
@@ -422,6 +449,7 @@ public class UIManager : Singleton<UIManager>
         if (workerStatusPanel != null) workerStatusPanel.SetActive(false);
         
         selectedBuilding = null;
+        upgradeClickCount = 0; // Dọn dẹp trạng thái click
         Debug.Log("[UIManager] 🧹 Đã dọn dẹp và ẩn toàn bộ giao diện cửa sổ popup.");
     }
 }

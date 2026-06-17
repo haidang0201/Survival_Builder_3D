@@ -348,6 +348,9 @@ MonoBehaviour:
   burnDamagePerSec: 5
   burnDuration: 3
   fireVfxPrefab: {fileID: 0}
+  animator: {fileID: 0}
+  attackParamName: IsAttack
+  attackRange: 8
 --- !u!114 &-5243861884058211375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -355,7 +358,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2086203743534257054}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
@@ -367,6 +370,8 @@ MonoBehaviour:
   - {fileID: 2086203743534257054}
   - {fileID: 3609327848608022778, guid: 7e43670d742d0604ca4b5984242b6802, type: 3}
   upgradeCosts: []
+  towerLevelScripts: []
+  buildingIcons: []
 --- !u!1 &3195779406867141580
 GameObject:
   m_ObjectHideFlags: 0

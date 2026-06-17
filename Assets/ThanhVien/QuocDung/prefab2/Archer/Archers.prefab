@@ -67,7 +67,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   buildingType: 9
-  buildingName: "Nh\xE0 Ch\xEDnh"
+  buildingName: "Th\xE1p Cung"
   visualModels:
   - {fileID: 4610933376437266070}
   - {fileID: 587683045643588261}
@@ -81,6 +81,14 @@ MonoBehaviour:
     stoneCost: 20
     foodCost: 20
     upgradeDuration: 5
+  towerLevelScripts:
+  - {fileID: 813366308911718622}
+  - {fileID: 1294948367187953023}
+  - {fileID: 5585306065595943594}
+  buildingIcons:
+  - {fileID: 1165255449, guid: 8db0aa9a1b20a2140b6dd474ad1626cb, type: 3}
+  - {fileID: -1377644736, guid: f08e7cb13e2f6124db0b5d6aaef1c64e, type: 3}
+  - {fileID: -314779987, guid: 71caefa6df072fc4983e7f5b6177df5b, type: 3}
 --- !u!65 &4232361120154803848
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -112,15 +120,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 983828037429990509, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.22
+      value: 2.94
       objectReference: {fileID: 0}
     - target: {fileID: 983828037429990509, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.33
+      value: -0.46
       objectReference: {fileID: 0}
     - target: {fileID: 983828037429990509, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.29
+      value: 3.65
       objectReference: {fileID: 0}
     - target: {fileID: 983828037429990509, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: m_LocalRotation.w
@@ -160,7 +168,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1110556030845387871, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: ShapeModule.angle
-      value: 72.79777
+      value: 41.566025
       objectReference: {fileID: 0}
     - target: {fileID: 1110556030845387871, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: InitialModule.size3D
@@ -168,11 +176,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1110556030845387871, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: ShapeModule.radius.value
-      value: 2.0340276
+      value: 1.125169
       objectReference: {fileID: 0}
     - target: {fileID: 1110556030845387871, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: InitialModule.startSize.scalar
-      value: 4
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1110556030845387871, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
+      propertyPath: InitialModule.startSpeed.scalar
+      value: 0.5423523
       objectReference: {fileID: 0}
     - target: {fileID: 1110556030845387871, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
       propertyPath: InitialModule.randomizeRotationDirection
@@ -243,7 +255,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1729469518383531347, guid: 33bacb457992928428909991f4a7df0c, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 1.13
+      value: 1.99
       objectReference: {fileID: 0}
     - target: {fileID: 2495278852803668856, guid: 33bacb457992928428909991f4a7df0c, type: 3}
       propertyPath: m_Name
@@ -406,6 +418,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2086203743534257054, guid: 7c7a3a6c8512d554d8eac43ef8b5adc2, type: 3}
   m_PrefabInstance: {fileID: 1500949772748980539}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1294948367187953023 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 372925140425360452, guid: 7c7a3a6c8512d554d8eac43ef8b5adc2, type: 3}
+  m_PrefabInstance: {fileID: 1500949772748980539}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 587683045643588261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea7187be5dc69d84597e08b4bd8d5453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttackTowerAI
 --- !u!4 &3015430867799533100 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4399040162417895191, guid: 7c7a3a6c8512d554d8eac43ef8b5adc2, type: 3}
@@ -437,7 +460,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
       propertyPath: ShapeModule.radius.value
-      value: 6.58
+      value: 2.2934241
       objectReference: {fileID: 0}
     - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
       propertyPath: InitialModule.startSize.scalar
@@ -652,6 +675,17 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 5807661066353932725, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
   m_PrefabInstance: {fileID: 6098033844259805904}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &813366308911718622 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6911117920321829390, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
+  m_PrefabInstance: {fileID: 6098033844259805904}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4610933376437266070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea7187be5dc69d84597e08b4bd8d5453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttackTowerAI
 --- !u!4 &2874797105008909913 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8306262536278951049, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
@@ -720,11 +754,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 265766274217486953, guid: d3015b7eea383f64d8b81f965cc466e7, type: 3}
       propertyPath: ShapeModule.radius.value
-      value: 3.0434713
+      value: 2.1926622
       objectReference: {fileID: 0}
     - target: {fileID: 265766274217486953, guid: d3015b7eea383f64d8b81f965cc466e7, type: 3}
       propertyPath: InitialModule.startSize.scalar
-      value: 4
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -811,6 +845,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6590621797040573536, guid: 7e43670d742d0604ca4b5984242b6802, type: 3}
   m_PrefabInstance: {fileID: 7994266830661307740}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &5585306065595943594 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -6668800711369750538, guid: 7e43670d742d0604ca4b5984242b6802, type: 3}
+  m_PrefabInstance: {fileID: 7994266830661307740}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6694530329693490598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea7187be5dc69d84597e08b4bd8d5453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttackTowerAI
 --- !u!1 &6694530329693490598 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3609327848608022778, guid: 7e43670d742d0604ca4b5984242b6802, type: 3}
