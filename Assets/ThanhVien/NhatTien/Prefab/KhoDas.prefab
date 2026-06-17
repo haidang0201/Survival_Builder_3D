@@ -83,10 +83,16 @@ MonoBehaviour:
     upgradeDuration: 5
   towerLevelScripts: []
   woodStorageLevels: []
-  stoneStorageLevels: []
+  stoneStorageLevels:
+  - {fileID: 8537162879823074742}
+  - {fileID: 3153805389908810432}
+  - {fileID: 699535281069894357}
   riceStorageLevels: []
   kitchenLevels: []
-  buildingIcons: []
+  buildingIcons:
+  - {fileID: 21300000, guid: e559a17545fcf2944be760f2a90d5ef6, type: 3}
+  - {fileID: 21300000, guid: 17a9222f4c791d441ad85bbfd99849c1, type: 3}
+  - {fileID: 21300000, guid: de789f2fdf186234fb1948862fe30eb6, type: 3}
 --- !u!65 &9199331572309389965
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -160,8 +166,7 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 7557015301310405286, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -176,6 +181,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2506075403489305980, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
   m_PrefabInstance: {fileID: 2208436213206814480}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8537162879823074742 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7557015301310405286, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
+  m_PrefabInstance: {fileID: 2208436213206814480}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1288484455214704858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167f0aa3c49821146a541a1e145d07bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StoneStorage
 --- !u!1001 &3917306978742294457
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -407,6 +423,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
+--- !u!114 &3153805389908810432 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7557015301310405286, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
+  m_PrefabInstance: {fileID: 4835590748054634598}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5503140272006244268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167f0aa3c49821146a541a1e145d07bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StoneStorage
 --- !u!1 &5503140272006244268 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
@@ -621,6 +648,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
+--- !u!114 &699535281069894357 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7557015301310405286, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
+  m_PrefabInstance: {fileID: 7019659095586795635}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7939487704447195065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167f0aa3c49821146a541a1e145d07bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StoneStorage
 --- !u!4 &4876704107623650575 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2506075403489305980, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}

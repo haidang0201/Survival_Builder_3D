@@ -84,9 +84,15 @@ MonoBehaviour:
   towerLevelScripts: []
   woodStorageLevels: []
   stoneStorageLevels: []
-  riceStorageLevels: []
+  riceStorageLevels:
+  - {fileID: 6794248459506429868}
+  - {fileID: 5771019430249226179}
+  - {fileID: 6295268082740247273}
   kitchenLevels: []
-  buildingIcons: []
+  buildingIcons:
+  - {fileID: 21300000, guid: 8586eb5be42379646a755ac3306aabd1, type: 3}
+  - {fileID: 21300000, guid: c8798ba4922b035429b13f11fe56570a, type: 3}
+  - {fileID: 21300000, guid: c56c76b41e04895449928e211a13faff, type: 3}
 --- !u!65 &8011120998058280505
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -440,6 +446,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5893278361766976580, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
   m_PrefabInstance: {fileID: 4874127331202226084}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6295268082740247273 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1511283183772167501, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
+  m_PrefabInstance: {fileID: 4874127331202226084}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7885731219697988287}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f75451aa42dd624aaf867772feb046d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RiceStorage
 --- !u!1 &7885731219697988287 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3372033079561069851, guid: 1bd213838f9c48f4e91dcf666b70f658, type: 3}
@@ -531,6 +548,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5893278361766976580, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
   m_PrefabInstance: {fileID: 4967452333217886862}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &5771019430249226179 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1511283183772167501, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
+  m_PrefabInstance: {fileID: 4967452333217886862}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7648292683164260245}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f75451aa42dd624aaf867772feb046d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RiceStorage
 --- !u!1 &7648292683164260245 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3372033079561069851, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
@@ -610,6 +638,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5893278361766976580, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
   m_PrefabInstance: {fileID: 5382695412889207521}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6794248459506429868 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1511283183772167501, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
+  m_PrefabInstance: {fileID: 5382695412889207521}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7239803366593292282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f75451aa42dd624aaf867772feb046d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RiceStorage
 --- !u!1 &7239803366593292282 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3372033079561069851, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
