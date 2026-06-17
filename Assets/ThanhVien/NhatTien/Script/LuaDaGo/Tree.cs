@@ -9,6 +9,9 @@ public class Tree : MonoBehaviour
     public ObjectPool woodPool;
     public int dropAmount = 3;
 
+    [Header("VFX")]
+    public ParticleSystem chipVFX;
+
     private int currentHealth;
     private bool isOccupied = false;
     private bool isFalling  = false; // Chặn TakeDamage kép trong lúc animation đổ cây
@@ -41,6 +44,13 @@ public class Tree : MonoBehaviour
     }
 
     public void Release() => isOccupied = false;
+
+    public void PlayChopHitVFX()
+    {
+        if (chipVFX == null) return;
+        chipVFX.transform.position = transform.position + Vector3.up * 1f;
+        chipVFX.Emit(8);
+    }
 
     public WoodPickup[] TakeDamage(int damage)
     {
