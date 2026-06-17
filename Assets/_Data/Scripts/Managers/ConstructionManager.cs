@@ -3,7 +3,10 @@ using System.Collections.Generic;
 
 /*
  * ConstructionManager.cs
- * Đã cập nhật: Tích hợp cấu hình chi phí và khấu trừ tài nguyên khi xây 11 loại nhà.
+ * Folder: Scripts/Building/
+ * Dự án: KHẨN HOANG (PENTA DEV)
+ * Người thực hiện: VŨ + ĐĂNG
+ * ĐÃ CẬP NHẬT: Đồng bộ trọn bộ 11 loại công trình chuẩn theo Enum và BuildingSystem.
  */
 
 public class ConstructionManager : Singleton<ConstructionManager>
@@ -28,6 +31,8 @@ public class ConstructionManager : Singleton<ConstructionManager>
     public GameObject stoneMinePrefab;
     public GameObject kitchenPrefab;
     public GameObject foodStoragePrefab;
+    public GameObject stoneStoragePrefab; // MỚI BỔ SUNG: Kho đá thật
+    public GameObject warehousePrefab;    // MỚI BỔ SUNG: Nhà kho tổng thật
 
     [Header("Prefab thật - Phòng thủ")]
     public GameObject watchTowerPrefab;
@@ -103,16 +108,21 @@ public class ConstructionManager : Singleton<ConstructionManager>
     {
         switch (type)
         {
+            // Nhóm Dân sự
             case BuildingType.House: return housePrefab;
             case BuildingType.WoodCutter: return woodCutterPrefab;
             case BuildingType.StoneMine: return stoneMinePrefab;
             case BuildingType.Kitchen: return kitchenPrefab;
             case BuildingType.FoodStorage: return foodStoragePrefab;
+            case BuildingType.StoneStorage: return stoneStoragePrefab; // MỚI BỔ SUNG
+            case BuildingType.Warehouse: return warehousePrefab;       // MỚI BỔ SUNG
 
+            // Nhóm Phòng thủ
             case BuildingType.WatchTower: return watchTowerPrefab;
             case BuildingType.ArcherTower: return archerTowerPrefab;
             case BuildingType.Cannon: return cannonPrefab;
 
+            // Nhóm Quân sự
             case BuildingType.BarracksMelee: return barracksMeleePrefab;
             case BuildingType.BarracksArcher: return barracksArcherPrefab;
             case BuildingType.BarracksSpear: return barracksSpearPrefab;
