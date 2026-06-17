@@ -12,19 +12,71 @@ public class WoodStorage : MonoBehaviour
     [Header("Storage Settings")]
     public int maxCapacity = 20;
 
+    [Header("Penta Dev - Civil Workers Setup")]
+    [Tooltip("Cấu hình số lượng worker tối đa qua từng level")]
+    public int[] maxWorkersLevels = new int[] { 2, 4, 6 };
+    public int currentWorkersCount = 0;
+
+    [Header("Spawn Settings")]
+    public GameObject workerPrefab;
+    public Transform spawnPoint;
+    [Tooltip("Số worker sẽ spawn tự động tương ứng khi lên từng level")]
+    public int[] spawnAmountPerLevel = new int[] { 1, 1, 2 };
+
     [Header("Events")]
     public UnityEvent      onStorageFull;
     public UnityEvent<int> onWoodAdded; // truyền currentAmount
+    public UnityEvent<int, int> onWorkersChanged; // truyền (current, max)
+    public UnityEvent<int> onCapacityChanged; // truyền maxCapacity mới
 
     private int currentAmount = 0;
+    private int currentLevelIndex = 0;
 
     // ===== PROPERTIES =====
     public int  CurrentAmount => currentAmount;
     public int  MaxCapacity   => maxCapacity;
     public bool IsFull        => currentAmount >= maxCapacity;
     public bool IsEmpty       => currentAmount <= 0;
+    public int  MaxWorkers    => (maxWorkersLevels != null && currentLevelIndex < maxWorkersLevels.Length) ? maxWorkersLevels[currentLevelIndex] : 0;
 
     // ===== PUBLIC API =====
+
+    /// <summary>
+    /// Hàm nhận diện nâng cấp từ UpgradeableBuilding để đồng bộ chỉ số dân sự
+    /// </summary>
+    public void SetupLevel(int levelIndex)
+    {
+        currentLevelIndex = levelIndex;
+        
+        // 1. Cập nhật sức chứa worker theo cấu hình mảng tùy chỉnh
+        if (maxWorkersLevels != null && levelIndex < maxWorkersLevels.Length)
+        {
+            onWorkersChanged?.Invoke(currentWorkersCount, maxWorkersLevels[levelIndex]);
+        }
+
+        // 2. Tự động kích hoạt luồng sinh worker mới từ Prefab
+        SpawnWorkersForLevel(levelIndex);
+    }
+
+    private void SpawnWorkersForLevel(int levelIndex)
+    {
+        if (workerPrefab == null || spawnAmountPerLevel == null || levelIndex >= spawnAmountPerLevel.Length) return;
+
+        int amountToSpawn = spawnAmountPerLevel[levelIndex];
+        Transform point = spawnPoint != null ? spawnPoint : transform;
+
+        for (int i = 0; i < amountToSpawn; i++)
+        {
+            if (currentWorkersCount >= MaxWorkers) break;
+
+            GameObject newWorker = Instantiate(workerPrefab, point.position, point.rotation);
+            currentWorkersCount++;
+            
+            Debug.Log($"[WoodStorage Spawn] Đã tạo thành công worker mới: {newWorker.name} tại Cấp {levelIndex + 1}");
+        }
+
+        onWorkersChanged?.Invoke(currentWorkersCount, MaxWorkers);
+    }
 
     public int AddWood(int amount = 1)
     {
@@ -75,14 +127,7 @@ public class WoodStorage : MonoBehaviour
     // ===== GIZMO =====
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = IsFull ? Color.red : Color.green;
+        Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, 1.5f);
-
-#if UNITY_EDITOR
-        UnityEditor.Handles.Label(
-            transform.position + Vector3.up * 2f,
-            $"Gỗ tạm: {currentAmount}/{maxCapacity}"
-        );
-#endif
     }
 }
