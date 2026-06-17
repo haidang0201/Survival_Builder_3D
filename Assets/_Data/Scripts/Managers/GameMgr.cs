@@ -17,6 +17,12 @@ public class GameMgr : Singleton<GameMgr>
     [Header("Scene Names")]
 
 
+    [Header("Main Game References")]
+    public GameObject questUI;
+    public QuestManager questManager;
+    //public GameObject buildingSystem;   // hệ thống xây dựng (ban ngày)
+    //public GameObject defenseSystem;    // hệ thống phòng thủ (ban đêm)
+
     public GameState CurrentState { get; private set; } = GameState.Boot;
 
     public event Action<GameState> OnGameStateChanged;
@@ -38,6 +44,8 @@ public class GameMgr : Singleton<GameMgr>
         var manager = DayNightManager.Ins;
         manager.OnDayStart += HandleDayStart;
         manager.OnNightStart += HandleNightStart;
+
+        if (questUI != null) questUI.SetActive(false);
     }
 
     public void SetState(GameState newState)
@@ -63,6 +71,27 @@ public class GameMgr : Singleton<GameMgr>
         SetState(GameState.Playing);
         SceneManager.LoadScene(1);
     }
+
+    /// <summary>
+    /// Gọi từ StoryUIController.onStoryFinished sau khi xem hết cutscene mở đầu.
+    /// </summary>
+    public void StartMainGame()
+    {
+        Time.timeScale = 1f;
+        SetState(GameState.Playing);
+
+        if (questUI != null) questUI.SetActive(true);
+
+        if (questManager != null)
+            questManager.SetQuest("Tiêu diệt bọn cướp, mở rộng lãnh thổ, mang lại bình yên");
+
+        // Vào game sẽ bắt đầu bằng ban ngày (xây dựng), tắt phòng thủ
+        //if (buildingSystem != null) buildingSystem.SetActive(true);
+        // if (defenseSystem != null) defenseSystem.SetActive(false);
+
+        Debug.Log("Main game started after story intro.");
+    }
+
 
     public void PauseGame()
     {
@@ -90,15 +119,20 @@ public class GameMgr : Singleton<GameMgr>
     {
         Application.Quit();
     }
+
     void HandleDayStart()
     {
         Debug.Log("Bắt đầu ngày: bật harvesting, tắt defense");
-        // Chuyển state worker, bật building interaction
+
+        //if (buildingSystem != null) buildingSystem.SetActive(true);
+        //if (defenseSystem != null) defenseSystem.SetActive(false);
     }
 
     void HandleNightStart()
     {
         Debug.Log("Bắt đầu đêm: tắt harvesting, bật defense");
-        // Chuyển state worker sang combat, bật defense building
+
+        //if (buildingSystem != null) buildingSystem.SetActive(false);
+        // if (defenseSystem != null) defenseSystem.SetActive(true);
     }
 }
