@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Events;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class StoryUIController : MonoBehaviour
 {
@@ -115,5 +116,9 @@ public class StoryUIController : MonoBehaviour
     {
         storyPanel.SetActive(false);
         onStoryFinished?.Invoke();
+    }
+    public void LoadSceneGamePlay()
+    {
+        SceneManager.LoadScene(2);
     }
 }
