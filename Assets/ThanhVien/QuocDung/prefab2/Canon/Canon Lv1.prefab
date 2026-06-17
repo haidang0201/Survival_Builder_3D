@@ -128,6 +128,7 @@ GameObject:
   - component: {fileID: 6402464722327007131}
   - component: {fileID: -7636250480985751170}
   - component: {fileID: 5490868277580300845}
+  - component: {fileID: 5730462662123160155}
   m_Layer: 0
   m_Name: Canon Lv1
   m_TagString: Untagged
@@ -272,7 +273,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1658031086135343822}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
@@ -306,6 +307,29 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5730462662123160155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658031086135343822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  buildingType: 10
+  validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
+  invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 8192
+  snapStep: 1
+  checkYSize: 2
 --- !u!1 &2406723649338239675
 GameObject:
   m_ObjectHideFlags: 0
