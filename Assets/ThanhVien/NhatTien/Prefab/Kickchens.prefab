@@ -85,8 +85,14 @@ MonoBehaviour:
   woodStorageLevels: []
   stoneStorageLevels: []
   riceStorageLevels: []
-  kitchenLevels: []
-  buildingIcons: []
+  kitchenLevels:
+  - {fileID: 7218589756144884198}
+  - {fileID: 7756106936144556122}
+  - {fileID: 3918596492548565356}
+  buildingIcons:
+  - {fileID: 21300000, guid: cf666747e6d64c94baa691c23aca7d8d, type: 3}
+  - {fileID: 21300000, guid: ac4ddce8f916b2145b3e0d54f6f795c4, type: 3}
+  - {fileID: 21300000, guid: c09ee040e5dfac64d9d9d6fd13526400, type: 3}
 --- !u!65 &4620375690299724751
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -417,6 +423,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 686541185277320091, guid: 56b1579b5d9023b44bbf08275d2fc8b2, type: 3}
   m_PrefabInstance: {fileID: 1354990113554287405}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7756106936144556122 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8750175760792632183, guid: 56b1579b5d9023b44bbf08275d2fc8b2, type: 3}
+  m_PrefabInstance: {fileID: 1354990113554287405}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966650021494427830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ac4febf9aec79443a2314874f0dcc8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kitchen
 --- !u!1001 &2108611914585940625
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -500,6 +517,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 201752955728232737, guid: d8c5a9411a639704aaf418fb0349d13d, type: 3}
   m_PrefabInstance: {fileID: 2108611914585940625}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7218589756144884198 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8750175760792632183, guid: d8c5a9411a639704aaf418fb0349d13d, type: 3}
+  m_PrefabInstance: {fileID: 2108611914585940625}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1496425220857952522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ac4febf9aec79443a2314874f0dcc8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kitchen
 --- !u!1001 &5696904827933938203
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -577,6 +605,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c96bfcd32c326d74d8c81266104fb81e, type: 3}
+--- !u!114 &3918596492548565356 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8750175760792632183, guid: c96bfcd32c326d74d8c81266104fb81e, type: 3}
+  m_PrefabInstance: {fileID: 5696904827933938203}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5082432386966522240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ac4febf9aec79443a2314874f0dcc8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Kitchen
 --- !u!1 &5082432386966522240 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 686541185277320091, guid: c96bfcd32c326d74d8c81266104fb81e, type: 3}
