@@ -33,5 +33,7 @@ public class BuildingState
     public float buildProgress;     // Tiến độ xây: 0.0 → 1.0
     public bool isBuilt;            // Đã xây xong chưa
     public bool isOccupied;         // Có worker đang làm việc không
+    public int currentWorkers;      // Số worker hiện tại của công trình
+    public int maxWorkers;          // Số worker tối đa của công trình
     public int level;               // Cấp độ công trình (dùng khi có nâng cấp)
 }
