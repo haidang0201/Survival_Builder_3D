@@ -39,9 +39,9 @@ public class ResourceTree : MonoBehaviour
 
         // 1. Thu hoạch gỗ dựa trên cấp độ cây hiện tại
         int woodReward = GetWoodAmount(currentStage);
-        if (ResourceManager.Instance != null)
+        if (DialogNPC.Instance != null)
         {
-            ResourceManager.Instance.Wood += woodReward;
+            DialogNPC.Instance.Wood += woodReward;
         }
         Debug.Log($"[TREE_SYSTEM] Đã chặt! Nhận {woodReward} gỗ từ [{currentStage}].");
 

@@ -311,15 +311,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b1783b3fe40e2664a823bcd1f70fa24d, type: 2}
+  m_sharedMaterial: {fileID: 5407650111654843092, guid: b1783b3fe40e2664a823bcd1f70fa24d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 0.9098039, g: 0.8352941, b: 0.627451, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -724,15 +724,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: Loading...
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b1783b3fe40e2664a823bcd1f70fa24d, type: 2}
+  m_sharedMaterial: {fileID: 5407650111654843092, guid: b1783b3fe40e2664a823bcd1f70fa24d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4293141780
-  m_fontColor: {r: 0.079309314, g: 0.14495549, b: 0.89433956, a: 1}
+  m_fontColor: {r: 0.9098039, g: 0.8352941, b: 0.627451, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -937,15 +937,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b1783b3fe40e2664a823bcd1f70fa24d, type: 2}
+  m_sharedMaterial: {fileID: 5407650111654843092, guid: b1783b3fe40e2664a823bcd1f70fa24d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 0.9098039, g: 0.8352941, b: 0.627451, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1087,15 +1087,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b1783b3fe40e2664a823bcd1f70fa24d, type: 2}
+  m_sharedMaterial: {fileID: 5407650111654843092, guid: b1783b3fe40e2664a823bcd1f70fa24d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 0.9098039, g: 0.8352941, b: 0.627451, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1281,7 +1281,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HUDController
   goldText: {fileID: 1368005950208060403}
   woodText: {fileID: 453065475262097428}
-  healthFill: {fileID: 4123021325448730247}
+  stoneText: {fileID: 0}
+  foodText: {fileID: 0}
   floatingTextPrefab: {fileID: 4435958920574013911}
   floatingTextParent: {fileID: 7029355908281148968}
 --- !u!114 &1543132223411133718
@@ -1323,6 +1324,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::JsonDataManager
   saveFileName: builder.json
+  configFileName: building_config.json
 --- !u!1 &6716220131984735789
 GameObject:
   m_ObjectHideFlags: 0
