@@ -151,7 +151,7 @@ public class EnemyAI : MonoBehaviour
         // Auto-find villageCenter using tag "Main" if null
         if (villageCenter == null)
         {
-            GameObject mainObj = GameObject.FindGameObjectWithTag("Main");
+            GameObject mainObj = FindGameObjectWithSafeTag("Main");
             if (mainObj != null)
             {
                 villageCenter = mainObj.transform;
@@ -203,7 +203,7 @@ public class EnemyAI : MonoBehaviour
                 // Determine if in range based on target type
                 float actualAttackRange = CurrentAttackRange;
                 if (attackType == EnemyAttackType.Melee && 
-                    (target.CompareTag("Main") || IsMainHouse(target.gameObject) || target.CompareTag("Tower") || IsTower(target.gameObject)))
+                    (SafeCompareTag(target, "Main") || IsMainHouse(target.gameObject) || SafeCompareTag(target, "Tower") || IsTower(target.gameObject)))
                 {
                     // Stand closer to Main house or Tower (1.0m is very close, right at the boundary)
                     actualAttackRange = 1.0f;
@@ -244,6 +244,49 @@ public class EnemyAI : MonoBehaviour
         UpdateAnimationState();
     }
 
+    private static IDamageable GetDamageable(GameObject go)
+    {
+        if (go == null) return null;
+        
+        // 1. Thử tìm trong chính nó và các cha
+        IDamageable dmg = go.GetComponentInParent<IDamageable>();
+        if (dmg != null) return dmg;
+
+        // 2. Thử tìm trong các con
+        dmg = go.GetComponentInChildren<IDamageable>();
+        if (dmg != null) return dmg;
+
+        // 3. Thử đi lên cha tối đa 3 cấp (tránh chạm tới Root Folder lớn như "Main Game" hay Scene Root)
+        Transform curr = go.transform.parent;
+        int depth = 0;
+        while (curr != null && depth < 3)
+        {
+            if (curr.parent == null) break;
+            
+            try
+            {
+                if (curr.CompareTag("Main") || curr.CompareTag("Player"))
+                {
+                    break;
+                }
+            }
+            catch {}
+
+            string nameLower = curr.name.ToLower();
+            if (nameLower.Contains("game") || nameLower.Contains("manager"))
+            {
+                break;
+            }
+
+            IDamageable parentChildDmg = curr.GetComponentInChildren<IDamageable>();
+            if (parentChildDmg != null) return parentChildDmg;
+            curr = curr.parent;
+            depth++;
+        }
+
+        return null;
+    }
+
     private static void CleanupTargetAssignments()
     {
         List<Transform> toRemove = new List<Transform>();
@@ -254,7 +297,7 @@ public class EnemyAI : MonoBehaviour
                 toRemove.Add(kvp.Key);
                 continue;
             }
-            IDamageable damageable = kvp.Key.GetComponentInParent<IDamageable>();
+            IDamageable damageable = GetDamageable(kvp.Key.gameObject);
             if (damageable != null && damageable.CurrentHealth <= 0f)
             {
                 toRemove.Add(kvp.Key);
@@ -279,7 +322,7 @@ public class EnemyAI : MonoBehaviour
         }
 
         // Assign new target (except if it's the main house/villageCenter, multiple enemies CAN target Main)
-        if (newTarget != null && newTarget != villageCenter && !newTarget.CompareTag("Main"))
+        if (newTarget != null && newTarget != villageCenter && !SafeCompareTag(newTarget, "Main"))
         {
             targetAssignments[newTarget] = this;
         }
@@ -290,12 +333,26 @@ public class EnemyAI : MonoBehaviour
         // 1. Giữ mục tiêu hiện tại (đánh đến cùng) cho đến khi mục tiêu chết hoặc biến mất
         if (chaseTarget != null && chaseTarget.gameObject.activeInHierarchy)
         {
-            bool isCurrentTargetMain = chaseTarget.CompareTag("Main") || chaseTarget == villageCenter || IsMainHouse(chaseTarget.gameObject);
+            bool isCurrentTargetMain = SafeCompareTag(chaseTarget, "Main") || chaseTarget == villageCenter || IsMainHouse(chaseTarget.gameObject);
             
-            // Nếu muốn test đánh trực tiếp Main nhưng target hiện tại không phải Main, ta bỏ qua stickiness để quét lại
-            if (!attackMainDirectly || isCurrentTargetMain)
+            // Nếu mục tiêu hiện tại là Main hoặc Tower, ta cho phép quét lại để ưu tiên đánh mục tiêu có độ ưu tiên cao hơn (Soldier > Tower > Main)
+            bool shouldStick = true;
+            if (isCurrentTargetMain)
             {
-                IDamageable damageable = chaseTarget.GetComponentInParent<IDamageable>();
+                shouldStick = false;
+            }
+            else
+            {
+                bool isCurrentTargetTower = SafeCompareTag(chaseTarget, "Tower") || IsTower(chaseTarget.gameObject);
+                if (isCurrentTargetTower)
+                {
+                    shouldStick = false;
+                }
+            }
+
+            if (shouldStick && (!attackMainDirectly || isCurrentTargetMain))
+            {
+                IDamageable damageable = GetDamageable(chaseTarget.gameObject);
                 bool isAlive = damageable == null || damageable.CurrentHealth > 0f;
 
                 if (isAlive)
@@ -312,8 +369,111 @@ public class EnemyAI : MonoBehaviour
 
         CleanupTargetAssignments();
 
-        float searchRadius = chaseTriggerRange * 3f;
+        float searchRadius = Mathf.Max(chaseTriggerRange * 5f, 40f);
+        
+        // Tạo tập hợp các đối tượng quét thấy, kết hợp OverlapSphere và FindObjectsOfType trực tiếp để đề phòng không có Collider
+        List<GameObject> detectedObjects = new List<GameObject>();
+
+        // 1. Quét bằng Physics.OverlapSphere
         Collider[] colliders = Physics.OverlapSphere(transform.position, searchRadius);
+        foreach (var col in colliders)
+        {
+            if (col != null && col.gameObject.activeInHierarchy && !detectedObjects.Contains(col.gameObject))
+            {
+                detectedObjects.Add(col.gameObject);
+            }
+        }
+
+        // 2. Dự phòng: Quét bằng các component để đối phó triệt để trường hợp thiếu Collider
+        try
+        {
+            UnitController[] allUnits = FindObjectsOfType<UnitController>();
+            foreach (var unit in allUnits)
+            {
+                if (unit != null && unit.gameObject.activeInHierarchy)
+                {
+                    float dist = Vector3.Distance(transform.position, unit.transform.position);
+                    if (dist <= searchRadius && !detectedObjects.Contains(unit.gameObject))
+                    {
+                        detectedObjects.Add(unit.gameObject);
+                    }
+                }
+            }
+        }
+        catch {}
+
+        try
+        {
+            HPSoldier[] allHPSoldiers = FindObjectsOfType<HPSoldier>();
+            foreach (var hpSoldier in allHPSoldiers)
+            {
+                if (hpSoldier != null && hpSoldier.gameObject.activeInHierarchy)
+                {
+                    float dist = Vector3.Distance(transform.position, hpSoldier.transform.position);
+                    if (dist <= searchRadius && !detectedObjects.Contains(hpSoldier.gameObject))
+                    {
+                        detectedObjects.Add(hpSoldier.gameObject);
+                    }
+                }
+            }
+        }
+        catch {}
+
+        try
+        {
+            WatchTowerAI[] allWatchTowers = FindObjectsOfType<WatchTowerAI>();
+            foreach (var tower in allWatchTowers)
+            {
+                if (tower != null && tower.gameObject.activeInHierarchy)
+                {
+                    float dist = Vector3.Distance(transform.position, tower.transform.position);
+                    if (dist <= searchRadius && !detectedObjects.Contains(tower.gameObject))
+                    {
+                        detectedObjects.Add(tower.gameObject);
+                    }
+                }
+            }
+        }
+        catch {}
+
+        try
+        {
+            AttackTowerAI[] allAttackTowers = FindObjectsOfType<AttackTowerAI>();
+            foreach (var tower in allAttackTowers)
+            {
+                if (tower != null && tower.gameObject.activeInHierarchy)
+                {
+                    float dist = Vector3.Distance(transform.position, tower.transform.position);
+                    if (dist <= searchRadius && !detectedObjects.Contains(tower.gameObject))
+                    {
+                        detectedObjects.Add(tower.gameObject);
+                    }
+                }
+            }
+        }
+        catch {}
+
+        try
+        {
+            DefenceTowerAI[] allDefenceTowers = FindObjectsOfType<DefenceTowerAI>();
+            foreach (var tower in allDefenceTowers)
+            {
+                if (tower != null && tower.gameObject.activeInHierarchy)
+                {
+                    float dist = Vector3.Distance(transform.position, tower.transform.position);
+                    if (dist <= searchRadius && !detectedObjects.Contains(tower.gameObject))
+                    {
+                        detectedObjects.Add(tower.gameObject);
+                    }
+                }
+            }
+        }
+        catch {}
+
+        if (debugLogs)
+        {
+            Debug.Log($"[EnemyAI] {gameObject.name} quét mục tiêu trong bán kính {searchRadius}. Tìm thấy {detectedObjects.Count} đối tượng hợp lệ.");
+        }
 
         Transform selected = null;
 
@@ -323,17 +483,16 @@ public class EnemyAI : MonoBehaviour
             Transform bestMain = null;
             float minMainDist = float.MaxValue;
 
-            foreach (var col in colliders)
+            foreach (var go in detectedObjects)
             {
-                if (col == null || !col.gameObject.activeInHierarchy) continue;
-                GameObject go = col.gameObject;
+                if (go == null || !go.activeInHierarchy) continue;
 
                 if (IsMainHouse(go))
                 {
-                    IDamageable damageable = go.GetComponentInParent<IDamageable>();
+                    IDamageable damageable = GetDamageable(go);
                     if (damageable != null && damageable.CurrentHealth <= 0f) continue;
 
-                    Transform t = GetEntityRoot(go, "Main");
+                    Transform t = GetMainHouseRoot(go);
                     if (t == null) continue;
 
                     float dist = GetDistanceToCollider(go);
@@ -370,36 +529,52 @@ public class EnemyAI : MonoBehaviour
         Transform bestMainInScan = null;
         float minMainDistInScan = float.MaxValue;
 
-        foreach (var col in colliders)
+        foreach (var go in detectedObjects)
         {
-            if (col == null || !col.gameObject.activeInHierarchy) continue;
-            GameObject go = col.gameObject;
+            if (go == null || !go.activeInHierarchy) continue;
 
             // Kiểm tra xem mục tiêu có còn sống không
-            IDamageable damageable = go.GetComponentInParent<IDamageable>();
-            if (damageable != null && damageable.CurrentHealth <= 0f) continue;
+            IDamageable damageable = GetDamageable(go);
+            if (damageable != null && damageable.CurrentHealth <= 0f)
+            {
+                if (debugLogs) Debug.Log($"[EnemyAI] Bỏ qua mục tiêu đã chết {go.name} (HP: {damageable.CurrentHealth})");
+                continue;
+            }
 
             if (IsSoldier(go))
             {
-                Transform t = GetEntityRoot(go, "Soldier");
-                if (t != null && !aliveSoldiers.Contains(t))
+                Transform t = GetSoldierRoot(go);
+                if (t != null)
                 {
-                    aliveSoldiers.Add(t);
+                    if (debugLogs) Debug.Log($"[EnemyAI] Phát hiện Soldier sống: {go.name} -> root: {t.name}");
+                    if (!aliveSoldiers.Contains(t))
+                    {
+                        aliveSoldiers.Add(t);
+                    }
+                }
+                else
+                {
+                    if (debugLogs) Debug.LogWarning($"[EnemyAI] {go.name} được nhận dạng là Soldier nhưng GetSoldierRoot trả về null!");
                 }
             }
             else if (IsTower(go))
             {
-                Transform t = GetEntityRoot(go, "Tower");
-                if (t != null && !aliveTowers.Contains(t))
+                Transform t = GetTowerRoot(go);
+                if (t != null)
                 {
-                    aliveTowers.Add(t);
+                    if (debugLogs) Debug.Log($"[EnemyAI] Phát hiện Tower sống: {go.name} -> root: {t.name}");
+                    if (!aliveTowers.Contains(t))
+                    {
+                        aliveTowers.Add(t);
+                    }
                 }
             }
             else if (IsMainHouse(go))
             {
-                Transform t = GetEntityRoot(go, "Main");
+                Transform t = GetMainHouseRoot(go);
                 if (t != null)
                 {
+                    if (debugLogs) Debug.Log($"[EnemyAI] Phát hiện Main House: {go.name} -> root: {t.name}");
                     float dist = GetDistanceToCollider(go);
                     if (dist < minMainDistInScan)
                     {
@@ -435,6 +610,7 @@ public class EnemyAI : MonoBehaviour
             if (bestUnoccupiedSoldier != null)
             {
                 selected = bestUnoccupiedSoldier;
+                if (debugLogs) Debug.Log($"[EnemyAI] Chọn Soldier chưa bị chiếm: {selected.name}");
             }
             else
             {
@@ -449,6 +625,7 @@ public class EnemyAI : MonoBehaviour
                         selected = soldier;
                     }
                 }
+                if (debugLogs && selected != null) Debug.Log($"[EnemyAI] Chọn Soldier đã bị chiếm (hội đồng): {selected.name}");
             }
         }
         // B. Nếu hết Soldier nhưng còn bất kỳ Tower nào sống, CHỈ chọn Tower
@@ -474,6 +651,7 @@ public class EnemyAI : MonoBehaviour
             if (bestUnoccupiedTower != null)
             {
                 selected = bestUnoccupiedTower;
+                if (debugLogs) Debug.Log($"[EnemyAI] Chọn Tower chưa bị chiếm: {selected.name}");
             }
             else
             {
@@ -488,6 +666,7 @@ public class EnemyAI : MonoBehaviour
                         selected = tower;
                     }
                 }
+                if (debugLogs && selected != null) Debug.Log($"[EnemyAI] Chọn Tower đã bị chiếm (hội đồng): {selected.name}");
             }
         }
         // C. Nếu không còn Soldier và Tower nào, tiến hành đánh thẳng vào Main
@@ -496,13 +675,14 @@ public class EnemyAI : MonoBehaviour
             if (bestMainInScan != null)
             {
                 selected = bestMainInScan;
+                if (debugLogs) Debug.Log($"[EnemyAI] Chọn Main House phát hiện trong tầm quét: {selected.name}");
             }
             else
             {
                 // Fallback cuối cùng về villageCenter
                 if (villageCenter == null)
                 {
-                    GameObject mainObj = GameObject.FindGameObjectWithTag("Main");
+                    GameObject mainObj = FindGameObjectWithSafeTag("Main");
                     if (mainObj != null)
                     {
                         villageCenter = mainObj.transform;
@@ -511,10 +691,11 @@ public class EnemyAI : MonoBehaviour
 
                 if (villageCenter != null)
                 {
-                    IDamageable damageable = villageCenter.GetComponentInParent<IDamageable>();
+                    IDamageable damageable = GetDamageable(villageCenter.gameObject);
                     if (damageable == null || damageable.CurrentHealth > 0f)
                     {
                         selected = villageCenter;
+                        if (debugLogs) Debug.Log($"[EnemyAI] Fallback về Village Center mặc định: {selected.name}");
                     }
                 }
             }
@@ -530,7 +711,7 @@ public class EnemyAI : MonoBehaviour
 
         if (attackType == EnemyAttackType.Melee)
         {
-            IDamageable damageable = target.GetComponentInParent<IDamageable>();
+            IDamageable damageable = GetDamageable(target.gameObject);
             if (damageable != null)
             {
                 damageable.TakeDamage(attackDamage, target.position);
@@ -564,7 +745,7 @@ public class EnemyAI : MonoBehaviour
             }
             else
             {
-                IDamageable damageable = target.GetComponentInParent<IDamageable>();
+                IDamageable damageable = GetDamageable(target.gameObject);
                 if (damageable != null)
                 {
                     damageable.TakeDamage(attackDamage, target.position);
@@ -573,22 +754,176 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    private static Transform GetEntityRootByComponent<T>(GameObject go) where T : Component
+    {
+        if (go == null) return null;
+        
+        // 1. Thử tìm trong chính nó và các cha
+        T comp = go.GetComponentInParent<T>();
+        if (comp != null) return comp.transform;
+
+        // 2. Thử tìm trong các con trực tiếp hoặc gián tiếp
+        T childComp = go.GetComponentInChildren<T>();
+        if (childComp != null) return childComp.transform;
+        
+        // 3. Thử đi lên cha tối đa 3 cấp và tìm trong các con
+        Transform curr = go.transform.parent;
+        int depth = 0;
+        while (curr != null && depth < 3)
+        {
+            if (curr.parent == null) break;
+
+            if (SafeCompareTag(curr, "Main") || SafeCompareTag(curr, "Player"))
+            {
+                break;
+            }
+
+            if (curr.name.ToLower().Contains("main") || curr.name.ToLower().Contains("game") || curr.name.ToLower().Contains("manager"))
+            {
+                break;
+            }
+
+            T subChildComp = curr.GetComponentInChildren<T>();
+            if (subChildComp != null) return subChildComp.transform;
+            curr = curr.parent;
+            depth++;
+        }
+        
+        return null;
+    }
+
+    private Transform GetSoldierRoot(GameObject go)
+    {
+        if (go == null) return null;
+
+        // 1. Tìm tag "Soldier" hoặc "soldier" hoặc "Player" hoặc "player"
+        Transform t = GetEntityRoot(go, "Soldier");
+        if (t != null) return t;
+
+        t = GetEntityRoot(go, "soldier");
+        if (t != null) return t;
+
+        t = GetEntityRoot(go, "Player");
+        if (t != null) return t;
+
+        t = GetEntityRoot(go, "player");
+        if (t != null) return t;
+
+        // 2. Tìm theo component
+        Transform unitControllerTrans = GetEntityRootByComponent<UnitController>(go);
+        if (unitControllerTrans != null) return unitControllerTrans;
+
+        Transform hpSoldierTrans = GetEntityRootByComponent<HPSoldier>(go);
+        if (hpSoldierTrans != null) return hpSoldierTrans;
+
+        Transform playerMoveTrans = GetEntityRootByComponent<PlayerMove>(go);
+        if (playerMoveTrans != null) return playerMoveTrans;
+
+        // 3. Fallback theo tên đối tượng
+        Transform curr = go.transform;
+        while (curr != null)
+        {
+            string nameLower = curr.name.ToLower();
+            if (nameLower.Contains("soldier") || nameLower.Contains("knight") || nameLower.Contains("archer") || nameLower.Contains("player"))
+            {
+                if (!nameLower.Contains("manager") && 
+                    !nameLower.Contains("pool") && 
+                    !nameLower.Contains("game") &&
+                    !nameLower.Contains("camera") &&
+                    !nameLower.Contains("light"))
+                {
+                    return curr;
+                }
+            }
+            curr = curr.parent;
+        }
+
+        return null;
+    }
+
+    private Transform GetTowerRoot(GameObject go)
+    {
+        if (go == null) return null;
+
+        // 1. Tìm tag "Tower" hoặc "tower"
+        Transform t = GetEntityRoot(go, "Tower");
+        if (t != null) return t;
+
+        t = GetEntityRoot(go, "tower");
+        if (t != null) return t;
+
+        // 2. Tìm theo component
+        Transform watchTowerTrans = GetEntityRootByComponent<WatchTowerAI>(go);
+        if (watchTowerTrans != null) return watchTowerTrans;
+
+        Transform attackTowerTrans = GetEntityRootByComponent<AttackTowerAI>(go);
+        if (attackTowerTrans != null) return attackTowerTrans;
+
+        Transform defenceTowerTrans = GetEntityRootByComponent<DefenceTowerAI>(go);
+        if (defenceTowerTrans != null) return defenceTowerTrans;
+
+        Transform hpTowerTrans = GetEntityRootByComponent<HPTower>(go);
+        if (hpTowerTrans != null) return hpTowerTrans;
+
+        // 3. Fallback theo tên đối tượng
+        Transform curr = go.transform;
+        while (curr != null)
+        {
+            string nameLower = curr.name.ToLower();
+            if (nameLower.Contains("tower") || nameLower.Contains("canon") || nameLower.Contains("watchtower"))
+            {
+                if (!nameLower.Contains("manager") && 
+                    !nameLower.Contains("pool") && 
+                    !nameLower.Contains("game") &&
+                    !nameLower.Contains("camera") &&
+                    !nameLower.Contains("light"))
+                {
+                    return curr;
+                }
+            }
+            curr = curr.parent;
+        }
+
+        return null;
+    }
+
+    private Transform GetMainHouseRoot(GameObject go)
+    {
+        if (go == null) return null;
+
+        // 1. Tìm tag "Main" hoặc "main"
+        Transform t = GetEntityRoot(go, "Main");
+        if (t != null) return t;
+
+        t = GetEntityRoot(go, "main");
+        if (t != null) return t;
+
+        if (villageCenter != null && (go.transform == villageCenter || go.transform.IsChildOf(villageCenter)))
+        {
+            return villageCenter;
+        }
+
+        if (go.name.ToLower().Contains("mainhouse") || go.name.ToLower().Contains("mainbuilding") || go.name.ToLower() == "main" || go.name.ToLower().Contains("villagecenter"))
+        {
+            return go.transform;
+        }
+
+        return null;
+    }
+
     private bool IsSoldier(GameObject go)
     {
-        if (go == null) return false;
-        return GetEntityRoot(go, "Soldier") != null;
+        return GetSoldierRoot(go) != null;
     }
 
     private bool IsTower(GameObject go)
     {
-        if (go == null) return false;
-        return GetEntityRoot(go, "Tower") != null;
+        return GetTowerRoot(go) != null;
     }
 
     private bool IsMainHouse(GameObject go)
     {
-        if (go == null) return false;
-        return GetEntityRoot(go, "Main") != null;
+        return GetMainHouseRoot(go) != null;
     }
 
     private Transform GetEntityRoot(GameObject go, string tag)
@@ -597,7 +932,7 @@ public class EnemyAI : MonoBehaviour
         Transform curr = go.transform;
         while (curr != null)
         {
-            if (curr.CompareTag(tag))
+            if (SafeCompareTag(curr, tag))
                 return curr;
             curr = curr.parent;
         }
@@ -871,6 +1206,51 @@ public class EnemyAI : MonoBehaviour
         {
             agent.enabled = true;
             agent.Warp(transform.position);
+        }
+    }
+
+    private static bool SafeCompareTag(GameObject go, string tag)
+    {
+        if (go == null) return false;
+        try
+        {
+            // So sánh trực tiếp chuỗi tag để tránh native error log của Unity trong Console
+            return string.Equals(go.tag, tag, System.StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool SafeCompareTag(Transform t, string tag)
+    {
+        if (t == null) return false;
+        return SafeCompareTag(t.gameObject, tag);
+    }
+
+    private static GameObject FindGameObjectWithSafeTag(string tag)
+    {
+        try
+        {
+            return GameObject.FindGameObjectWithTag(tag);
+        }
+        catch
+        {
+            // Fallback: tìm theo tên
+            GameObject[] allGo = GameObject.FindObjectsOfType<GameObject>();
+            foreach (var go in allGo)
+            {
+                if (go != null && go.activeInHierarchy)
+                {
+                    string nameLower = go.name.ToLower();
+                    if (nameLower.Contains("villagecenter") || nameLower.Contains("mainhouse") || nameLower == "main")
+                    {
+                        return go;
+                    }
+                }
+            }
+            return null;
         }
     }
 }

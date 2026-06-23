@@ -106,6 +106,7 @@ GameObject:
   - component: {fileID: 5005357954351556229}
   - component: {fileID: 8739053802251168775}
   - component: {fileID: 5000775425539140646}
+  - component: {fileID: 355569045403577936}
   m_Layer: 0
   m_Name: EnemyMele
   m_TagString: Enemy
@@ -211,6 +212,21 @@ MonoBehaviour:
   debugLogInterval: 1
   attackMainDirectly: 0
   moveThreshold: 0.1
+--- !u!114 &355569045403577936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 370480945864454416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b21438a376193724b9ecd0d36c92d5ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
+  maxHealth: 1000
+  bloodVFXPrefab: {fileID: 0}
+  visualChild: {fileID: 0}
 --- !u!1 &437001277409286907
 GameObject:
   m_ObjectHideFlags: 0
