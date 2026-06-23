@@ -47,11 +47,13 @@ public class UpgradeableBuilding : MonoBehaviour
     [SerializeField] private StoneStorage[] stoneStorageLevels;
     [SerializeField] private RiceStorage[] riceStorageLevels;
     [SerializeField] private Kitchen[] kitchenLevels;
+    [SerializeField] private House[] houseLevels; // <-- VŨ THÊM DÒNG NÀY VÀO ĐÂY
 
     public WoodStorage[] WoodStorageLevels => woodStorageLevels;
     public StoneStorage[] StoneStorageLevels => stoneStorageLevels;
     public RiceStorage[] RiceStorageLevels => riceStorageLevels;
     public Kitchen[] KitchenLevels => kitchenLevels;
+    public House[] HouseLevels => houseLevels; // <-- VŨ THÊM DÒNG NÀY ĐỂ UI ĐỌC ĐƯỢC
     // ====================================================================
 
     // Các trường lưu giữ visual gốc phục vụ cơ chế tự tham chiếu không reparent
@@ -532,6 +534,11 @@ public class UpgradeableBuilding : MonoBehaviour
             case BuildingType.Kitchen:
                 Kitchen kc = GetComponentInChildren<Kitchen>();
                 if (kc != null) kc.SetupLevel(CurrentLevel);
+                break;
+            case BuildingType.House: // <-- THÊM LOGIC ĐỒNG BỘ CHO NHÀ WORKER
+                House hs = GetComponentInChildren<House>();
+                // Nếu các file House của bạn có viết hàm SetupLevel(level) giống WoodStorage thì gọi ở đây,
+                // hoặc tạm thời giữ để cập nhật model visual khi nâng cấp thành công.
                 break;
         }
     }
