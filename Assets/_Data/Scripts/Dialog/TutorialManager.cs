@@ -1,187 +1,232 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class TutorialManager : MonoBehaviour
 {
-    public static TutorialManager Instance;
-
-    [Header("Core Systems")]
+    [Header("Core")]
     public NPCDialogue npc;
     public UIHighlightSystem highlight;
 
-    [Header("Nút Tiếp tục trên NPCPanel")]
-    public Button continueButton;
+    [Header("Managers")]
+    public ResourceMa ResourceMa;
+    public CameraFocus cameraFocus;
 
-    [Header("Danh sách bước tutorial theo thứ tự")]
-    public List<TutorialStepSO> steps;
+    [Header("World Target")]
+    public Transform stoneMineTarget;
 
-    // ── Runtime ──────────────────────────────────────────
-    private bool continuePressed = false;
+    [Header("Tutorial Settings")]
+    public bool runOnStart = true;
+    public bool hideStoneMineAtStart = true;
+    public bool debugKeys = true;
 
-    // ══════════════════════════════════════════════════════
-    void Awake() { Instance = this; }
+    public float shortDelay = 1.5f;
+    public float mediumDelay = 2.2f;
+
+    private Coroutine tutorialRoutine;
 
     void Start()
     {
-        Debug.Log("<color=cyan>[TUTORIAL] ▶ Start()</color>");
+        CacheReferences();
+
+        if (hideStoneMineAtStart && stoneMineTarget != null)
+            stoneMineTarget.gameObject.SetActive(false);
+
+        if (runOnStart)
+            tutorialRoutine = StartCoroutine(RunDay1Tutorial());
+    }
+
+    void Update()
+    {
+        if (!debugKeys) return;
+
+        ResourceMa rm = GetResourceMa();
+
+        if (rm == null) return;
+
+        // Test nhanh:
+        // Phím 1 = +5 gỗ
+        // Phím 2 = +1 đá
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            rm.wood += 5;
+            Debug.Log("[DEBUG] +5 wood");
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            rm.stone += 1;
+            Debug.Log("[DEBUG] +1 stone");
+        }
+    }
+
+    private IEnumerator RunDay1Tutorial()
+    {
+        CacheReferences();
 
         if (npc == null)
-            Debug.LogError("[TUTORIAL] ✗ npc NULL!");
+        {
+            Debug.LogError("[TUTORIAL] npc chưa gán.");
+            yield break;
+        }
+
         if (highlight == null)
-            Debug.LogError("[TUTORIAL] ✗ highlight NULL!");
-        if (continueButton == null)
-            Debug.LogError("[TUTORIAL] ✗ continueButton NULL!");
+        {
+            Debug.LogError("[TUTORIAL] highlight chưa gán.");
+            yield break;
+        }
 
-        if (continueButton != null)
-            continueButton.onClick.AddListener(OnContinuePressed);
+        // STEP 0 - Intro
+        yield return npc.ShowAndWait(
+            "Cậu đã đến rồi. Tốt lắm. Tôi là phó lý — người lo việc lớn nhỏ trong làng này."
+        );
 
-        StartCoroutine(RunTutorial());
-    }
+        // STEP 1 - Giới thiệu HUD gỗ
+        highlight.HighlightWood();
 
-    // ══════════════════════════════════════════════════════
-    //  MAIN FLOW
-    // ══════════════════════════════════════════════════════
-    IEnumerator RunTutorial()
-    {
-        // Chờ 1 frame để scene load xong
+        yield return npc.ShowAndWait(
+            "Nhìn lên thanh tài nguyên. Đây là gỗ — thứ đầu tiên làng cần để sống."
+        );
+
+        // Người chơi bấm Tiếp tục xong mới tắt highlight
+        highlight.ClearAll();
+
+        // STEP 1B - Nhiệm vụ thu thập 5 gỗ
+        highlight.HighlightWood();
+
+        npc.ShowObjective(
+            "Hãy thu thập đủ 5 gỗ đầu tiên."
+        );
+
+        yield return new WaitUntil(() => GetWood() >= 5);
+
+        highlight.ClearAll();
+
+        yield return npc.ShowAndWait(
+            "Tốt. Làng đã có gỗ để bắt đầu dựng xây."
+        );
+
+        // STEP 2 - Worker có sẵn
+        highlight.HighlightWorker();
+
+        yield return npc.ShowAndWait(
+            "Cậu không cô độc. Làng đã có 2 người thợ sẵn sàng làm việc."
+        );
+
+        highlight.ClearAll();
+
+        // STEP 3 - Mở mỏ đá
+        yield return npc.ShowAndWait(
+            "Nhưng gỗ thôi chưa đủ. Phía xa kia có một mỏ đá."
+        );
+
+        UnlockStoneMine();
+
         yield return null;
 
-        Debug.Log($"<color=cyan>[TUTORIAL] Bắt đầu — {steps.Count} bước</color>");
+        FocusStoneMine();
 
-        for (int i = 0; i < steps.Count; i++)
-        {
-            if (steps[i] == null)
-            {
-                Debug.LogWarning($"[TUTORIAL] Step {i} là null — bỏ qua");
-                continue;
-            }
-            yield return RunStep(steps[i], i + 1);
-        }
+        yield return npc.ShowAndWait(
+            "Đó là nơi cậu sẽ khai thác đá."
+        );
 
-        // Xong tất cả
-        Debug.Log("<color=cyan>[TUTORIAL] ✓ Hoàn thành!</color>");
+        // STEP 4 - Giới thiệu đá trên HUD
+        highlight.HighlightStone();
+
+        yield return npc.ShowAndWait(
+            "Đá sẽ giúp cậu xây những công trình chắc chắn hơn."
+        );
+
+        // Người chơi bấm Tiếp tục xong mới tắt highlight
         highlight.ClearAll();
-        npc.Hide();
+
+        // STEP 4B - Nhiệm vụ khai thác đá
+        highlight.HighlightStone();
+
+        npc.ShowObjective(
+            "Hãy khai thác đá đầu tiên."
+        );
+
+        yield return new WaitUntil(() => GetStone() > 0);
+
+        highlight.ClearAll();
+
+        yield return npc.ShowAndWait(
+            "Tốt lắm. Gỗ và đá đã bắt đầu chảy về làng. Từ đây, thành của cậu mới thật sự sống."
+        );
+
+        highlight.ClearAll();
     }
 
-    // ══════════════════════════════════════════════════════
-    //  MỖI BƯỚC
-    // ══════════════════════════════════════════════════════
-    IEnumerator RunStep(TutorialStepSO step, int stepNum)
+    private void CacheReferences()
     {
-        Debug.Log($"<color=yellow>[STEP {stepNum}] Bắt đầu — icon='{step.iconName}'</color>");
+        if (ResourceMa == null)
+            ResourceMa = FindFirstObjectByType<ResourceMa>();
 
-        // ── 1. KHOÁ nút Tiếp tục, hiện dialog ──────────
-        continuePressed = false;          // reset SỚM — tránh sót true từ step trước
-        SetContinueButton(false);
-        npc.Show(step.dialogContent);
+        if (cameraFocus == null)
+            cameraFocus = FindFirstObjectByType<CameraFocus>();
 
-        // ── 2. Chờ text chạy xong ────────────────────────
-        Debug.Log($"<color=yellow>[STEP {stepNum}] Chờ text xong...</color>");
-        yield return new WaitUntil(() => npc.IsTypingDone());
-        Debug.Log($"<color=yellow>[STEP {stepNum}] ✓ Text xong</color>");
-
-        // ── 3. Nếu có icon → highlight MINH HỌA, sáng cho tới khi bấm Tiếp tục ──
-        // FIX theo yêu cầu mới: icon KHÔNG tự tắt sau 1 khoảng thời gian cố định nữa.
-        // Icon sẽ sáng liên tục, mở nút Tiếp tục NGAY, và chỉ tắt sáng khi người chơi
-        // thực sự bấm Tiếp tục (xử lý ở bước 5, sau WaitForContinue()).
-        bool hasIcon = !string.IsNullOrEmpty(step.iconName);
-        if (hasIcon)
+        if (stoneMineTarget == null)
         {
-            GameObject icon = FindIconByName(step.iconName);
+            GameObject mine = GameObject.Find("StoneMine");
 
-            if (icon == null)
-            {
-                Debug.LogError(
-                    $"[STEP {stepNum}] ✗ Không tìm thấy icon '{step.iconName}'!\n" +
-                    "→ Kiểm tra tên trong TutorialStepSO hoặc kéo vào UIHighlightSystem");
-                // Không có icon để highlight — bỏ qua, vẫn cho qua bước bình thường
-            }
-            else
-            {
-                Debug.Log($"<color=yellow>[STEP {stepNum}] Highlight {icon.name} — sáng cho tới khi bấm Tiếp tục</color>");
-                highlight.HighlightUI(icon);
-            }
+            if (mine != null)
+                stoneMineTarget = mine.transform;
+        }
+    }
+
+    private ResourceMa GetResourceMa()
+    {
+        if (ResourceMa == null)
+            ResourceMa = FindFirstObjectByType<ResourceMa>();
+
+        return ResourceMa;
+    }
+
+    private int GetWood()
+    {
+        ResourceMa rm = GetResourceMa();
+
+        if (rm == null)
+            return 0;
+
+        return rm.wood;
+    }
+
+    private int GetStone()
+    {
+        ResourceMa rm = GetResourceMa();
+
+        if (rm == null)
+            return 0;
+
+        return rm.stone;
+    }
+
+    private void UnlockStoneMine()
+    {
+        if (stoneMineTarget == null)
+        {
+            Debug.LogWarning("[TUTORIAL] stoneMineTarget chưa gán.");
+            return;
         }
 
-        // ── 4. Mở nút Tiếp tục NGAY (không chờ thêm) ────
-        Debug.Log($"<color=cyan>[STEP {stepNum}] Mở nút Tiếp tục</color>");
-        SetContinueButton(true);
+        stoneMineTarget.gameObject.SetActive(true);
+    }
 
-        // ── 5. Chờ bấm Tiếp tục, RỒI MỚI tắt highlight ──
-        yield return WaitForContinue();
-        Debug.Log($"<color=lime>[STEP {stepNum}] ✓ Tiếp tục — sang step tiếp</color>");
-
-        if (hasIcon)
+    private void FocusStoneMine()
+    {
+        if (stoneMineTarget == null)
         {
-            highlight.ClearAll(); // FIX: chỉ tắt sáng khi đã bấm Tiếp tục, không tắt sớm
+            Debug.LogWarning("[TUTORIAL] Không có StoneMine để lia camera.");
+            return;
         }
 
-        // ── 6. Mở nhiệm vụ nếu có ───────────────────────
-        if (!string.IsNullOrEmpty(step.questDescription))
+        if (cameraFocus == null)
         {
-            Debug.Log($"<color=lime>[QUEST] Mở: {step.questDescription}</color>");
-            // TODO: QuestManager.Instance.OpenQuest(step.questDescription);
+            Debug.LogWarning("[TUTORIAL] cameraFocus chưa gán.");
+            return;
         }
 
-        yield return new WaitForSeconds(0.2f);
-    }
-
-    // ══════════════════════════════════════════════════════
-    //  HELPERS
-    // ══════════════════════════════════════════════════════
-
-    /// <summary>Tìm icon theo tên — ưu tiên field trong UIHighlightSystem</summary>
-    GameObject FindIconByName(string name)
-    {
-        // Tìm qua field RectTransform trong UIHighlightSystem
-        var rt = highlight.GetIconRT(name);
-        if (rt != null) return rt.gameObject;
-
-        // Fallback: GameObject.Find
-        var go = GameObject.Find(name);
-        if (go != null) return go;
-
-        return null;
-    }
-
-    /// <summary>Khoá/mở nút Tiếp tục + đổi màu</summary>
-    void SetContinueButton(bool interactable)
-    {
-        if (continueButton == null) return;
-
-        continueButton.interactable = interactable;
-
-        var colors = continueButton.colors;
-        colors.normalColor = interactable
-            ? new Color(0.2f, 0.65f, 0.2f)   // xanh lá = mở
-            : new Color(0.35f, 0.35f, 0.35f); // xám = khoá
-        continueButton.colors = colors;
-
-        Debug.Log($"<color=cyan>[TUTORIAL] Nút Tiếp tục: {(interactable ? "✓ MỞ" : "✗ KHOÁ")}</color>");
-    }
-
-    /// <summary>Chờ bấm nút Tiếp tục</summary>
-    IEnumerator WaitForContinue()
-    {
-        continuePressed = false;
-        yield return new WaitUntil(() => continuePressed);
-    }
-
-    // ── Callback ─────────────────────────────────────────
-    void OnContinuePressed()
-    {
-        if (continueButton != null && !continueButton.interactable) return;
-        Debug.Log("<color=lime>[TUTORIAL] ✓ Tiếp tục được bấm</color>");
-        SetContinueButton(false);   // khoá ngay — tránh bấm 2 lần / sót sang step sau
-        continuePressed = true;
-    }
-
-    void OnDestroy()
-    {
-        if (continueButton != null)
-            continueButton.onClick.RemoveListener(OnContinuePressed);
+        cameraFocus.MoveTo(stoneMineTarget);
     }
 }
