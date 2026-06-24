@@ -1,0 +1,616 @@
+using UnityEngine;
+using UnityEngine.AI;
+using System.Collections;
+using System.Collections.Generic;
+
+// 1. Định nghĩa các Trạng thái (State Machine)
+public enum UnitState
+{
+    Idle,
+    Moving,
+    Attacking
+}
+
+public enum AttackMode
+{
+    Melee,
+    Ranged
+}
+
+[RequireComponent(typeof(NavMeshAgent))]
+public class UnitController : MonoBehaviour
+{
+    private static readonly Dictionary<int, UnitController> claimedEnemies = new Dictionary<int, UnitController>();
+
+    // 2. Khai báo các thành phần cần thiết
+    private NavMeshAgent agent;
+
+    [Header("Animation Config")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private string moveBoolParam = "IsMove";
+    [SerializeField] private string attackBoolParam = "IsAttack";
+    [SerializeField] private string shootBoolParam = "IsShoot";
+
+    [Header("Combat Config")]
+    [SerializeField] float attackDamage = 15f;
+    [SerializeField] float attackRate = 1.5f;
+    [SerializeField] GameObject projectilePrefab;
+    [SerializeField] Transform firePoint;
+    [SerializeField] float projectileSpeed = 15f;
+    private float nextAttackTime;
+    public UnitState currentState = UnitState.Idle;
+    public GameObject currentTarget;
+    public float scanFrequency = 0.25f;
+    [SerializeField] AttackMode attackMode = AttackMode.Melee;
+    [SerializeField] float attackRange = 2f;
+    [SerializeField] float rangedAttackRange = 5f;
+    
+    [Header("Area Scan Config")]
+    [SerializeField] float detectRadius = 25f;
+    [SerializeField] LayerMask enemyLayer = ~0;
+    
+    // Giữ lại các biến cũ để tránh mất cấu hình ở Inspector (tương thích ngược)
+    [SerializeField] LayerMask targetLayerMask = ~0;
+    [SerializeField] float raycastDistance = 6f;
+    [SerializeField] float raycastHeight = 0.8f;
+    [SerializeField] float visionAngle = 180f;
+    [SerializeField] int visionRayCount = 7;
+    
+    [SerializeField] float destinationUpdateThreshold = 0.5f;
+    [SerializeField] string enemyTag = "Enemy";
+
+    // Internal caches
+    private Coroutine lowFreqCoroutine;
+    private Vector3 lastDestinationPos = Vector3.positiveInfinity;
+    private int currentTargetInstanceId = 0;
+
+    float GetAttackStopDistance()
+    {
+        return attackMode == AttackMode.Ranged ? rangedAttackRange : attackRange;
+    }
+
+    bool IsEnemyAlive(GameObject enemy)
+    {
+        if (enemy == null || !enemy.activeInHierarchy) return false;
+        
+        var enemyHealth = enemy.GetComponentInParent<EnemyHealth>();
+        if (enemyHealth != null)
+        {
+            return enemyHealth.CurrentHealth > 0f;
+        }
+
+        var damageable = enemy.GetComponentInParent<IDamageable>();
+        if (damageable != null)
+        {
+            return damageable.CurrentHealth > 0f;
+        }
+
+        return true;
+    }
+
+    bool IsEnemyClaimedByOther(GameObject enemy)
+    {
+        if (enemy == null) return false;
+        int id = enemy.GetInstanceID();
+        if (claimedEnemies.TryGetValue(id, out UnitController owner))
+        {
+            return owner != null && owner != this;
+        }
+        return false;
+    }
+
+    bool ClaimEnemy(GameObject enemy)
+    {
+        if (enemy == null) return false;
+
+        int id = enemy.GetInstanceID();
+        claimedEnemies[id] = this;
+        currentTargetInstanceId = id;
+        return true;
+    }
+
+    void ReleaseCurrentTargetClaim()
+    {
+        int id = currentTargetInstanceId;
+        if (id == 0 && currentTarget != null)
+        {
+            id = currentTarget.GetInstanceID();
+        }
+
+        if (id == 0)
+        {
+            return;
+        }
+
+        if (claimedEnemies.TryGetValue(id, out UnitController owner) && owner == this)
+        {
+            claimedEnemies.Remove(id);
+        }
+
+        currentTargetInstanceId = 0;
+    }
+
+    void Start()
+    {
+        agent = GetComponent<NavMeshAgent>();
+        if (agent == null)
+        {
+            Debug.LogError("UnitController requires a NavMeshAgent component.");
+            enabled = false;
+            return;
+        }
+
+        if (animator == null)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
+
+        // Khởi tạo tương thích ngược cho detectRadius và enemyLayer
+        if (detectRadius == 25f && raycastDistance != 6f)
+        {
+            detectRadius = raycastDistance;
+        }
+        
+        // Đảm bảo bán kính quét tối thiểu là 20f để hoạt động theo vùng hiệu quả
+        if (detectRadius < 15f)
+        {
+            detectRadius = 20f;
+        }
+
+        if (enemyLayer.value == ~0 && targetLayerMask.value != ~0)
+        {
+            enemyLayer = targetLayerMask;
+        }
+
+        // Tự động warp agent lên NavMesh nếu bị lệch khi spawn
+        if (!agent.isOnNavMesh)
+        {
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+        }
+
+        lowFreqCoroutine = StartCoroutine(LowFrequencyUpdate());
+
+        if (currentState == UnitState.Attacking && currentTarget != null)
+        {
+            SetDestination(currentTarget.transform.position);
+            lastDestinationPos = currentTarget.transform.position;
+        }
+    }
+
+    private void SetDestination(Vector3 dest)
+    {
+        if (agent == null) return;
+
+        if (!agent.isOnNavMesh)
+        {
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        agent.isStopped = false;
+
+        if (Vector3.Distance(agent.destination, dest) > 0.25f)
+        {
+            agent.SetDestination(dest);
+        }
+    }
+
+    IEnumerator LowFrequencyUpdate()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(scanFrequency);
+
+            if (currentState == UnitState.Attacking && currentTarget != null)
+            {
+                if (!IsEnemyAlive(currentTarget))
+                {
+                    ReleaseCurrentTargetClaim();
+                    currentTarget = null;
+                    currentState = UnitState.Idle;
+                    if (agent != null && agent.isOnNavMesh)
+                    {
+                        agent.isStopped = true;
+                    }
+                    continue;
+                }
+
+                Vector3 targetPos = currentTarget.transform.position;
+                float stopDistance = GetAttackStopDistance();
+
+                if ((transform.position - targetPos).sqrMagnitude > stopDistance * stopDistance)
+                {
+                    if ((targetPos - lastDestinationPos).sqrMagnitude > destinationUpdateThreshold * destinationUpdateThreshold)
+                    {
+                        SetDestination(targetPos);
+                        lastDestinationPos = targetPos;
+                    }
+                }
+            }
+        }
+    }
+
+    void Update()
+    {
+        // Nếu không có mục tiêu, mục tiêu không hợp lệ hoặc đã chết, quét mục tiêu mới theo vùng
+        if (currentTarget == null || !currentTarget.CompareTag(enemyTag) || !IsEnemyAlive(currentTarget))
+        {
+            if (TryAcquireEnemyInArea())
+            {
+                // Tìm thấy mục tiêu mới và bắt đầu đuổi/tấn công
+            }
+            else
+            {
+                // Không thấy kẻ địch nào -> Về trạng thái Idle và dừng agent
+                if (currentState == UnitState.Attacking)
+                {
+                    ReleaseCurrentTargetClaim();
+                    currentTarget = null;
+                    currentState = UnitState.Idle;
+                    if (agent != null && agent.isOnNavMesh)
+                    {
+                        agent.isStopped = true;
+                    }
+                }
+            }
+        }
+
+        switch (currentState)
+        {
+            case UnitState.Attacking:
+                HandleAttacking();
+                break;
+            case UnitState.Moving:
+                HandleMovement();
+                break;
+        }
+
+        UpdateAnimationState();
+    }
+
+    public void SetNewTarget(GameObject target)
+    {
+        if (target == null) return;
+        if (!target.CompareTag(enemyTag)) return;
+        if (currentTarget == target) return;
+
+        ReleaseCurrentTargetClaim();
+        if (!ClaimEnemy(target)) return;
+
+        currentTarget = target;
+        currentState = UnitState.Attacking;
+
+        SetDestination(target.transform.position);
+        lastDestinationPos = target.transform.position;
+    }
+
+    void HandleAttacking()
+    {
+        if (currentTarget == null)
+        {
+            ReleaseCurrentTargetClaim();
+            currentState = UnitState.Idle;
+            return;
+        }
+
+        float sqrDistance = (transform.position - currentTarget.transform.position).sqrMagnitude;
+        float stopDistance = GetAttackStopDistance();
+
+        if (sqrDistance <= stopDistance * stopDistance)
+        {
+            if (agent != null && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+            }
+            
+            // Xoay mượt về phía kẻ địch khi đứng tấn công
+            Vector3 lookDir = (currentTarget.transform.position - transform.position);
+            lookDir.y = 0f;
+            if (lookDir.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(lookDir);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 360f * Time.deltaTime);
+            }
+
+            // Thực hiện tấn công theo chu kỳ
+            if (Time.time >= nextAttackTime)
+            {
+                ExecuteAttack(currentTarget.transform);
+                nextAttackTime = Time.time + attackRate;
+            }
+        }
+        else
+        {
+            if (agent != null && agent.isOnNavMesh && agent.isStopped)
+            {
+                agent.isStopped = false;
+            }
+        }
+    }
+
+    void HandleMovement()
+    {
+        if (agent != null && agent.isOnNavMesh && !agent.pathPending)
+        {
+            if (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance)
+            {
+                currentState = UnitState.Idle;
+            }
+        }
+    }
+
+    private bool IsEnemyCollider(Collider col, out GameObject enemyRoot)
+    {
+        enemyRoot = null;
+        if (col == null) return false;
+
+        if (col.CompareTag(enemyTag) || 
+            col.GetComponentInParent<EnemyHealth>() != null || 
+            col.name.ToLower().Contains("enemy"))
+        {
+            var health = col.GetComponentInParent<EnemyHealth>();
+            enemyRoot = (health != null) ? health.gameObject : col.gameObject;
+            return IsEnemyAlive(enemyRoot);
+        }
+        return false;
+    }
+
+    bool TryAcquireEnemyInArea()
+    {
+        Collider[] colliders = null;
+        if (enemyLayer.value != 0)
+        {
+            colliders = Physics.OverlapSphere(transform.position, detectRadius, enemyLayer);
+        }
+
+        List<GameObject> validEnemies = new List<GameObject>();
+
+        if (colliders != null)
+        {
+            foreach (var col in colliders)
+            {
+                if (col == null || !col.gameObject.activeInHierarchy) continue;
+                if (IsEnemyCollider(col, out GameObject enemyRoot))
+                {
+                    if (!validEnemies.Contains(enemyRoot)) validEnemies.Add(enemyRoot);
+                }
+            }
+        }
+
+        // Fallback 1: Nếu LayerMask không tìm thấy gì, quét lại toàn bộ các Layer trong bán kính
+        if (validEnemies.Count == 0)
+        {
+            Collider[] fallbackColliders = Physics.OverlapSphere(transform.position, detectRadius);
+            foreach (var col in fallbackColliders)
+            {
+                if (col == null || !col.gameObject.activeInHierarchy) continue;
+                if (IsEnemyCollider(col, out GameObject enemyRoot))
+                {
+                    if (!validEnemies.Contains(enemyRoot)) validEnemies.Add(enemyRoot);
+                }
+            }
+        }
+
+        // Fallback 2: Quét toàn bộ Scene theo Tag "Enemy" trong bán kính
+        if (validEnemies.Count == 0)
+        {
+            GameObject[] taggedEnemies = null;
+            try { taggedEnemies = GameObject.FindGameObjectsWithTag(enemyTag); } catch { taggedEnemies = null; }
+
+            if (taggedEnemies != null)
+            {
+                float detectRadiusSqr = detectRadius * detectRadius;
+                foreach (var go in taggedEnemies)
+                {
+                    if (go == null || !go.activeInHierarchy) continue;
+
+                    float sqrDist = (go.transform.position - transform.position).sqrMagnitude;
+                    if (sqrDist <= detectRadiusSqr)
+                    {
+                        var health = go.GetComponentInParent<EnemyHealth>();
+                        GameObject enemyRoot = (health != null) ? health.gameObject : go;
+
+                        if (IsEnemyAlive(enemyRoot) && !validEnemies.Contains(enemyRoot))
+                        {
+                            validEnemies.Add(enemyRoot);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (validEnemies.Count == 0)
+        {
+            return false;
+        }
+
+        // In log giúp theo dõi trong Console
+        Debug.Log($"[UnitController Scan] {gameObject.name} tìm thấy {validEnemies.Count} mục tiêu hợp lệ trong bán kính {detectRadius}.");
+
+        // 1. Tìm kẻ địch gần nhất chưa bị ai chiếm (claim)
+        GameObject bestTarget = null;
+        float minDistance = float.MaxValue;
+
+        foreach (var enemy in validEnemies)
+        {
+            if (IsEnemyClaimedByOther(enemy)) continue;
+
+            float dist = (enemy.transform.position - transform.position).sqrMagnitude;
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                bestTarget = enemy;
+            }
+        }
+
+        // 2. Fallback: Nếu tất cả kẻ địch trong tầm đều đã bị chiếm, chọn kẻ địch gần nhất (chấp nhận chia sẻ mục tiêu)
+        if (bestTarget == null)
+        {
+            minDistance = float.MaxValue;
+            foreach (var enemy in validEnemies)
+            {
+                float dist = (enemy.transform.position - transform.position).sqrMagnitude;
+                if (dist < minDistance)
+                {
+                    minDistance = dist;
+                    bestTarget = enemy;
+                }
+            }
+        }
+
+        if (bestTarget != null)
+        {
+            if (currentTarget == bestTarget)
+            {
+                return true;
+            }
+
+            ReleaseCurrentTargetClaim();
+            ClaimEnemy(bestTarget);
+
+            currentTarget = bestTarget;
+            currentState = UnitState.Attacking;
+
+            SetDestination(currentTarget.transform.position);
+            lastDestinationPos = currentTarget.transform.position;
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ExecuteAttack(Transform target)
+    {
+        PlayAttackAnimation();
+
+        if (attackMode == AttackMode.Melee)
+        {
+            IDamageable damageable = target.GetComponentInParent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(attackDamage, target.position);
+            }
+        }
+        else if (attackMode == AttackMode.Ranged)
+        {
+            if (projectilePrefab != null)
+            {
+                Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position + Vector3.up * 1.5f;
+                Collider targetCollider = target.GetComponentInChildren<Collider>();
+                Vector3 targetCenter = targetCollider != null ? targetCollider.bounds.center : target.position + Vector3.up * 1f;
+                Vector3 direction = (targetCenter - spawnPos).normalized;
+                Quaternion spawnRot = Quaternion.LookRotation(direction);
+
+                GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
+                
+                Arrow arrowComp = proj.GetComponent<Arrow>();
+                if (arrowComp != null)
+                {
+                    arrowComp.SetLauncher(gameObject);
+                    arrowComp.SetDamage(attackDamage);
+                    arrowComp.SetTarget(target, projectileSpeed);
+                }
+                else
+                {
+                    Rigidbody rb = proj.GetComponent<Rigidbody>();
+                    if (rb == null) rb = proj.AddComponent<Rigidbody>();
+                    rb.linearVelocity = direction * projectileSpeed;
+                }
+            }
+        }
+    }
+
+    public void PlayAttackAnimation()
+    {
+        if (animator == null) return;
+
+        string paramToSet = (attackMode == AttackMode.Ranged) ? shootBoolParam : attackBoolParam;
+        if (!string.IsNullOrWhiteSpace(paramToSet))
+        {
+            if (HasAnimatorParameter(animator, paramToSet, AnimatorControllerParameterType.Trigger))
+            {
+                animator.SetTrigger(paramToSet);
+            }
+            else
+            {
+                StartCoroutine(TriggerBoolAnimation(paramToSet));
+            }
+        }
+    }
+
+    private bool HasAnimatorParameter(Animator anim, string paramName, AnimatorControllerParameterType type)
+    {
+        foreach (AnimatorControllerParameter param in anim.parameters)
+        {
+            if (param.name == paramName && param.type == type)
+                return true;
+        }
+        return false;
+    }
+
+    private System.Collections.IEnumerator TriggerBoolAnimation(string paramName)
+    {
+        animator.SetBool(paramName, true);
+        yield return new WaitForSeconds(0.1f);
+        animator.SetBool(paramName, false);
+    }
+
+    private void UpdateAnimationState()
+    {
+        if (animator == null) return;
+
+        bool isMoving = false;
+
+        if (agent != null)
+        {
+            if (agent.isOnNavMesh)
+            {
+                bool hasMeaningfulPath = !agent.isStopped && agent.hasPath && !agent.pathPending && agent.remainingDistance > agent.stoppingDistance;
+                bool hasMeaningfulVelocity = !agent.isStopped && agent.velocity.sqrMagnitude > 0.01f;
+                isMoving = hasMeaningfulPath || hasMeaningfulVelocity;
+            }
+            else
+            {
+                isMoving = !agent.isStopped && agent.desiredVelocity.sqrMagnitude > 0.01f;
+            }
+        }
+
+        animator.SetBool(moveBoolParam, isMoving);
+    }
+
+    public void SetAttackDamage(float damage)
+    {
+        attackDamage = damage;
+    }
+
+    void OnDisable()
+    {
+        ReleaseCurrentTargetClaim();
+
+        if (lowFreqCoroutine != null)
+        {
+            StopCoroutine(lowFreqCoroutine);
+            lowFreqCoroutine = null;
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        // Vòng đỏ: Tầm quét kẻ địch theo vùng
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, detectRadius);
+
+        // Vòng vàng: Tầm dừng tấn công
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, GetAttackStopDistance());
+    }
+}
