@@ -50,7 +50,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cef52e85d6b194b4aaa1a0fdaf4ee47f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BuildingCtrl
-  buildingType: 3
+  buildingType: 6
   door: {fileID: 0}
   buildProgress: 0
   isOccupied: 0
@@ -66,7 +66,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
-  buildingType: 3
+  isInitialBuildNeeded: 1
+  initialBuildDuration: 5
+  buildingType: 6
   buildingName: StoneMine
   visualModels:
   - {fileID: 1288484455214704858}
@@ -827,7 +829,6 @@ MonoBehaviour:
   placementDustVFX: {fileID: 3899390982892795209}
   constructionLoopVFX: {fileID: 3885798294157589968}
   completionAuraVFX: {fileID: 75319398410612171}
-  buildDuration: 7
   upgradeAudioSources:
   - {fileID: 6616120644670150889}
   - {fileID: 4985163683656208335}

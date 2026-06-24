@@ -26,8 +26,8 @@ public class BuildingProgressBarUI : MonoBehaviour
     [Tooltip("Chức năng 3: Ánh sáng aura quét dọc thân nhà (Chỉ Active và quét 1 lần duy nhất khi vừa hoàn thành)")]
     public ParticleSystem completionAuraVFX;      
 
-    [Header("[Cấu Hình Thời Gian Xây Dựng]")]
-    [SerializeField] private float buildDuration = 7f; 
+    // [Header("[Cấu Hình Thời Gian Xây Dựng]")]
+    // [SerializeField] private float buildDuration = 7f; 
 
     [Header("[HỆ THỐNG NGUỒN ÂM THANH ĐỘC LẬP (CÓ CỘNG TRỪ)]")]
     [Tooltip("Mảng AudioSource chuyên trị tiếng LOOP nâng cấp (Bấm dấu + để thêm nhiều nguồn phát song song)")]
@@ -71,14 +71,24 @@ public class BuildingProgressBarUI : MonoBehaviour
         }
     }
 
-    private void OnEnable()
+   private void OnEnable()
     {
         if (_ownerBuilding != null)
         {
             BuildingProgressBridge.RegisterUI(_ownerBuilding, this);
 
-            if (!_ownerBuilding.IsUpgrading && !_isBuildingNew)
+            // CHỈNH SỬA TẠI ĐÂY: Hỗ trợ luồng kiểm tra nếu nhà đang nâng cấp HOẶC đang cần xây mới ban đầu
+            if (_ownerBuilding.IsUpgrading || _ownerBuilding.IsInitialBuildNeeded)
             {
+                // Nếu nhà có tích chưa xây, hệ thống sẽ bỏ qua lệnh ẩn và chuẩn bị chạy tiến trình
+                if (_ownerBuilding.IsInitialBuildNeeded)
+                {
+                    _isBuildingNew = true; 
+                }
+            }
+            else
+            {
+                // Nếu vào game mà nhà không có tích (đã xây xong từ trước), ẩn UI đếm số và chỉ phát bụi bám đất 1 lần
                 HideProgress();
                 DeactivateAllVFX();
                 PlayPlacementVFX();
@@ -129,7 +139,7 @@ public class BuildingProgressBarUI : MonoBehaviour
         }
     }
 
-    public void UpdateProgress(float currentTimer, float totalDuration)
+   public void UpdateProgress(float currentTimer, float totalDuration)
     {
         if (upgradeProgressBar != null)
         {
@@ -145,6 +155,7 @@ public class BuildingProgressBarUI : MonoBehaviour
             upgradeTimerText.text = $"{timeLeft:F1}s";
         }
 
+        // Bật cụm khói lớn thi công lặp liên tục trong suốt thời gian đếm số
         if (constructionLoopVFX != null && !constructionLoopVFX.gameObject.activeSelf)
         {
             DeactivateAllVFX();
@@ -152,12 +163,11 @@ public class BuildingProgressBarUI : MonoBehaviour
             constructionLoopVFX.Play();
         }
 
-        // Luồng kích hoạt âm thanh nâng cấp lặp đồng thời dựa trên mảng
-        if (_ownerBuilding != null && _ownerBuilding.IsUpgrading)
+        // ĐỒNG BỘ MẢNG ÂM THANH: Phát nhạc loop thi công cho cả lúc Upgrading hoặc đang Xây mới ban đầu
+        if (_ownerBuilding != null && (_ownerBuilding.IsUpgrading || _ownerBuilding.IsInitialBuildNeeded))
         {
             if (upgradeAudioSources != null && upgradeLoopSFXPool != null)
             {
-                // Quét qua các cặp AudioSource và AudioClip tương ứng để phát song song
                 int loopCount = Mathf.Min(upgradeAudioSources.Length, upgradeLoopSFXPool.Length);
                 for (int i = 0; i < loopCount; i++)
                 {

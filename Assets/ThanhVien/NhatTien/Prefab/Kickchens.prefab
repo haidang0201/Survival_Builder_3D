@@ -50,7 +50,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cef52e85d6b194b4aaa1a0fdaf4ee47f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BuildingCtrl
-  buildingType: 10
+  buildingType: 4
   door: {fileID: 0}
   buildProgress: 0
   isOccupied: 0
@@ -66,7 +66,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
-  buildingType: 10
+  isInitialBuildNeeded: 1
+  initialBuildDuration: 5
+  buildingType: 4
   buildingName: "Nh\xE0 Ch\xEDnh"
   visualModels:
   - {fileID: 1496425220857952522}
@@ -89,6 +91,7 @@ MonoBehaviour:
   - {fileID: 7218589756144884198}
   - {fileID: 7756106936144556122}
   - {fileID: 3918596492548565356}
+  houseLevels: []
   buildingIcons:
   - {fileID: 21300000, guid: cf666747e6d64c94baa691c23aca7d8d, type: 3}
   - {fileID: 21300000, guid: ac4ddce8f916b2145b3e0d54f6f795c4, type: 3}
@@ -316,7 +319,6 @@ MonoBehaviour:
   placementDustVFX: {fileID: 7835650514963798343}
   constructionLoopVFX: {fileID: 624513514887071783}
   completionAuraVFX: {fileID: 786016727055827441}
-  buildDuration: 7
   upgradeAudioSources:
   - {fileID: 8173864379704936885}
   - {fileID: 3659660626967497899}
