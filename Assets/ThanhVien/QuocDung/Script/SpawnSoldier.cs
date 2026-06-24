@@ -59,7 +59,11 @@ public class SpawnSoldier : MonoBehaviour
     void OnDisable()
     {
         // Khi Spawner bị tắt (do nâng cấp tắt model con hoặc bị hủy), xóa toàn bộ lính cũ
-        ClearSpawnedSoldiers();
+        // Chỉ dọn dẹp nếu danh sách thực sự có lính để tránh việc các model cấp độ khác bị tắt kích hoạt tính năng quét diện rộng phá hủy lính của model chính
+        if (spawnedSoldiers != null && spawnedSoldiers.Count > 0)
+        {
+            ClearSpawnedSoldiers();
+        }
     }
 
     void Update()
