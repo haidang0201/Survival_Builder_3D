@@ -129,6 +129,8 @@ GameObject:
   - component: {fileID: -7636250480985751170}
   - component: {fileID: 5490868277580300845}
   - component: {fileID: 5730462662123160155}
+  - component: {fileID: 5190861513250659853}
+  - component: {fileID: 1706773192625025059}
   m_Layer: 0
   m_Name: Canon Lv1
   m_TagString: Untagged
@@ -144,7 +146,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1658031086135343822}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 80.61664, y: -0.008103013, z: 55.66005}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -266,6 +268,7 @@ MonoBehaviour:
   fireVfxPrefab: {fileID: 0}
   animator: {fileID: 5490868277580300845}
   attackParamName: IsAttack
+  attackRange: 8
 --- !u!114 &-7636250480985751170
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -285,6 +288,12 @@ MonoBehaviour:
   - {fileID: 970716139476267917, guid: d1f532869ba23024b8fcbb04a936f7f6, type: 3}
   - {fileID: 6721075531389115540, guid: 8fa22f5b5d43ff1449ac220a2a443752, type: 3}
   upgradeCosts: []
+  towerLevelScripts: []
+  woodStorageLevels: []
+  stoneStorageLevels: []
+  riceStorageLevels: []
+  kitchenLevels: []
+  buildingIcons: []
 --- !u!95 &5490868277580300845
 Animator:
   serializedVersion: 7
@@ -330,6 +339,131 @@ MonoBehaviour:
     m_Bits: 8192
   snapStep: 1
   checkYSize: 2
+--- !u!82 &5190861513250659853
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658031086135343822}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 5
+  MaxDistance: 25
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &1706773192625025059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658031086135343822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15477d9e9af9da4458f1a5fb15fd0b71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerSoundPlayer
+  archerFireClips:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  cannonFireClips:
+  - {fileID: 8300000, guid: d2ea1ee55e86d8747b4d361036599fa2, type: 3}
+  - {fileID: 8300000, guid: d2ea1ee55e86d8747b4d361036599fa2, type: 3}
+  - {fileID: 8300000, guid: a3e2d8cdb3432bf45b238534584b908d, type: 3}
+  fireVolume: 0.9
+  maxAudioDistance: 30
+  projectileTag: Projectile
+  projectileLayer:
+    serializedVersion: 2
+    m_Bits: 32768
+  muzzleCheckRadius: 1.5
+  minSoundInterval: 0.3
 --- !u!1 &2406723649338239675
 GameObject:
   m_ObjectHideFlags: 0

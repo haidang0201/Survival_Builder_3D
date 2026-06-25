@@ -182,11 +182,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
-  maxCapacity: 20
+  maxCapacity: 999
+  maxWorkersLevels: 020000000400000006000000
+  currentWorkersCount: 0
+  workerPrefab: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  spawnAmountPerLevel: 010000000100000002000000
   onStorageFull:
     m_PersistentCalls:
       m_Calls: []
   onWoodAdded:
+    m_PersistentCalls:
+      m_Calls: []
+  onWorkersChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onCapacityChanged:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1001 &5481681204703294503

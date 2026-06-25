@@ -14,9 +14,10 @@ GameObject:
   - component: {fileID: 4690240402555610505}
   - component: {fileID: 8746925437192037808}
   - component: {fileID: 8205568565815264762}
-  m_Layer: 0
+  - component: {fileID: 6933300406565887254}
+  m_Layer: 15
   m_Name: Canon
-  m_TagString: Untagged
+  m_TagString: Projectile
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -157,3 +158,21 @@ MonoBehaviour:
   explosionRadius: 3
   explosionForce: 300
   explosionVfx: {fileID: 868468853075218060, guid: 6c0e2ea3d9659784bad0f7b76ee08899, type: 3}
+--- !u!114 &6933300406565887254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8080310107249123535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a50b1509e25e38f4598c89563613681f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectileImpactSound
+  impactClip: {fileID: 8300000, guid: a3e2d8cdb3432bf45b238534584b908d, type: 3}
+  impactVolume: 1
+  enemyTag: Enemy
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0

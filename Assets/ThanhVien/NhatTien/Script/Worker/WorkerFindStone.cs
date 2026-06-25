@@ -29,6 +29,16 @@ public class WorkerFindStone : MonoBehaviour
     private float depositRetryTimer = 0f;
     private float totalWaitTimer = 0f; 
 
+    [Header("Lift/Pickup Settings")]
+    public string liftTriggerName = "Lift";
+    public float  liftTime        = 1f;   // tổng thời gian animation Lift chạy (khớp với độ dài clip)
+    public float  liftGrabRatio   = 0.6f; // % thời gian khi tay chạm đá để gắn vào tay
+
+    private bool        isLifting            = false;
+    private float       liftTimer            = 0f;
+    private bool        hasGrabbedDuringLift = false;
+    private StonePickup pendingStone         = null;
+
     private Stone targetStone;
     private float mineTimer            = 0f;
     private bool  hasTriggeredMineAnim = false;
@@ -49,6 +59,12 @@ public class WorkerFindStone : MonoBehaviour
     {
         UpdateAnimationSpeed();
         CheckStuck();
+
+        if (isLifting)
+        {
+            HandleLifting();
+            return;
+        }
 
         if (carrySystem.IsCarrying())
         {
@@ -252,10 +268,38 @@ public class WorkerFindStone : MonoBehaviour
         StonePickup[] drops = targetStone.TakeDamage(1);
         if (drops != null && drops.Length > 0)
         {
-            // BUG FIX: Pickup trước, Release sau — nhất quán với WorkerFindRice/WorkerFindTree
-            carrySystem.PickupStone(drops[0]);
+            // Đá đã vỡ: nhả claim ngay, rồi chơi animation Lift trước khi gắn đá vào tay
             ReleaseCurrentStone();
+            StartLifting(drops[0]);
         }
+    }
+
+    void StartLifting(StonePickup stone)
+    {
+        pendingStone         = stone;
+        isLifting            = true;
+        liftTimer            = 0f;
+        hasGrabbedDuringLift = false;
+
+        if (animator != null) { animator.ResetTrigger(liftTriggerName); animator.SetTrigger(liftTriggerName); }
+    }
+
+    void HandleLifting()
+    {
+        agent.isStopped = true;
+        liftTimer += Time.deltaTime;
+
+        // Gắn đá vào tay đúng lúc tay chạm xuống trong animation Lift
+        if (!hasGrabbedDuringLift && liftTimer >= liftTime * liftGrabRatio)
+        {
+            hasGrabbedDuringLift = true;
+            if (pendingStone != null) carrySystem.PickupStone(pendingStone);
+        }
+
+        if (liftTimer < liftTime) return;
+
+        isLifting    = false;
+        pendingStone = null;
     }
 
     void ReleaseCurrentStone()

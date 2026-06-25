@@ -18,6 +18,16 @@ public class WorkerFindTree : MonoBehaviour
     public float chopImpactRatio = 0.5f; // % thời gian chop khi rìu chạm cây
     private bool hasPlayedImpactVFX = false;
 
+    [Header("Lift/Pickup Settings")]
+    public string liftTriggerName = "Lift";
+    public float  liftTime        = 1f;   // tổng thời gian animation Lift chạy (khớp với độ dài clip)
+    public float  liftGrabRatio   = 0.6f; // % thời gian khi tay chạm gỗ để gắn vào tay
+
+    private bool       isLifting            = false;
+    private float      liftTimer            = 0f;
+    private bool       hasGrabbedDuringLift = false;
+    private WoodPickup pendingWood          = null;
+
     [Header("Idle/Wander Settings")]
     public float wanderRadius = 5f;
     public float wanderInterval = 3f;
@@ -50,6 +60,12 @@ public class WorkerFindTree : MonoBehaviour
     {
         UpdateAnimationSpeed();
         CheckStuck(); 
+
+        if (isLifting)
+        {
+            HandleLifting();
+            return;
+        }
 
         if (carrySystem.IsCarrying())
         {
@@ -261,10 +277,38 @@ public class WorkerFindTree : MonoBehaviour
         WoodPickup[] woods = targetTree.TakeDamage(1);
         if (woods != null && woods.Length > 0)
         {
-            // BUG FIX: Pickup trước, Release sau — nhất quán với WorkerFindRice/WorkerFindStone
-            carrySystem.PickupWood(woods[0]);
+            // Cây đã ngã: nhả claim ngay, rồi chơi animation Lift trước khi gắn gỗ vào tay
             ReleaseCurrentTree();
+            StartLifting(woods[0]);
         }
+    }
+
+    void StartLifting(WoodPickup wood)
+    {
+        pendingWood          = wood;
+        isLifting            = true;
+        liftTimer            = 0f;
+        hasGrabbedDuringLift = false;
+
+        if (animator != null) { animator.ResetTrigger(liftTriggerName); animator.SetTrigger(liftTriggerName); }
+    }
+
+    void HandleLifting()
+    {
+        agent.isStopped = true;
+        liftTimer += Time.deltaTime;
+
+        // Gắn gỗ vào tay đúng lúc tay chạm xuống trong animation Lift
+        if (!hasGrabbedDuringLift && liftTimer >= liftTime * liftGrabRatio)
+        {
+            hasGrabbedDuringLift = true;
+            if (pendingWood != null) carrySystem.PickupWood(pendingWood);
+        }
+
+        if (liftTimer < liftTime) return;
+
+        isLifting   = false;
+        pendingWood = null;
     }
 
     void ReleaseCurrentTree()
