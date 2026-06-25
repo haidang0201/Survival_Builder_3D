@@ -11,6 +11,15 @@ public class UIHighlightSystem : MonoBehaviour
     [Header("SPRITES")]
     public Sprite circleSprite;
 
+    // 💥 NEW FEILDS (YOU ASKED)
+    [Header("HIGHLIGHT SIZE")]
+    public float circleSize = 140f;          // 🔥 chỉnh kích thước vòng
+
+    [Header("PULSE / MOVEMENT FX")]
+    public float scaleStrength = 0.1f;       // 🔥 độ phồng to nhỏ
+    public float moveStrength = 6f;          // 🔥 độ rung lên xuống mạnh
+    public float moveSpeed = 3f;            // 🔥 tốc độ rung
+
     GameObject dimGO;
     GameObject circleGO;
 
@@ -19,7 +28,7 @@ public class UIHighlightSystem : MonoBehaviour
     RectTransform currentTarget;
 
     Vector3 baseScale;
-
+    Vector2 basePos;
 
     void Awake()
     {
@@ -31,8 +40,13 @@ public class UIHighlightSystem : MonoBehaviour
     {
         if (circleRT == null) return;
 
-        float scale = 1f + Mathf.Sin(Time.time * 2f) * 0.1f;
+        // 💥 SCALE PULSE
+        float scale = 1f + Mathf.Sin(Time.time * 2f) * scaleStrength;
         circleRT.localScale = baseScale * scale;
+
+        // 💥 STRONG FLOAT UP/DOWN
+        float yOffset = Mathf.Sin(Time.time * moveSpeed) * moveStrength;
+        circleRT.anchoredPosition = basePos + new Vector2(0, yOffset);
     }
 
     void LateUpdate()
@@ -42,7 +56,10 @@ public class UIHighlightSystem : MonoBehaviour
         Vector2 pos = GetPos(currentTarget);
 
         if (circleRT != null)
+        {
+            basePos = pos;
             circleRT.anchoredPosition = pos;
+        }
     }
 
     // ================= MAIN =================
@@ -89,7 +106,9 @@ public class UIHighlightSystem : MonoBehaviour
         img.raycastTarget = false;
 
         circleRT.anchorMin = circleRT.anchorMax = new Vector2(0.5f, 0.5f);
-        circleRT.sizeDelta = new Vector2(140, 140);
+
+        // 💥 USE FEILD SIZE
+        circleRT.sizeDelta = new Vector2(circleSize, circleSize);
 
         baseScale = circleRT.localScale;
     }

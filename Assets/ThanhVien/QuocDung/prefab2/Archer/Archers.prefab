@@ -12,6 +12,9 @@ GameObject:
   - component: {fileID: 8142332527710236933}
   - component: {fileID: 7212593560884518217}
   - component: {fileID: 4232361120154803848}
+  - component: {fileID: 623490944352807106}
+  - component: {fileID: 4688307958404689018}
+  - component: {fileID: 5619626056799918320}
   m_Layer: 11
   m_Name: Archers
   m_TagString: Untagged
@@ -54,6 +57,8 @@ MonoBehaviour:
   door: {fileID: 0}
   buildProgress: 0
   isOccupied: 0
+  currentWorkers: 0
+  maxWorkers: 4
 --- !u!114 &7212593560884518217
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66,6 +71,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
+  isInitialBuildNeeded: 0
+  initialBuildDuration: 5
   buildingType: 9
   buildingName: "Th\xE1p Cung"
   visualModels:
@@ -115,6 +122,161 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.7990618, y: 1.8279905, z: 3.2562668}
   m_Center: {x: 0.16797376, y: 0.91381407, z: -0.9656912}
+--- !u!114 &623490944352807106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4605438273477018434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea7187be5dc69d84597e08b4bd8d5453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttackTowerAI
+  towerType: 0
+  fireRate: 1
+  firePoint: {fileID: 2491036374883584548}
+  projectilePrefab: {fileID: 5359184337749467852, guid: f993c8283c5cd9040bec9dd913992256, type: 3}
+  projectileSpeed: 20
+  projectileYawOffset: 0
+  bombSpawnHeight: 6
+  muzzleOffset: 0.5
+  damageLv1: 10
+  damageLv2: 15
+  damageLv3: 20
+  burnRadius: 3
+  burnDamagePerSec: 5
+  burnDuration: 3
+  fireVfxPrefab: {fileID: 0}
+  animator: {fileID: 304104578642486117}
+  attackParamName: IsAttack
+  attackRange: 8
+--- !u!82 &4688307958404689018
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4605438273477018434}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &5619626056799918320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4605438273477018434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15477d9e9af9da4458f1a5fb15fd0b71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerSoundPlayer
+  archerFireClips:
+  - {fileID: 8300000, guid: b3d9ec1feeac1064f97ea9729507e7d5, type: 3}
+  - {fileID: 8300000, guid: accd0e2aa4754124ba442887fa0f8b69, type: 3}
+  - {fileID: 8300000, guid: a3e2d8cdb3432bf45b238534584b908d, type: 3}
+  cannonFireClips:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  fireVolume: 0.9
+  maxAudioDistance: 30
+  projectileTag: Projectile
+  projectileLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  muzzleCheckRadius: 2.5
+  minSoundInterval: 0.3
 --- !u!1001 &291811069844008687
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -333,7 +495,6 @@ MonoBehaviour:
   placementDustVFX: {fileID: 821278339072338608}
   constructionLoopVFX: {fileID: 6785628520736509681}
   completionAuraVFX: {fileID: 2099934446310799672}
-  buildDuration: 7
   upgradeAudioSources:
   - {fileID: 8248158118062996801}
   - {fileID: 1681968413120131105}
@@ -1110,6 +1271,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea7187be5dc69d84597e08b4bd8d5453, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AttackTowerAI
+--- !u!4 &2491036374883584548 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8516695136727011572, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
+  m_PrefabInstance: {fileID: 6098033844259805904}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2874797105008909913 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8306262536278951049, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}

@@ -8,13 +8,24 @@ public class QuestTabUI : MonoBehaviour
     public Button[] tabButtons;
     public Image[] tabImages;
 
-    [Header("Colors")]
-    public Color normalColor = new Color32(90, 59, 36, 255);
-    public Color selectedColor = new Color32(200, 138, 61, 255);
+    [Header("Colors - VIỆT CỔ STYLE (FIXED CONTRAST)")]
+    public Color normalColor = new Color32(55, 40, 25, 255);      // tối hơn, dễ đọc
+    public Color selectedColor = new Color32(245, 200, 110, 255); // vàng sáng nổi bật
 
     [Header("Content")]
     public TMP_Text contentTitleText;
     public TMP_Text contentBodyText;
+
+    // 💥 RESOURCE ICON POSITIONS (FIELD BẠN MUỐN)
+    [Header("RESOURCE ICON POSITIONS (UI IMAGE)")]
+    public Image woodIconUI;
+    public Image stoneIconUI;
+    public Image foodIconUI;
+
+    [Header("RESOURCE SPRITES")]
+    public Sprite woodSprite;
+    public Sprite stoneSprite;
+    public Sprite foodSprite;
 
     private string[] titles =
     {
@@ -25,20 +36,18 @@ public class QuestTabUI : MonoBehaviour
 
     private string[] bodies =
     {
-        "1. Mở rộng Sức chứa Nhân lực\n- Xây nhà dân\n- Mục tiêu: Có 4 Worker trên bản đồ\n\n" +
-        "2. Kích hoạt chuỗi Lương thực\n- Đặt 1 Cánh đồng lúa\n- Mục tiêu: Thu về 50 Lúa\n\n" +
-        "3. Tối ưu vận chuyển\n- Xây Kho chứa phụ gần mỏ\n- Mục tiêu: Tăng tốc độ thu thập +100 Gỗ",
+        "1. Mở rộng Sức chứa Nhân lực\n- Xây nhà dân\n- Mục tiêu: Có 4 Worker\n\n" +
+        "2. Thu thập tài nguyên\n- 200 \n- 100 \n- 70 \n\n" +
+        "3. Tối ưu vận chuyển\n- Xây kho gần mỏ",
 
-        "1. Đạt mốc Tích trữ\n- Xây hoặc nâng cấp kho chứa lớn\n\n" +
-        "Mục tiêu:\n- 500 Gỗ\n- 500 Đá\n- 500 Lúa\n\n" +
-        "Kiểm tra hệ thống Worker tự động hoạt động ổn định.",
+        "1. Đạt mốc tích trữ\n- Nâng cấp kho\n\n" +
+        "Mục tiêu:\n- 500 \n- 500 \n- 500 ",
 
-        "1. Thiết lập Vành đai bảo hộ\n- Xây Tháp Canh, Tháp Pháo, Tháp Cung\n- Bảo vệ 2 khu khai thác\n\n" +
-        "2. Tự động hóa Tiêu diệt\n- Tháp tự bắn Enemy\n- Mục tiêu: Diệt 10 Enemy\n\n" +
-        "3. Vận hành không tổn thất\n- Sống sót qua đợt tấn công\n- Worker chết = 0"
+        "1. Thiết lập phòng thủ\n- Xây Tháp Canh\n- Xây Tháp Pháo\n\n" +
+        "2. Tiêu diệt kẻ địch\n- Diệt 10 Enemy"
     };
 
-    private void Start()
+    void Start()
     {
         for (int i = 0; i < tabButtons.Length; i++)
         {
@@ -47,16 +56,34 @@ public class QuestTabUI : MonoBehaviour
         }
 
         ShowTab(0);
+
+        ApplyResourceIcons();
     }
 
     public void ShowTab(int index)
     {
         contentTitleText.text = titles[index];
+
+        // 💥 TEXT NỔI HƠN
+        contentBodyText.color = new Color32(90, 60, 30, 255);
         contentBodyText.text = bodies[index];
 
         for (int i = 0; i < tabImages.Length; i++)
         {
-            tabImages[i].color = i == index ? selectedColor : normalColor;
+            tabImages[i].color = (i == index) ? selectedColor : normalColor;
         }
+    }
+
+    // 💥 SET ICON INTO UI POSITIONS
+    void ApplyResourceIcons()
+    {
+        if (woodIconUI != null && woodSprite != null)
+            woodIconUI.sprite = woodSprite;
+
+        if (stoneIconUI != null && stoneSprite != null)
+            stoneIconUI.sprite = stoneSprite;
+
+        if (foodIconUI != null && foodSprite != null)
+            foodIconUI.sprite = foodSprite;
     }
 }

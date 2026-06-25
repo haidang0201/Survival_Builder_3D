@@ -63,9 +63,12 @@ public class NPCDialogue : MonoBehaviour
 
         isTypingDone = true;
     }
-
-    void OnContinue()
+    public void OnContinue()
     {
         continueClicked = true;
+
+        // 🔥 FIX: tự tắt panel khi bấm Continue
+        if (panel != null)
+            panel.SetActive(false);
     }
 }

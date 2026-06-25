@@ -2,28 +2,25 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using TMPro; // Neu khong dung TextMeshPro, xoa dong nay va doi TMP_Text -> Text (UnityEngine.UI)
+using TMPro;
 
-// Gan script nay vao GameObject "SplashLoadingManager".
-// Keo Image BarFill (Image Type = Filled) vao "fillBar".
-// Keo Text % (neu co) vao "percentText".
 public class SplashLoadingBar : MonoBehaviour
 {
-    [Header("Thanh loading (Image Type = Filled)")]
+    [Header("Bar")]
     public Image fillBar;
 
-    [Header("Text hien % (co the de trong)")]
+    [Header("Text %")]
     public TMP_Text percentText;
 
-    [Header("Thoi gian chay gia (giay)")]
+    [Header("Time")]
     public float duration = 2.5f;
 
-    [Header("Duong cong tang toc do (de khong chay deu deu nhu robot)")]
-    public AnimationCurve progressCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-
-    [Header("Tu dong chuyen scene sau khi chay xong")]
+    [Header("Next Scene")]
     public bool autoLoadNextScene = true;
     public string nextSceneName = "MainGame";
+
+    // 🔥 ADD: event sync intro
+    public System.Action<float> OnLoadingProgress;
 
     void Start()
     {
@@ -31,7 +28,7 @@ public class SplashLoadingBar : MonoBehaviour
         StartCoroutine(RunFakeLoading());
     }
 
-    private IEnumerator RunFakeLoading()
+    IEnumerator RunFakeLoading()
     {
         float elapsed = 0f;
 
@@ -39,26 +36,24 @@ public class SplashLoadingBar : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            float progress = progressCurve.Evaluate(t);
 
-            if (fillBar != null)
-                fillBar.fillAmount = progress;
+            fillBar.fillAmount = t;
 
             if (percentText != null)
-                percentText.text = Mathf.RoundToInt(progress * 100f) + "%";
+                percentText.text = Mathf.RoundToInt(t * 100f) + "%";
+
+            // 🔥 SYNC INTRO
+            OnLoadingProgress?.Invoke(t);
 
             yield return null;
         }
 
-        // Dam bao ket thuc dung 100%
-        if (fillBar != null) fillBar.fillAmount = 1f;
+        fillBar.fillAmount = 1f;
         if (percentText != null) percentText.text = "100%";
 
-        yield return new WaitForSeconds(0.3f); // dung lai 1 chut cho nguoi choi thay 100%
+        yield return new WaitForSeconds(0.3f);
 
-        if (autoLoadNextScene && !string.IsNullOrEmpty(nextSceneName))
-        {
+        if (autoLoadNextScene)
             SceneManager.LoadScene(nextSceneName);
-        }
     }
 }

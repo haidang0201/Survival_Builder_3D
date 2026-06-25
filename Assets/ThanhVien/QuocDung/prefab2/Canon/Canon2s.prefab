@@ -12,6 +12,9 @@ GameObject:
   - component: {fileID: 8651473812605907446}
   - component: {fileID: 2971188096906272410}
   - component: {fileID: 9057538648367644328}
+  - component: {fileID: 4541371095603602797}
+  - component: {fileID: 7362775286027331498}
+  - component: {fileID: 3978047784260270418}
   m_Layer: 11
   m_Name: Canon2s
   m_TagString: Untagged
@@ -54,6 +57,8 @@ MonoBehaviour:
   door: {fileID: 0}
   buildProgress: 0
   isOccupied: 0
+  currentWorkers: 0
+  maxWorkers: 4
 --- !u!114 &2971188096906272410
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66,6 +71,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
+  isInitialBuildNeeded: 0
+  initialBuildDuration: 5
   buildingType: 10
   buildingName: "Ph\xE1o"
   visualModels:
@@ -115,6 +122,161 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.7990618, y: 1.8279905, z: 3.2562668}
   m_Center: {x: 0.16797376, y: 0.91381407, z: -0.9656912}
+--- !u!114 &4541371095603602797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1204634543905229984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea7187be5dc69d84597e08b4bd8d5453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttackTowerAI
+  towerType: 1
+  fireRate: 0.5
+  firePoint: {fileID: 5820942404898211948}
+  projectilePrefab: {fileID: 8080310107249123535, guid: fcb8c8cd951a9e449823d3bffca66e5b, type: 3}
+  projectileSpeed: 20
+  projectileYawOffset: 0
+  bombSpawnHeight: 2
+  muzzleOffset: 0.5
+  damageLv1: 10
+  damageLv2: 15
+  damageLv3: 20
+  burnRadius: 3
+  burnDamagePerSec: 5
+  burnDuration: 3
+  fireVfxPrefab: {fileID: 0}
+  animator: {fileID: 6674684139583448465}
+  attackParamName: IsAttack
+  attackRange: 8
+--- !u!82 &7362775286027331498
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1204634543905229984}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &3978047784260270418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1204634543905229984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15477d9e9af9da4458f1a5fb15fd0b71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerSoundPlayer
+  archerFireClips:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  cannonFireClips:
+  - {fileID: 8300000, guid: d2ea1ee55e86d8747b4d361036599fa2, type: 3}
+  - {fileID: 8300000, guid: d2ea1ee55e86d8747b4d361036599fa2, type: 3}
+  - {fileID: 8300000, guid: a3e2d8cdb3432bf45b238534584b908d, type: 3}
+  fireVolume: 0.9
+  maxAudioDistance: 30
+  projectileTag: Projectile
+  projectileLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  muzzleCheckRadius: 2.5
+  minSoundInterval: 0.3
 --- !u!1001 &1194094122742097852
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -201,6 +363,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea7187be5dc69d84597e08b4bd8d5453, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AttackTowerAI
+--- !u!4 &5820942404898211948 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4637126526584483792, guid: c82d9517f847c4a4cb58ebefce0d84e1, type: 3}
+  m_PrefabInstance: {fileID: 1194094122742097852}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &6674684139583448465 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5490868277580300845, guid: c82d9517f847c4a4cb58ebefce0d84e1, type: 3}
+  m_PrefabInstance: {fileID: 1194094122742097852}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1626883557597765072
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -665,7 +837,6 @@ MonoBehaviour:
   placementDustVFX: {fileID: 8257144849673689280}
   constructionLoopVFX: {fileID: 7952720348254158031}
   completionAuraVFX: {fileID: 2289344441727746885}
-  buildDuration: 7
   upgradeAudioSources:
   - {fileID: 7403734806743078756}
   - {fileID: 2700735322738378248}

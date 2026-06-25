@@ -52,6 +52,8 @@ MonoBehaviour:
   door: {fileID: 0}
   buildProgress: 0
   isOccupied: 0
+  currentWorkers: 0
+  maxWorkers: 4
 --- !u!114 &7377948713702016207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -64,6 +66,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
+  isInitialBuildNeeded: 0
+  initialBuildDuration: 5
   buildingType: 8
   buildingName: "Th\xE1p canh"
   visualModels:
@@ -74,6 +78,7 @@ MonoBehaviour:
   stoneStorageLevels: []
   riceStorageLevels: []
   kitchenLevels: []
+  houseLevels: []
   buildingIcons:
   - {fileID: 21300000, guid: 75d09e1ef10346a4bb05e9a9d12cec92, type: 3}
 --- !u!65 &8486806693736343140
@@ -539,7 +544,10 @@ MonoBehaviour:
   placementDustVFX: {fileID: 8340006721861171518}
   constructionLoopVFX: {fileID: 8135459397803890225}
   completionAuraVFX: {fileID: 3507815463582998832}
-  buildDuration: 7
+  upgradeAudioSources: []
+  placementAudioSources: []
+  upgradeLoopSFXPool: []
+  placementSFX: {fileID: 0}
 --- !u!4 &7486515091705124285 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1256211159982899511, guid: 33bacb457992928428909991f4a7df0c, type: 3}

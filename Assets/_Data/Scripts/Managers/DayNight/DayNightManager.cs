@@ -10,8 +10,8 @@ public class DayNightManager : Singleton<DayNightManager>
     public event Action OnNightStart;
 
     [Header("Cài đặt Thời gian (Giây)")]
-    public float DayDuration = 15f;  // Thời gian ban ngày 
-    public float NightDuration = 30f; // Thời gian ban đêm 
+    public float DayDuration = 10f;  // Thời gian ban ngày 
+    public float NightDuration = 10f; // Thời gian ban đêm 
 
     [Header("Đồng hồ đếm ngược (Chỉ xem, đừng sửa)")]
     [SerializeField] private float timer; // <--- THÊM [SerializeField] VÀO ĐÂY ĐỂ HIỆN LÊN INSPECTOR
