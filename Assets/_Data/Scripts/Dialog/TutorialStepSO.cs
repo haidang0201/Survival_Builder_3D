@@ -15,4 +15,5 @@ public class TutorialStepSO : ScriptableObject
     [Header("Nhiệm vụ mở ra sau step này (để trống nếu không có)")]
     [TextArea(2, 3)]
     public string questDescription;
+
 }
