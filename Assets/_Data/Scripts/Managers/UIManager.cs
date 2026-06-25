@@ -391,6 +391,42 @@ public class UIManager : Singleton<UIManager>
                     }
                 }
                 break;
+
+            case BuildingType.House:
+                if (building.HouseLevels != null && lv < building.HouseLevels.Length && building.HouseLevels[lv] != null)
+                {
+                    // Đổi tên nhãn hiển thị bên trái cột thông số
+                    ResetStatLabels("Sức chứa nhà", "Tốc độ khai thác");
+                    var curScript = building.HouseLevels[lv];
+
+                    // 1. Điền thông số hiện tại (Cột bên trái)
+                    // Hiện số worker hiện tại đang ngủ / Sức chứa tối đa cấp này
+                    if (txt_SatThuong_HienTai != null) 
+                        txt_SatThuong_HienTai.text = $"{curScript.WorkerCount}/{curScript.maxCapacity}";
+                    
+                    // Hiện tốc độ khai thác của cấp này
+                    if (txt_TamBan_HienTai != null) 
+                        txt_TamBan_HienTai.text = $"{curScript.gatherSpeed:F1}s";
+
+                    // 2. Điền thông số cấp tiếp theo nếu chưa đạt cấp tối đa (Cột bên phải)
+                    if (!isMax && (lv + 1) < building.HouseLevels.Length && building.HouseLevels[lv + 1] != null)
+                    {
+                        var nxtScript = building.HouseLevels[lv + 1];
+                        
+                        // Nếu tăng sức chứa tối đa thì hiển thị chữ màu xanh green
+                        if (txt_SatThuong_NangCap != null) 
+                            txt_SatThuong_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity 
+                                ? $"<color=green>{nxtScript.maxCapacity} Worker</color>" 
+                                : $"{nxtScript.maxCapacity} Worker";
+
+                        // Nếu tốc độ khai thác được tối ưu (giảm thời gian xuống) thì hiện màu xanh
+                        if (txt_TamBan_NangCap != null) 
+                            txt_TamBan_NangCap.text = nxtScript.gatherSpeed < curScript.gatherSpeed 
+                                ? $"<color=green>{nxtScript.gatherSpeed:F1}s</color>" 
+                                : $"{nxtScript.gatherSpeed:F1}s";
+                    }
+                }
+                break;
             default:
                 if (chiso_panel != null) chiso_panel.SetActive(false);
                 break;
