@@ -29,6 +29,8 @@ public class BuildingCtrl : MonoBehaviour
     [Header("State – chỉ xem, không sửa tay")]
     [SerializeField] private float buildProgress = 0f;
     [SerializeField] private bool isOccupied = false;
+    [SerializeField] private int currentWorkers = 0;
+    [SerializeField] private int maxWorkers = 4;
 
     // // Thêm vào file BuildingCtrl.cs của bạn
     // public float currentHealth = 100f; 
@@ -45,6 +47,8 @@ public class BuildingCtrl : MonoBehaviour
     public bool IsBuilt => buildProgress >= 1f;
     public bool IsOccupied => isOccupied;
     public bool IsAvailable => IsBuilt && !isOccupied;
+    public int CurrentWorkers => currentWorkers;
+    public int MaxWorkers => maxWorkers;
 
     /// <summary>Góc Y hiện tại (luôn là bội số 90°)</summary>
     public float CurrentYRotation => NormalizeAngle(transform.eulerAngles.y);
@@ -79,14 +83,28 @@ public class BuildingCtrl : MonoBehaviour
             return;
         }
 
+        if (currentWorkers < maxWorkers)
+        {
+            currentWorkers++;
+        }
         isOccupied = true;
         worker.MoveToLocation(door.position);
     }
 
     public void ReleaseWorker(WorkerCtrl worker)
     {
+        if (currentWorkers > 0)
+        {
+            currentWorkers--;
+        }
         isOccupied = false;
         worker.ComeBackToWork();
+    }
+
+    public void SetWorkerState(int current, int max)
+    {
+        maxWorkers = Mathf.Max(0, max);
+        currentWorkers = Mathf.Clamp(current, 0, maxWorkers);
     }
 
     // ================= PUBLIC – BUILD =================
@@ -139,6 +157,8 @@ public class BuildingCtrl : MonoBehaviour
             buildProgress = buildProgress,
             isBuilt = IsBuilt,
             isOccupied = isOccupied,
+            currentWorkers = currentWorkers,
+            maxWorkers = maxWorkers,
             level = 0
         };
     }
@@ -152,6 +172,8 @@ public class BuildingCtrl : MonoBehaviour
         buildingType = state.buildingType;
         buildProgress = state.buildProgress;
         isOccupied = state.isOccupied;
+        maxWorkers = Mathf.Max(0, state.maxWorkers);
+        currentWorkers = Mathf.Clamp(state.currentWorkers, 0, maxWorkers);
 
         transform.position = state.position.ToVector3();
         transform.eulerAngles = state.rotation.ToVector3();

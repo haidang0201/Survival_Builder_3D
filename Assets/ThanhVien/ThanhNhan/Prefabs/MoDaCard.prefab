@@ -151,7 +151,7 @@ GameObject:
   - component: {fileID: 5174207277279288631}
   - component: {fileID: 7996560084388292853}
   m_Layer: 5
-  m_Name: Text_Right
+  m_Name: Text_RightSL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -288,7 +288,7 @@ GameObject:
   - component: {fileID: 1593807372015574909}
   - component: {fileID: 5515435181497340810}
   m_Layer: 5
-  m_Name: Text_Right
+  m_Name: Text_RightTD
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -611,15 +611,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.101960786, g: 0.101960786, b: 0.101960786, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: -1949108698, guid: 8338e3c2821dd4a05810d31bf80440f1, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -706,6 +706,7 @@ GameObject:
   - component: {fileID: 4395330704815505021}
   - component: {fileID: 4438992870787114015}
   - component: {fileID: 87659302086163750}
+  - component: {fileID: 3081223348398409178}
   m_Layer: 5
   m_Name: MoDaCard
   m_TagString: Untagged
@@ -720,7 +721,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2798214238269613788}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -767,8 +768,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 2140823956, guid: 1781f04e990b74f4391b3d1028753f8d, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -790,8 +791,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.VerticalLayoutGroup
   m_Padding:
-    m_Left: 20
-    m_Right: 20
+    m_Left: 30
+    m_Right: 30
     m_Top: 25
     m_Bottom: 25
   m_ChildAlignment: 0
@@ -816,7 +817,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
   m_HorizontalFit: 0
-  m_VerticalFit: 2
+  m_VerticalFit: 0
 --- !u!114 &87659302086163750
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -829,10 +830,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afc241570d88ecc4eb40926393c0818d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ResourceCardUI
-  workerProgressText: {fileID: 0}
-  productionText: {fileID: 0}
-  workerCountText: {fileID: 0}
+  workerProgressText: {fileID: 5515435181497340810}
+  productionText: {fileID: 7996560084388292853}
+  workerCountText: {fileID: 3887810172519994763}
   confirmButton: {fileID: 7185165853032173215}
+--- !u!114 &3081223348398409178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798214238269613788}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 676528e4bdf6b8041b359521e71a6ed7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StoneMineUnlockPanelController
+  cardUI: {fileID: 87659302086163750}
+  confirmButton: {fileID: 7185165853032173215}
+  backgroundButton: {fileID: 0}
+  targetBuildingType: 3
+  requiredWorkersToUnlock: 4
+  productionRatePerMinute: 6
 --- !u!1 &2862858376317277937
 GameObject:
   m_ObjectHideFlags: 0
@@ -1965,7 +1984,7 @@ GameObject:
   - component: {fileID: 3506589960417190383}
   - component: {fileID: 3887810172519994763}
   m_Layer: 5
-  m_Name: Text_Right
+  m_Name: Text_RightW
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
