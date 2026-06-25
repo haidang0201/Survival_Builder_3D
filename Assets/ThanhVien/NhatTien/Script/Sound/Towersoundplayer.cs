@@ -1,18 +1,9 @@
 using UnityEngine;
 
-/*
- * TowerSoundPlayer.cs  (v3 – Đã fix lỗi không nhận Trigger & trễ Physics)
- * Folder: Scripts/Building/Audio/
- */
-
 [RequireComponent(typeof(AttackTowerAI))]
 [RequireComponent(typeof(AudioSource))]
 public class TowerSoundPlayer : MonoBehaviour
 {
-    // ═══════════════════════════════════════════════════
-    //  INSPECTOR
-    // ═══════════════════════════════════════════════════
-
     [Header("🏹 Âm thanh Cung (Archer) – 3 slot = 3 cấp độ")]
     public AudioClip[] archerFireClips = new AudioClip[3];
 
@@ -22,29 +13,21 @@ public class TowerSoundPlayer : MonoBehaviour
     [Header("⚙️ Cấu hình Âm thanh")]
     [Range(0f, 1f)]
     public float fireVolume = 0.9f;
-
     [Range(1f, 50f)]
     public float maxAudioDistance = 30f;
 
-    [Header("🔍 Nhận biết Đạn (để detect lúc bắn)")]
-    [Tooltip("Tag gán cho prefab Arrow và CanonBall. Ví dụ: 'Projectile'")]
+    [Header("🔍 Nhận biết Đạn")]
+    [Tooltip("Tag gán cho prefab Arrow và CanonBall")]
     public string projectileTag = "Projectile";
-
-    [Tooltip("Layer của prefab Arrow và CanonBall (nếu có). Để None = dùng Tag.")]
     public LayerMask projectileLayer;
-
     [Range(0.3f, 5f)]
-    [Tooltip("Bán kính quét quanh muzzle. Tăng lên một chút nếu đạn bay quá nhanh")]
     public float muzzleCheckRadius = 2.5f;
 
     [Header("⏱️ Cooldown tối thiểu (giây)")]
     [Range(0.05f, 5f)]
     public float minSoundInterval = 0.3f;
 
-    // ═══════════════════════════════════════════════════
-    //  PRIVATE
-    // ═══════════════════════════════════════════════════
-
+    // ── Private ──────────────────────────────────────────
     private AttackTowerAI       attackAI;
     private UpgradeableBuilding upgradeBuilding;
     private AudioSource         audioSource;
@@ -53,23 +36,22 @@ public class TowerSoundPlayer : MonoBehaviour
     private float lastSoundTime       = -99f;
     private Transform cachedFirePoint;
 
-    // ═══════════════════════════════════════════════════
-    //  LIFECYCLE
-    // ═══════════════════════════════════════════════════
-
+    // ─────────────────────────────────────────────────────
     private void Start()
     {
         attackAI        = GetComponent<AttackTowerAI>();
-        upgradeBuilding = GetComponent<UpgradeableBuilding>();
+        upgradeBuilding = GetComponent<UpgradeableBuilding>(); // nullable – OK
         audioSource     = GetComponent<AudioSource>();
 
         audioSource.playOnAwake  = false;
-        // Chỉnh xuống 0.5f (Semi-3D) để nghe tiếng bắn rõ hơn khi Camera ở trên cao
-        audioSource.spatialBlend = 0.5f; 
+        audioSource.spatialBlend = 0.5f;
         audioSource.rolloffMode  = AudioRolloffMode.Logarithmic;
         audioSource.minDistance  = 3f;
         audioSource.maxDistance  = maxAudioDistance;
         audioSource.dopplerLevel = 0f;
+
+        // FIX 1: Bật auto sync một lần thay vì gọi SyncTransforms() mỗi frame
+        Physics.autoSyncTransforms = true;
 
         ValidateClipArrays();
     }
@@ -83,6 +65,7 @@ public class TowerSoundPlayer : MonoBehaviour
 
         int currentCount = CountProjectilesNearMuzzle();
 
+        // FIX 4: Chỉ trigger nếu đã qua cooldown VÀ có đạn mới
         if (currentCount > lastProjectileCount)
         {
             float timeSinceLast = Time.time - lastSoundTime;
@@ -90,51 +73,49 @@ public class TowerSoundPlayer : MonoBehaviour
             {
                 PlayFireSound();
                 lastSoundTime = Time.time;
+                // Reset ngay để tránh trigger lại frame kế nếu count vẫn cao
+                lastProjectileCount = currentCount;
+                return;
             }
         }
 
         lastProjectileCount = currentCount;
     }
 
-    // ═══════════════════════════════════════════════════
-    //  ĐẾM ĐẠN QUANH MUZZLE (ĐÃ ĐƯỢC FIX)
-    // ═══════════════════════════════════════════════════
-
+    // ─────────────────────────────────────────────────────
     private int CountProjectilesNearMuzzle()
     {
+        // FIX 1: Bỏ Physics.SyncTransforms() ở đây vì đã bật autoSyncTransforms
         Vector3 checkPos = cachedFirePoint.position;
         int count = 0;
 
-        // BẮT BUỘC: Ép Unity đồng bộ vật lý ngay trong frame này để thấy viên đạn vừa Instantiate
-        Physics.SyncTransforms();
-
-        // Ưu tiên Layer
         if (projectileLayer.value != 0)
         {
-            // BẮT BUỘC: Dùng QueryTriggerInteraction.Collide để bắt được các đạn dùng Trigger
-            Collider[] hits = Physics.OverlapSphere(checkPos, muzzleCheckRadius, projectileLayer, QueryTriggerInteraction.Collide);
+            Collider[] hits = Physics.OverlapSphere(
+                checkPos, muzzleCheckRadius,
+                projectileLayer,
+                QueryTriggerInteraction.Collide);
             return hits.Length;
         }
 
-        // Fallback: Tag
         if (!string.IsNullOrEmpty(projectileTag))
         {
-            // BẮT BUỘC: Dùng ~0 (tìm trên mọi Layer) và QueryTriggerInteraction.Collide
-            Collider[] allHits = Physics.OverlapSphere(checkPos, muzzleCheckRadius, ~0, QueryTriggerInteraction.Collide);
+            Collider[] allHits = Physics.OverlapSphere(
+                checkPos, muzzleCheckRadius,
+                ~0,
+                QueryTriggerInteraction.Collide);
+
             foreach (var col in allHits)
             {
                 if (col == null) continue;
-                try { if (col.CompareTag(projectileTag)) count++; } catch { }
+                if (col.CompareTag(projectileTag)) count++;
             }
         }
 
         return count;
     }
 
-    // ═══════════════════════════════════════════════════
-    //  PHÁT TIẾNG BẮN
-    // ═══════════════════════════════════════════════════
-
+    // ─────────────────────────────────────────────────────
     private void PlayFireSound()
     {
         int level = upgradeBuilding != null ? upgradeBuilding.CurrentLevel : 0;
@@ -158,54 +139,46 @@ public class TowerSoundPlayer : MonoBehaviour
 
         for (int i = idx - 1; i >= 0; i--)
             if (clips[i] != null) return clips[i];
-
         for (int i = idx + 1; i < clips.Length; i++)
             if (clips[i] != null) return clips[i];
 
         return null;
     }
 
-    // ═══════════════════════════════════════════════════
-    //  CACHE FIREPOINT
-    // ═══════════════════════════════════════════════════
-
+    // ─────────────────────────────────────────────────────
     private void RefreshFirePoint()
     {
-        if (attackAI.firePoint != null && attackAI.firePoint != cachedFirePoint)
-        {
-            cachedFirePoint = attackAI.firePoint;
-            lastProjectileCount = CountProjectilesNearMuzzle();
-        }
+        if (attackAI.firePoint == null || attackAI.firePoint == cachedFirePoint) return;
+
+        // FIX 2: Cập nhật cache TRƯỚC, rồi mới đếm để dùng đúng vị trí mới
+        cachedFirePoint = attackAI.firePoint;
+        lastProjectileCount = CountProjectilesNearMuzzle();
     }
 
-    // ═══════════════════════════════════════════════════
-    //  TIỆN ÍCH & GIZMO
-    // ═══════════════════════════════════════════════════
-
+    // ─────────────────────────────────────────────────────
     private void ValidateClipArrays()
     {
-        if (archerFireClips == null || archerFireClips.Length < 3)
-        {
-            AudioClip[] newArr = new AudioClip[3];
-            if (archerFireClips != null) System.Array.Copy(archerFireClips, newArr, Mathf.Min(archerFireClips.Length, 3));
-            archerFireClips = newArr;
-        }
-        if (cannonFireClips == null || cannonFireClips.Length < 3)
-        {
-            AudioClip[] newArr = new AudioClip[3];
-            if (cannonFireClips != null) System.Array.Copy(cannonFireClips, newArr, Mathf.Min(cannonFireClips.Length, 3));
-            cannonFireClips = newArr;
-        }
+        archerFireClips = EnsureLength(archerFireClips, 3);
+        cannonFireClips = EnsureLength(cannonFireClips, 3);
     }
 
+    private AudioClip[] EnsureLength(AudioClip[] arr, int length)
+    {
+        if (arr != null && arr.Length >= length) return arr;
+        AudioClip[] newArr = new AudioClip[length];
+        if (arr != null) System.Array.Copy(arr, newArr, Mathf.Min(arr.Length, length));
+        return newArr;
+    }
+
+    // FIX 5: Dùng cached attackAI thay vì GetComponent trong Gizmo
     private void OnDrawGizmosSelected()
     {
-        if (attackAI == null) attackAI = GetComponent<AttackTowerAI>();
-        if (attackAI == null || attackAI.firePoint == null) return;
+        var ai = attackAI != null ? attackAI : GetComponent<AttackTowerAI>();
+        if (ai == null || ai.firePoint == null) return;
 
         Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
-        Gizmos.DrawSphere(attackAI.firePoint.position, muzzleCheckRadius);
+        Gizmos.DrawSphere(ai.firePoint.position, muzzleCheckRadius);
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(attackAI.firePoint.position, muzzleCheckRadius);
+        Gizmos.DrawWireSphere(ai.firePoint.position, muzzleCheckRadius);
     }
 }
