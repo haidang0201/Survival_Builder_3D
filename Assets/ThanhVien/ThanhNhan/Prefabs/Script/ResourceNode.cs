@@ -9,6 +9,8 @@ public class ResourceNode : MonoBehaviour
     [Header("UI Panel Ref")]
     public GameObject moDaCardPanel; // Kéo thả cái bảng trắng MoDaCard vào đây
 
+    private StoneMineUnlockPanelController panelController;
+
     void Start()
     {
         // Ban đầu cập nhật trạng thái ổ khóa lơ lửng trên đầu
@@ -18,6 +20,7 @@ public class ResourceNode : MonoBehaviour
         if (moDaCardPanel != null)
         {
             moDaCardPanel.SetActive(false);
+            panelController = moDaCardPanel.GetComponent<StoneMineUnlockPanelController>();
         }
     }
 
@@ -38,6 +41,17 @@ public class ResourceNode : MonoBehaviour
             Debug.Log("Mỏ đá đang bị khóa! Bật bảng UI nhiệm vụ lên.");
             if (moDaCardPanel != null)
             {
+                if (panelController == null)
+                {
+                    panelController = moDaCardPanel.GetComponent<StoneMineUnlockPanelController>();
+                }
+
+                if (panelController != null)
+                {
+                    panelController.BindTargetNode(this);
+                    panelController.RefreshPanelData();
+                }
+
                 moDaCardPanel.SetActive(true); // Bật bảng trắng lên
             }
         }
@@ -46,6 +60,13 @@ public class ResourceNode : MonoBehaviour
             Debug.Log("Mỏ đá đã mở khóa! Tiến hành khai thác...");
             // Viết logic cộng đá hoặc cho worker làm việc ở đây
         }
+    }
+
+    public void UnlockNode()
+    {
+        isLocked = false;
+        UpdateLockStatus();
+        Debug.Log("Mỏ đá đã được mở khóa thành công.");
     }
     // Thêm hàm này vào dưới cùng script ResourceNode của bạn
     void Update()

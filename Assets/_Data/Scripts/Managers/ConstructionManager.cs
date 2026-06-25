@@ -69,13 +69,13 @@ public class ConstructionManager : Singleton<ConstructionManager>
         BuildingCost cost = GetBuildingCost(type);
 
         // 3. Gọi ResourceManager để kiểm tra và trừ tài nguyên tài khoản
-        if (ResourceManager.Instance != null)
+        if (DialogNPC.Instance != null)
         {
             // Truyền Wood, Rice (Food), Stone vào hàm Consume
-            if (!ResourceManager.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost))
+            if (!DialogNPC.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost))
             {
                 // Nếu không đủ tiền, hàm Consume tự báo Log và dừng đặt nhà tại đây
-                return; 
+                return;
             }
         }
 

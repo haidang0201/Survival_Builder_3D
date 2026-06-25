@@ -12,6 +12,16 @@ public class UpgradeableBuilding : MonoBehaviour
         public float upgradeDuration; // Thời gian nâng cấp tính bằng giây
     }
 
+    [Header("Penta Dev - Khởi Tạo Xây Dựng Ban Đầu")]
+    [Tooltip("TÍCH VÀO: Công trình chưa xây. Khi vừa chạy game sẽ ép chạy thời gian, VFX, SFX như nâng cấp.\nTẮT TÍCH: Công trình đã xây xong từ trước, vào game sẽ không lặp lại.")]
+    [SerializeField] private bool isInitialBuildNeeded = true;
+
+    [Tooltip("Thời gian để hoàn thành việc xây dựng công trình này lần đầu tiên (tính bằng giây)")]
+    [SerializeField] private float initialBuildDuration = 5f;
+
+    // Cổng Property để UI đọc trạng thái xem nhà có phải đang trong luồng xây mới hay không
+    public bool IsInitialBuildNeeded => isInitialBuildNeeded;
+
     [Header("Loại công trình")]
     public BuildingType buildingType;
 
@@ -47,11 +57,13 @@ public class UpgradeableBuilding : MonoBehaviour
     [SerializeField] private StoneStorage[] stoneStorageLevels;
     [SerializeField] private RiceStorage[] riceStorageLevels;
     [SerializeField] private Kitchen[] kitchenLevels;
+    [SerializeField] private House[] houseLevels; // <-- VŨ THÊM DÒNG NÀY VÀO ĐÂY
 
     public WoodStorage[] WoodStorageLevels => woodStorageLevels;
     public StoneStorage[] StoneStorageLevels => stoneStorageLevels;
     public RiceStorage[] RiceStorageLevels => riceStorageLevels;
     public Kitchen[] KitchenLevels => kitchenLevels;
+    public House[] HouseLevels => houseLevels; // <-- VŨ THÊM DÒNG NÀY ĐỂ UI ĐỌC ĐƯỢC
     // ====================================================================
 
     // Các trường lưu giữ visual gốc phục vụ cơ chế tự tham chiếu không reparent
@@ -325,6 +337,15 @@ public class UpgradeableBuilding : MonoBehaviour
                 helper.parentBuilding = this;
             }
         }
+
+        // Nếu căn nhà này được đánh dấu là CẦN XÂY DỰNG BAN ĐẦU
+        if (isInitialBuildNeeded)
+        {
+            // Kích hoạt trạng thái nâng cấp giả lập để UI bắt đầu đếm số và chạy VFX/SFX
+            IsUpgrading = true;
+            StartCoroutine(UpgradeRoutine(initialBuildDuration));
+        }
+
         UpdateCivilianBuildingData();
     }
 
@@ -374,12 +395,33 @@ public class UpgradeableBuilding : MonoBehaviour
             yield return null;
         }
 
-        // Sau khi chạy hết thời gian chờ -> Tiến hành đổi cấp bậc hình ảnh
-        ExecuteLevelUp();
+        // ====================================================================
+        // --- PHÂN TÁCH LUỒNG XỬ LÝ KHI HẾT THỜI GIAN (PENTA DEV - VŨ) ---
+        // ====================================================================
+        if (isInitialBuildNeeded)
+        {
+            // TH 1: NẾU ĐANG TRONG LUỒNG XÂY MỚI BAN ĐẦU
+            isInitialBuildNeeded = false; // TẮT TÍCH VĨNH VIỄN: Xác nhận đã xây dựng xong!
+            IsUpgrading = false;
 
-        IsUpgrading = false;
+            // Kích hoạt hiệu ứng hoàn thành (Aura quét dọc thân nhà) từ BuildingProgressBarUI
+            var targetUI = BuildingProgressBridge.GetUI(this);
+            if (targetUI != null)
+            {
+                targetUI.HandleCompleteSequence();
+            }
 
-        // TẮT TEXT VÀ SLIDER THỜI GIAN KHI NÂNG CẤP XONG
+            Debug.Log($"[Penta Dev] 🏠 Công trình {buildingName} đã hoàn thành xây dựng lần đầu tiên thành công!");
+        }
+        else
+        {
+            // TH 2: NẾU LÀ LUỒNG NÂNG CẤP THÔNG THƯỜNG -> Tiến hành đổi cấp bậc hình ảnh
+            ExecuteLevelUp();
+            IsUpgrading = false;
+        }
+        // ====================================================================
+
+        // TẮT TEXT VÀ SLIDER THỜI GIAN KHI NÂNG CẤP/XÂY DỰNG XONG
         if (UIManager.Ins != null)
         {
             UIManager.Ins.HideUpgradeProgress();
@@ -532,6 +574,11 @@ public class UpgradeableBuilding : MonoBehaviour
             case BuildingType.Kitchen:
                 Kitchen kc = GetComponentInChildren<Kitchen>();
                 if (kc != null) kc.SetupLevel(CurrentLevel);
+                break;
+            case BuildingType.House: // <-- THÊM LOGIC ĐỒNG BỘ CHO NHÀ WORKER
+                House hs = GetComponentInChildren<House>();
+                // Nếu các file House của bạn có viết hàm SetupLevel(level) giống WoodStorage thì gọi ở đây,
+                // hoặc tạm thời giữ để cập nhật model visual khi nâng cấp thành công.
                 break;
         }
     }

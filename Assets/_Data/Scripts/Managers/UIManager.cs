@@ -26,8 +26,8 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private Button settingButton;
 
     [Header("Bottom UI Toolbar (Panels)")]
-    [SerializeField] private GameObject controlHintsGroup; 
-    [SerializeField] private GameObject settingUI;            
+    [SerializeField] private GameObject controlHintsGroup;
+    [SerializeField] private GameObject settingUI;
 
     private Coroutine _fadeWarningCoroutine;
 
@@ -37,15 +37,15 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private TMP_Text levelText;
     [SerializeField] private Button upgradeButton;
     [SerializeField] private TMP_Text upgradeButtonText;
-    [SerializeField] private Button moveButton; 
+    [SerializeField] private Button moveButton;
 
     [Header("New Features – Preview UI Elements")]
-    [SerializeField] private Image currentBuildingPreviewImage;  
-    [SerializeField] private Image nextBuildingPreviewImage;     
-    
+    [SerializeField] private Image currentBuildingPreviewImage;
+    [SerializeField] private Image nextBuildingPreviewImage;
+
     [Header("Cấu trúc Cửa sổ Chỉ Số (chiso_panel)")]
     [SerializeField] private GameObject chiso_panel;          // Panel tổng quản lý hiển thị chỉ số
-    
+
     [Space(10)]
     [Header("--- Cấu Phần Con Của chiso_hientai ---")]
     [SerializeField] private GameObject chiso_hientai_obj;    // Object cụm Hiện Tại để ẩn/hiện
@@ -83,7 +83,7 @@ public class UIManager : Singleton<UIManager>
         if (workerStatusPanel != null) workerStatusPanel.SetActive(true);
         if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
         if (settingUI != null) settingUI.SetActive(false);
-        if (upgradePanel != null) upgradePanel.SetActive(false); 
+        if (upgradePanel != null) upgradePanel.SetActive(false);
 
         if (buildButton != null) buildButton.onClick.AddListener(ToggleBuildMenu);
         if (toolsButton != null) toolsButton.onClick.AddListener(OnClickToolsButton);
@@ -126,8 +126,8 @@ public class UIManager : Singleton<UIManager>
 
     public void ExitPlacementMode(bool shouldReopenMenu)
     {
-        if (controlHintsGroup != null) controlHintsGroup.SetActive(false); 
-        if (buildMenu != null) buildMenu.SetActive(shouldReopenMenu); 
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
+        if (buildMenu != null) buildMenu.SetActive(shouldReopenMenu);
     }
 
     // ================= WARNING UI LOGIC =================
@@ -167,10 +167,10 @@ public class UIManager : Singleton<UIManager>
         if (building == null) return;
         selectedBuilding = building;
         if (upgradePanel != null) upgradePanel.SetActive(true);
-        
+
         // Reset lại số lần bấm về 0 khi chọn công trình mới
         upgradeClickCount = 0;
-        
+
         RefreshUpgradePanel(building);
     }
 
@@ -178,17 +178,17 @@ public class UIManager : Singleton<UIManager>
     {
         if (building == null) return;
 
-        int currentLevelIdx = building.CurrentLevel; 
-        int displayLevel = currentLevelIdx + 1;       
+        int currentLevelIdx = building.CurrentLevel;
+        int displayLevel = currentLevelIdx + 1;
         bool isMaxLevel = building.CurrentLevel >= building.MaxLevel - 1;
         bool isCurrentlyUpgrading = building.IsUpgrading;
 
         if (buildingNameText != null) buildingNameText.text = building.buildingName;
         if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
-        
+
         if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel && !isCurrentlyUpgrading;
         if (moveButton != null) moveButton.interactable = !isCurrentlyUpgrading;
-        
+
         if (upgradeButtonText != null)
         {
             if (isMaxLevel) upgradeButtonText.text = "Đã tối đa";
@@ -215,14 +215,14 @@ public class UIManager : Singleton<UIManager>
                 }
                 else
                 {
-                    nextBuildingPreviewImage.gameObject.SetActive(false); 
+                    nextBuildingPreviewImage.gameObject.SetActive(false);
                 }
             }
         }
 
         // --- LUỒNG HIỂN THỊ CHỈ SỐ (QUÂN SỰ & DÂN SỰ) ---
-        bool isDefenseTower = building.buildingType == BuildingType.WatchTower || 
-                              building.buildingType == BuildingType.ArcherTower || 
+        bool isDefenseTower = building.buildingType == BuildingType.WatchTower ||
+                              building.buildingType == BuildingType.ArcherTower ||
                               building.buildingType == BuildingType.Cannon;
 
         // Chỉ hiển thị thông số chi tiết khi đã đạt Max cấp HOẶC khi người chơi nhấn nút Nâng cấp lần 1
@@ -324,9 +324,9 @@ public class UIManager : Singleton<UIManager>
                     if (!isMax && (lv + 1) < building.WoodStorageLevels.Length && building.WoodStorageLevels[lv + 1] != null)
                     {
                         var nxtScript = building.WoodStorageLevels[lv + 1];
-                        if (txt_SatThuong_NangCap != null) 
+                        if (txt_SatThuong_NangCap != null)
                             txt_SatThuong_NangCap.text = nxtScript.MaxWorkers > curScript.MaxWorkers ? $"<color=green>{nxtScript.MaxWorkers} Max</color>" : $"{nxtScript.MaxWorkers} Max";
-                        if (txt_TamBan_NangCap != null) 
+                        if (txt_TamBan_NangCap != null)
                             txt_TamBan_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity}</color>" : $"{nxtScript.maxCapacity}";
                     }
                 }
@@ -344,9 +344,9 @@ public class UIManager : Singleton<UIManager>
                     if (!isMax && (lv + 1) < building.StoneStorageLevels.Length && building.StoneStorageLevels[lv + 1] != null)
                     {
                         var nxtScript = building.StoneStorageLevels[lv + 1];
-                        if (txt_SatThuong_NangCap != null) 
+                        if (txt_SatThuong_NangCap != null)
                             txt_SatThuong_NangCap.text = nxtScript.MaxWorkers > curScript.MaxWorkers ? $"<color=green>{nxtScript.MaxWorkers} Max</color>" : $"{nxtScript.MaxWorkers} Max";
-                        if (txt_TamBan_NangCap != null) 
+                        if (txt_TamBan_NangCap != null)
                             txt_TamBan_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity}</color>" : $"{nxtScript.maxCapacity}";
                     }
                 }
@@ -364,9 +364,9 @@ public class UIManager : Singleton<UIManager>
                     if (!isMax && (lv + 1) < building.RiceStorageLevels.Length && building.RiceStorageLevels[lv + 1] != null)
                     {
                         var nxtScript = building.RiceStorageLevels[lv + 1];
-                        if (txt_SatThuong_NangCap != null) 
+                        if (txt_SatThuong_NangCap != null)
                             txt_SatThuong_NangCap.text = nxtScript.MaxWorkers > curScript.MaxWorkers ? $"<color=green>{nxtScript.MaxWorkers} Max</color>" : $"{nxtScript.MaxWorkers} Max";
-                        if (txt_TamBan_NangCap != null) 
+                        if (txt_TamBan_NangCap != null)
                             txt_TamBan_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity}</color>" : $"{nxtScript.maxCapacity}";
                     }
                 }
@@ -384,10 +384,46 @@ public class UIManager : Singleton<UIManager>
                     if (!isMax && (lv + 1) < building.KitchenLevels.Length && building.KitchenLevels[lv + 1] != null)
                     {
                         var nxtScript = building.KitchenLevels[lv + 1];
-                        if (txt_SatThuong_NangCap != null) 
+                        if (txt_SatThuong_NangCap != null)
                             txt_SatThuong_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity} Slot</color>" : $"{nxtScript.maxCapacity} Slot";
-                        if (txt_TamBan_NangCap != null) 
+                        if (txt_TamBan_NangCap != null)
                             txt_TamBan_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity ? $"<color=green>{nxtScript.maxCapacity}</color>" : $"{nxtScript.maxCapacity}";
+                    }
+                }
+                break;
+
+            case BuildingType.House:
+                if (building.HouseLevels != null && lv < building.HouseLevels.Length && building.HouseLevels[lv] != null)
+                {
+                    // Đổi tên nhãn hiển thị bên trái cột thông số
+                    ResetStatLabels("Sức chứa nhà", "Tốc độ khai thác");
+                    var curScript = building.HouseLevels[lv];
+
+                    // 1. Điền thông số hiện tại (Cột bên trái)
+                    // Hiện số worker hiện tại đang ngủ / Sức chứa tối đa cấp này
+                    if (txt_SatThuong_HienTai != null) 
+                        txt_SatThuong_HienTai.text = $"{curScript.WorkerCount}/{curScript.maxCapacity}";
+                    
+                    // Hiện tốc độ khai thác của cấp này
+                    if (txt_TamBan_HienTai != null) 
+                        txt_TamBan_HienTai.text = $"{curScript.gatherSpeed:F1}s";
+
+                    // 2. Điền thông số cấp tiếp theo nếu chưa đạt cấp tối đa (Cột bên phải)
+                    if (!isMax && (lv + 1) < building.HouseLevels.Length && building.HouseLevels[lv + 1] != null)
+                    {
+                        var nxtScript = building.HouseLevels[lv + 1];
+                        
+                        // Nếu tăng sức chứa tối đa thì hiển thị chữ màu xanh green
+                        if (txt_SatThuong_NangCap != null) 
+                            txt_SatThuong_NangCap.text = nxtScript.maxCapacity > curScript.maxCapacity 
+                                ? $"<color=green>{nxtScript.maxCapacity} Worker</color>" 
+                                : $"{nxtScript.maxCapacity} Worker";
+
+                        // Nếu tốc độ khai thác được tối ưu (giảm thời gian xuống) thì hiện màu xanh
+                        if (txt_TamBan_NangCap != null) 
+                            txt_TamBan_NangCap.text = nxtScript.gatherSpeed < curScript.gatherSpeed 
+                                ? $"<color=green>{nxtScript.gatherSpeed:F1}s</color>" 
+                                : $"{nxtScript.gatherSpeed:F1}s";
                     }
                 }
                 break;
@@ -408,7 +444,7 @@ public class UIManager : Singleton<UIManager>
     private void UpdateDetailedTowerStats(UpgradeableBuilding building, int currentLv, bool isMax)
     {
         float curDamage = 0, nxtDamage = 0;
-        float curRange = 0, nxtRange = 0; 
+        float curRange = 0, nxtRange = 0;
         float curSpeed = 0, nxtSpeed = 0;
 
         AttackTowerAI currentAttackAI = null;
@@ -424,7 +460,7 @@ public class UIManager : Singleton<UIManager>
         if (currentAttackAI != null)
         {
             curSpeed = currentAttackAI.fireRate;
-            curRange = currentAttackAI.AttackRange; 
+            curRange = currentAttackAI.AttackRange;
 
             if (currentLv == 0) curDamage = currentAttackAI.damageLv1;
             else if (currentLv == 1) curDamage = currentAttackAI.damageLv2;
@@ -471,13 +507,13 @@ public class UIManager : Singleton<UIManager>
                     nxtSpeed = curSpeed;
                 }
 
-                if (txt_SatThuong_NangCap != null) 
+                if (txt_SatThuong_NangCap != null)
                     txt_SatThuong_NangCap.text = nxtDamage > curDamage ? $"<color=green>{nxtDamage}</color>" : nxtDamage.ToString();
-                
-                if (txt_TamBan_NangCap != null) 
+
+                if (txt_TamBan_NangCap != null)
                     txt_TamBan_NangCap.text = nxtRange > curRange ? $"<color=green>{nxtRange}m</color>" : $"{nxtRange}m";
-                
-                if (txt_TocDo_NangCap != null) 
+
+                if (txt_TocDo_NangCap != null)
                     txt_TocDo_NangCap.text = nxtSpeed > curSpeed ? $"<color=green>{nxtSpeed}/s</color>" : $"{nxtSpeed}/s";
             }
         }
@@ -504,7 +540,7 @@ public class UIManager : Singleton<UIManager>
                 if (chiso_nangcap_obj != null) chiso_nangcap_obj.SetActive(true);
                 if (txt_MaxLevelNotice != null) txt_MaxLevelNotice.gameObject.SetActive(false);
 
-                float nxtWatchRange = curRange + 5f; 
+                float nxtWatchRange = curRange + 5f;
 
                 if (txt_SatThuong_NangCap != null) txt_SatThuong_NangCap.text = "-";
                 if (txt_TamBan_NangCap != null) txt_TamBan_NangCap.text = $"<color=green>{nxtWatchRange}m</color>";
@@ -516,7 +552,7 @@ public class UIManager : Singleton<UIManager>
     public void HideUpgradePanel()
     {
         selectedBuilding = null;
-        upgradeClickCount = 0; 
+        upgradeClickCount = 0;
         if (upgradePanel != null) upgradePanel.SetActive(false);
     }
 
@@ -527,15 +563,15 @@ public class UIManager : Singleton<UIManager>
         if (upgradeClickCount == 0)
         {
             upgradeClickCount = 1;
-            RefreshUpgradePanel(selectedBuilding); 
+            RefreshUpgradePanel(selectedBuilding);
             return;
         }
 
         UpgradeableBuilding.UpgradeCost cost = selectedBuilding.GetNextUpgradeCost();
-        if (ResourceManager.Instance != null && !ResourceManager.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost)) return;
+        if (DialogNPC.Instance != null && !DialogNPC.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost)) return;
 
         selectedBuilding.StartUpgradeProcess();
-        upgradeClickCount = 0; 
+        upgradeClickCount = 0;
         RefreshUpgradePanel(selectedBuilding);
     }
 
@@ -554,7 +590,7 @@ public class UIManager : Singleton<UIManager>
     public void CloseUpgradePanel()
     {
         selectedBuilding = null;
-        upgradeClickCount = 0; 
+        upgradeClickCount = 0;
         if (upgradePanel != null)
         {
             upgradePanel.SetActive(false);
@@ -578,9 +614,9 @@ public class UIManager : Singleton<UIManager>
         if (settingUI != null) settingUI.SetActive(false);
         if (houseSelectionPanel != null) houseSelectionPanel.SetActive(false);
         if (workerStatusPanel != null) workerStatusPanel.SetActive(false);
-        
+
         selectedBuilding = null;
-        upgradeClickCount = 0; 
+        upgradeClickCount = 0;
         Debug.Log("[UIManager] 🧹 Đã dọn dẹp và ẩn toàn bộ giao diện cửa sổ popup.");
     }
 }
