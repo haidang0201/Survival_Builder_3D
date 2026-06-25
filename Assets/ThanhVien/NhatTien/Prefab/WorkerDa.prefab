@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 4390436857174182095}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000000002963052, y: 7.1054274e-15, z: -7.994219e-16, w: 1}
-  m_LocalPosition: {x: -0.011, y: 0.51, z: -0.65}
+  m_LocalPosition: {x: -0.13, y: 1.124, z: -0.279}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -88,6 +88,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3d3d327b50fbce54f9491ab58b2842f8, type: 3}
+--- !u!1 &8574434573239635609 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6582677637703321714, guid: 3d3d327b50fbce54f9491ab58b2842f8, type: 3}
+  m_PrefabInstance: {fileID: 3288996345044535019}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &9058236919086224419 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5769549569038127816, guid: 3d3d327b50fbce54f9491ab58b2842f8, type: 3}
@@ -103,15 +108,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 27.34283
+      value: 32.37
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.393979
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -9.631332
+      value: -4.93
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       propertyPath: m_LocalRotation.w
@@ -177,6 +182,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5459137789851626224, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
   m_PrefabInstance: {fileID: 8006096358226887460}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &3807821670197831253 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -2611164630692354703, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
+  m_PrefabInstance: {fileID: 8006096358226887460}
+  m_PrefabAsset: {fileID: 0}
 --- !u!95 &4499601329679318709 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
@@ -218,10 +228,15 @@ MonoBehaviour:
   carrySystem: {fileID: 7446059158469354286}
   animator: {fileID: 4499601329679318709}
   stamina: {fileID: 8967893099953977591}
-  mineDistance: 1.8
+  mineDistance: 2
   mineTime: 1.5
   mineTriggerName: Mine
+  wanderRadius: 5
+  wanderInterval: 3
   stuckTimeout: 2
+  liftTriggerName: Lift
+  liftTime: 0.8
+  liftGrabRatio: 0.6
 --- !u!195 &7785316619217161163
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -256,11 +271,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d2ee751f2b79af498f83c5db4b63606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkerStamina
-  maxStamina: 100
+  maxStamina: 200
   drainPerSecond: 5
   recoverPerSecond: 20
   restThreshold: 0
   resumeThreshold: 100
+  morningForceWakeThreshold: 30
+  kitchen: {fileID: 0}
+  house: {fileID: 0}
+  hungryRecoverMultiplier: 0.3
+  workerModel: {fileID: 3807821670197831253}
+  extraModelsToHide:
+  - {fileID: 4390436857174182095}
+  - {fileID: 8574434573239635609}
+  interactionRadius: 2
+  waitingScatterRadius: 2.5
   restSpot: {fileID: 0}
   onStaminaDepleted:
     m_PersistentCalls:
@@ -268,6 +293,7 @@ MonoBehaviour:
   onStaminaRecovered:
     m_PersistentCalls:
       m_Calls: []
+  isCarryingResources: 0
 --- !u!4 &7535057936231752911 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}

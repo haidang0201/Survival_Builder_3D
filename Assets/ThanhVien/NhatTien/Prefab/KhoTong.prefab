@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 3497381215702936149}
   m_Layer: 8
   m_Name: KhoTong
-  m_TagString: House
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -29,7 +29,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1498960011288815298}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.5811292, z: -0, w: 0.81381136}
+  m_LocalRotation: {x: 0, y: -0.58112913, z: 0, w: 0.81381136}
   m_LocalPosition: {x: -13.51152, y: 1.84, z: -3.495613}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -156,6 +156,51 @@ MonoBehaviour:
   onWarehouseFull:
     m_PersistentCalls:
       m_Calls: []
+  onWoodChanged:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: ResourceUIEffect, Assembly-CSharp
+        m_MethodName: OnWoodChanged
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onRiceChanged:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: ResourceUIEffect, Assembly-CSharp
+        m_MethodName: OnRiceChanged
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onStoneChanged:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: ResourceUIEffect, Assembly-CSharp
+        m_MethodName: OnStoneChanged
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &2124500121800340979
 GameObject:
   m_ObjectHideFlags: 0

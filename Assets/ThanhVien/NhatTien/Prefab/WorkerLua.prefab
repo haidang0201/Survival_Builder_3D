@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 4091280499755891250}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000000002963052, y: 7.1054274e-15, z: -7.994219e-16, w: 1}
-  m_LocalPosition: {x: -0.0069999695, y: 1.1599997, z: 0.709}
+  m_LocalPosition: {x: -0.0069999695, y: 1.1599997, z: -0.396}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -41,15 +41,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 7.756363
+      value: 7.6584854
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.12
+      value: 1.952
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -8.540718
+      value: -7.895607
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalRotation.w
@@ -81,7 +81,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_Name
-      value: peasant_6
+      value: WorkerLua
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -157,6 +157,8 @@ MonoBehaviour:
   harvestDistance: 1.8
   harvestTime: 2
   harvestTriggerName: Harvest
+  wanderRadius: 5
+  wanderInterval: 3
   stuckTimeout: 2
 --- !u!114 &8787511423028096762
 MonoBehaviour:
@@ -185,11 +187,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d2ee751f2b79af498f83c5db4b63606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkerStamina
-  maxStamina: 100
+  maxStamina: 200
   drainPerSecond: 5
   recoverPerSecond: 20
   restThreshold: 0
   resumeThreshold: 100
+  morningForceWakeThreshold: 30
+  kitchen: {fileID: 0}
+  house: {fileID: 0}
+  hungryRecoverMultiplier: 0.3
+  workerModel: {fileID: 4884473633011549685}
+  extraModelsToHide:
+  - {fileID: 4091280499755891250}
+  interactionRadius: 2
+  waitingScatterRadius: 2.5
   restSpot: {fileID: 0}
   onStaminaDepleted:
     m_PersistentCalls:
@@ -197,6 +208,7 @@ MonoBehaviour:
   onStaminaRecovered:
     m_PersistentCalls:
       m_Calls: []
+  isCarryingResources: 0
 --- !u!195 &8305230404701861977
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -219,3 +231,8 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!1 &4884473633011549685 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8437689587053184301, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
+  m_PrefabInstance: {fileID: 3950100089723879640}
+  m_PrefabAsset: {fileID: 0}

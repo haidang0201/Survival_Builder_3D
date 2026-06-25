@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 636578361628074388}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000000002963052, y: 7.1054274e-15, z: -7.994219e-16, w: 1}
-  m_LocalPosition: {x: -0.15, y: 1.273, z: 0.51}
+  m_LocalPosition: {x: -0.15, y: 1.273, z: -0.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -41,15 +41,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 12.976143
+      value: 23.31
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.3939793
+      value: 1.91
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.1749496
+      value: -7.11
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalRotation.w
@@ -81,7 +81,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_Name
-      value: peasant_5
+      value: WorkerCarrier
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_Controller
@@ -100,6 +100,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2202617565389417470}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0fb973e027c18794690a4041558b7234, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6034336859055696849}
   m_SourcePrefab: {fileID: 100100000, guid: 0fb973e027c18794690a4041558b7234, type: 3}
 --- !u!4 &1460319315114611668 stripped
 Transform:
@@ -159,11 +162,50 @@ MonoBehaviour:
   speedParam: Speed
   carryingParam: IsCarrying
   arriveDistance: 1.5
-  wanderRadius: 6
+  wanderRadius: 5
   wanderInterval: 3
   checkInterval: 0.5
   maxCarryCapacity: 10
   stuckTimeout: 2
+--- !u!114 &6034336859055696849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2238227453136603502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d2ee751f2b79af498f83c5db4b63606, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorkerStamina
+  maxStamina: 100
+  drainPerSecond: 5
+  recoverPerSecond: 20
+  restThreshold: 0
+  resumeThreshold: 100
+  morningForceWakeThreshold: 30
+  kitchen: {fileID: 0}
+  house: {fileID: 0}
+  hungryRecoverMultiplier: 0.3
+  workerModel: {fileID: 3509607050175132844}
+  extraModelsToHide:
+  - {fileID: 636578361628074388}
+  interactionRadius: 2
+  waitingScatterRadius: 2.5
+  restSpot: {fileID: 0}
+  onStaminaDepleted:
+    m_PersistentCalls:
+      m_Calls: []
+  onStaminaRecovered:
+    m_PersistentCalls:
+      m_Calls: []
+  isCarryingResources: 0
+--- !u!1 &3509607050175132844 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2556356662379413651, guid: 0fb973e027c18794690a4041558b7234, type: 3}
+  m_PrefabInstance: {fileID: 1427256061323195455}
+  m_PrefabAsset: {fileID: 0}
 --- !u!95 &4802020803714582958 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 0fb973e027c18794690a4041558b7234, type: 3}

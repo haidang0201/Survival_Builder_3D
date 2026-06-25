@@ -60,7 +60,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3372033079561069851}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.959705, z: -0, w: 0.28100953}
+  m_LocalRotation: {x: 0, y: -0.9597048, z: 0, w: 0.2810102}
   m_LocalPosition: {x: -0.28151703, y: 1.84, z: -11.815613}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -193,11 +193,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f75451aa42dd624aaf867772feb046d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RiceStorage
-  maxCapacity: 2
+  maxCapacity: 999
+  maxWorkersLevels: 020000000400000006000000
+  currentWorkersCount: 0
+  workerPrefab: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  spawnAmountPerLevel: 010000000100000002000000
   onStorageFull:
     m_PersistentCalls:
       m_Calls: []
   onRiceAdded:
+    m_PersistentCalls:
+      m_Calls: []
+  onWorkersChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onCapacityChanged:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1001 &67014088655766283
