@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &793116129931588251
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1162954564423519793}
+  - component: {fileID: 4670882592304094419}
+  - component: {fileID: 7553071864358403706}
+  - component: {fileID: 7846188429196765765}
+  m_Layer: 0
+  m_Name: TutorialManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1162954564423519793
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793116129931588251}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -63.70618, y: 0, z: -74.07746}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4670882592304094419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793116129931588251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 924ab6f7220c45449b491fd13ff9cfda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TutorialManager
+  npc: {fileID: 7846188429196765765}
+  highlight: {fileID: 7553071864358403706}
+  woodIcon: {fileID: 0}
+  stoneIcon: {fileID: 0}
+  wheatIcon: {fileID: 0}
+  dayTimerObj: {fileID: 0}
+  enemyCounterObj: {fileID: 0}
+  workerPopup: {fileID: 0}
+  buildButton: {fileID: 0}
+--- !u!114 &7553071864358403706
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793116129931588251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a250435dc3b782459da1fa599e83c8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIHighlightSystem
+  tutorialCanvas: {fileID: 0}
+  highlightRingPrefab: {fileID: 3831968715145009618, guid: ea0ed626e3ad06b4a9c4cbf3d0ffdfd4, type: 3}
+  dimOverlayPrefab: {fileID: 6848563261295988838, guid: b13504ec017203a4b88b5c01a4beac16, type: 3}
+  lockIconPrefab: {fileID: 6119730755061638174, guid: 0616422ac233a834eba977f250b9905f, type: 3}
+  pulseSpeed: 2.5
+  pulseExtra: 12
+--- !u!114 &7846188429196765765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793116129931588251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8c0452973622414c930bff8a8c0877d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCDialogue
+  panel: {fileID: 0}
+  text: {fileID: 0}
+  typeSpeed: 0.03

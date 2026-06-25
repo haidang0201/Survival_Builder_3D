@@ -26,10 +26,10 @@ public class UnlockableEntity : MonoBehaviour
 
     [Header("Cấu hình Khóa")]
     [Tooltip("ID duy nhất để Save/Load trạng thái vùng đất (Ví dụ: Zone_Bridge_01, Block_Forest_West)")]
-    public string entityId; 
+    public string entityId;
     public string entityName = "Vùng Đất Bí Ẩn";
     [TextArea(2, 4)] public string entityDescription = "Nộp đủ tài nguyên để khai hoang và mở rộng khu vực này.";
-    
+
     public UnlockRequirement requirement;
 
     [Header("Trạng thái Hiện tại")]
@@ -38,16 +38,16 @@ public class UnlockableEntity : MonoBehaviour
 
     [Header("Liên kết Công năng (Tùy chọn)")]
     [Tooltip("Các script tính năng sẽ bị VÔ HIỆU HÓA khi khu vực bị khóa (Ví dụ: Mine, Generator)")]
-    public MonoBehaviour[] targetScripts;    
+    public MonoBehaviour[] targetScripts;
 
     [Tooltip("Các bức tường tàng hình vật lý chặn không cho dân làng đi qua khi chưa mở khóa")]
-    public GameObject[] blockObstacles;      
+    public GameObject[] blockObstacles;
 
     private void Start()
     {
         // 1. Kiểm tra dữ liệu Save/Load từ các phiên chơi trước
         LoadUnlockState();
-        
+
         // 2. Áp dụng trạng thái tương ứng
         ApplyState();
     }
@@ -84,11 +84,11 @@ public class UnlockableEntity : MonoBehaviour
     public bool CanUnlock()
     {
         // Kiểm tra an toàn hệ thống dữ liệu lõi
-        if (ResourceManager.Instance == null || JsonDataManager.Ins == null) return false;
-        
+        if (DialogNPC.Instance == null || JsonDataManager.Ins == null) return false;
+
         // Check tài nguyên Gỗ, Đá, Thịt thông qua ResourceManager
-        bool hasEnoughResources = ResourceManager.Instance.CanAfford(requirement.woodRequired, requirement.foodRequired, requirement.stoneRequired);
-        
+        bool hasEnoughResources = DialogNPC.Instance.CanAfford(requirement.woodRequired, requirement.foodRequired, requirement.stoneRequired);
+
         // Check tài nguyên Vàng thông qua JsonDataManager lõi
         bool hasEnoughGold = JsonDataManager.Ins.gold >= requirement.goldRequired;
 
@@ -104,9 +104,9 @@ public class UnlockableEntity : MonoBehaviour
         if (!CanUnlock()) return false;
 
         // 1. Khấu trừ tài nguyên tiêu tốn từ kho lõi
-        if (ResourceManager.Instance != null)
+        if (DialogNPC.Instance != null)
         {
-            ResourceManager.Instance.Consume(requirement.woodRequired, requirement.foodRequired, requirement.stoneRequired);
+            DialogNPC.Instance.Consume(requirement.woodRequired, requirement.foodRequired, requirement.stoneRequired);
         }
         if (JsonDataManager.Ins != null && requirement.goldRequired > 0)
         {
@@ -123,7 +123,7 @@ public class UnlockableEntity : MonoBehaviour
 
         // 4. Tìm kiếm script va chạm Click đính kèm trên chính nó hoặc con của nó để thực hiện tự hủy
         UnlockWorldUI lockZoneScript = GetComponent<UnlockWorldUI>();
-        if (lockZoneScript == null) 
+        if (lockZoneScript == null)
         {
             lockZoneScript = GetComponentInChildren<UnlockWorldUI>();
         }

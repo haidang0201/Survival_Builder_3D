@@ -1,9 +1,9 @@
 using System;
 using UnityEngine;
 
-public class ResourceManager : MonoBehaviour
+public class DialogNPC : MonoBehaviour
 {
-    public static ResourceManager Instance { get; private set; }
+    public static DialogNPC Instance { get; private set; }
 
     // ĐÃ LOẠI BỎ: Các biến private wood, rice, stone cũ để tránh trùng lặp dữ liệu
 
@@ -11,7 +11,7 @@ public class ResourceManager : MonoBehaviour
     public int Wood
     {
         get => JsonDataManager.Ins != null ? JsonDataManager.Ins.wood : 0;
-        set 
+        set
         {
             if (JsonDataManager.Ins == null) return;
             int delta = value - JsonDataManager.Ins.wood;
@@ -22,7 +22,7 @@ public class ResourceManager : MonoBehaviour
     public int Stone
     {
         get => JsonDataManager.Ins != null ? JsonDataManager.Ins.stone : 0;
-        set 
+        set
         {
             if (JsonDataManager.Ins == null) return;
             int delta = value - JsonDataManager.Ins.stone;
@@ -33,7 +33,7 @@ public class ResourceManager : MonoBehaviour
     public int Rice // Map thuộc tính Rice của bạn với thuộc tính Food của JsonDataManager
     {
         get => JsonDataManager.Ins != null ? JsonDataManager.Ins.food : 0;
-        set 
+        set
         {
             if (JsonDataManager.Ins == null) return;
             int delta = value - JsonDataManager.Ins.food;
@@ -60,8 +60,8 @@ public class ResourceManager : MonoBehaviour
     public bool CanAfford(int woodCost, int foodCost, int stoneCost)
     {
         if (JsonDataManager.Ins == null) return false;
-        return JsonDataManager.Ins.wood >= woodCost && 
-               JsonDataManager.Ins.food >= foodCost && 
+        return JsonDataManager.Ins.wood >= woodCost &&
+               JsonDataManager.Ins.food >= foodCost &&
                JsonDataManager.Ins.stone >= stoneCost;
     }
 
