@@ -54,6 +54,8 @@ MonoBehaviour:
   door: {fileID: 0}
   buildProgress: 0
   isOccupied: 0
+  currentWorkers: 0
+  maxWorkers: 4
 --- !u!114 &1410563701730727719
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66,6 +68,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
+  isInitialBuildNeeded: 1
+  initialBuildDuration: 5
   buildingType: 5
   buildingName: Food Storage
   visualModels:
@@ -891,7 +895,6 @@ MonoBehaviour:
   placementDustVFX: {fileID: 2010998926970057873}
   constructionLoopVFX: {fileID: 7693279860488685065}
   completionAuraVFX: {fileID: 5308925052982917163}
-  buildDuration: 7
   upgradeAudioSources:
   - {fileID: 7269087530124385535}
   - {fileID: 4545557406595627545}
