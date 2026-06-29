@@ -5,6 +5,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private GameObject bloodVFXPrefab;
     [SerializeField] private Transform visualChild;
+    [SerializeField] private Transform bloodTransform;
 
     public float CurrentHealth { get; set; }
     public float MaxHealth { get; set; }
@@ -19,6 +20,29 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             visualChild = transform.GetChild(0);
         }
+
+        // Tự động tìm object con có tên chứa "blood"
+        if (bloodTransform == null)
+        {
+            bloodTransform = FindChildRecursive(transform, "blood");
+        }
+    }
+
+    private Transform FindChildRecursive(Transform parent, string targetName)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.name.ToLower().Contains(targetName.ToLower()))
+            {
+                return child;
+            }
+            Transform found = FindChildRecursive(child, targetName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+        return null;
     }
 
     public void TakeDamage(float amount, Vector3 hitPoint)
@@ -33,7 +57,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             Quaternion vfxRotation = visualChild != null ? visualChild.rotation : transform.rotation;
             Transform parentTransform = visualChild != null ? visualChild : transform;
 
-            GameObject vfx = Instantiate(bloodVFXPrefab, hitPoint, vfxRotation, parentTransform);
+            // Ưu tiên vị trí của bloodTransform nếu tìm thấy, ngược lại dùng hitPoint
+            Vector3 spawnPosition = bloodTransform != null ? bloodTransform.position : hitPoint;
+
+            GameObject vfx = Instantiate(bloodVFXPrefab, spawnPosition, vfxRotation, parentTransform);
             Destroy(vfx, 1f);
         }
 
