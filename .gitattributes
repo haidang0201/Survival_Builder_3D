@@ -1,1 +1,11 @@
-*.unity
+# Ép buộc tất cả các file code và cấu hình text của Unity sử dụng LF khi push lên Git
+*.cs text eol=lf
+*.json text eol=lf
+*.meta text eol=lf
+*.xml text eol=lf
+
+# Đảm bảo các file binary (như hình ảnh, âm thanh, model) không bị Git tự ý sửa đổi
+*.png binary
+*.jpg binary
+*.fbx binary
+*.asset binary
