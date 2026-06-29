@@ -45,6 +45,7 @@ public class DayNightManager : Singleton<DayNightManager>
         {
             SwitchMode();
         }
+
     }
 
     private void SwitchMode()

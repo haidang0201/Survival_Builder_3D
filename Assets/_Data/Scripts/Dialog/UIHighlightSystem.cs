@@ -5,20 +5,20 @@ public class UIHighlightSystem : MonoBehaviour
 {
     public static UIHighlightSystem Instance;
 
-    [Header("HUD CANVAS")]
-    public Canvas hudCanvas;
+    [Header("CANVASES")]
+    public Canvas hudCanvas;             // Canvas chứa hệ thống Tutorial (Sort Order cao)
+    public Canvas mainBuildCanvas;       // Kéo "BuildCanvas" từ Hierarchy vào đây!
 
     [Header("SPRITES")]
     public Sprite circleSprite;
 
-    // 💥 NEW FEILDS (YOU ASKED)
     [Header("HIGHLIGHT SIZE")]
-    public float circleSize = 140f;          // 🔥 chỉnh kích thước vòng
+    public float circleSize = 140f;
 
     [Header("PULSE / MOVEMENT FX")]
-    public float scaleStrength = 0.1f;       // 🔥 độ phồng to nhỏ
-    public float moveStrength = 6f;          // 🔥 độ rung lên xuống mạnh
-    public float moveSpeed = 3f;            // 🔥 tốc độ rung
+    public float scaleStrength = 0.1f;
+    public float moveStrength = 6f;
+    public float moveSpeed = 3f;
 
     GameObject dimGO;
     GameObject circleGO;
@@ -26,6 +26,7 @@ public class UIHighlightSystem : MonoBehaviour
     RectTransform circleRT;
     RectTransform canvasRT;
     RectTransform currentTarget;
+    RectTransform parentScrollViewViewport; // Khung Viewport của ScrollView chứa nút
 
     Vector3 baseScale;
     Vector2 basePos;
@@ -38,7 +39,7 @@ public class UIHighlightSystem : MonoBehaviour
 
     void Update()
     {
-        if (circleRT == null) return;
+        if (circleRT == null || !circleRT.gameObject.activeInHierarchy) return;
 
         // 💥 SCALE PULSE
         float scale = 1f + Mathf.Sin(Time.time * 2f) * scaleStrength;
@@ -53,6 +54,25 @@ public class UIHighlightSystem : MonoBehaviour
     {
         if (currentTarget == null) return;
 
+        // ================= FIX LỖI SCROLLVIEW ĐA HƯỚNG (NGANG & DỌC) =================
+        if (parentScrollViewViewport != null)
+        {
+            if (!IsTargetInsideViewport(currentTarget, parentScrollViewViewport))
+            {
+                // Nếu nút trượt ra ngoài rìa (Trái/Phải/Trên/Dưới) -> Ẩn Highlight ngay
+                if (circleGO != null && circleGO.activeSelf) circleGO.SetActive(false);
+                if (dimGO != null && dimGO.activeSelf) dimGO.SetActive(false);
+                return;
+            }
+            else
+            {
+                // Nếu nút quay trở lại vùng nhìn thấy -> Hiện Highlight lên
+                if (circleGO != null && !circleGO.activeSelf) circleGO.SetActive(true);
+                if (dimGO != null && !dimGO.activeSelf) dimGO.SetActive(true);
+            }
+        }
+        // ============================================================================
+
         Vector2 pos = GetPos(currentTarget);
 
         if (circleRT != null)
@@ -60,6 +80,42 @@ public class UIHighlightSystem : MonoBehaviour
             basePos = pos;
             circleRT.anchoredPosition = pos;
         }
+    }
+
+    // Kiểm tra va chạm hình học tuyệt đối 4 chiều giữa Nút và Khung Viewport
+    private bool IsTargetInsideViewport(RectTransform target, RectTransform viewport)
+    {
+        Vector3[] targetCorners = new Vector3[4];
+        target.GetWorldCorners(targetCorners); // 0: bottom-left, 1: top-left, 2: top-right, 3: bottom-right
+
+        Vector3[] viewportCorners = new Vector3[4];
+        viewport.GetWorldCorners(viewportCorners);
+
+        // Biên vật lý của Viewport trên màn hình
+        float viewLeft = viewportCorners[0].x;
+        float viewRight = viewportCorners[2].x;
+        float viewBottom = viewportCorners[0].y;
+        float viewTop = viewportCorners[2].y;
+
+        // Biên vật lý của Nút bấm
+        float targetLeft = targetCorners[0].x;
+        float targetRight = targetCorners[2].x;
+        float targetBottom = targetCorners[0].y;
+        float targetTop = targetCorners[1].y;
+
+        // TRƯỜNG HỢP 1: Nút cuộn mất theo chiều ngang (X) - Cho Scroll View Ngang của bạn
+        if (targetRight < viewLeft || targetLeft > viewRight)
+        {
+            return false;
+        }
+
+        // TRƯỜNG HỢP 2: Nút cuộn mất theo chiều dọc (Y)
+        if (targetTop < viewBottom || targetBottom > viewTop)
+        {
+            return false;
+        }
+
+        return true; // Vẫn nằm trong vùng nhìn thấy
     }
 
     // ================= MAIN =================
@@ -70,6 +126,23 @@ public class UIHighlightSystem : MonoBehaviour
         if (target == null) return;
 
         currentTarget = target;
+
+        // Nếu quên chưa kéo BuildCanvas trong Inspector, hệ thống tự tìm ngược lên cha
+        if (mainBuildCanvas == null)
+        {
+            mainBuildCanvas = target.GetComponentInParent<Canvas>();
+        }
+
+        // Tự động tìm khung Viewport của ScrollRect chứa nút công trình
+        ScrollRect scrollRect = target.GetComponentInParent<ScrollRect>();
+        if (scrollRect != null && scrollRect.viewport != null)
+        {
+            parentScrollViewViewport = scrollRect.viewport;
+        }
+        else
+        {
+            parentScrollViewViewport = null;
+        }
 
         CreateDim();
         CreateCircle(target);
@@ -89,6 +162,12 @@ public class UIHighlightSystem : MonoBehaviour
         RectTransform rt = dimGO.GetComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
+
+        // Tạo Canvas riêng biệt đè lên UI thường
+        Canvas c = dimGO.AddComponent<Canvas>();
+        c.overrideSorting = true;
+        c.sortingOrder = 998;
+        dimGO.AddComponent<GraphicRaycaster>();
     }
 
     // ================= CIRCLE =================
@@ -106,11 +185,15 @@ public class UIHighlightSystem : MonoBehaviour
         img.raycastTarget = false;
 
         circleRT.anchorMin = circleRT.anchorMax = new Vector2(0.5f, 0.5f);
-
-        // 💥 USE FEILD SIZE
         circleRT.sizeDelta = new Vector2(circleSize, circleSize);
 
         baseScale = circleRT.localScale;
+
+        // Tạo Canvas riêng biệt có Sort Order cao nhất để đè lên tất cả
+        Canvas c = circleGO.AddComponent<Canvas>();
+        c.overrideSorting = true;
+        c.sortingOrder = 999;
+        circleGO.AddComponent<GraphicRaycaster>();
     }
 
     // ================= POSITION =================
@@ -122,8 +205,10 @@ public class UIHighlightSystem : MonoBehaviour
 
         Vector3 center = (c[0] + c[2]) * 0.5f;
 
+        Camera targetCamera = (mainBuildCanvas != null) ? mainBuildCanvas.worldCamera : hudCanvas.worldCamera;
+
         Vector2 screen = RectTransformUtility.WorldToScreenPoint(
-            hudCanvas.worldCamera,
+            targetCamera,
             center
         );
 
@@ -142,6 +227,7 @@ public class UIHighlightSystem : MonoBehaviour
     public void ClearAll()
     {
         currentTarget = null;
+        parentScrollViewViewport = null;
 
         if (dimGO) Destroy(dimGO);
         if (circleGO) Destroy(circleGO);
