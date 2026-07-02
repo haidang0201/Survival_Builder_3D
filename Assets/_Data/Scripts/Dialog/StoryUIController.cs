@@ -494,6 +494,6 @@ public class StoryUIController : MonoBehaviour
     }
     public void SceneLoadToGamePlay()
     {
-        SceneManager.LoadScene(3);
+        SceneManager.LoadScene(4);
     }
 }

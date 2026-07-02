@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class TutorialManager : MonoBehaviour
 {
@@ -49,6 +51,17 @@ public class TutorialManager : MonoBehaviour
     public int worker = 0;
     public int wood = 0;
 
+    [Header("TYPING SOUND")]
+    [Tooltip("AudioSource có clip 'tick' ngắn — âm thanh chạy theo từng chữ trong hộp thoại NPC.")]
+    [SerializeField] private AudioSource typingAudioSource;
+    [Tooltip("Tốc độ gõ chữ (giây/ký tự). Khớp với tốc độ hiển thị text bên NPCDialogue.")]
+    [SerializeField] private float typingSpeed = 0.04f;
+    [Tooltip("TextMeshProUGUI hiển thị nội dung trong hộp thoại NPC. Cần để đếm ký tự thật sự hiển thị.")]
+    [SerializeField] private TextMeshProUGUI npcDialogueText;
+
+    private static readonly HashSet<char> silentChars = new HashSet<char> { ' ', '\n', '\t' };
+    private Coroutine typingSoundCoroutine;
+
     void Start()
     {
         StartCoroutine(Intro());
@@ -56,165 +69,117 @@ public class TutorialManager : MonoBehaviour
 
     IEnumerator Intro()
     {
-        // ================= INTRO CƠ BẢN (GOLD, DAY, TÀI NGUYÊN) =================
-        SetTimePaused(true); // Dừng đồng hồ, NPC vẫn nói
+        // ================= MỎ ĐÁ (Highlight Gỗ/Đá khi nhắc đến) =================
+        SetTimePaused(true);
+        yield return ShowAndWaitWithSound("Chào mừng đến với vùng đất Khẩn Hoang! Hãy bắt đầu bằng việc khai thác tài nguyên.");
 
-        highlight.Highlight(goldIcon);
-        yield return npc.ShowAndWait("Đây là vàng thưởng - nhận được khi đánh thắng kẻ địch.");
-
-        highlight.Highlight(dayIcon);
-        yield return npc.ShowAndWait("Đây là DAY - thể hiện số ngày bạn đã sinh tồn.");
-
-        highlight.ClearAll();
-
-        UIHighlightSystem.Instance.Highlight(woodIcon);
-        yield return npc.ShowAndWait("Đây là GỖ - dùng để xây dựng.");
-
-        UIHighlightSystem.Instance.Highlight(stoneIcon);
-        yield return npc.ShowAndWait("Đây là ĐÁ - dùng để xây công trình.");
-
-        UIHighlightSystem.Instance.Highlight(foodIcon);
-        yield return npc.ShowAndWait("Đây là LÚA - nuôi dân làng.");
-
-        UIHighlightSystem.Instance.ClearAll();
-        yield return npc.ShowAndWait("Bắt đầu xây dựng làng!");
-
-        // ================= MỎ ĐÁ =================
-        yield return npc.ShowAndWait("Phía xa là mỏ đá.");
-        highlight.ClearAll();
-        npc.Show("Lia camera đến mỏ đá...");
+        ShowWithSound("Lia camera đến mỏ đá...");
         Camera.main.transform.position = stoneMineWorld.position;
 
-        yield return npc.ShowAndWait("Mỏ đá đang bị khóa.");
-        yield return npc.ShowAndWait("Cần 7 worker và 12 gỗ để mở.");
+        // Highlight Gỗ và Đá khi nhắc đến yêu cầu mở mỏ
+        highlight.Highlight(woodIcon);
+        highlight.Highlight(stoneIcon);
+        yield return ShowAndWaitWithSound("Mỏ đá đang bị khóa. Cần 7 worker và 12 Gỗ để mở.");
+        highlight.ClearAll(); // Tắt highlight sau khi nhắc
 
-        SetTimePaused(false); // Cho đồng hồ chạy để người chơi rảnh tay cày cuốc
+        SetTimePaused(false);
         yield return new WaitUntil(() => worker >= 7 && wood >= 12);
 
-        SetTimePaused(true); // Đủ tài nguyên, dừng đồng hồ để khen ngợi
-        yield return npc.ShowAndWait("Mỏ đá đã mở!");
-
+        SetTimePaused(true);
+        yield return ShowAndWaitWithSound("Mỏ đá đã mở!");
+        npc.Hide();
         Camera.main.transform.position = Vector3.zero;
         SetTimePaused(false);
 
-        // ================= NGÀY THỨ 3 (CẢNH BÁO ĐỊCH) =================
+        // ================= NGÀY THỨ 3 (CẢNH BÁO) =================
         yield return new WaitUntil(() => DayNightManager.Ins != null && DayNightManager.Ins.CurrentDay >= 3);
         SetTimePaused(true);
-
-        yield return npc.ShowAndWait("Phó lý: Bẩm, địch gồm cung thủ và quân phi lao đang chuẩn bị tấn công!");
-        yield return npc.ShowAndWait("Hãy chuẩn bị dùng 15 Gỗ và 10 Đá để mở tháp canh bảo vệ làng!");
-
+        yield return ShowAndWaitWithSound("Phó lý: Bẩm, địch đang chuẩn bị tấn công!");
+        yield return ShowAndWaitWithSound("Hãy chuẩn bị 15 Gỗ và 10 Đá để mở tháp canh bảo vệ làng!");
+        npc.Hide();
         SetTimePaused(false);
 
-        // ================= NGÀY THỨ 4 (NÂNG CẤP NHÀ WORKER) =================
+        // ================= NGÀY THỨ 4 (Highlight Gỗ/Đá khi nâng cấp) =================
         yield return new WaitUntil(() => DayNightManager.Ins != null && DayNightManager.Ins.CurrentDay >= 4);
         SetTimePaused(true);
 
-        yield return npc.ShowAndWait("Ngày thứ 4: 4 Worker của chúng ta đã làm việc rất chăm chỉ.");
-        yield return npc.ShowAndWait("Khi tích lũy đủ 40 Gỗ và 60 Đá, hãy nâng cấp nhà Worker.");
-        yield return npc.ShowAndWait("Việc này sẽ tăng giới hạn lên 6 Worker và mở khóa công nghệ Tháp Canh để chống địch!");
+        highlight.Highlight(woodIcon);
+        highlight.Highlight(stoneIcon);
+        yield return ShowAndWaitWithSound("Ngày thứ 4: Khi tích lũy đủ 40 Gỗ và 60 Đá, hãy nâng cấp nhà Worker.");
+        highlight.ClearAll();
 
+        yield return ShowAndWaitWithSound("Việc này sẽ mở khóa công nghệ Tháp Canh để chống địch!");
+        npc.Hide();
         SetTimePaused(false);
 
-        // ================= NGÀY THỨ 5 (MỞ KHÓA THÁP CANH) =================
+        // ================= NGÀY THỨ 5 (BUILD THÁP CANH) =================
         yield return new WaitUntil(() => DayNightManager.Ins != null && DayNightManager.Ins.CurrentDay >= 5);
         SetTimePaused(true);
 
-        yield return npc.ShowAndWait("Ngày thứ 5: Kẻ địch đang chuẩn bị một cuộc tấn công quy mô lớn hơn!");
-        yield return npc.ShowAndWait("Hệ thống phòng thủ cơ bản của bạn cần được tối ưu tầm nhìn.");
-
         if (openBuildPanelBtn != null) highlight.Highlight(openBuildPanelBtn);
-        yield return npc.ShowAndWait("Hãy mở Menu Xây Dựng để chế tạo hệ thống phòng thủ mới.");
-
+        yield return ShowAndWaitWithSound("Hãy mở Menu Xây Dựng để chế tạo hệ thống phòng thủ.");
         yield return new WaitUntil(() => buildPanelObject != null && buildPanelObject.activeSelf == true);
         highlight.ClearAll();
 
         if (buildWatchTowerBtn != null)
         {
-            Button btnWatch = buildWatchTowerBtn.GetComponent<Button>();
-            if (btnWatch != null)
-            {
-                btnWatch.onClick.RemoveListener(OnWatchTowerBtnClicked);
-                btnWatch.onClick.AddListener(OnWatchTowerBtnClicked);
-            }
             highlight.Highlight(buildWatchTowerBtn);
+            buildWatchTowerBtn.GetComponent<Button>().onClick.AddListener(OnWatchTowerBtnClicked);
         }
-        yield return npc.ShowAndWait("Hãy chọn xây Tháp Canh (Watch Tower)!");
-
+        yield return ShowAndWaitWithSound("Hãy chọn xây Tháp Canh (Watch Tower)!");
         yield return new WaitUntil(() => isWatchTowerButtonClicked == true);
         highlight.ClearAll();
-
-        yield return npc.ShowAndWait("Cơ chế hoạt động: Tháp Canh sẽ tự động quét vị trí địch trong phạm vi → Chỉ điểm mục tiêu từ xa cho Tháp Pháo và Tháp Cung tấn công!");
-        yield return npc.ShowAndWait("Hãy đặt Tháp Canh ở vị trí chiến lược đầu chiến tuyến để dẫn đường loạt đạn phòng thủ.");
-
+        npc.Hide();
         SetTimePaused(false);
 
-        // ================= NGÀY THỨ 6 (XÂY DỰNG NHÀ BẾP) =================
+        // ================= NGÀY THỨ 6 (XÂY NHÀ BẾP - Highlight Lúa) =================
         yield return new WaitUntil(() => DayNightManager.Ins != null && DayNightManager.Ins.CurrentDay >= 6);
         SetTimePaused(true);
 
-        yield return npc.ShowAndWait("Ngày thứ 6: Khu vực gỗ ban đầu đã cạn kiệt!");
-        npc.Show("Lia camera đến khu rừng mới...");
-        if (newForestWorld != null) Camera.main.transform.position = newForestWorld.position;
-
-        yield return npc.ShowAndWait("Worker phải đi làm rất xa, dẫn đến việc mất nhiều năng lượng và giảm năng suất.");
+        Camera.main.transform.position = newForestWorld.position;
+        highlight.Highlight(foodIcon); // Highlight Lúa khi nhắc đến Nhà Bếp
+        yield return ShowAndWaitWithSound("Gỗ đã cạn! Hãy xây Nhà Bếp dùng LÚA để hồi năng lượng cho dân làng.");
+        highlight.ClearAll();
 
         if (openBuildPanelBtn != null) highlight.Highlight(openBuildPanelBtn);
-        yield return npc.ShowAndWait("Hãy mở lại Menu Xây Dựng để tìm công trình hỗ trợ kinh tế.");
-
         yield return new WaitUntil(() => buildPanelObject != null && buildPanelObject.activeSelf == true);
         highlight.ClearAll();
 
         if (buildKitchenBtn != null)
         {
-            Button btnKitchen = buildKitchenBtn.GetComponent<Button>();
-            if (btnKitchen != null)
-            {
-                btnKitchen.onClick.RemoveListener(OnKitchenBtnClicked);
-                btnKitchen.onClick.AddListener(OnKitchenBtnClicked);
-            }
             highlight.Highlight(buildKitchenBtn);
+            buildKitchenBtn.GetComponent<Button>().onClick.AddListener(OnKitchenBtnClicked);
         }
-        yield return npc.ShowAndWait("Hãy chọn xây Nhà Bếp (Kitchen) để giúp Worker hồi năng lượng gần khu rừng mới!");
-
+        yield return ShowAndWaitWithSound("Hãy chọn xây Nhà Bếp (Kitchen)!");
         yield return new WaitUntil(() => isKitchenButtonClicked == true);
-        highlight.ClearAll();
-        yield return npc.ShowAndWait("Tuyệt vời! Hãy đặt Nhà Bếp ở gần khu vực khai thác mới để tối ưu hóa nhé.");
-
-        // ================= LỀU ĐỊCH (LẦN ĐẦU) =================
-        yield return npc.ShowAndWait("Phía xa là lều địch.");
-        highlight.ClearAll();
-        Camera.main.transform.position = enemyCampWorld.position;
-        yield return npc.ShowAndWait("Đây là nơi địch đóng quân.");
-        yield return npc.ShowAndWait("Hãy chuẩn bị phòng thủ!");
         highlight.ClearAll();
 
         Camera.main.transform.position = Vector3.zero;
-
+        npc.Hide();
         SetTimePaused(false);
 
         // ================= NGÀY THỨ 8 (ĐỢT TẤN CÔNG LỚN) =================
         yield return new WaitUntil(() => DayNightManager.Ins != null && DayNightManager.Ins.CurrentDay >= 8);
         SetTimePaused(true);
 
-        yield return npc.ShowAndWait("Ngày thứ 8: Địch Phi Lao và Bắn Cung đang mở một đợt tấn công lớn!");
+        yield return ShowAndWaitWithSound("Ngày thứ 8: Địch Phi Lao và Bắn Cung đang mở một đợt tấn công lớn!");
 
         if (watchTowerWorld != null)
         {
-            npc.Show("Lia camera đến tháp canh...");
+            ShowWithSound("Lia camera đến tháp canh...");
             Camera.main.transform.position = watchTowerWorld.position;
         }
-        yield return npc.ShowAndWait("Tháp canh đang liên tục quét vị trí kẻ địch, hãy ra lệnh cho tháp phòng thủ bắn trả!");
+        yield return ShowAndWaitWithSound("Tháp canh đang liên tục quét vị trí kẻ địch, hãy ra lệnh cho tháp phòng thủ bắn trả!");
 
         if (alliedTroopsWorld != null)
         {
-            npc.Show("Lia camera đến lính ta...");
+            ShowWithSound("Lia camera đến lính ta...");
             Camera.main.transform.position = alliedTroopsWorld.position;
         }
-        yield return npc.ShowAndWait("Huấn luyện thêm đội Lính Ta và ra lệnh tiến lên chống trả để giành chiến thắng!");
+        yield return ShowAndWaitWithSound("Huấn luyện thêm đội Lính Ta và ra lệnh tiến lên chống trả để giành chiến thắng!");
 
         Camera.main.transform.position = Vector3.zero;
-
+        npc.Hide();
         SetTimePaused(false);
 
         // =================================================================
@@ -238,8 +203,8 @@ public class TutorialManager : MonoBehaviour
 
         if (day9EnemySpawnPos != null) Camera.main.transform.position = day9EnemySpawnPos.position;
 
-        yield return npc.ShowAndWait("Địch đang chuẩn bị tổng lực tấn công!");
-        yield return npc.ShowAndWait("Cậu hãy xây dựng pháo và cung để chống trả!");
+        yield return ShowAndWaitWithSound("Địch đang chuẩn bị tổng lực tấn công!");
+        yield return ShowAndWaitWithSound("Cậu hãy xây dựng pháo và cung để chống trả!");
 
         if (WarningUI.Instance != null)
         {
@@ -251,7 +216,7 @@ public class TutorialManager : MonoBehaviour
         if (buildPanelObject != null && buildPanelObject.activeSelf == false)
         {
             if (openBuildPanelBtn != null) highlight.Highlight(openBuildPanelBtn);
-            yield return npc.ShowAndWait("Hãy mở Menu Xây Dựng để bố trí vũ khí!");
+            yield return ShowAndWaitWithSound("Hãy mở Menu Xây Dựng để bố trí vũ khí!");
             yield return new WaitUntil(() => buildPanelObject.activeSelf == true);
             highlight.ClearAll();
         }
@@ -262,7 +227,7 @@ public class TutorialManager : MonoBehaviour
             if (btnCannon != null) { btnCannon.onClick.RemoveListener(OnCannonBtnClicked); btnCannon.onClick.AddListener(OnCannonBtnClicked); }
             highlight.Highlight(buildCannonBtn);
         }
-        yield return npc.ShowAndWait("Hãy chọn xây THÁP PHÁO (Cannon)!");
+        yield return ShowAndWaitWithSound("Hãy chọn xây THÁP PHÁO (Cannon)!");
         yield return new WaitUntil(() => isCannonButtonClicked == true);
         highlight.ClearAll();
 
@@ -279,25 +244,26 @@ public class TutorialManager : MonoBehaviour
             if (btnArcher != null) { btnArcher.onClick.RemoveListener(OnArcherBtnClicked); btnArcher.onClick.AddListener(OnArcherBtnClicked); }
             highlight.Highlight(buildArcherTowerBtn);
         }
-        yield return npc.ShowAndWait("Đồng thời xây thêm THÁP CUNG!");
+        yield return ShowAndWaitWithSound("Đồng thời xây thêm THÁP CUNG!");
         yield return new WaitUntil(() => isArcherButtonClicked == true);
         highlight.ClearAll();
 
         if (day9EnemySpawnPos != null) Camera.main.transform.position = day9EnemySpawnPos.position;
-        yield return npc.ShowAndWait("Kìa, địch đang di chuyển qua! Hãy phối hợp cùng quân lính bảo vệ ngôi làng và tiến lên san phẳng căn cứ địch!");
+        yield return ShowAndWaitWithSound("Kìa, địch đang di chuyển qua! Hãy phối hợp cùng quân lính bảo vệ ngôi làng và tiến lên san phẳng căn cứ địch!");
 
         Camera.main.transform.position = Vector3.zero;
-
+        npc.Hide();
         SetTimePaused(false); // Cho đồng hồ chạy lại và trận chiến diễn ra!
 
         yield return new WaitUntil(() => CheckEnemyCampDestroyed());
 
         SetTimePaused(true); // Dừng lại để chúc mừng
-        yield return npc.ShowAndWait("Xuất sắc! Căn cứ điểm của bọn Thổ phỉ đã bị san phẳng hoàn toàn!");
-        yield return npc.ShowAndWait("Phần thưởng chiến công: +500 xu vàng đã được chuyển vào kho báu của làng!");
+        yield return ShowAndWaitWithSound("Xuất sắc! Căn cứ điểm của bọn Thổ phỉ đã bị san phẳng hoàn toàn!");
+        yield return ShowAndWaitWithSound("Phần thưởng chiến công: +500 xu vàng đã được chuyển vào kho báu của làng!");
 
         ClearAllMapFog();
-        yield return npc.ShowAndWait("Toàn bộ sương mù bao phủ vùng đất đã tan biến! Hãy chuẩn bị cho trận chiến cuối cùng.");
+        yield return ShowAndWaitWithSound("Toàn bộ sương mù bao phủ vùng đất đã tan biến! Hãy chuẩn bị cho trận chiến cuối cùng.");
+        npc.Hide();
         SetTimePaused(false);
 
 
@@ -312,30 +278,101 @@ public class TutorialManager : MonoBehaviour
             WarningUI.Instance.Show("⚠️ TRẬN CHIẾN QUYẾT ĐỊNH: BOSS TỐI CAO XUẤT HIỆN! ⚠️");
         }
 
-        yield return npc.ShowAndWait("NGÀY 10 - TRẬN CHIẾN QUYẾT ĐỊNH VẬN MỆNH VÙNG ĐẤT!");
-        yield return npc.ShowAndWait("Thủ lĩnh tối cao Thổ phỉ (BOSS CUỐI) đang tiến vào! Hãy dồn toàn bộ lực lượng tiêu diệt hắn!");
+        yield return ShowAndWaitWithSound("NGÀY 10 - TRẬN CHIẾN QUYẾT ĐỊNH VẬN MỆNH VÙNG ĐẤT!");
+        yield return ShowAndWaitWithSound("Thủ lĩnh tối cao Thổ phỉ (BOSS CUỐI) đang tiến vào! Hãy dồn toàn bộ lực lượng tiêu diệt hắn!");
 
         if (WarningUI.Instance != null)
         {
             WarningUI.Instance.Hide();
         }
 
+        npc.Hide();
         SetTimePaused(false);
 
         yield return new WaitUntil(() => CheckBossDefeated() || DayNightManager.Ins.CurrentDay > 10);
 
         SetTimePaused(true);
-        yield return npc.ShowAndWait("Tuyệt vời! Bạn đã đánh bại thủ lĩnh tối cao và bảo vệ vùng đất Khẩn Hoang thành công rực rỡ!");
-        yield return npc.ShowAndWait("Bình minh ló rạng, cuộc sống của dân làng từ nay đã được ấm no, bình yên ổn định...");
-        yield return npc.ShowAndWait("Bạn đã giữ trọn vẹn lời hứa thiêng liêng với vị cố Trưởng Làng quá cố!");
+        yield return ShowAndWaitWithSound("Tuyệt vời! Bạn đã đánh bại thủ lĩnh tối cao và bảo vệ vùng đất Khẩn Hoang thành công rực rỡ!");
+        yield return ShowAndWaitWithSound("Bình minh ló rạng, cuộc sống của dân làng từ nay đã được ấm no, bình yên ổn định...");
+        yield return ShowAndWaitWithSound("Bạn đã giữ trọn vẹn lời hứa thiêng liêng với vị cố Trưởng Làng quá cố!");
 
         UnlockEndlessMode();
 
-        yield return npc.ShowAndWait("HỆ THỐNG: Chúc mừng bạn đã hoàn thành mạch truyện chính! Đã mở khóa CHẾ ĐỘ CHƠI VÔ TẬN.");
-        yield return npc.ShowAndWait("Giờ đây bạn có thể tiếp tục phát triển, xây dựng và sinh tồn không giới hạn tại vùng đất này!");
+        yield return ShowAndWaitWithSound("HỆ THỐNG: Chúc mừng bạn đã hoàn thành mạch truyện chính! Đã mở khóa CHẾ ĐỘ CHƠI VÔ TẬN.");
+        yield return ShowAndWaitWithSound("Giờ đây bạn có thể tiếp tục phát triển, xây dựng và sinh tồn không giới hạn tại vùng đất này!");
+        npc.Hide();
 
         highlight.ClearAll();
         SetTimePaused(false);
+    }
+
+    // =========================================================
+    //  TYPING SOUND HELPERS
+    // =========================================================
+
+    /// <summary>
+    /// Thay thế npc.ShowAndWait() — hiện text + chạy typing sound song song, rồi chờ hộp thoại đóng.
+    /// </summary>
+    private IEnumerator ShowAndWaitWithSound(string message)
+    {
+        StopTypingSound();
+        typingSoundCoroutine = StartCoroutine(PlayTypingSound(message));
+        yield return npc.ShowAndWait(message);
+        StopTypingSound();
+    }
+
+    /// <summary>
+    /// Thay thế npc.Show() — hiện text + chạy typing sound (không chờ, fire-and-forget).
+    /// </summary>
+    private void ShowWithSound(string message)
+    {
+        StopTypingSound();
+        npc.Show(message);
+        typingSoundCoroutine = StartCoroutine(PlayTypingSound(message));
+    }
+
+    private void StopTypingSound()
+    {
+        if (typingSoundCoroutine != null)
+        {
+            StopCoroutine(typingSoundCoroutine);
+            typingSoundCoroutine = null;
+        }
+        if (typingAudioSource != null) typingAudioSource.Stop();
+    }
+
+    /// <summary>
+    /// Phát âm thanh gõ chữ khớp từng ký tự hiển thị thật sự.
+    /// Dùng npcDialogueText.GetParsedText() để bỏ qua rich-text tag (giống StoryUIController).
+    /// Dùng AudioSettings.dspTime + PlayScheduled() để khớp chính xác với audio thread.
+    /// </summary>
+    private IEnumerator PlayTypingSound(string message)
+    {
+        if (typingAudioSource == null || typingAudioSource.clip == null) yield break;
+
+        // Nếu có tham chiếu tới TextMeshPro của hộp thoại NPC, dùng GetParsedText()
+        // để bỏ hết rich-text tag, đếm đúng ký tự thật sự hiển thị.
+        string parsedText = message;
+        if (npcDialogueText != null)
+        {
+            npcDialogueText.text = message;
+            npcDialogueText.ForceMeshUpdate();
+            parsedText = npcDialogueText.GetParsedText();
+        }
+
+        double nextDspTime = AudioSettings.dspTime;
+
+        foreach (char c in parsedText)
+        {
+            if (!silentChars.Contains(c))
+            {
+                typingAudioSource.pitch = Random.Range(0.95f, 1.05f);
+                typingAudioSource.Stop();
+                typingAudioSource.PlayScheduled(nextDspTime);
+            }
+            yield return new WaitForSeconds(typingSpeed);
+            nextDspTime = AudioSettings.dspTime;
+        }
     }
 
     /// <summary>

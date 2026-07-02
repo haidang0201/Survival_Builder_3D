@@ -129,43 +129,34 @@ public class BuildingSystem : Singleton<BuildingSystem>
         }
     }
 
-    // =================================──────────────────────────────
-    // THÀNH PHẦN XỬ LÝ DI CHUYỂN CÔNG TRÌNH (MOVE BUILDING LOGIC)
-    // =================================──────────────────────────────
-
-    /// <summary>
-    /// Kích hoạt chế độ di chuyển một nhà cụ thể (Được gọi từ nút Di Chuyển trên UIManager)
-    /// </summary>
     public void StartMoving(UpgradeableBuilding building)
     {
         if (building == null) return;
 
-        // Đề phòng đang bận đặt công trình xây mới thì hủy bỏ luồng đó
+        // Code nguyên bản của Vũ
         if (isPlacing) CancelPlacing();
         if (_isMovingMode) CancelMoving();
 
         _movingBuilding = building;
         _isMovingMode = true;
 
-        // 1. Tạm thời ẩn toàn bộ Model hình ảnh của công trình thực tế trên Map
         _movingBuilding.gameObject.SetActive(false);
 
-        // 2. Tự động tìm kiếm Prefab Ghost tương thích dựa trên thuộc tính cấu hình của nhà để người chơi kéo đi
-        // LƯU Ý: Đảm bảo class UpgradeableBuilding của bạn có một biến public/property trả về cấu trúc BuildingType của nó (Ví dụ: building.buildingType)
-        BuildingType currentType = BuildingType.House; // Mặc định dự phòng
-        
-        // Đoạn code an toàn bóc tách tên hoặc biến loại nhà từ UpgradeableBuilding của bạn:
-        // Nếu lớp UpgradeableBuilding của bạn có trường 'buildingType', hãy bỏ comment dòng dưới:
-        currentType = building.buildingType; 
+        BuildingType currentType = building.buildingType; 
 
         GameObject prefab = GetGhostPrefab(currentType);
         if (prefab != null)
         {
-            GameObject obj = Instantiate(prefab);
+            GameObject obj = Instantiate(prefab, building.transform.position, building.transform.rotation);
             currentGhost = obj.GetComponent<GhostBuilding>();
             if (currentGhost != null)
             {
                 currentGhost.buildingType = currentType;
+                
+                // 🔥 ĐỒNG BỘ CẤP ĐỘ (Ý TƯỞNG CỦA VŨ)
+                // Gọi hàm SetGhostLevel và truyền CurrentLevel của nhà thật sang
+                currentGhost.SetGhostLevel(building.CurrentLevel);
+                
                 currentGhost.InstantSnapToMouse();
             }
         }
@@ -174,8 +165,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
         {
             UIManager.Ins.EnterPlacementMode();
         }
-
-        Debug.Log($"[BuildingSystem] Đang dịch chuyển công trình: {building.buildingName} sang vị trí mới.");
     }
 
     /// <summary>
