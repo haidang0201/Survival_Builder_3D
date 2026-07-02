@@ -487,19 +487,55 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     void CreateQuestIcon(Transform parent, Sprite sprite)
     {
-        Image frame = CreateImage(parent, "QuestIconFrame", new Vector2(70, 0), new Vector2(92, 92), Anchor.LeftMiddle);
-        frame.color = new Color32(255, 210, 45, 255);
+        float frameSize = 95f;
 
-        Image icon = CreateImage(frame.transform, "QuestIcon", Vector2.zero, new Vector2(76, 76), Anchor.Center);
-        icon.sprite = sprite;
-        icon.color = Color.white;
-        icon.enabled = sprite != null;
+        Image frame = CreateImage(
+            parent,
+            "QuestIconFrame",
+            new Vector2(70, 0),
+            new Vector2(frameSize, frameSize),
+            Anchor.LeftMiddle
+        );
 
-        if (sprite == null)
+        frame.raycastTarget = false;
+
+        // Nếu có icon thật: không dùng nền vàng nữa, để icon tự hiện full khung
+        if (sprite != null)
         {
-            TMP_Text fallback = CreateText(frame.transform, "IconFallback", "?", Vector2.zero, new Vector2(76, 76), 40, Anchor.Center);
+            frame.color = new Color(1f, 1f, 1f, 0f); // trong suốt
+
+            Image icon = CreateImage(
+                frame.transform,
+                "QuestIcon",
+                Vector2.zero,
+                new Vector2(frameSize, frameSize),
+                Anchor.Center
+            );
+
+            icon.sprite = sprite;
+            icon.enabled = true;
+            icon.color = Color.white;
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+        }
+        else
+        {
+            // Nếu chưa gán icon thì hiện ô vàng + dấu ?
+            frame.color = new Color32(255, 210, 45, 255);
+
+            TMP_Text fallback = CreateText(
+                frame.transform,
+                "IconFallback",
+                "?",
+                Vector2.zero,
+                new Vector2(frameSize, frameSize),
+                40,
+                Anchor.Center
+            );
+
             fallback.alignment = TextAlignmentOptions.Center;
             fallback.fontStyle = FontStyles.Bold;
+            fallback.color = Color.white;
         }
     }
 
