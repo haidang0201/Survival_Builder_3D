@@ -28,6 +28,11 @@ public class WorkerCarryStone : MonoBehaviour
                 Destroy(currentStone.gameObject);
             
             currentStone = null;
+
+            // FIX: đảm bảo Stamina không bị kẹt ở trạng thái "đang ôm hàng"
+            // (nếu không, isCarryingResources/isReturnPending có thể bị kẹt true vĩnh viễn
+            // khi vật phẩm bị huỷ đột ngột, ví dụ do cơ chế chống-kẹt ép reset carrySystem)
+            if (workerStamina != null) workerStamina.OnResourcesDeposited();
         }
     }
 
