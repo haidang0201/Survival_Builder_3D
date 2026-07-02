@@ -762,6 +762,37 @@ Transform:
   - {fileID: 627324270799820869}
   m_Father: {fileID: 534933504993111239}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2696873176100376964
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8318639044910168917}
+  m_Layer: 0
+  m_Name: Blood
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8318639044910168917
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2696873176100376964}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.34, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 10671561110450466}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2820767442231704814
 GameObject:
   m_ObjectHideFlags: 0
@@ -1002,6 +1033,7 @@ GameObject:
   - component: {fileID: 2803330838288357007}
   - component: {fileID: 3581391958472659968}
   - component: {fileID: 5391766205351348083}
+  - component: {fileID: 8227527299081017143}
   m_Layer: 0
   m_Name: EnemyRanged
   m_TagString: Enemy
@@ -1025,6 +1057,7 @@ Transform:
   - {fileID: 2674653683988810328}
   - {fileID: 1485305299267002118}
   - {fileID: 7321976001334201679}
+  - {fileID: 8318639044910168917}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!95 &472579318761163330
@@ -1155,6 +1188,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8227527299081017143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3322312632539215873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b21438a376193724b9ecd0d36c92d5ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
+  maxHealth: 100
+  bloodVFXPrefab: {fileID: 843967532825127196, guid: e63a740f4b46b264c9a65fb12ffd3ebb, type: 3}
+  visualChild: {fileID: 8318639044910168917}
 --- !u!1 &3411791581244358841
 GameObject:
   m_ObjectHideFlags: 0

@@ -128,6 +128,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
+  isInitialBuildNeeded: 1
+  initialBuildDuration: 5
   buildingType: 0
   buildingName: "Nh\xE0 Ch\xEDnh"
   visualModels:
@@ -140,6 +142,7 @@ MonoBehaviour:
   stoneStorageLevels: []
   riceStorageLevels: []
   kitchenLevels: []
+  houseLevels: []
   buildingIcons: []
 --- !u!114 &4326439082884434585
 MonoBehaviour:
@@ -153,7 +156,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32cfc10cc292ab44b92717cf0e5bf574, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnSoldier
-  soldierPrefab: {fileID: 1999277456456185836, guid: 6f6383d8f0b521f449a9ee5eb68d04cf, type: 3}
+  soldierPrefab: {fileID: 5529766660109328545, guid: 6faae46d02eec1b458eaa4f73464be71, type: 3}
   spawnRadius: 5
   currentLevel: 3
 --- !u!1 &8388610715534152709
