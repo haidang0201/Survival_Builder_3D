@@ -25,6 +25,8 @@ using UnityEngine;
 public class GhostBuilding : MonoBehaviour
 {
     // ================= INSPECTOR =================
+    [Header("Mảng Model Ghost theo Cấp Độ")]
+    public GameObject[] levelModels; // Mảng này sẽ tạo ra dấu + ngoài Inspector để Vũ kéo các model Ghost vào
 
     [Header("Loại công trình đang đặt")]
     public BuildingType buildingType;
@@ -308,5 +310,20 @@ public class GhostBuilding : MonoBehaviour
         Gizmos.color = isValid ? Color.green : Color.red;
         Gizmos.matrix = Matrix4x4.TRS(GetColliderCenter(), transform.rotation, Vector3.one);
         Gizmos.DrawWireCube(Vector3.zero, GetColliderHalfSize() * 2f);
+    }
+
+    // Hàm này sẽ tắt bật Model Ghost theo level truyền vào
+    public void SetGhostLevel(int level)
+    {
+        if (levelModels == null || levelModels.Length == 0) return;
+
+        for (int i = 0; i < levelModels.Length; i++)
+        {
+            if (levelModels[i] != null)
+            {
+                // Chỉ bật model khớp với level hiện tại, các model khác ẩn đi
+                levelModels[i].SetActive(i == level);
+            }
+        }
     }
 }
