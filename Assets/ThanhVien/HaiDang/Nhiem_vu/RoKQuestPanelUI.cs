@@ -74,13 +74,29 @@ public class RoKQuestPanelUI : MonoBehaviour
     public Sprite goldIcon;
     public Sprite chestIcon;
 
-    [Header("STYLE")]
-    public Color mainHeaderColor = new Color32(255, 210, 70, 255);
-    public Color sideHeaderColor = new Color32(60, 240, 255, 255);
-    public Color scrollBgColor = new Color32(0, 85, 115, 180);
-    public Color cardColor = new Color32(20, 150, 205, 235);
-    public Color buttonColor = new Color32(0, 180, 240, 255);
-    public Color textColor = Color.white;
+    [Header("WOOD THEME")]
+    [Tooltip("Bật để tự ép toàn bộ bảng nhiệm vụ sang màu vàng gỗ khi Play.")]
+    public bool forceWoodThemeOnStart = true;
+
+    [Header("STYLE - WOOD / MEDIEVAL")]
+    public Color panelColor = new Color32(58, 36, 21, 255);          // #3A2415
+    public Color headerColor = new Color32(107, 63, 31, 255);        // #6B3F1F
+    public Color scrollBgColor = new Color32(43, 26, 16, 235);       // #2B1A10
+
+    public Color mainHeaderColor = new Color32(255, 211, 90, 255);   // #FFD35A
+    public Color sideHeaderColor = new Color32(242, 179, 90, 255);   // #F2B35A
+
+    public Color mainCardColor = new Color32(184, 117, 50, 255);     // #B87532
+    public Color sideCardColor = new Color32(122, 74, 36, 255);      // #7A4A24
+    public Color cardBorderColor = new Color32(224, 166, 74, 255);   // #E0A64A
+
+    public Color titleTextColor = new Color32(255, 241, 194, 255);   // #FFF1C2
+    public Color descriptionTextColor = new Color32(232, 212, 162, 255); // #E8D4A2
+    public Color rewardTextColor = new Color32(255, 224, 138, 255);  // #FFE08A
+
+    public Color buttonColor = new Color32(199, 106, 27, 255);       // #C76A1B
+    public Color buttonHighlightColor = new Color32(240, 167, 58, 255); // #F0A73A
+    public Color textColor = new Color32(255, 241, 194, 255);        // fallback
 
     [Header("LAYOUT")]
     public int panelSortingOrder = 5000;
@@ -121,7 +137,12 @@ public class RoKQuestPanelUI : MonoBehaviour
         }
 
         BuildDefaultQuestList();
+
+        if (forceWoodThemeOnStart)
+            ApplyWoodThemeColors();
+
         ApplyTopCanvas();
+        ApplyBasePanelColors();
 
         if (questPanelRoot != null)
             questPanelRoot.SetActive(false);
@@ -335,6 +356,48 @@ public class RoKQuestPanelUI : MonoBehaviour
         questPanelRoot.transform.SetAsLastSibling();
     }
 
+    [ContextMenu("Apply Wood Theme Colors")]
+    public void ApplyWoodThemeColors()
+    {
+        panelColor = new Color32(58, 36, 21, 255);
+        headerColor = new Color32(107, 63, 31, 255);
+        scrollBgColor = new Color32(43, 26, 16, 235);
+
+        mainHeaderColor = new Color32(255, 211, 90, 255);
+        sideHeaderColor = new Color32(242, 179, 90, 255);
+
+        mainCardColor = new Color32(184, 117, 50, 255);
+        sideCardColor = new Color32(122, 74, 36, 255);
+        cardBorderColor = new Color32(224, 166, 74, 255);
+
+        titleTextColor = new Color32(255, 241, 194, 255);
+        descriptionTextColor = new Color32(232, 212, 162, 255);
+        rewardTextColor = new Color32(255, 224, 138, 255);
+
+        buttonColor = new Color32(199, 106, 27, 255);
+        buttonHighlightColor = new Color32(240, 167, 58, 255);
+        textColor = titleTextColor;
+
+        ApplyBasePanelColors();
+    }
+
+    void ApplyBasePanelColors()
+    {
+        if (questPanelRoot == null) return;
+
+        Image rootImage = questPanelRoot.GetComponent<Image>();
+        if (rootImage != null)
+            rootImage.color = panelColor;
+
+        Transform header = questPanelRoot.transform.Find("Header");
+        if (header != null)
+        {
+            Image headerImage = header.GetComponent<Image>();
+            if (headerImage != null)
+                headerImage.color = headerColor;
+        }
+    }
+
     // =====================================================
     // RENDER UI
     // =====================================================
@@ -348,6 +411,7 @@ public class RoKQuestPanelUI : MonoBehaviour
         }
 
         ClearOldGeneratedUI();
+        ApplyBasePanelColors();
 
         GameObject scrollGO = new GameObject(GENERATED_ROOT_NAME, typeof(RectTransform), typeof(Image), typeof(ScrollRect));
         scrollGO.transform.SetParent(questPanelRoot.transform, false);
@@ -464,12 +528,17 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     void CreateQuestCard(Quest quest)
     {
-        GameObject card = new GameObject("QuestItem_" + quest.id, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        GameObject card = new GameObject("QuestItem_" + quest.id, typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(Outline));
         card.transform.SetParent(generatedContent, false);
 
         Image bg = card.GetComponent<Image>();
-        bg.color = cardColor;
+        bg.color = quest.type == QuestType.Main ? mainCardColor : sideCardColor;
         bg.raycastTarget = true;
+
+        Outline outline = card.GetComponent<Outline>();
+        outline.effectColor = cardBorderColor;
+        outline.effectDistance = new Vector2(2f, -2f);
+        outline.useGraphicAlpha = false;
 
         RectTransform rt = card.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(0, itemHeight);
@@ -543,6 +612,7 @@ public class RoKQuestPanelUI : MonoBehaviour
     {
         TMP_Text title = CreateText(parent, "QuestTitleText", quest.title, new Vector2(130, -18), new Vector2(700, 34), 30, Anchor.TopLeft);
         title.fontStyle = FontStyles.Bold;
+        title.color = titleTextColor;
 
         TMP_Text progress = CreateText(
             parent,
@@ -553,16 +623,16 @@ public class RoKQuestPanelUI : MonoBehaviour
             22,
             Anchor.TopLeft
         );
-        progress.color = new Color32(230, 250, 255, 255);
+        progress.color = descriptionTextColor;
 
         TMP_Text hint = CreateText(parent, "QuestDescriptionText", quest.shortHint, new Vector2(130, -80), new Vector2(780, 26), 19, Anchor.TopLeft);
-        hint.color = new Color32(200, 240, 255, 255);
+        hint.color = descriptionTextColor;
     }
 
     void CreateRewards(Transform parent, Quest quest)
     {
         TMP_Text label = CreateText(parent, "RewardLabelText", "Thưởng", new Vector2(130, -112), new Vector2(90, 26), 20, Anchor.TopLeft);
-        label.color = new Color32(160, 230, 255, 255);
+        label.color = rewardTextColor;
 
         for (int i = 0; i < quest.rewards.Count; i++)
         {
@@ -575,12 +645,13 @@ public class RoKQuestPanelUI : MonoBehaviour
 
             TMP_Text amount = CreateText(parent, "RewardText_" + i, FormatAmount(quest.rewards[i].amount), new Vector2(x + 36, -106), new Vector2(85, 26), 20, Anchor.TopLeft);
             amount.fontStyle = FontStyles.Bold;
+            amount.color = rewardTextColor;
         }
     }
 
     void CreateGoButton(Transform parent, Quest quest)
     {
-        GameObject go = new GameObject("GoButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        GameObject go = new GameObject("GoButton", typeof(RectTransform), typeof(Image), typeof(Button), typeof(Outline));
         go.transform.SetParent(parent, false);
 
         RectTransform rt = go.GetComponent<RectTransform>();
@@ -591,7 +662,21 @@ public class RoKQuestPanelUI : MonoBehaviour
         Image img = go.GetComponent<Image>();
         img.color = buttonColor;
 
+        Outline outline = go.GetComponent<Outline>();
+        outline.effectColor = cardBorderColor;
+        outline.effectDistance = new Vector2(2f, -2f);
+        outline.useGraphicAlpha = false;
+
         Button btn = go.GetComponent<Button>();
+        ColorBlock colors = btn.colors;
+        colors.normalColor = buttonColor;
+        colors.highlightedColor = buttonHighlightColor;
+        colors.selectedColor = buttonHighlightColor;
+        colors.pressedColor = new Color32(145, 70, 16, 255);
+        colors.disabledColor = new Color32(80, 60, 45, 180);
+        colors.colorMultiplier = 1f;
+        btn.colors = colors;
+
         btn.onClick.AddListener(() => OnQuestButtonClicked(quest.id));
 
         TMP_Text text = CreateText(
@@ -606,6 +691,7 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         text.alignment = TextAlignmentOptions.Center;
         text.fontStyle = FontStyles.Bold;
+        text.color = titleTextColor;
     }
 
     // =====================================================
