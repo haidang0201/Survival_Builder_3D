@@ -1,0 +1,520 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4595812283716212148
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7776248271435431291}
+  - component: {fileID: 4878699572390582046}
+  - component: {fileID: 2279795419369443312}
+  - component: {fileID: 233214991817258130}
+  - component: {fileID: 2529202334202226691}
+  m_Layer: 11
+  m_Name: GhostKhoGos
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7776248271435431291
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4595812283716212148}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.6596089, y: 0.004594425, z: 0.91299504}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 420747207665306876}
+  - {fileID: 7473165676183139183}
+  - {fileID: 2648612107046586127}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4878699572390582046
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4595812283716212148}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cef52e85d6b194b4aaa1a0fdaf4ee47f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingCtrl
+  buildingType: 2
+  door: {fileID: 0}
+  buildProgress: 0
+  isOccupied: 0
+  currentWorkers: 0
+  maxWorkers: 4
+--- !u!114 &2279795419369443312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4595812283716212148}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
+  isInitialBuildNeeded: 1
+  initialBuildDuration: 5
+  buildingType: 2
+  buildingName: Wood
+  visualModels:
+  - {fileID: 6966664119630470878}
+  - {fileID: 202204408986067277}
+  - {fileID: 4735985728916804909}
+  upgradeCosts:
+  - woodCost: 10
+    stoneCost: 10
+    foodCost: 10
+    upgradeDuration: 5
+  - woodCost: 20
+    stoneCost: 20
+    foodCost: 20
+    upgradeDuration: 5
+  towerLevelScripts: []
+  woodStorageLevels:
+  - {fileID: 3811367398836026770}
+  - {fileID: 6234246017802912257}
+  - {fileID: 1581814061917501025}
+  stoneStorageLevels: []
+  riceStorageLevels: []
+  kitchenLevels: []
+  houseLevels: []
+  buildingIcons:
+  - {fileID: 21300000, guid: 9a198188e043c8c4aa6f1eb25b0f1533, type: 3}
+  - {fileID: 21300000, guid: c7eb428113b428f46833f8a20c0ed76c, type: 3}
+  - {fileID: 21300000, guid: 0644633800341a44294ef2ad2d4f6258, type: 3}
+--- !u!65 &233214991817258130
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4595812283716212148}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 11.439949, y: 2.9529173, z: 9.508296}
+  m_Center: {x: 0.87773037, y: 1.4762775, z: -2.3409677}
+--- !u!114 &2529202334202226691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4595812283716212148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  levelModels:
+  - {fileID: 6966664119630470878}
+  - {fileID: 202204408986067277}
+  - {fileID: 4735985728916804909}
+  buildingType: 2
+  validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
+  invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  snapStep: 1
+  checkYSize: 2
+--- !u!1001 &2122512889292501888
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7776248271435431291}
+    m_Modifications:
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9068629112016285022, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      propertyPath: m_Name
+      value: KhoGo
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9068629112016285022, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 678245865860209868}
+  m_SourcePrefab: {fileID: 100100000, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+--- !u!4 &420747207665306876 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1775092670429364092, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+  m_PrefabInstance: {fileID: 2122512889292501888}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3811367398836026770 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2994924875704405522, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+  m_PrefabInstance: {fileID: 2122512889292501888}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6966664119630470878}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
+--- !u!1 &6966664119630470878 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9068629112016285022, guid: df6d7d0ab2c4373448fe1c484cb92aff, type: 3}
+  m_PrefabInstance: {fileID: 2122512889292501888}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &678245865860209868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6966664119630470878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  levelModels:
+  - {fileID: 6966664119630470878}
+  - {fileID: 202204408986067277}
+  - {fileID: 4735985728916804909}
+  buildingType: 2
+  validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
+  invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  snapStep: 1
+  checkYSize: 2
+--- !u!1001 &4351506162472515699
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7776248271435431291}
+    m_Modifications:
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9068629112016285022, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_Name
+      value: KhoGo 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9068629112016285022, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9068629112016285022, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2523415380173194876}
+  m_SourcePrefab: {fileID: 100100000, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+--- !u!114 &1581814061917501025 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2994924875704405522, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+  m_PrefabInstance: {fileID: 4351506162472515699}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4735985728916804909}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
+--- !u!4 &2648612107046586127 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1775092670429364092, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+  m_PrefabInstance: {fileID: 4351506162472515699}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &4735985728916804909 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9068629112016285022, guid: a3d0bb920c56bfe4894ad76779a5046f, type: 3}
+  m_PrefabInstance: {fileID: 4351506162472515699}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2523415380173194876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4735985728916804909}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  levelModels:
+  - {fileID: 6966664119630470878}
+  - {fileID: 202204408986067277}
+  - {fileID: 4735985728916804909}
+  buildingType: 2
+  validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
+  invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  snapStep: 1
+  checkYSize: 2
+--- !u!1001 &9157051658065071123
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7776248271435431291}
+    m_Modifications:
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: maxWorkersLevels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: 'maxWorkersLevels.Array.data[0]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: spawnAmountPerLevel.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9068629112016285022, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_Name
+      value: KhoGo 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9068629112016285022, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 9068629112016285022, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7797883064592659729}
+  m_SourcePrefab: {fileID: 100100000, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+--- !u!1 &202204408986067277 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9068629112016285022, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+  m_PrefabInstance: {fileID: 9157051658065071123}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7797883064592659729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 202204408986067277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  levelModels:
+  - {fileID: 6966664119630470878}
+  - {fileID: 202204408986067277}
+  - {fileID: 4735985728916804909}
+  buildingType: 2
+  validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
+  invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  snapStep: 1
+  checkYSize: 2
+--- !u!114 &6234246017802912257 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2994924875704405522, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+  m_PrefabInstance: {fileID: 9157051658065071123}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 202204408986067277}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba1ade60c3099e34b9c7c46f5ee264a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WoodStorage
+--- !u!4 &7473165676183139183 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1775092670429364092, guid: 6ac82a8a2eb23a74ab2028d9ca4124c4, type: 3}
+  m_PrefabInstance: {fileID: 9157051658065071123}
+  m_PrefabAsset: {fileID: 0}
