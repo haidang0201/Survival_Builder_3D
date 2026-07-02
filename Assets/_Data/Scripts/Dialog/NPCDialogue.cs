@@ -39,6 +39,8 @@ public class NPCDialogue : MonoBehaviour
     private Coroutine typingCoroutine;
     private bool isTyping = false;
     private bool waitingForContinue = false;
+    public GameObject dialogueRoot;
+    public System.Action onContinueEvent;
 
     // =========================================================
     //  PUBLIC API — dùng từ TutorialManager (không thay đổi)
@@ -55,6 +57,11 @@ public class NPCDialogue : MonoBehaviour
 
         StopTyping();
         typingCoroutine = StartCoroutine(TypeText(message));
+    }
+    public void HideNow()
+    {
+        if (dialoguePanel != null)
+            dialoguePanel.SetActive(false);
     }
 
     /// <summary>
@@ -95,17 +102,20 @@ public class NPCDialogue : MonoBehaviour
     {
         if (isTyping)
         {
-            // Skip gõ chữ — hiện full text ngay, tắt âm thanh
             StopTyping();
             if (dialogueText != null)
                 dialogueText.maxVisibleCharacters = int.MaxValue;
+
             isTyping = false;
-            // KHÔNG return — fall through để unblock waitingForContinue luôn
         }
 
         if (waitingForContinue)
         {
             waitingForContinue = false;
+
+            // 🔥 AUTO CLOSE DIALOG KHI BẤM TIẾP TỤC
+            if (dialoguePanel != null)
+                dialoguePanel.SetActive(false);
         }
     }
     // =========================================================

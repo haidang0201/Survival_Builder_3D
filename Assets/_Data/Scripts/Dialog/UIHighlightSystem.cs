@@ -232,4 +232,10 @@ public class UIHighlightSystem : MonoBehaviour
         if (dimGO) Destroy(dimGO);
         if (circleGO) Destroy(circleGO);
     }
+    public void HighlightWorld(Transform target)
+    {
+        // tạo mũi tên chỉ vào target
+        // hoặc dùng UI arrow prefab
+        Debug.Log("Arrow pointing to: " + target.name);
+    }
 }

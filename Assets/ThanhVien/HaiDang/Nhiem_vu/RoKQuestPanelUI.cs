@@ -102,6 +102,7 @@ public class RoKQuestPanelUI : MonoBehaviour
     private RectTransform generatedContent;
     private readonly List<Quest> quests = new List<Quest>();
     private readonly Dictionary<string, Quest> questMap = new Dictionary<string, Quest>();
+    public RoKQuestItemUI questItemPrefab;
 
     private const string GENERATED_ROOT_NAME = "GeneratedQuestScroll";
 
@@ -710,4 +711,21 @@ public class RoKQuestPanelUI : MonoBehaviour
     {
         return value.ToString("#,0").Replace(",", ".");
     }
+    public void OnQuestGoClicked(string questId)
+    {
+        Debug.Log("[QuestPanel] Bridge GO: " + questId);
+
+        if (onGoPressed != null)
+            onGoPressed.Invoke(questId);
+    }
+    private void CreateQuestItem(Quest quest)
+    {
+        RoKQuestItemUI item = Instantiate(questItemPrefab, generatedContent);
+
+        item.Bind(quest, this);
+
+        // 👉 LINK ITEM → PANEL → TUTORIAL
+        item.onGoClicked = OnQuestGoClicked;
+    }
+
 }
