@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 8350106097222672184}
   - component: {fileID: 2472773563439248427}
   - component: {fileID: 2094686968249118774}
+  - component: {fileID: 7735173501276547949}
   m_Layer: 0
   m_Name: ArcherBarracksLv1
   m_TagString: Tower
@@ -158,3 +159,17 @@ MonoBehaviour:
   kitchenLevels: []
   houseLevels: []
   buildingIcons: []
+--- !u!114 &7735173501276547949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6720032043596487692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb66dc95d9299a6498dcf8d9d7757b9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HPTower
+  maxHealth: 200
+  destroyVFXPrefab: {fileID: 0}
