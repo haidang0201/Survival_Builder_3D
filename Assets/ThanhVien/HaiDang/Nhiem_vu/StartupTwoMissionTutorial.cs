@@ -5,6 +5,8 @@ using System.Reflection;
 
 public class StartupTwoMissionTutorial : MonoBehaviour
 {
+    public static StartupTwoMissionTutorial Instance { get; private set; }
+
     [Header("CORE")]
     public NPCDialogue npc;
     public UIHighlightSystem highlight;
@@ -33,11 +35,19 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     public bool watchTowerSelected;
     public bool watchTowerPlaced;
 
+    [Header("READ ONLY")]
+    public bool IsWaitingForWatchTowerPlacement;
+
     [Header("OPTIONS")]
     public bool autoStart = true;
     public float startDelay = 0.4f;
 
     Coroutine routine;
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
@@ -53,6 +63,9 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     void OnDestroy()
     {
         UnbindButtons();
+
+        if (Instance == this)
+            Instance = null;
     }
 
     void BindButtons()
@@ -86,6 +99,7 @@ public class StartupTwoMissionTutorial : MonoBehaviour
         buildButtonClicked = false;
         watchTowerSelected = false;
         watchTowerPlaced = false;
+        IsWaitingForWatchTowerPlacement = false;
 
         HideArrow();
         ClearHighlight();
@@ -113,7 +127,7 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     {
         HighlightUI(openBuildButtonRT);
 
-        // Quan trọng: dùng ShowObjective, KHÔNG dùng ShowAndWait
+        // Không hiện nút Tiếp tục. Người chơi phải bấm nút Build.
         ShowObjective("Hãy mở bảng xây dựng.");
 
         if (openBuildButton != null)
@@ -147,7 +161,7 @@ public class StartupTwoMissionTutorial : MonoBehaviour
 
         HighlightUI(watchTowerButtonRT);
 
-        // Không cần bấm Tiếp tục, phải bấm Tháp Canh
+        // Không hiện nút Tiếp tục. Người chơi phải bấm Tháp Canh.
         ShowObjective("Chọn Tháp Canh trong bảng xây dựng.");
 
         if (watchTowerButton != null)
@@ -165,13 +179,16 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     }
 
     // =====================================================
-    // STEP 3: CHỈ VỊ TRÍ ĐẶT THÁP — KHÔNG CÒN HIGHLIGHT TRÒN
+    // STEP 3: CHỈ VỊ TRÍ ĐẶT THÁP
     // =====================================================
 
     IEnumerator Step_PlaceWatchTower()
     {
-        // Fix quan trọng: tắt vòng highlight tròn trước
+        // Tắt vòng highlight tròn. Bước này chỉ dùng mũi tên.
         ClearHighlight();
+
+        watchTowerPlaced = false;
+        IsWaitingForWatchTowerPlacement = true;
 
         if (moveCameraToPlacePoint && towerPlacePoint != null)
             yield return MoveCameraTo(towerPlacePoint);
@@ -179,10 +196,12 @@ public class StartupTwoMissionTutorial : MonoBehaviour
         if (worldArrow != null && towerPlacePoint != null)
             worldArrow.Show(towerPlacePoint);
 
-        // Không hiện nút Tiếp tục, phải đặt tháp
+        // Không hiện nút Tiếp tục. Người chơi phải đặt Tháp Canh xuống đất.
         ShowObjective("Đặt Tháp Canh vào vị trí mũi tên chỉ dẫn.");
 
         yield return new WaitUntil(() => watchTowerPlaced);
+
+        IsWaitingForWatchTowerPlacement = false;
 
         HideNPC();
         HideArrow();
@@ -196,20 +215,28 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     public void OnBuildButtonClicked()
     {
         buildButtonClicked = true;
+        Debug.Log("[StartupTwoMissionTutorial] Đã bấm nút mở bảng xây dựng.");
     }
 
     public void OnWatchTowerButtonClicked()
     {
         watchTowerSelected = true;
+        Debug.Log("[StartupTwoMissionTutorial] Đã chọn Tháp Canh.");
     }
 
-    // Gọi hàm này từ build system khi người chơi đặt tháp xong
+    // Gọi hàm này khi THÁP CANH THẬT được đặt xuống đất thành công
     public void NotifyWatchTowerPlaced()
     {
+        if (!IsWaitingForWatchTowerPlacement)
+        {
+            Debug.Log("[StartupTwoMissionTutorial] Đã đặt Tháp Canh nhưng tutorial chưa ở bước chờ đặt.");
+            return;
+        }
+
         watchTowerPlaced = true;
+        Debug.Log("[StartupTwoMissionTutorial] Tutorial nhận tín hiệu: Tháp Canh đã đặt xong.");
     }
 
-    // Test nhanh bằng button inspector
     public void TestPlaced()
     {
         NotifyWatchTowerPlaced();
@@ -231,7 +258,6 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     {
         if (npc == null) return;
 
-        // Gọi ShowObjective nếu NPCDialogue có hàm này
         MethodInfo method = npc.GetType().GetMethod("ShowObjective", new[] { typeof(string) });
 
         if (method != null)
@@ -240,7 +266,6 @@ public class StartupTwoMissionTutorial : MonoBehaviour
         }
         else
         {
-            // Fallback nếu NPCDialogue bản cũ chưa có ShowObjective
             npc.Show(text);
         }
     }
@@ -259,7 +284,6 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     {
         if (highlight == null || target == null) return;
 
-        // Hỗ trợ cả UIHighlightSystem bản có HighlightRT và bản có Highlight
         MethodInfo method = highlight.GetType().GetMethod("HighlightRT", new[] { typeof(RectTransform) });
 
         if (method != null)
