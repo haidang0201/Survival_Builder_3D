@@ -37,10 +37,10 @@ public class JsonDataManager : Singleton<JsonDataManager>
     // TÀI NGUYÊN RUNTIME
     // ──────────────────────────────────────────────
 
-    public int gold { get; private set; } = 50;
-    public int wood { get; private set; } = 50;
-    public int stone { get; private set; } = 50;
-    public int food { get; private set; } = 50;
+    public int gold { get; private set; } = 200;
+    public int wood { get; private set; } = 500;
+    public int stone { get; private set; } = 500;
+    public int food { get; private set; } = 500;
 
     // ──────────────────────────────────────────────
     // BỔ SUNG: TÀI NGUYÊN TÍCH LŨY SUỐT TRẬN ĐẤU (Phục vụ EndGameUI)

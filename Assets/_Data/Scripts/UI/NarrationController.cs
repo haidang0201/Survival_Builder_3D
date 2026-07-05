@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class NarrationController : MonoBehaviour
 {
@@ -16,7 +17,7 @@ public class NarrationController : MonoBehaviour
     }
 
     [Header("UI Components (2D Canvas)")]
-    public Image backgroundImage;        
+    public Image backgroundImage;
     public Image fadeImageOverlay;       // Tấm dùng để Fade ảnh hoặc Nháy Đỏ
     public TextMeshProUGUI narrationText;
 
@@ -24,24 +25,24 @@ public class NarrationController : MonoBehaviour
     public Camera mainCamera;            // Kéo Main Camera của bạn vào đây
 
     [Header("Audio Components")]
-    public AudioSource audioSource;      
+    public AudioSource audioSource;
 
     [Header("Settings")]
-    public float typingSpeed = 0.05f;    
-    public float defaultFadeDuration = 0.8f; 
+    public float typingSpeed = 0.05f;
+    public float defaultFadeDuration = 0.8f;
 
     [System.Serializable]
     public class NarrationStep
     {
-        public Sprite backgroundSprite;  
+        public Sprite backgroundSprite;
         public TransitionType transition; // Ô chọn hiệu ứng đặc biệt
         [TextArea(3, 5)]
-        public string textContent;       
-        public AudioClip voiceOrSFX;     
+        public string textContent;
+        public AudioClip voiceOrSFX;
     }
 
     [Header("Story Timeline")]
-    public NarrationStep[] storySteps;   
+    public NarrationStep[] storySteps;
 
     private int currentIndex = 0;
     private Coroutine typingCoroutine;
@@ -54,7 +55,7 @@ public class NarrationController : MonoBehaviour
     void Start()
     {
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
-        
+
         if (mainCamera == null) mainCamera = Camera.main;
         if (mainCamera != null) originalCamPos = mainCamera.transform.localPosition;
 
@@ -98,7 +99,7 @@ public class NarrationController : MonoBehaviour
             {
                 narrationText.text = "";
                 if (audioSource.isPlaying) audioSource.Stop();
-                Debug.Log("Kết thúc!");
+                else SceneManager.LoadScene(2);
             }
         }
     }
@@ -109,8 +110,8 @@ public class NarrationController : MonoBehaviour
         TransitionType currentTransition = storySteps[index].transition;
 
         // Cập nhật ảnh nền trước (nếu có và không thuộc nhóm chỉ hiệu ứng)
-        if (storySteps[index].backgroundSprite != null && 
-            currentTransition != TransitionType.ScreenShakeOnly && 
+        if (storySteps[index].backgroundSprite != null &&
+            currentTransition != TransitionType.ScreenShakeOnly &&
             currentTransition != TransitionType.RedFlashOnly)
         {
             if (backgroundImage.sprite == null || currentTransition == TransitionType.Instant)
@@ -243,7 +244,7 @@ public class NarrationController : MonoBehaviour
     IEnumerator FadeThroughBlackRoutine(Sprite nextSprite)
     {
         if (fadeImageOverlay == null) { backgroundImage.sprite = nextSprite; yield break; }
-        fadeImageOverlay.sprite = null; 
+        fadeImageOverlay.sprite = null;
         fadeImageOverlay.color = Color.black;
         float halfDuration = defaultFadeDuration / 2f;
         float timer = 0f;
