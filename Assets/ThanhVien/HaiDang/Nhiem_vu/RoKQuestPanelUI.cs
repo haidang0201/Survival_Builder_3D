@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Events;
+using System.Collections;
+
 
 public class RoKQuestPanelUI : MonoBehaviour
 {
@@ -111,6 +113,19 @@ public class RoKQuestPanelUI : MonoBehaviour
     [Header("OPTIONS")]
     public bool closePanelWhenPressGo = true;
     public bool debugMode = true;
+
+    [Header("REWARD CLAIM FX")]
+    public RoKCoinRewardFlyEffect coinRewardFlyEffect;
+
+    [Tooltip("Kéo RectTransform của icon xu/vàng trên thanh top HUD vào đây.")]
+    public RectTransform goldHudTarget;
+
+    public bool playGoldFlyEffectOnClaim = true;
+
+    // Fix lỗi dòng đỏ này
+    public int renameQuestFallbackGoldReward = 100;
+
+    private bool rewardClaimRunning;
 
     [Header("EVENT")]
     public QuestGoEvent onGoPressed;
@@ -677,7 +692,7 @@ public class RoKQuestPanelUI : MonoBehaviour
         colors.colorMultiplier = 1f;
         btn.colors = colors;
 
-        btn.onClick.AddListener(() => OnQuestButtonClicked(quest.id));
+        btn.onClick.AddListener(() => OnQuestButtonClicked(quest.id, rt));
 
         TMP_Text text = CreateText(
             go.transform,
@@ -775,7 +790,7 @@ public class RoKQuestPanelUI : MonoBehaviour
     // QUEST BUTTON LOGIC
     // =====================================================
 
-    public void OnQuestButtonClicked(string questId)
+    public void OnQuestButtonClicked(string questId, RectTransform clickSource = null)
     {
         if (!questMap.ContainsKey(questId))
             return;
@@ -785,18 +800,133 @@ public class RoKQuestPanelUI : MonoBehaviour
         if (quest.claimed)
             return;
 
+        // Nếu quest đã xong → đây là nút "Nhận"
         if (quest.IsCompleted())
         {
-            quest.claimed = true;
-            RenderQuestList();
+            if (!rewardClaimRunning)
+                StartCoroutine(ClaimQuestRewardRoutine(quest, clickSource));
+
             return;
         }
 
+        // Nếu quest chưa xong → đây là nút "Đi"
         Debug.Log("[Quest] Đi tới nhiệm vụ: " + quest.title);
         onGoPressed?.Invoke(questId);
 
         if (closePanelWhenPressGo)
             ClosePanel();
+    }
+
+    IEnumerator ClaimQuestRewardRoutine(Quest quest, RectTransform clickSource)
+    {
+        rewardClaimRunning = true;
+
+        int goldReward = GetGoldRewardAmount(quest);
+
+        // 1. Nếu có thưởng xu/vàng → chạy hiệu ứng bay xu trước
+        if (goldReward > 0)
+        {
+            if (playGoldFlyEffectOnClaim &&
+                coinRewardFlyEffect != null &&
+                goldHudTarget != null)
+            {
+                bool fxDone = false;
+
+                coinRewardFlyEffect.PlayGoldFly(
+                    clickSource,
+                    goldHudTarget,
+                    goldIcon,
+                    goldReward,
+                    () =>
+                    {
+                        AddGoldReward(goldReward);
+                        fxDone = true;
+                    }
+                );
+
+                yield return new WaitUntil(() => fxDone);
+            }
+            else
+            {
+                AddGoldReward(goldReward);
+            }
+        }
+
+        // 2. Cộng các tài nguyên khác nếu có
+        GiveNonGoldResourceRewards(quest);
+
+        // 3. Đánh dấu đã nhận
+        quest.claimed = true;
+
+        rewardClaimRunning = false;
+
+        RenderQuestList();
+    }
+
+    int GetGoldRewardAmount(Quest quest)
+    {
+        int total = 0;
+
+        foreach (Reward reward in quest.rewards)
+        {
+            if (reward.icon == goldIcon)
+                total += reward.amount;
+        }
+
+        // Fallback riêng cho nhiệm vụ đổi tên nếu chưa gán đúng goldIcon
+        if (total <= 0 && quest.id == "my_name")
+            total = renameQuestFallbackGoldReward;
+
+        return total;
+    }
+
+    void GiveNonGoldResourceRewards(Quest quest)
+    {
+        JsonDataManager data = FindObjectOfType<JsonDataManager>();
+
+        if (data == null)
+        {
+            Debug.LogWarning("[RoKQuestPanelUI] Không tìm thấy JsonDataManager.");
+            return;
+        }
+
+        foreach (Reward reward in quest.rewards)
+        {
+            if (reward.amount <= 0)
+                continue;
+
+            // Gold đã cộng bằng hiệu ứng rồi, bỏ qua ở đây
+            if (reward.icon == goldIcon)
+                continue;
+
+            if (reward.icon == woodIcon)
+                data.AddWood(reward.amount);
+            else if (reward.icon == stoneIcon)
+                data.AddStone(reward.amount);
+            else if (reward.icon == foodIcon)
+                data.AddFood(reward.amount);
+        }
+
+        data.BroadcastAllResources();
+    }
+
+    void AddGoldReward(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        JsonDataManager data = FindObjectOfType<JsonDataManager>();
+
+        if (data == null)
+        {
+            Debug.LogWarning("[RoKQuestPanelUI] Không tìm thấy JsonDataManager.");
+            return;
+        }
+
+        data.AddGold(amount);
+        data.BroadcastAllResources();
+
+        Debug.Log("[RoKQuestPanelUI] Đã cộng xu/vàng: +" + amount);
     }
 
     public void SetProgress(string questId, int value)
