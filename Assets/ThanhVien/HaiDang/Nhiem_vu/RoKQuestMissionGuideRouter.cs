@@ -1,8 +1,12 @@
 using System.Collections;
+using System.Reflection;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class RoKQuestMissionGuideRouter : MonoBehaviour
 {
+    public static RoKQuestMissionGuideRouter Instance { get; private set; }
+
     // ID phải trùng với quest id trong RoKQuestPanelUI
     const string QUEST_TRAIN_ARCHER = "train_archer";
     const string QUEST_WATCH_TOWER = "build_watchtower";
@@ -14,9 +18,10 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
     const string QUEST_GATHER_WOOD = "gather_wood";
     const string QUEST_UPGRADE_STORAGE = "upgrade_storage";
 
+
     [Header("CORE")]
     public RoKQuestPanelUI questPanel;
-    public NPCDialogue npc;
+    public RoKNpcMissionDialogUI npc;
     public UIHighlightSystem highlight;
 
     [Header("CAMERA")]
@@ -79,6 +84,45 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
     public Transform storagePoint;
     public bool storageUpgraded;
 
+    [Header("9. STORAGE FLOW")]
+    [Tooltip("Bật nếu muốn tutorial chờ người chơi nhấn vào nhà kho trước khi highlight nút nâng cấp.")]
+    public bool waitForStorageHouseClick = true;
+    public int requiredStorageLevel = 2;
+
+    [Header("9. STORAGE LEVEL DETECTION")]
+    [Tooltip("Kéo GameObject nhà kho / nhà Wood vào đây. Router sẽ tự đọc level từ component trên object này.")]
+    public GameObject storageLevelSource;
+
+    [Tooltip("Nếu biết chính xác script giữ level, kéo component đó vào đây. Có thể để trống nếu đã gán Storage Level Source.")]
+    public MonoBehaviour storageLevelComponent;
+
+    [Tooltip("Tự quét các field/property phổ biến như currentLevel, level, buildingLevel...")]
+    public bool autoDetectStorageLevel = true;
+
+    [Tooltip("Khoảng thời gian kiểm tra level khi nhiệm vụ Người giữ kho đang chạy.")]
+    public float storageLevelCheckInterval = 0.15f;
+
+    [Tooltip("Nếu ON, bấm nút Upgrade sẽ hoàn thành quest ngay. Chỉ bật nếu nút này chắc chắn nâng Kho lên cấp 2.")]
+    public bool completeStorageQuestWhenUpgradeButtonClicked = false;
+
+    [Tooltip("Tự bắt sự kiện click của Storage Upgrade Button để khởi động kiểm tra level.")]
+    public bool autoBindStorageUpgradeButton = true;
+
+    public string[] storageLevelMemberNames =
+    {
+        "currentLevel", "CurrentLevel",
+        "level", "Level",
+        "buildingLevel", "BuildingLevel",
+        "storageLevel", "StorageLevel",
+        "warehouseLevel", "WarehouseLevel",
+        "currentBuildingLevel", "CurrentBuildingLevel"
+    };
+
+    bool storageHouseClicked;
+    bool storageQuestCompleted;
+    bool storageUpgradeButtonClicked;
+    Coroutine storageLevelWatchRoutine;
+
     [Header("OPTIONS")]
     public bool closeQuestPanelWhenGuideStart = true;
     public bool openQuestPanelWhenComplete = true;
@@ -86,6 +130,13 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
 
     GameObject arrowInstance;
     bool guideRunning;
+    [Header("EXTERNAL COMPLETE")]
+    public bool openPanelWhenExternalComplete = true;
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
@@ -98,6 +149,7 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
             questPanel.onGoPressed.AddListener(OnQuestGoPressed);
         }
 
+        BindStorageUpgradeButton();
         SyncInitialProgress();
     }
 
@@ -105,6 +157,11 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
     {
         if (questPanel != null)
             questPanel.onGoPressed.RemoveListener(OnQuestGoPressed);
+
+        UnbindStorageUpgradeButton();
+
+        if (Instance == this)
+            Instance = null;
     }
 
     // =====================================================
@@ -348,7 +405,15 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
 
         yield return new WaitUntil(() => gatheredWood >= gatherWoodTarget);
 
-        FinishQuest(QUEST_GATHER_WOOD, "Tốt. Gỗ đã được tích trữ.");
+        if (!gatherWoodQuestCompleted)
+        {
+            gatherWoodQuestCompleted = true;
+            FinishQuest(QUEST_GATHER_WOOD, "Tốt. Gỗ đã được tích trữ.");
+        }
+        else
+        {
+            yield return Say("Tốt. Gỗ đã được tích trữ.");
+        }
     }
 
     // =====================================================
@@ -357,18 +422,47 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
 
     IEnumerator GuideUpgradeStorage()
     {
+        storageHouseClicked = false;
+        storageUpgraded = false;
+        storageUpgradeButtonClicked = false;
+
+        StartStorageLevelWatcher();
+
         yield return Say("Nhiệm vụ: Nâng cấp Kho chứa lên cấp 2.");
 
+        // 1. Lia camera tới nhà kho / ngôi nhà đã có sẵn.
         yield return FocusWorld(storagePoint);
 
+        // Nếu nhà kho đã level 2 sẵn thì hoàn thành luôn.
+        if (IsStorageLevelReached())
+            yield break;
+
+        // 2. Nói người chơi nhấn vào nhà.
+        ShowObjective("Hãy nhấn vào ngôi nhà, rồi nâng cấp Kho chứa lên cấp 2.");
+
+        // 3. Chờ người chơi click nhà kho hoặc hệ thống báo đã lên level.
+        if (waitForStorageHouseClick)
+            yield return new WaitUntil(() =>
+                storageHouseClicked ||
+                storageUpgraded ||
+                IsStorageLevelReached() ||
+                IsUIVisible(storageUpgradeButton)
+            );
+
+        if (storageQuestCompleted)
+            yield break;
+
+        // 4. Highlight nút nâng cấp khi panel nâng cấp đã mở.
         if (storageUpgradeButton != null && highlight != null)
             highlight.Highlight(storageUpgradeButton);
 
-        yield return Say("Hãy nâng cấp Kho chứa để bảo vệ tài nguyên.");
+        ShowObjective("Bấm nút nâng cấp để đưa Kho chứa lên cấp 2.");
 
-        yield return new WaitUntil(() => storageUpgraded);
+        // 5. Chờ nhà kho thật sự lên level 2.
+        yield return new WaitUntil(() => storageUpgraded || IsStorageLevelReached());
 
-        FinishQuest(QUEST_UPGRADE_STORAGE, "Tốt. Kho chứa đã được nâng cấp.");
+        if (!storageQuestCompleted)
+            CompleteStorageQuestForClaim();
     }
 
     // =====================================================
@@ -380,30 +474,41 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
     {
         trainedArcherCount += amount;
         SetQuestProgress(QUEST_TRAIN_ARCHER, trainedArcherCount);
+
+        if (trainedArcherCount >= trainArcherTarget)
+            CompleteQuestForClaim(QUEST_TRAIN_ARCHER, openPanelWhenExternalComplete);
     }
 
     public void OnWatchTowerBuilt()
     {
+        ExternalCompleteWatchTowerFromStartup(openPanelWhenExternalComplete);
+    }
+
+    public void ExternalCompleteWatchTowerFromStartup(bool openPanel = true)
+    {
         watchTowerBuilt = true;
-        SetQuestProgress(QUEST_WATCH_TOWER, 1);
+        CompleteQuestForClaim(QUEST_WATCH_TOWER, openPanel);
     }
 
     public void OnCannonUnlocked()
     {
         cannonUnlocked = true;
-        SetQuestProgress(QUEST_UNLOCK_CANNON, 1);
+        CompleteQuestForClaim(QUEST_UNLOCK_CANNON, openPanelWhenExternalComplete);
     }
 
     public void OnFirstRaidDefeated()
     {
         firstRaidDefeated = true;
-        SetQuestProgress(QUEST_FIRST_RAID, 1);
+        CompleteQuestForClaim(QUEST_FIRST_RAID, openPanelWhenExternalComplete);
     }
 
     public void SetFoodProduction(int value)
     {
         foodProduction = value;
         SetQuestProgress(QUEST_LANDLORD, foodProduction);
+
+        if (foodProduction >= foodTarget)
+            CompleteQuestForClaim(QUEST_LANDLORD, openPanelWhenExternalComplete);
     }
 
     public void AddFoodProduction(int amount)
@@ -415,24 +520,331 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
     {
         barbarianDefeated += amount;
         SetQuestProgress(QUEST_CIVILIZATION, barbarianDefeated);
+
+        if (barbarianDefeated >= barbarianTarget)
+            CompleteQuestForClaim(QUEST_CIVILIZATION, openPanelWhenExternalComplete);
     }
 
     public void OnPlayerNameSet()
     {
         playerNameSet = true;
-        SetQuestProgress(QUEST_MY_NAME, 1);
+        CompleteQuestForClaim(QUEST_MY_NAME, openPanelWhenExternalComplete);
+    }
+
+
+    bool gatherWoodQuestCompleted;
+
+    public void RegisterWorkerWoodGathered(int amount)
+    {
+        AddGatheredWood(amount);
     }
 
     public void AddGatheredWood(int amount)
     {
-        gatheredWood += amount;
+        if (amount <= 0)
+            return;
+
+        if (gatherWoodQuestCompleted)
+            return;
+
+        gatheredWood = Mathf.Clamp(gatheredWood + amount, 0, gatherWoodTarget);
+
         SetQuestProgress(QUEST_GATHER_WOOD, gatheredWood);
+
+        Debug.Log("[GatherWoodQuest] Worker + " + amount + " wood. Progress = " + gatheredWood + "/" + gatherWoodTarget);
+
+        if (gatheredWood >= gatherWoodTarget)
+        {
+            gatherWoodQuestCompleted = true;
+            CompleteQuestForClaim(QUEST_GATHER_WOOD, openPanelWhenExternalComplete);
+        }
     }
 
+    // Gọi khi người chơi nhấn/chọn vào nhà kho trên map.
+    public void NotifyStorageHouseClicked()
+    {
+        storageHouseClicked = true;
+        StartStorageLevelWatcher();
+
+        if (debugLog)
+            Debug.Log("[StorageQuest] Đã nhấn vào nhà kho.");
+    }
+
+    // Alias cho dễ gọi từ OnClick của nhà.
+    public void NotifyStorageSelected()
+    {
+        NotifyStorageHouseClicked();
+    }
+
+    // Gọi khi người chơi bấm nút nâng cấp kho.
+    // Hàm này KHÔNG tự hoàn thành quest, trừ khi bật completeStorageQuestWhenUpgradeButtonClicked.
+    public void NotifyStorageUpgradeButtonClicked()
+    {
+        storageUpgradeButtonClicked = true;
+        StartStorageLevelWatcher();
+
+        if (debugLog)
+            Debug.Log("[StorageQuest] Đã bấm nút nâng cấp kho. Đang chờ level >= " + requiredStorageLevel);
+
+        if (completeStorageQuestWhenUpgradeButtonClicked)
+            NotifyStorageLevelChanged(requiredStorageLevel);
+    }
+
+    // Gọi khi hệ thống nâng cấp nhà kho báo level hiện tại.
+    // Chỉ khi level >= requiredStorageLevel thì nhiệm vụ mới thành 1/1.
+    public void NotifyStorageLevelChanged(int storageLevel)
+    {
+        if (debugLog)
+            Debug.Log("[StorageQuest] Nhận level kho = " + storageLevel + " | required = " + requiredStorageLevel);
+
+        if (storageLevel < requiredStorageLevel)
+            return;
+
+        if (storageQuestCompleted)
+            return;
+
+        storageUpgraded = true;
+        CompleteStorageQuestForClaim();
+    }
+
+    // Alias dễ gọi từ code nhà kho.
+    public void NotifyStorageUpgradedToLevel(int storageLevel)
+    {
+        NotifyStorageLevelChanged(storageLevel);
+    }
+
+    public void NotifyStorageUpgradedToLevel2()
+    {
+        NotifyStorageLevelChanged(requiredStorageLevel);
+    }
+
+    // Hàm cũ giữ lại để các code cũ gọi vẫn chạy.
     public void OnStorageUpgraded()
     {
+        NotifyStorageLevelChanged(requiredStorageLevel);
+    }
+
+    void BindStorageUpgradeButton()
+    {
+        if (!autoBindStorageUpgradeButton || storageUpgradeButton == null)
+            return;
+
+        Button btn = storageUpgradeButton.GetComponent<Button>();
+        if (btn == null)
+            return;
+
+        btn.onClick.RemoveListener(NotifyStorageUpgradeButtonClicked);
+        btn.onClick.AddListener(NotifyStorageUpgradeButtonClicked);
+    }
+
+    void UnbindStorageUpgradeButton()
+    {
+        if (storageUpgradeButton == null)
+            return;
+
+        Button btn = storageUpgradeButton.GetComponent<Button>();
+        if (btn == null)
+            return;
+
+        btn.onClick.RemoveListener(NotifyStorageUpgradeButtonClicked);
+    }
+
+    void StartStorageLevelWatcher()
+    {
+        if (!autoDetectStorageLevel)
+            return;
+
+        if (storageLevelWatchRoutine != null)
+            return;
+
+        storageLevelWatchRoutine = StartCoroutine(StorageLevelWatcher());
+    }
+
+    IEnumerator StorageLevelWatcher()
+    {
+        while (!storageQuestCompleted)
+        {
+            IsStorageLevelReached();
+
+            if (storageQuestCompleted)
+                break;
+
+            yield return new WaitForSeconds(storageLevelCheckInterval);
+        }
+
+        storageLevelWatchRoutine = null;
+    }
+
+    bool IsStorageLevelReached()
+    {
+        int level = DetectStorageLevel();
+
+        if (level >= requiredStorageLevel)
+        {
+            NotifyStorageLevelChanged(level);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool IsUIVisible(RectTransform target)
+    {
+        return target != null && target.gameObject.activeInHierarchy;
+    }
+
+    int DetectStorageLevel()
+    {
+        int level;
+
+        if (TryReadLevelFromComponent(storageLevelComponent, out level))
+            return level;
+
+        if (storageLevelSource != null)
+        {
+            MonoBehaviour[] behaviours = storageLevelSource.GetComponentsInChildren<MonoBehaviour>(true);
+            foreach (MonoBehaviour behaviour in behaviours)
+            {
+                if (TryReadLevelFromComponent(behaviour, out level))
+                    return level;
+            }
+        }
+
+        if (storagePoint != null)
+        {
+            MonoBehaviour[] behaviours = storagePoint.GetComponentsInChildren<MonoBehaviour>(true);
+            foreach (MonoBehaviour behaviour in behaviours)
+            {
+                if (TryReadLevelFromComponent(behaviour, out level))
+                    return level;
+            }
+        }
+
+        return -1;
+    }
+
+    bool TryReadLevelFromComponent(MonoBehaviour component, out int level)
+    {
+        level = -1;
+
+        if (component == null)
+            return false;
+
+        System.Type type = component.GetType();
+        BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+        if (storageLevelMemberNames != null)
+        {
+            foreach (string memberName in storageLevelMemberNames)
+            {
+                if (string.IsNullOrEmpty(memberName))
+                    continue;
+
+                FieldInfo field = type.GetField(memberName, flags);
+                if (TryGetIntValue(field != null ? field.GetValue(component) : null, out level))
+                    return true;
+
+                PropertyInfo prop = type.GetProperty(memberName, flags);
+                if (prop != null && prop.CanRead && prop.GetIndexParameters().Length == 0)
+                {
+                    try
+                    {
+                        if (TryGetIntValue(prop.GetValue(component, null), out level))
+                            return true;
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        // Fallback: tự tìm field/property có chữ level, nhưng bỏ qua max/target/required.
+        foreach (FieldInfo field in type.GetFields(flags))
+        {
+            if (!IsLikelyCurrentLevelName(field.Name))
+                continue;
+
+            if (TryGetIntValue(field.GetValue(component), out level))
+                return true;
+        }
+
+        foreach (PropertyInfo prop in type.GetProperties(flags))
+        {
+            if (!prop.CanRead || prop.GetIndexParameters().Length > 0 || !IsLikelyCurrentLevelName(prop.Name))
+                continue;
+
+            try
+            {
+                if (TryGetIntValue(prop.GetValue(component, null), out level))
+                    return true;
+            }
+            catch { }
+        }
+
+        return false;
+    }
+
+    bool IsLikelyCurrentLevelName(string memberName)
+    {
+        string n = memberName.ToLowerInvariant();
+
+        if (!n.Contains("level") && !n.Contains("lvl"))
+            return false;
+
+        if (n.Contains("max") || n.Contains("target") || n.Contains("required") || n.Contains("capacity"))
+            return false;
+
+        return true;
+    }
+
+    bool TryGetIntValue(object value, out int result)
+    {
+        result = -1;
+
+        if (value is int intValue)
+        {
+            result = intValue;
+            return true;
+        }
+
+        if (value is float floatValue)
+        {
+            result = Mathf.RoundToInt(floatValue);
+            return true;
+        }
+
+        if (value is double doubleValue)
+        {
+            result = Mathf.RoundToInt((float)doubleValue);
+            return true;
+        }
+
+        return false;
+    }
+
+    void CompleteStorageQuestForClaim()
+    {
+        if (storageQuestCompleted)
+            return;
+
+        storageQuestCompleted = true;
         storageUpgraded = true;
+
+        if (storageLevelWatchRoutine != null)
+        {
+            StopCoroutine(storageLevelWatchRoutine);
+            storageLevelWatchRoutine = null;
+        }
+
+        if (npc != null)
+            npc.Hide();
+
         SetQuestProgress(QUEST_UPGRADE_STORAGE, 1);
+        CompleteQuestForClaim(QUEST_UPGRADE_STORAGE, openPanelWhenExternalComplete);
+
+        guideRunning = false;
+
+        if (debugLog)
+            Debug.Log("[StorageQuest] Kho chứa đã lên cấp " + requiredStorageLevel + " → nhiệm vụ Người giữ kho = 1/1.");
     }
 
     // Test nhanh
@@ -464,6 +876,24 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
 
         StartCoroutine(Say(doneMessage));
     }
+    void CompleteQuestForClaim(string questId, bool openPanel)
+    {
+        ClearGuide();
+
+        if (npc != null)
+            npc.Hide();
+
+        if (questPanel == null)
+            return;
+
+        questPanel.CompleteQuest(questId);
+
+        if (openPanel)
+            questPanel.OpenPanel();
+
+        if (debugLog)
+            Debug.Log("[RoKQuestMissionGuideRouter] Quest hoàn thành, chờ nhận thưởng: " + questId);
+    }
 
     void SetQuestProgress(string questId, int value)
     {
@@ -485,7 +915,14 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
             yield break;
 
         yield return npc.ShowAndWait(text);
-        npc.Hide();
+    }
+
+    void ShowObjective(string text)
+    {
+        if (npc == null)
+            return;
+
+        npc.ShowObjective(text);
     }
 
     IEnumerator FocusWorld(Transform target)

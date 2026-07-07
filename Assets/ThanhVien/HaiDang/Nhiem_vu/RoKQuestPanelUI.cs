@@ -119,11 +119,26 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     [Tooltip("Kéo RectTransform của icon xu/vàng trên thanh top HUD vào đây.")]
     public RectTransform goldHudTarget;
+    [Header("RESOURCE HUD TARGETS")]
+    public RectTransform woodHudTarget;
+    public RectTransform stoneHudTarget;
+    public RectTransform foodHudTarget;
+
+    [Header("RESOURCE CLAIM SFX")]
+    public AudioClip goldRewardSfx;
+    public AudioClip woodRewardSfx;
+    public AudioClip stoneRewardSfx;
+    public AudioClip foodRewardSfx;
+
+    public bool playAllResourceFlyEffectOnClaim = true;
 
     public bool playGoldFlyEffectOnClaim = true;
 
     // Fix lỗi dòng đỏ này
     public int renameQuestFallbackGoldReward = 100;
+    [Header("REWARD TO JSON")]
+    public bool giveResourceRewardsOnClaim = true;
+    public bool broadcastResourcesAfterClaim = true;
 
     private bool rewardClaimRunning;
 
@@ -313,7 +328,7 @@ public class RoKQuestPanelUI : MonoBehaviour
             title = "Người giữ kho",
             current = 0,
             target = 1,
-            description = "Nâng cấp Kho chứa lên cấp 2",
+            description = "Nâng cấp Kho chứa gỗ lên cấp 3",
             shortHint = "Bảo vệ tài nguyên.",
             rewards =
             {
@@ -800,7 +815,7 @@ public class RoKQuestPanelUI : MonoBehaviour
         if (quest.claimed)
             return;
 
-        // Nếu quest đã xong → đây là nút "Nhận"
+        // Nút "Nhận"
         if (quest.IsCompleted())
         {
             if (!rewardClaimRunning)
@@ -809,58 +824,341 @@ public class RoKQuestPanelUI : MonoBehaviour
             return;
         }
 
-        // Nếu quest chưa xong → đây là nút "Đi"
+        // Nút "Đi"
         Debug.Log("[Quest] Đi tới nhiệm vụ: " + quest.title);
         onGoPressed?.Invoke(questId);
 
         if (closePanelWhenPressGo)
             ClosePanel();
     }
+    void GiveQuestRewardsToJson(Quest quest)
+    {
+        JsonDataManager data = FindObjectOfType<JsonDataManager>();
+
+        if (data == null)
+        {
+            Debug.LogWarning("[RoKQuestPanelUI] Không tìm thấy JsonDataManager. Không cộng được thưởng.");
+            return;
+        }
+
+        bool matchedAnyResource = false;
+
+        foreach (Reward reward in quest.rewards)
+        {
+            if (reward.amount <= 0)
+                continue;
+
+            if (reward.icon == goldIcon)
+            {
+                data.AddGold(reward.amount);
+                matchedAnyResource = true;
+            }
+            else if (reward.icon == woodIcon)
+            {
+                data.AddWood(reward.amount);
+                matchedAnyResource = true;
+            }
+            else if (reward.icon == stoneIcon)
+            {
+                data.AddStone(reward.amount);
+                matchedAnyResource = true;
+            }
+            else if (reward.icon == foodIcon)
+            {
+                data.AddFood(reward.amount);
+                matchedAnyResource = true;
+            }
+        }
+
+        // Fallback nếu icon reward chưa gán đúng
+        if (!matchedAnyResource)
+            GiveFallbackReward(data, quest.id);
+
+        if (broadcastResourcesAfterClaim)
+            data.BroadcastAllResources();
+
+        Debug.Log("[RoKQuestPanelUI] Đã nhận thưởng quest: " + quest.id);
+    }
+
+    void GiveFallbackReward(JsonDataManager data, string questId)
+    {
+        switch (questId)
+        {
+            case "build_watchtower":
+                data.AddWood(100);
+                data.AddStone(50);
+                break;
+
+            case "my_name":
+                data.AddGold(renameQuestFallbackGoldReward);
+                break;
+
+            case "first_raid":
+                data.AddGold(200);
+                break;
+
+            case "landlord":
+                data.AddFood(2500);
+                data.AddWood(2500);
+                break;
+
+            case "gather_wood":
+                data.AddWood(1000);
+                break;
+
+            case "upgrade_storage":
+                data.AddStone(500);
+                data.AddFood(500);
+                break;
+        }
+    }
 
     IEnumerator ClaimQuestRewardRoutine(Quest quest, RectTransform clickSource)
     {
         rewardClaimRunning = true;
 
-        int goldReward = GetGoldRewardAmount(quest);
+        JsonDataManager data = FindObjectOfType<JsonDataManager>();
 
-        // 1. Nếu có thưởng xu/vàng → chạy hiệu ứng bay xu trước
-        if (goldReward > 0)
+        if (data == null)
         {
-            if (playGoldFlyEffectOnClaim &&
-                coinRewardFlyEffect != null &&
-                goldHudTarget != null)
-            {
-                bool fxDone = false;
+            Debug.LogWarning("[RoKQuestPanelUI] Không tìm thấy JsonDataManager.");
+            rewardClaimRunning = false;
+            yield break;
+        }
 
-                coinRewardFlyEffect.PlayGoldFly(
+        bool matchedAnyResource = false;
+
+        foreach (Reward reward in quest.rewards)
+        {
+            if (reward.amount <= 0)
+                continue;
+
+            if (reward.icon == goldIcon)
+            {
+                matchedAnyResource = true;
+
+                yield return PlayAndAddResource(
                     clickSource,
                     goldHudTarget,
                     goldIcon,
-                    goldReward,
-                    () =>
-                    {
-                        AddGoldReward(goldReward);
-                        fxDone = true;
-                    }
+                    reward.amount,
+                    goldRewardSfx,
+                    () => data.AddGold(reward.amount),
+                    "Gold"
                 );
-
-                yield return new WaitUntil(() => fxDone);
             }
-            else
+            else if (reward.icon == woodIcon)
             {
-                AddGoldReward(goldReward);
+                matchedAnyResource = true;
+
+                yield return PlayAndAddResource(
+                    clickSource,
+                    woodHudTarget,
+                    woodIcon,
+                    reward.amount,
+                    woodRewardSfx,
+                    () => data.AddWood(reward.amount),
+                    "Wood"
+                );
+            }
+            else if (reward.icon == stoneIcon)
+            {
+                matchedAnyResource = true;
+
+                yield return PlayAndAddResource(
+                    clickSource,
+                    stoneHudTarget,
+                    stoneIcon,
+                    reward.amount,
+                    stoneRewardSfx,
+                    () => data.AddStone(reward.amount),
+                    "Stone"
+                );
+            }
+            else if (reward.icon == foodIcon)
+            {
+                matchedAnyResource = true;
+
+                yield return PlayAndAddResource(
+                    clickSource,
+                    foodHudTarget,
+                    foodIcon,
+                    reward.amount,
+                    foodRewardSfx,
+                    () => data.AddFood(reward.amount),
+                    "Food"
+                );
             }
         }
 
-        // 2. Cộng các tài nguyên khác nếu có
-        GiveNonGoldResourceRewards(quest);
+        // Fallback nếu icon reward chưa match đúng
+        if (!matchedAnyResource)
+            yield return GiveFallbackRewardWithFx(data, quest.id, clickSource);
 
-        // 3. Đánh dấu đã nhận
+        if (broadcastResourcesAfterClaim)
+            data.BroadcastAllResources();
+
         quest.claimed = true;
-
         rewardClaimRunning = false;
 
         RenderQuestList();
+
+        Debug.Log("[RoKQuestPanelUI] Đã nhận thưởng quest: " + quest.id);
+    }
+
+
+    IEnumerator PlayAndAddResource(
+    RectTransform from,
+    RectTransform hudTarget,
+    Sprite sprite,
+    int amount,
+    AudioClip sfx,
+    System.Action addAction,
+    string debugName
+)
+    {
+        if (amount <= 0)
+            yield break;
+
+        if (playAllResourceFlyEffectOnClaim &&
+            coinRewardFlyEffect != null &&
+            hudTarget != null)
+        {
+            bool done = false;
+
+            coinRewardFlyEffect.PlayResourceFly(
+                from,
+                hudTarget,
+                sprite,
+                amount,
+                sfx,
+                () =>
+                {
+                    addAction?.Invoke();
+                    done = true;
+                }
+            );
+
+            yield return new WaitUntil(() => done);
+        }
+        else
+        {
+            if (coinRewardFlyEffect == null)
+                Debug.LogWarning("[RewardFX] Thiếu Coin Reward Fly Effect.");
+
+            if (hudTarget == null)
+                Debug.LogWarning("[RewardFX] Thiếu HUD target cho: " + debugName);
+
+            addAction?.Invoke();
+        }
+    }
+
+    IEnumerator GiveFallbackRewardWithFx(JsonDataManager data, string questId, RectTransform clickSource)
+    {
+        switch (questId)
+        {
+            case "build_watchtower":
+                yield return PlayAndAddResource(
+                    clickSource,
+                    woodHudTarget,
+                    woodIcon,
+                    100,
+                    woodRewardSfx,
+                    () => data.AddWood(100),
+                    "Wood"
+                );
+
+                yield return PlayAndAddResource(
+                    clickSource,
+                    stoneHudTarget,
+                    stoneIcon,
+                    50,
+                    stoneRewardSfx,
+                    () => data.AddStone(50),
+                    "Stone"
+                );
+                break;
+
+            case "my_name":
+                yield return PlayAndAddResource(
+                    clickSource,
+                    goldHudTarget,
+                    goldIcon,
+                    renameQuestFallbackGoldReward,
+                    goldRewardSfx,
+                    () => data.AddGold(renameQuestFallbackGoldReward),
+                    "Gold"
+                );
+                break;
+
+            case "first_raid":
+                yield return PlayAndAddResource(
+                    clickSource,
+                    goldHudTarget,
+                    goldIcon,
+                    200,
+                    goldRewardSfx,
+                    () => data.AddGold(200),
+                    "Gold"
+                );
+                break;
+
+            case "landlord":
+                yield return PlayAndAddResource(
+                    clickSource,
+                    foodHudTarget,
+                    foodIcon,
+                    2500,
+                    foodRewardSfx,
+                    () => data.AddFood(2500),
+                    "Food"
+                );
+
+                yield return PlayAndAddResource(
+                    clickSource,
+                    woodHudTarget,
+                    woodIcon,
+                    2500,
+                    woodRewardSfx,
+                    () => data.AddWood(2500),
+                    "Wood"
+                );
+                break;
+
+            case "gather_wood":
+                yield return PlayAndAddResource(
+                    clickSource,
+                    woodHudTarget,
+                    woodIcon,
+                    1000,
+                    woodRewardSfx,
+                    () => data.AddWood(1000),
+                    "Wood"
+                );
+                break;
+
+            case "upgrade_storage":
+                yield return PlayAndAddResource(
+                    clickSource,
+                    stoneHudTarget,
+                    stoneIcon,
+                    500,
+                    stoneRewardSfx,
+                    () => data.AddStone(500),
+                    "Stone"
+                );
+
+                yield return PlayAndAddResource(
+                    clickSource,
+                    foodHudTarget,
+                    foodIcon,
+                    500,
+                    foodRewardSfx,
+                    () => data.AddFood(500),
+                    "Food"
+                );
+                break;
+        }
     }
 
     int GetGoldRewardAmount(Quest quest)

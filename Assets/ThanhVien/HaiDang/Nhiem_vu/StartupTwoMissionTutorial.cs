@@ -1,14 +1,14 @@
 using System.Collections;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Reflection;
 
 public class StartupTwoMissionTutorial : MonoBehaviour
 {
     public static StartupTwoMissionTutorial Instance { get; private set; }
 
     [Header("CORE")]
-    public NPCDialogue npc;
+    public RoKNpcMissionDialogUI npc;
     public UIHighlightSystem highlight;
 
     [Header("BUILD UI")]
@@ -41,6 +41,16 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     [Header("OPTIONS")]
     public bool autoStart = true;
     public float startDelay = 0.4f;
+
+    [Header("QUEST LINK")]
+    public RoKQuestPanelUI questPanel;
+    public RoKQuestMissionGuideRouter questRouter;
+    public RoKQuestCompletePopupUI completePopup;
+
+    public string watchTowerQuestId = "build_watchtower";
+    public bool showCompletePopup = true;
+    public bool openQuestPanelAfterComplete = false;
+
 
     Coroutine routine;
 
@@ -114,10 +124,50 @@ public class StartupTwoMissionTutorial : MonoBehaviour
 
         yield return Say("Tốt lắm. Tháp Canh đã được đặt xong.");
 
+        MarkWatchTowerQuestCompleteForClaim();
+
         HideNPC();
         ClearHighlight();
         HideArrow();
     }
+
+
+
+    void MarkWatchTowerQuestCompleteForClaim()
+    {
+        // Ưu tiên báo qua router quản lý nhiệm vụ
+        if (questRouter != null)
+        {
+            questRouter.ExternalCompleteWatchTowerFromStartup(false);
+        }
+        else if (questPanel != null)
+        {
+            questPanel.CompleteQuest(watchTowerQuestId);
+        }
+
+        // Popup kiểu Rise of Kingdom
+        if (showCompletePopup && completePopup != null)
+        {
+            completePopup.Show(
+                "Nhiệm vụ hoàn thành",
+                "Tháp Canh đã được xây dựng. Hãy vào bảng nhiệm vụ để nhận thưởng.",
+                () =>
+                {
+                    if (questPanel != null)
+                        questPanel.OpenPanel();
+                }
+            );
+
+            return;
+        }
+
+        // Hoặc mở thẳng bảng nhiệm vụ
+        if (openQuestPanelAfterComplete && questPanel != null)
+            questPanel.OpenPanel();
+
+        Debug.Log("[StartupTwoMissionTutorial] Đã hoàn thành quest build_watchtower. Chờ người chơi vào bảng nhiệm vụ nhận thưởng.");
+    }
+
 
     // =====================================================
     // STEP 1: BẮT BUỘC BẤM BUILD
@@ -251,33 +301,20 @@ public class StartupTwoMissionTutorial : MonoBehaviour
         if (npc == null) yield break;
 
         yield return npc.ShowAndWait(text);
-        HideNPC();
     }
 
     void ShowObjective(string text)
     {
         if (npc == null) return;
 
-        MethodInfo method = npc.GetType().GetMethod("ShowObjective", new[] { typeof(string) });
-
-        if (method != null)
-        {
-            method.Invoke(npc, new object[] { text });
-        }
-        else
-        {
-            npc.Show(text);
-        }
+        npc.ShowObjective(text);
     }
 
     void HideNPC()
     {
         if (npc == null) return;
 
-        MethodInfo method = npc.GetType().GetMethod("Hide");
-
-        if (method != null)
-            method.Invoke(npc, null);
+        npc.Hide();
     }
 
     void HighlightUI(RectTransform target)

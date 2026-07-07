@@ -185,4 +185,31 @@ public class RoKCoinRewardFlyEffect : MonoBehaviour
         audioSource.pitch = pitch;
         audioSource.PlayOneShot(coinSfx);
     }
+    public void PlayResourceFly(
+    RectTransform from,
+    RectTransform to,
+    Sprite resourceSprite,
+    int amount,
+    AudioClip overrideSfx,
+    System.Action onArrive
+)
+    {
+        AudioClip oldClip = coinSfx;
+
+        if (overrideSfx != null)
+            coinSfx = overrideSfx;
+
+        PlayGoldFly(
+            from,
+            to,
+            resourceSprite,
+            amount,
+            () =>
+            {
+                coinSfx = oldClip;
+                onArrive?.Invoke();
+            }
+        );
+    }
+
 }

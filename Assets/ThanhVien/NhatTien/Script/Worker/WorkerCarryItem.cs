@@ -3,11 +3,11 @@ using UnityEngine.AI;
 
 public class WorkerCarryItem : MonoBehaviour
 {
-    public Transform    handPoint;
+    public Transform handPoint;
     public NavMeshAgent agent;
-    public Transform    woodStoragePoint;   
+    public Transform woodStoragePoint;
 
-    private WoodPickup  currentWood;
+    private WoodPickup currentWood;
     private WoodStorage woodStorage;
     private WorkerStamina workerStamina; // Thêm tham chiếu
 
@@ -22,11 +22,11 @@ public class WorkerCarryItem : MonoBehaviour
         if (currentWood != null)
         {
             ObjectPool pool = currentWood.pool;
-            if (pool != null && currentWood.gameObject.activeInHierarchy) 
+            if (pool != null && currentWood.gameObject.activeInHierarchy)
                 pool.ReturnObject(currentWood.gameObject);
-            else 
+            else
                 Destroy(currentWood.gameObject);
-            
+
             currentWood = null;
 
             // FIX: đảm bảo Stamina không bị kẹt ở trạng thái "đang ôm hàng"
@@ -61,7 +61,7 @@ public class WorkerCarryItem : MonoBehaviour
             woodStoragePoint = fallback.transform;
             return fallback;
         }
-        
+
         woodStoragePoint = null;
         return null;
     }
@@ -77,7 +77,7 @@ public class WorkerCarryItem : MonoBehaviour
         agent.ResetPath();
 
         // Báo cho Stamina biết đã cầm đồ
-        if (workerStamina != null) workerStamina.isCarryingResources = true; 
+        if (workerStamina != null) workerStamina.isCarryingResources = true;
     }
 
     public bool MoveToStorage()
@@ -91,11 +91,11 @@ public class WorkerCarryItem : MonoBehaviour
     public bool TryDeposit()
     {
         if (currentWood == null) return false;
-        
-        if (woodStorage == null) 
+
+        if (woodStorage == null)
         {
             Debug.LogError($"[WorkerCarryItem] {name} KHÔNG tìm thấy WoodStorage trên Map. Hãy kiểm tra Tag 'Storage'!");
-            return false; 
+            return false;
         }
 
         if (woodStorage.IsFull) return false;
@@ -106,9 +106,10 @@ public class WorkerCarryItem : MonoBehaviour
 
         currentWood = null;
         woodStorage.AddWood(1);
+        RoKQuestMissionGuideRouter.Instance?.RegisterWorkerWoodGathered(1);
 
         // Báo cho Stamina biết đã nộp đồ xong
-        if (workerStamina != null) workerStamina.OnResourcesDeposited(); 
+        if (workerStamina != null) workerStamina.OnResourcesDeposited();
 
         return true;
     }
