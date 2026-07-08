@@ -42,6 +42,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     [Header("GAME LINK")]
     public UILinh uiLinh;
     public JsonDataManager jsonDataManager;
+    public UIThapCanh uiThapCanh;
 
     [Header("STYLE")]
     public Color rootColor = new Color32(0, 0, 0, 130);
@@ -496,20 +497,43 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         RefreshUI();
         CloseRenamePanel();
 
-        if (questPanel != null)
+        if (RoKQuestMissionGuideRouter.Instance != null)
         {
-            // Chỉ đánh dấu hoàn thành. Không cộng xu ở đây.
-            // Người chơi sẽ quay về bảng nhiệm vụ và bấm Nhận để nhận xu.
-            questPanel.CompleteQuest(renameQuestId);
-            CloseProfile();
-            questPanel.OpenPanel();
+            RoKQuestMissionGuideRouter.Instance.OnPlayerNameSet();
+        }
+        else
+        {
+            // fallback nếu Router chưa tồn tại
+            if (questPanel != null)
+                questPanel.CompleteQuest(renameQuestId);
         }
 
-        Debug.Log("[RoKProfileQuestAutoUI] Đã đổi tên: " + currentName + " | Quest hoàn thành, quay lại bảng nhiệm vụ để nhận thưởng.");
+
+        Debug.Log("[RoKProfileQuestAutoUI] Đã đổi tên: " + currentName);
+    }
+    void UpdateResourceCollected()
+    {
+        if (jsonDataManager == null)
+            return;
+
+
+        // Tổng tài nguyên hiện có trên HUD
+        resourceCollected =
+            jsonDataManager.food +
+            jsonDataManager.wood +
+            jsonDataManager.stone;
+
+
+        if (resourceCollectedText != null)
+        {
+            resourceCollectedText.text =
+                resourceCollected.ToString("#,0");
+        }
     }
 
     void RefreshUI()
     {
+        UpdateResourceCollected();
         if (governorNameText != null) governorNameText.text = currentName;
         if (governorIdText != null) governorIdText.text = governorId.ToString();
         if (governorLevelText != null) governorLevelText.text = governorLevel.ToString();
@@ -525,7 +549,16 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
             armyCount = uiLinh.GetSoldierCount();
         }
 
+
         armyText.text = armyCount.ToString();
+        if (uiThapCanh != null)
+        {
+            watchTowerCount =
+                uiThapCanh.GetWatchTowerCount();
+        }
+
+        watchTowerText.text =
+            watchTowerCount.ToString();
         if (buildingText != null) buildingText.text = buildingCount.ToString();
         if (watchTowerText != null) watchTowerText.text = watchTowerCount.ToString();
         if (cannonText != null) cannonText.text = cannonCount.ToString();
