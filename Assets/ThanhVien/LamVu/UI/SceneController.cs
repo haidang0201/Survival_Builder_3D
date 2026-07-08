@@ -3,6 +3,9 @@ using UnityEngine.SceneManagement; // Bắt buộc phải có để quản lý S
 
 public class SceneController : MonoBehaviour
 {
+    [Header("Settings Configuration")]
+    [SerializeField] private GameObject settingsPanel; // Kéo thả Object Setting (Panel) vào đây từ Inspector
+
     /// <summary>
     /// Hàm chuyển cảnh nhận tên Scene trực tiếp từ sự kiện OnClick UI
     /// </summary>
@@ -16,6 +19,36 @@ public class SceneController : MonoBehaviour
         else
         {
             Debug.LogError("Tên Scene truyền vào bị trống! Vui lòng kiểm tra lại trong OnClick.");
+        }
+    }
+
+    /// <summary>
+    /// Hàm CHUYÊN DÙNG ĐỂ MỞ Setting Panel (Gán cho nút Setting ở Menu chính)
+    /// </summary>
+    public void OpenSettings()
+    {
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError("Chưa gán Object Settings vào SceneController trong Inspector!");
+        }
+    }
+
+    /// <summary>
+    /// Hàm CHUYÊN DÙNG ĐỂ ĐÓNG Setting Panel (Gán cho nút X hoặc nút Back bên trong Panel)
+    /// </summary>
+    public void CloseSettings()
+    {
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(false);
+        }
+        else
+        {
+            Debug.LogError("Chưa gán Object Settings vào SceneController trong Inspector!");
         }
     }
 
