@@ -285,7 +285,7 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
         tapHintColor = new Color32(255, 224, 138, 210);
 
         // Kích thước gọn, không che nhiều UI.
-        bubbleSize = new Vector2(416, 382);
+        bubbleSize = new Vector2(416, 210);
         bubbleOffset = new Vector2(-237, 193);
         portraitSize = new Vector2(210, 330);
         portraitOffset = new Vector2(-30, 25);
