@@ -87,7 +87,7 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
     [Header("9. STORAGE FLOW")]
     [Tooltip("Bật nếu muốn tutorial chờ người chơi nhấn vào nhà kho trước khi highlight nút nâng cấp.")]
     public bool waitForStorageHouseClick = true;
-    public int requiredStorageLevel = 2;
+    public int requiredStorageLevel = 3;
 
     [Header("9. STORAGE LEVEL DETECTION")]
     [Tooltip("Kéo GameObject nhà kho / nhà Wood vào đây. Router sẽ tự đọc level từ component trên object này.")]
@@ -372,14 +372,14 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
         yield return Say("Nhiệm vụ: Đặt biệt danh của bạn.");
 
         if (profileButton != null && highlight != null)
-            highlight.Highlight(profileButton);
+            // highlight.Highlight(profileButton);
 
-        yield return Say("Mở hồ sơ của bạn.");
+            //yield return Say("Mở hồ sơ của bạn.");
 
-        if (renameButton != null && highlight != null)
-            highlight.Highlight(renameButton);
+            if (renameButton != null && highlight != null)
+                //highlight.Highlight(renameButton);
 
-        yield return Say("Hãy đặt biệt danh trong hồ sơ.");
+                yield return Say("Hãy đặt biệt danh trong hồ sơ.");
 
         yield return new WaitUntil(() => playerNameSet);
 
@@ -428,7 +428,7 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
 
         StartStorageLevelWatcher();
 
-        yield return Say("Nhiệm vụ: Nâng cấp Kho chứa lên cấp 2.");
+        yield return Say("Nhiệm vụ: Nâng cấp Kho chứa lên cấp 3.");
 
         // 1. Lia camera tới nhà kho / ngôi nhà đã có sẵn.
         yield return FocusWorld(storagePoint);
@@ -438,7 +438,7 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
             yield break;
 
         // 2. Nói người chơi nhấn vào nhà.
-        ShowObjective("Hãy nhấn vào ngôi nhà, rồi nâng cấp Kho chứa lên cấp 2.");
+        ShowObjective("Hãy nhấn vào ngôi nhà, rồi nâng cấp Kho chứa lên cấp 3.");
 
         // 3. Chờ người chơi click nhà kho hoặc hệ thống báo đã lên level.
         if (waitForStorageHouseClick)
@@ -456,7 +456,7 @@ public class RoKQuestMissionGuideRouter : MonoBehaviour
         if (storageUpgradeButton != null && highlight != null)
             highlight.Highlight(storageUpgradeButton);
 
-        ShowObjective("Bấm nút nâng cấp để đưa Kho chứa lên cấp 2.");
+        ShowObjective("Bấm nút nâng cấp để đưa Kho chứa lên cấp 3.");
 
         // 5. Chờ nhà kho thật sự lên level 2.
         yield return new WaitUntil(() => storageUpgraded || IsStorageLevelReached());

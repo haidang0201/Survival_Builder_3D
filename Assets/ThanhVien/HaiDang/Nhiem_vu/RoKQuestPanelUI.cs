@@ -98,6 +98,27 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     public Color buttonColor = new Color32(199, 106, 27, 255);       // #C76A1B
     public Color buttonHighlightColor = new Color32(240, 167, 58, 255); // #F0A73A
+
+    [Header("QUEST BUTTON STATES - UI ONLY")]
+    [Tooltip("Nút Đi: nhiệm vụ chưa hoàn thành, bấm để dẫn người chơi tới vị trí làm nhiệm vụ.")]
+    public Color goButtonColor = new Color32(38, 116, 170, 255);          // xanh dẫn đường
+    public Color goButtonHighlightColor = new Color32(70, 165, 220, 255);
+    public Color goButtonPressedColor = new Color32(22, 75, 118, 255);
+
+    [Tooltip("Nút Nhận: nhiệm vụ đã hoàn thành, bấm để nhận thưởng.")]
+    public Color claimButtonColor = new Color32(42, 145, 66, 255);        // xanh lá nhận thưởng
+    public Color claimButtonHighlightColor = new Color32(77, 195, 88, 255);
+    public Color claimButtonPressedColor = new Color32(28, 95, 44, 255);
+
+    [Tooltip("Nút Xong: nhiệm vụ đã nhận thưởng, chỉ để báo trạng thái.")]
+    public Color claimedButtonColor = new Color32(92, 78, 66, 255);       // xám gỗ đã xong
+    public Color claimedButtonHighlightColor = new Color32(115, 95, 78, 255);
+    public Color claimedButtonPressedColor = new Color32(70, 58, 48, 255);
+
+    public Color goButtonTextColor = new Color32(255, 241, 194, 255);
+    public Color claimButtonTextColor = new Color32(255, 255, 210, 255);
+    public Color claimedButtonTextColor = new Color32(205, 190, 160, 255);
+
     public Color textColor = new Color32(255, 241, 194, 255);        // fallback
 
     [Header("LAYOUT")]
@@ -406,6 +427,23 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         buttonColor = new Color32(199, 106, 27, 255);
         buttonHighlightColor = new Color32(240, 167, 58, 255);
+
+        goButtonColor = new Color32(38, 116, 170, 255);
+        goButtonHighlightColor = new Color32(70, 165, 220, 255);
+        goButtonPressedColor = new Color32(22, 75, 118, 255);
+
+        claimButtonColor = new Color32(42, 145, 66, 255);
+        claimButtonHighlightColor = new Color32(77, 195, 88, 255);
+        claimButtonPressedColor = new Color32(28, 95, 44, 255);
+
+        claimedButtonColor = new Color32(92, 78, 66, 255);
+        claimedButtonHighlightColor = new Color32(115, 95, 78, 255);
+        claimedButtonPressedColor = new Color32(70, 58, 48, 255);
+
+        goButtonTextColor = new Color32(255, 241, 194, 255);
+        claimButtonTextColor = new Color32(255, 255, 210, 255);
+        claimedButtonTextColor = new Color32(205, 190, 160, 255);
+
         textColor = titleTextColor;
 
         ApplyBasePanelColors();
@@ -681,6 +719,12 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     void CreateGoButton(Transform parent, Quest quest)
     {
+        string label = GetQuestButtonLabel(quest);
+        Color normalColor = GetQuestButtonNormalColor(quest);
+        Color highlightColor = GetQuestButtonHighlightColor(quest);
+        Color pressedColor = GetQuestButtonPressedColor(quest);
+        Color textStateColor = GetQuestButtonTextColor(quest);
+
         GameObject go = new GameObject("GoButton", typeof(RectTransform), typeof(Image), typeof(Button), typeof(Outline));
         go.transform.SetParent(parent, false);
 
@@ -690,20 +734,20 @@ public class RoKQuestPanelUI : MonoBehaviour
         rt.sizeDelta = new Vector2(130, 55);
 
         Image img = go.GetComponent<Image>();
-        img.color = buttonColor;
+        img.color = normalColor;
 
         Outline outline = go.GetComponent<Outline>();
-        outline.effectColor = cardBorderColor;
-        outline.effectDistance = new Vector2(2f, -2f);
+        outline.effectColor = quest.claimed ? new Color32(120, 95, 70, 255) : cardBorderColor;
+        outline.effectDistance = quest.IsCompleted() && !quest.claimed ? new Vector2(3f, -3f) : new Vector2(2f, -2f);
         outline.useGraphicAlpha = false;
 
         Button btn = go.GetComponent<Button>();
         ColorBlock colors = btn.colors;
-        colors.normalColor = buttonColor;
-        colors.highlightedColor = buttonHighlightColor;
-        colors.selectedColor = buttonHighlightColor;
-        colors.pressedColor = new Color32(145, 70, 16, 255);
-        colors.disabledColor = new Color32(80, 60, 45, 180);
+        colors.normalColor = normalColor;
+        colors.highlightedColor = highlightColor;
+        colors.selectedColor = highlightColor;
+        colors.pressedColor = pressedColor;
+        colors.disabledColor = claimedButtonColor;
         colors.colorMultiplier = 1f;
         btn.colors = colors;
 
@@ -712,7 +756,7 @@ public class RoKQuestPanelUI : MonoBehaviour
         TMP_Text text = CreateText(
             go.transform,
             "GoButtonText",
-            quest.claimed ? "Xong" : quest.IsCompleted() ? "Nhận" : "Đi",
+            label,
             Vector2.zero,
             new Vector2(130, 55),
             28,
@@ -721,7 +765,62 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         text.alignment = TextAlignmentOptions.Center;
         text.fontStyle = FontStyles.Bold;
-        text.color = titleTextColor;
+        text.color = textStateColor;
+    }
+
+    string GetQuestButtonLabel(Quest quest)
+    {
+        if (quest.claimed)
+            return "Xong";
+
+        if (quest.IsCompleted())
+            return "Nhận";
+
+        return "Đi";
+    }
+
+    Color GetQuestButtonNormalColor(Quest quest)
+    {
+        if (quest.claimed)
+            return claimedButtonColor;
+
+        if (quest.IsCompleted())
+            return claimButtonColor;
+
+        return goButtonColor;
+    }
+
+    Color GetQuestButtonHighlightColor(Quest quest)
+    {
+        if (quest.claimed)
+            return claimedButtonHighlightColor;
+
+        if (quest.IsCompleted())
+            return claimButtonHighlightColor;
+
+        return goButtonHighlightColor;
+    }
+
+    Color GetQuestButtonPressedColor(Quest quest)
+    {
+        if (quest.claimed)
+            return claimedButtonPressedColor;
+
+        if (quest.IsCompleted())
+            return claimButtonPressedColor;
+
+        return goButtonPressedColor;
+    }
+
+    Color GetQuestButtonTextColor(Quest quest)
+    {
+        if (quest.claimed)
+            return claimedButtonTextColor;
+
+        if (quest.IsCompleted())
+            return claimButtonTextColor;
+
+        return goButtonTextColor;
     }
 
     // =====================================================

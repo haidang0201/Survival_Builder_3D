@@ -38,6 +38,11 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     public int resourceCollected = 0;
     public int enemyDefeated = 0;
 
+
+    [Header("GAME LINK")]
+    public UILinh uiLinh;
+    public JsonDataManager jsonDataManager;
+
     [Header("STYLE")]
     public Color rootColor = new Color32(0, 0, 0, 130);
     public Color panelColor = new Color32(58, 36, 21, 255);
@@ -515,7 +520,12 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         if (civilizationText != null) civilizationText.text = civilizationName;
 
         if (workerText != null) workerText.text = workerCurrent + "/" + workerMax;
-        if (armyText != null) armyText.text = armyCount.ToString();
+        if (uiLinh != null)
+        {
+            armyCount = uiLinh.GetSoldierCount();
+        }
+
+        armyText.text = armyCount.ToString();
         if (buildingText != null) buildingText.text = buildingCount.ToString();
         if (watchTowerText != null) watchTowerText.text = watchTowerCount.ToString();
         if (cannonText != null) cannonText.text = cannonCount.ToString();
