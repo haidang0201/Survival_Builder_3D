@@ -15,9 +15,10 @@ GameObject:
   - component: {fileID: 4541371095603602797}
   - component: {fileID: 7362775286027331498}
   - component: {fileID: 3978047784260270418}
+  - component: {fileID: 8794665981355711205}
   m_Layer: 11
   m_Name: Canon2s
-  m_TagString: Untagged
+  m_TagString: Cannon
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -277,6 +278,20 @@ MonoBehaviour:
     m_Bits: 0
   muzzleCheckRadius: 2.5
   minSoundInterval: 0.3
+--- !u!114 &8794665981355711205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1204634543905229984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cffa2259ee48591459471f591da66520, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIPhaoThu
+  cannonTag: Cannon
+  cannonCount: 0
 --- !u!1001 &1194094122742097852
 PrefabInstance:
   m_ObjectHideFlags: 0

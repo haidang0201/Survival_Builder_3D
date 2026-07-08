@@ -43,6 +43,9 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     public UILinh uiLinh;
     public JsonDataManager jsonDataManager;
     public UIThapCanh uiThapCanh;
+    public UIPhaoThu uiPhaoThu;
+    public UIWorkerCount uiWorkerCount;
+    public UIBuildingCount uiBuildingCount;
 
     [Header("STYLE")]
     public Color rootColor = new Color32(0, 0, 0, 130);
@@ -543,7 +546,17 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         if (allianceText != null) allianceText.text = allianceName;
         if (civilizationText != null) civilizationText.text = civilizationName;
 
-        if (workerText != null) workerText.text = workerCurrent + "/" + workerMax;
+        if (uiWorkerCount != null)
+        {
+            workerCurrent = uiWorkerCount.GetWorkerCount();
+        }
+
+
+        if (workerText != null)
+        {
+            workerText.text =
+                workerCurrent + "/" + workerMax;
+        }
         if (uiLinh != null)
         {
             armyCount = uiLinh.GetSoldierCount();
@@ -559,7 +572,28 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         watchTowerText.text =
             watchTowerCount.ToString();
-        if (buildingText != null) buildingText.text = buildingCount.ToString();
+
+        if (uiPhaoThu != null)
+        {
+            cannonCount =
+                uiPhaoThu.GetCannonCount();
+        }
+
+        cannonText.text =
+            cannonCount.ToString();
+
+        if (uiBuildingCount != null)
+        {
+            buildingCount =
+                uiBuildingCount.GetBuildingCount();
+        }
+
+
+        if (buildingText != null)
+        {
+            buildingText.text =
+                buildingCount.ToString();
+        }
         if (watchTowerText != null) watchTowerText.text = watchTowerCount.ToString();
         if (cannonText != null) cannonText.text = cannonCount.ToString();
         if (resourceCollectedText != null) resourceCollectedText.text = FormatNumber(resourceCollected);
