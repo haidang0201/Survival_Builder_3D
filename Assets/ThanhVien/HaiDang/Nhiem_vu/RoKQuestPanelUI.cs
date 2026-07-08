@@ -8,6 +8,9 @@ using System.Collections;
 
 public class RoKQuestPanelUI : MonoBehaviour
 {
+
+    [Header("FONT")]
+    public TMP_FontAsset vietnameseFont;
     public enum QuestType
     {
         Main,
@@ -587,6 +590,10 @@ public class RoKQuestPanelUI : MonoBehaviour
         text.alignment = TextAlignmentOptions.Left;
         text.raycastTarget = false;
         text.enableWordWrapping = false;
+        if (vietnameseFont != null)
+        {
+            text.font = vietnameseFont;
+        }
 
         LayoutElement le = go.GetComponent<LayoutElement>();
         le.minHeight = sectionHeight;
@@ -865,6 +872,10 @@ public class RoKQuestPanelUI : MonoBehaviour
         text.text = value;
         text.fontSize = fontSize;
         text.color = textColor;
+        if (vietnameseFont != null)
+        {
+            text.font = vietnameseFont;
+        }
         text.alignment = TextAlignmentOptions.Left;
         text.fontStyle = FontStyles.Normal;
         text.raycastTarget = false;
