@@ -515,6 +515,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0975bb6cc125d1846b24db6e2d68cc19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SceneController
+  settingsPanel: {fileID: 0}
 --- !u!1 &6598705424955373570
 GameObject:
   m_ObjectHideFlags: 0
@@ -636,13 +637,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 6038542755158954844}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
+      - m_Target: {fileID: 176587664145308752}
+        m_TargetAssemblyTypeName: SceneController, Assembly-CSharp
+        m_MethodName: OpenSettings
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
