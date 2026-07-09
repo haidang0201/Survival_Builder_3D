@@ -88,6 +88,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3d3d327b50fbce54f9491ab58b2842f8, type: 3}
+--- !u!1 &1186952584762079677 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4457503331279552342, guid: 3d3d327b50fbce54f9491ab58b2842f8, type: 3}
+  m_PrefabInstance: {fileID: 3288996345044535019}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &8574434573239635609 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6582677637703321714, guid: 3d3d327b50fbce54f9491ab58b2842f8, type: 3}
@@ -108,15 +113,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 32.37
+      value: 7.756569
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2
+      value: 2.98591
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.93
+      value: -8.540512
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       propertyPath: m_LocalRotation.w
@@ -176,6 +181,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8967893099953977591}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1102425049762750604}
   m_SourcePrefab: {fileID: 100100000, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}
 --- !u!4 &2655328128774040020 stripped
 Transform:
@@ -294,6 +302,31 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   isCarryingResources: 0
+--- !u!114 &1102425049762750604
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7195124832196148853}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac8774c2e77651743bea7d6b05a8029e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorkerEnemyFlee
+  enemyTag: Enemy
+  detectRadius: 8
+  detectInterval: 0.25
+  safeExtraRadius: 2
+  arriveDistance: 2
+  house: {fileID: 0}
+  fallbackHomeSpot: {fileID: 0}
+  workerModel: {fileID: 3807821670197831253}
+  extraModelsToHide:
+  - {fileID: 1186952584762079677}
+  animator: {fileID: 4499601329679318709}
+  speedParamName: Speed
+  fleeBoolName: 
 --- !u!4 &7535057936231752911 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3675bf656428f7d4c9156ceb80e78249, type: 3}

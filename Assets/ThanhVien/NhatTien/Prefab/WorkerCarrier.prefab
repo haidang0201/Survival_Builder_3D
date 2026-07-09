@@ -41,15 +41,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 23.31
+      value: 7.437
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.91
+      value: 2.98591
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -7.11
+      value: -4.07
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalRotation.w
@@ -83,6 +83,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: WorkerCarrier
       objectReference: {fileID: 0}
+    - target: {fileID: 933360862552426075, guid: 0fb973e027c18794690a4041558b7234, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.174
+      objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_Controller
       value: 
@@ -103,6 +107,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6034336859055696849}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0fb973e027c18794690a4041558b7234, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5159291893062162841}
   m_SourcePrefab: {fileID: 100100000, guid: 0fb973e027c18794690a4041558b7234, type: 3}
 --- !u!4 &1460319315114611668 stripped
 Transform:
@@ -201,6 +208,30 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   isCarryingResources: 0
+--- !u!114 &5159291893062162841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2238227453136603502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac8774c2e77651743bea7d6b05a8029e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorkerEnemyFlee
+  enemyTag: Enemy
+  detectRadius: 8
+  detectInterval: 0.25
+  safeExtraRadius: 2
+  arriveDistance: 2
+  house: {fileID: 0}
+  fallbackHomeSpot: {fileID: 0}
+  workerModel: {fileID: 3509607050175132844}
+  extraModelsToHide: []
+  animator: {fileID: 4802020803714582958}
+  speedParamName: Speed
+  fleeBoolName: 
 --- !u!1 &3509607050175132844 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2556356662379413651, guid: 0fb973e027c18794690a4041558b7234, type: 3}
