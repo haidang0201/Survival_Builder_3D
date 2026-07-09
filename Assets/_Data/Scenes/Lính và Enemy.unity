@@ -655,10 +655,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8842015158073378861, guid: 4e8826a831ea2824d9abb9f0a152760c, type: 3}
-      propertyPath: maxHealth
-      value: 10
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -777,6 +773,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: barrackSoldierLV1
       objectReference: {fileID: 0}
+    - target: {fileID: 8387842726007996306, guid: ba06fce2318fb204d8990c9767483301, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -852,8 +852,8 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1299433096291259578, guid: e295e695a3451e846a55548e181856fc, type: 3}
-      propertyPath: maxHealth
-      value: 10
+      propertyPath: hideHpBarWhenFull
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1354021103751014317, guid: e295e695a3451e846a55548e181856fc, type: 3}
       propertyPath: m_Name
@@ -1087,10 +1087,6 @@ PrefabInstance:
     - target: {fileID: 2556603996210469987, guid: c82d9517f847c4a4cb58ebefce0d84e1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4964305420059010361, guid: c82d9517f847c4a4cb58ebefce0d84e1, type: 3}
-      propertyPath: maxHealth
-      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

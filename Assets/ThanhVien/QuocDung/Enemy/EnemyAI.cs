@@ -50,6 +50,12 @@ public class EnemyAI : MonoBehaviour
     [Header("Move Animation")]
     public float moveThreshold = 0.1f;
 
+    [Header("Marching Settings")]
+    public float marchSpacingX = 1.5f;
+    public float marchSpacingZ = 1.5f;
+    public int marchColumns = 3;
+    public float marchMergeDistance = 10f;
+
     private NavMeshAgent agent;
     private Vector3 currentPatrolPoint;
     private bool hasPatrolPoint;
@@ -61,7 +67,9 @@ public class EnemyAI : MonoBehaviour
     private float nextTargetClosestPointUpdateTime;
 
     // Static variables for group coordination and target sharing
-    private static List<EnemyAI> activeEnemies = new List<EnemyAI>();
+    private static List<EnemyAI> globalActiveEnemies = new List<EnemyAI>();
+    public List<EnemyAI> squadEnemies;
+    private List<EnemyAI> ActiveEnemiesList => squadEnemies != null ? squadEnemies : globalActiveEnemies;
     private static Dictionary<Transform, EnemyAI> targetAssignments = new Dictionary<Transform, EnemyAI>();
     private float myNextScanTime;
     private static float scanInterval = 0.2f;
@@ -89,15 +97,23 @@ public class EnemyAI : MonoBehaviour
 
     private void OnEnable()
     {
-        if (!activeEnemies.Contains(this))
+        if (!globalActiveEnemies.Contains(this))
         {
-            activeEnemies.Add(this);
+            globalActiveEnemies.Add(this);
+        }
+        if (squadEnemies != null && !squadEnemies.Contains(this))
+        {
+            squadEnemies.Add(this);
         }
     }
 
     private void OnDisable()
     {
-        activeEnemies.Remove(this);
+        globalActiveEnemies.Remove(this);
+        if (squadEnemies != null)
+        {
+            squadEnemies.Remove(this);
+        }
         // Clear target assignment for this enemy
         List<Transform> keys = new List<Transform>(targetAssignments.Keys);
         foreach (var key in keys)
@@ -111,7 +127,11 @@ public class EnemyAI : MonoBehaviour
 
     private void OnDestroy()
     {
-        activeEnemies.Remove(this);
+        globalActiveEnemies.Remove(this);
+        if (squadEnemies != null)
+        {
+            squadEnemies.Remove(this);
+        }
         // Clear target assignment for this enemy
         List<Transform> keys = new List<Transform>(targetAssignments.Keys);
         foreach (var key in keys)
@@ -133,9 +153,13 @@ public class EnemyAI : MonoBehaviour
         }
         
         // Register this enemy to start marching
-        if (!activeEnemies.Contains(this))
+        if (!globalActiveEnemies.Contains(this))
         {
-            activeEnemies.Add(this);
+            globalActiveEnemies.Add(this);
+        }
+        if (squadEnemies != null && !squadEnemies.Contains(this))
+        {
+            squadEnemies.Add(this);
         }
 
         UpdateAnimationState();
@@ -144,9 +168,9 @@ public class EnemyAI : MonoBehaviour
     private void Update()
     {
         // Keep list clean of destroyed objects
-        activeEnemies.RemoveAll(e => e == null);
+        ActiveEnemiesList.RemoveAll(e => e == null);
 
-        if (activeEnemies.Count == 0) return;
+        if (ActiveEnemiesList.Count == 0) return;
 
         // Auto-find villageCenter using tag "Main" if null
         if (villageCenter == null)
@@ -188,7 +212,7 @@ public class EnemyAI : MonoBehaviour
                 UpdateTargetClosestPoint(target);
             }
 
-            int myIndex = activeEnemies.IndexOf(this);
+            int myIndex = ActiveEnemiesList.IndexOf(this);
             if (myIndex < 0) myIndex = 0;
 
             Vector3 dest = GetFormationPosition(target, myIndex);
@@ -200,39 +224,79 @@ public class EnemyAI : MonoBehaviour
             {
                 agent.speed = chaseSpeed;
                 
-                // Determine if in range based on target type
-                float actualAttackRange = CurrentAttackRange;
-                if (attackType == EnemyAttackType.Melee && 
-                    (target.CompareTag("Main") || IsMainHouse(target.gameObject) || target.CompareTag("Tower") || IsTower(target.gameObject)))
+                if (IsMarching())
                 {
-                    // Stand closer to Main house or Tower (1.0m is very close, right at the boundary)
-                    actualAttackRange = 1.0f;
-                }
-
-                // If close to actual target, stop and attack
-                if (distToTarget <= actualAttackRange)
-                {
-                    agent.isStopped = true;
-                    
-                    // Rotate towards target when attacking (very fast rotation speed using RotateTowards)
-                    Vector3 lookDir = (target.position - transform.position);
-                    lookDir.y = 0f;
-                    if (lookDir.sqrMagnitude > 0.001f)
+                    EnemyAI leader = GetMarchLeader();
+                    if (leader != null && leader != this)
                     {
-                        Quaternion targetRot = Quaternion.LookRotation(lookDir);
-                        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
+                        // Follow the march leader in formation
+                        Vector3 marchDest = GetMarchFormationPosition(leader);
+                        agent.isStopped = false;
+                        SetDestination(marchDest);
                     }
-                    
-                    if (Time.time >= nextAttackTime)
+                    else
                     {
-                        ExecuteAttack(target);
-                        nextAttackTime = Time.time + attackRate;
+                        // Leader behavior or far-away follower: move to target formation position independently
+                        float actualAttackRange = CurrentAttackRange;
+                        if (attackType == EnemyAttackType.Melee && 
+                            (target.CompareTag("Main") || IsMainHouse(target.gameObject) || target.CompareTag("Tower") || IsTower(target.gameObject)))
+                        {
+                            actualAttackRange = 1.0f;
+                        }
+
+                        if (distToTarget <= actualAttackRange)
+                        {
+                            agent.isStopped = true;
+                            
+                            Vector3 lookDir = (target.position - transform.position);
+                            lookDir.y = 0f;
+                            if (lookDir.sqrMagnitude > 0.001f)
+                            {
+                                Quaternion targetRot = Quaternion.LookRotation(lookDir);
+                                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
+                            }
+                            
+                            if (Time.time >= nextAttackTime)
+                            {
+                                ExecuteAttack(target);
+                                nextAttackTime = Time.time + attackRate;
+                            }
+                        }
+                        else
+                        {
+                            agent.isStopped = false;
+                            SetDestination(dest);
+                        }
                     }
                 }
                 else
                 {
-                    agent.isStopped = false;
-                    SetDestination(dest);
+                    // Combat state: split up and attack individual targets
+                    float actualAttackRange = CurrentAttackRange;
+
+                    if (distToTarget <= actualAttackRange)
+                    {
+                        agent.isStopped = true;
+                        
+                        Vector3 lookDir = (target.position - transform.position);
+                        lookDir.y = 0f;
+                        if (lookDir.sqrMagnitude > 0.001f)
+                        {
+                            Quaternion targetRot = Quaternion.LookRotation(lookDir);
+                            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
+                        }
+                        
+                        if (Time.time >= nextAttackTime)
+                        {
+                            ExecuteAttack(target);
+                            nextAttackTime = Time.time + attackRate;
+                        }
+                    }
+                    else
+                    {
+                        agent.isStopped = false;
+                        SetDestination(dest);
+                    }
                 }
             }
         }
@@ -288,12 +352,14 @@ public class EnemyAI : MonoBehaviour
     private void FindIndividualTarget()
     {
         // 1. Giữ mục tiêu hiện tại (đánh đến cùng) cho đến khi mục tiêu chết hoặc biến mất
+        // CHỈ giữ mục tiêu nếu đó là Soldier hoặc Tower hoặc nếu ta muốn test đánh trực tiếp Main.
+        // Nếu đang target Main/villageCenter (đang hành quân) và không bật test đánh trực tiếp Main,
+        // vẫn cho phép quét tìm Soldier hoặc Tower xung quanh để tách ra tấn công.
         if (chaseTarget != null && chaseTarget.gameObject.activeInHierarchy)
         {
             bool isCurrentTargetMain = chaseTarget.CompareTag("Main") || chaseTarget == villageCenter || IsMainHouse(chaseTarget.gameObject);
             
-            // Nếu muốn test đánh trực tiếp Main nhưng target hiện tại không phải Main, ta bỏ qua stickiness để quét lại
-            if (!attackMainDirectly || isCurrentTargetMain)
+            if (!isCurrentTargetMain || attackMainDirectly)
             {
                 IDamageable damageable = chaseTarget.GetComponentInParent<IDamageable>();
                 bool isAlive = damageable == null || damageable.CurrentHealth > 0f;
@@ -872,6 +938,73 @@ public class EnemyAI : MonoBehaviour
             agent.enabled = true;
             agent.Warp(transform.position);
         }
+    }
+
+    public bool IsMarching()
+    {
+        if (chaseTarget == null) return false;
+        bool isMainTarget = chaseTarget == villageCenter || chaseTarget.CompareTag("Main") || IsMainHouse(chaseTarget.gameObject);
+        if (isMainTarget)
+        {
+            // If we are close to the main target (e.g. within 8m), we break formation and attack individually
+            float distToTarget = GetDistanceToCollider(chaseTarget.gameObject);
+            if (distToTarget <= 8.0f)
+            {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private EnemyAI GetMarchLeader()
+    {
+        foreach (var enemy in ActiveEnemiesList)
+        {
+            if (enemy != null && enemy.gameObject.activeInHierarchy && enemy.IsMarching())
+            {
+                return enemy;
+            }
+        }
+        return null;
+    }
+
+    private int GetMarchingIndex()
+    {
+        int index = 0;
+        foreach (var enemy in ActiveEnemiesList)
+        {
+            if (enemy == this) return index;
+            if (enemy != null && enemy.gameObject.activeInHierarchy && enemy.IsMarching())
+            {
+                index++;
+            }
+        }
+        return index;
+    }
+
+    private Vector3 GetMarchFormationPosition(EnemyAI leader)
+    {
+        if (leader == null) return transform.position;
+
+        Vector3 leaderPos = leader.transform.position;
+        Vector3 leaderForward = leader.transform.forward;
+        Vector3 leaderRight = leader.transform.right;
+
+        int marchIndex = GetMarchingIndex();
+        int row = marchIndex / marchColumns;
+        int col = marchIndex % marchColumns;
+
+        float offsetX = (col - (marchColumns - 1) * 0.5f) * marchSpacingX;
+        float offsetZ = -row * marchSpacingZ;
+
+        Vector3 targetPos = leaderPos + leaderRight * offsetX + leaderForward * offsetZ;
+
+        if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
+        {
+            return hit.position;
+        }
+        return targetPos;
     }
 }
 

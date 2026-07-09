@@ -131,9 +131,10 @@ GameObject:
   - component: {fileID: 5730462662123160155}
   - component: {fileID: 5190861513250659853}
   - component: {fileID: 1706773192625025059}
+  - component: {fileID: 492012095863904725}
   m_Layer: 0
   m_Name: Canon Lv1
-  m_TagString: Untagged
+  m_TagString: Tower
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -269,6 +270,8 @@ MonoBehaviour:
   animator: {fileID: 5490868277580300845}
   attackParamName: IsAttack
   attackRange: 8
+  rotationSpeed: 10
+  partToRotate: {fileID: 0}
 --- !u!114 &-7636250480985751170
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,6 +284,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
+  isInitialBuildNeeded: 1
+  initialBuildDuration: 5
   buildingType: 0
   buildingName: "Nh\xE0 Ch\xEDnh"
   visualModels:
@@ -293,6 +298,7 @@ MonoBehaviour:
   stoneStorageLevels: []
   riceStorageLevels: []
   kitchenLevels: []
+  houseLevels: []
   buildingIcons: []
 --- !u!95 &5490868277580300845
 Animator:
@@ -328,6 +334,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  levelModels: []
   buildingType: 10
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
@@ -464,6 +471,24 @@ MonoBehaviour:
     m_Bits: 32768
   muzzleCheckRadius: 1.5
   minSoundInterval: 0.3
+--- !u!114 &492012095863904725
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658031086135343822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb66dc95d9299a6498dcf8d9d7757b9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HPTower
+  maxHealth: 200
+  destroyVFXPrefab: {fileID: 0}
+  hpBarHeightOffset: 4
+  hpBarSize: {x: 2, y: 0.25}
+  hpBarColor: {r: 1, g: 0, b: 0, a: 1}
+  hideHpBarWhenFull: 0
 --- !u!1 &2406723649338239675
 GameObject:
   m_ObjectHideFlags: 0

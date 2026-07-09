@@ -46,6 +46,11 @@ public class AttackTowerAI : MonoBehaviour
     [Header("Hệ thống nhắm mục tiêu (Targeting)")]
     [SerializeField] private float attackRange = 8f; 
 
+    [Header("Cấu hình Xoay (Rotation)")]
+    public float rotationSpeed = 10f;
+    [Tooltip("Kéo phần đầu hoặc thân tháp cần xoay vào đây. Nếu để trống, sẽ xoay toàn bộ tháp.")]
+    public Transform partToRotate;
+
     // --- CỔNG KẾT NỐI PUBLIC ĐỂ UIManager ĐỌC DỮ LIỆU (KHÔNG LÀM MẤT PRIVATE BIẾN GỐC) ---
     public float AttackRange => attackRange;
 
@@ -95,11 +100,29 @@ public class AttackTowerAI : MonoBehaviour
             return;
         }
 
+        // Xoay tháp về phía mục tiêu
+        RotateTowardsTarget();
+
         // Kiểm tra giãn cách thời gian giữa các loạt bắn
         if (Time.time >= nextFireTime)
         {
             ExecuteAttack();
             nextFireTime = Time.time + 1f / fireRate;
+        }
+    }
+
+    private void RotateTowardsTarget()
+    {
+        if (currentTarget == null) return;
+
+        Transform rotateTransform = partToRotate != null ? partToRotate : transform;
+        Vector3 targetDirection = currentTarget.position - rotateTransform.position;
+        targetDirection.y = 0f; // Chỉ xoay quanh trục Y
+
+        if (targetDirection.sqrMagnitude > 0.001f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(targetDirection);
+            rotateTransform.rotation = Quaternion.Slerp(rotateTransform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
         }
     }
 
