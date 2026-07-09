@@ -53,8 +53,11 @@ public class WoodPickup : MonoBehaviour
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
-            rb.isKinematic = kinematic;
-            col.enabled = collisions;
+            rb.isKinematic      = kinematic;
+            rb.detectCollisions = collisions;
         }
+
+        if (col != null)
+            col.enabled = collisions;
     }
 }
