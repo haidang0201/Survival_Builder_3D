@@ -223,7 +223,9 @@ public class RoKQuestPanelUI : MonoBehaviour
             shortHint = "Chuẩn bị lực lượng tầm xa.",
             rewards =
             {
-                new Reward(speedupIcon, 2)
+                //new Reward(speedupIcon, 2)
+                new Reward(woodIcon, 300),
+                new Reward(stoneIcon, 150)
             }
         });
 
@@ -256,7 +258,9 @@ public class RoKQuestPanelUI : MonoBehaviour
             shortHint = "Tăng sức mạnh phòng thủ.",
             rewards =
             {
-                new Reward(chestIcon, 1)
+                //new Reward(chestIcon, 1),
+                new Reward(stoneIcon, 2200),
+                new Reward(woodIcon, 500),
             }
         });
 
@@ -282,15 +286,15 @@ public class RoKQuestPanelUI : MonoBehaviour
             type = QuestType.Side,
             icon = scrollIcon,
             title = "Đại địa chủ",
-            current = 451,
+            current = 199,
             target = 500,
-            description = "Đạt 500 sản lượng Lúa",
+            description = "Đạt 500 sản lượng Lúa ngoài bản đồ",
             shortHint = "Tăng nguồn lương thực.",
             rewards =
             {
                 new Reward(foodIcon, 2500),
                 new Reward(woodIcon, 2500),
-                new Reward(chestIcon, 1)
+               // new Reward(chestIcon, 1)
             }
         });
 
@@ -308,7 +312,7 @@ public class RoKQuestPanelUI : MonoBehaviour
             {
                 new Reward(woodIcon, 2000),
                 new Reward(stoneIcon, 2000),
-                new Reward(speedupIcon, 1)
+               // new Reward(speedupIcon, 1)
             }
         });
 
@@ -958,22 +962,22 @@ public class RoKQuestPanelUI : MonoBehaviour
             if (reward.amount <= 0)
                 continue;
 
-            if (reward.icon == goldIcon || reward.icon.name.Contains("gold"))
+            if (reward.icon == goldIcon)
             {
                 data.AddGold(reward.amount);
                 matchedAnyResource = true;
             }
-            else if (reward.icon == woodIcon || reward.icon.name.Contains("wood"))
+            else if (reward.icon == woodIcon)
             {
                 data.AddWood(reward.amount);
                 matchedAnyResource = true;
             }
-            else if (reward.icon == stoneIcon || reward.icon.name.Contains("stone"))
+            else if (reward.icon == stoneIcon)
             {
                 data.AddStone(reward.amount);
                 matchedAnyResource = true;
             }
-            else if (reward.icon == foodIcon || reward.icon.name.Contains("food"))
+            else if (reward.icon == foodIcon)
             {
                 data.AddFood(reward.amount);
                 matchedAnyResource = true;
@@ -1057,7 +1061,7 @@ public class RoKQuestPanelUI : MonoBehaviour
                     "Gold"
                 );
             }
-            else if (reward.icon == woodIcon || reward.icon.name.Contains("WoodIcon"))
+            else if (reward.icon == woodIcon)
             {
                 matchedAnyResource = true;
 
@@ -1071,7 +1075,7 @@ public class RoKQuestPanelUI : MonoBehaviour
                     "Wood"
                 );
             }
-            else if (reward.icon == stoneIcon || reward.icon.name.Contains("stone"))
+            else if (reward.icon == stoneIcon)
             {
                 matchedAnyResource = true;
 
@@ -1085,7 +1089,7 @@ public class RoKQuestPanelUI : MonoBehaviour
                     "Stone"
                 );
             }
-            else if (reward.icon == foodIcon || reward.icon.name.Contains("food"))
+            else if (reward.icon == foodIcon)
             {
                 matchedAnyResource = true;
 

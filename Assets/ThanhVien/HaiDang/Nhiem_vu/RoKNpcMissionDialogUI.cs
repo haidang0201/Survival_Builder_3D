@@ -24,50 +24,72 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
     public Sprite portraitSprite;
     public TMP_FontAsset vietnameseFont;
 
+    [Header("SPRITES (tuỳ chọn - dùng ảnh khung gỗ chạm khắc thật giống mẫu)")]
+    [Tooltip("Sprite khung thoại chính (nên là ảnh 9-slice có sẵn 4 góc chạm khắc + viền vàng như ảnh mẫu). Nếu để trống sẽ dùng màu phẳng như bản cũ.")]
+    public Sprite frameSprite;
+    [Tooltip("Sprite ruy băng chứa tên NPC, nhô ra góc trên-trái khung (như 'PHÓ LÝ' trong ảnh mẫu). Nếu để trống sẽ dùng màu phẳng như bản cũ.")]
+    public Sprite nameRibbonSprite;
+    [Tooltip("Màu tint áp lên frameSprite/nameRibbonSprite. Để trắng nếu muốn giữ nguyên màu gốc của sprite.")]
+    public Color frameTint = Color.white;
+
+    [Tooltip("Bật nếu muốn ô tên NPC (PHÓ LÝ) có nền màu/ruy băng phía sau. Tắt = chỉ hiện chữ, không có nền.")]
+    public bool nameRibbonHasBackground = false;
+
     [Header("LAYOUT - EDITABLE IN PLAY")]
-    public Vector2 bubbleSize = new Vector2(600, 115);
-    public Vector2 bubbleOffset = new Vector2(-300, 105);
-    public Vector2 portraitSize = new Vector2(210, 330);
-    public Vector2 portraitOffset = new Vector2(-30, 25);
+    public Vector2 bubbleSize = new Vector2(1000, 380);
+    public Vector2 bubbleOffset = new Vector2(-500, 380);
+    [Tooltip("Kích thước ảnh NPC, tính theo bên trong khung thoại (parent = khung, không phải toàn màn hình nữa).")]
+    public Vector2 portraitSize = new Vector2(260, 340);
+    [Tooltip("Vị trí ảnh NPC neo góc dưới-phải BÊN TRONG khung thoại.")]
+    public Vector2 portraitOffset = new Vector2(-25, 20);
 
     [Header("BUBBLE INNER")]
-    public Vector2 innerOffsetMin = new Vector2(12, 8);
-    public Vector2 innerOffsetMax = new Vector2(-12, -8);
+    public Vector2 innerOffsetMin = new Vector2(40, 30);
+    public Vector2 innerOffsetMax = new Vector2(-40, -70);
+
+    [Header("NAME RIBBON - EDITABLE IN PLAY")]
+    [Tooltip("Vị trí ruy băng tên tính từ góc trên-trái khung, nhô lên trên viền như ảnh mẫu.")]
+    public Vector2 ribbonOffset = new Vector2(68, -49);
+    public Vector2 ribbonSize = new Vector2(300, 70);
 
     [Header("TEXT LAYOUT - EDITABLE IN PLAY")]
-    public Vector2 namePosition = new Vector2(18, -8);
-    public Vector2 nameSize = new Vector2(160, 24);
-    public Vector2 messagePosition = new Vector2(18, -34);
-    public Vector2 messageSize = new Vector2(430, 76);
-    public Vector2 tapHintPosition = new Vector2(13, -165);
-    public Vector2 tapHintSize = new Vector2(250, 22);
+    public Vector2 namePosition = Vector2.zero;
+    public Vector2 nameSize = new Vector2(300, 70);
+    public Vector2 messagePosition = new Vector2(20, -110);
+    public Vector2 messageSize = new Vector2(560, 130);
+    public Vector2 tapHintPosition = new Vector2(0, -20);
+    public Vector2 tapHintSize = new Vector2(603, 110);
 
     [Header("TAIL")]
-    public bool showTail = true;
+    public bool showTail = false;
     public Vector2 tailSize = new Vector2(32, 32);
     public Vector2 tailOffset = new Vector2(-8, -18);
     public float tailRotation = 45f;
 
-    [Header("STYLE - POOR WOOD")]
+    [Header("STYLE - POOR WOOD (dùng khi không gắn frameSprite/nameRibbonSprite)")]
     public Color bubbleColor = new Color32(93, 55, 30, 245);
     public Color bubbleInnerColor = new Color32(150, 98, 50, 245);
     public Color bubbleBorderColor = new Color32(205, 139, 54, 255);
     public Color tailColor = new Color32(150, 98, 50, 245);
+    public Color ribbonColor = new Color32(122, 45, 30, 255);
 
     public Color nameColor = new Color32(255, 224, 138, 255);
     public Color messageColor = new Color32(255, 241, 194, 255);
     public Color tapHintColor = new Color32(255, 224, 138, 210);
 
     [Header("TEXT")]
-    public int nameFontSize = 18;
-    public int messageFontSize = 20;
-    public int hintFontSize = 14;
+    public int nameFontSize = 26;
+    public int messageFontSize = 26;
+    public int hintFontSize = 25;
     public string tapHintMessage = "Nhấn vào màn hình để tiếp tục";
+    [Tooltip("Ký tự mũi tên hiển thị 2 bên dòng tap hint, giống ảnh mẫu.")]
+    public string tapHintLeftArrow = "\u2190\u2014";
+    public string tapHintRightArrow = "\u2014\u2192";
     public bool showTapHint = true;
 
     [Header("MESSAGE WRAP / SPACING - EDITABLE IN PLAY")]
     [Tooltip("Khoảng cách giữa dòng trên và dòng dưới của nội dung thoại.")]
-    public float messageLineSpacing = 7f;
+    public float messageLineSpacing = 10f;
 
     [Tooltip("Số dòng tối đa của nội dung thoại. Quá số dòng sẽ hiện dấu ...")]
     public int messageMaxLines = 3;
@@ -76,7 +98,7 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
     public bool autoGrowMessageHeight = true;
 
     [Tooltip("Chiều cao ước lượng mỗi dòng thoại.")]
-    public float messageLineHeight = 25f;
+    public float messageLineHeight = 34f;
 
     private const string ROOT_NAME = "RoK_NpcMissionDialog_AutoRoot";
 
@@ -91,6 +113,7 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
     RectTransform bubbleInnerRT;
     RectTransform bubbleTailRT;
     RectTransform portraitRT;
+    RectTransform nameRibbonRT;
     RectTransform nameRT;
     RectTransform messageRT;
     RectTransform tapHintRT;
@@ -99,6 +122,7 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
     Image bubbleInnerImage;
     Image bubbleTailImage;
     Image portraitImage;
+    Image nameRibbonImage;
     Outline bubbleOutline;
 
     TMP_Text nameText;
@@ -109,6 +133,7 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
 
     void Awake()
     {
+
         if (applyPoorWoodStyleOnAwake)
             SetPoorWoodValues();
 
@@ -217,7 +242,12 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
             messageText.text = message;
 
         if (tapHintText != null)
-            tapHintText.text = tapHintMessage;
+            tapHintText.text = BuildTapHintText();
+    }
+
+    string BuildTapHintText()
+    {
+        return $"{tapHintLeftArrow}   {tapHintMessage}   {tapHintRightArrow}";
     }
 
     void SetClickCatcher(bool active)
@@ -274,42 +304,47 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
 
     void SetPoorWoodValues()
     {
-        // Màu nghèo / gỗ cũ
+        // Màu nghèo / gỗ cũ (dùng khi không gắn sprite khung thật)
         bubbleColor = new Color32(93, 55, 30, 245);
         bubbleInnerColor = new Color32(150, 98, 50, 245);
         bubbleBorderColor = new Color32(205, 139, 54, 255);
         tailColor = bubbleInnerColor;
+        ribbonColor = new Color32(122, 45, 30, 255);
 
         nameColor = new Color32(255, 224, 138, 255);
         messageColor = new Color32(255, 241, 194, 255);
         tapHintColor = new Color32(255, 224, 138, 210);
 
-        // Kích thước gọn, không che nhiều UI.
-        bubbleSize = new Vector2(416, 210);
-        bubbleOffset = new Vector2(-237, 193);
-        portraitSize = new Vector2(210, 330);
-        portraitOffset = new Vector2(-30, 25);
+        // Kích thước & bố cục giống ảnh mẫu: khung rộng, ribbon tên nhô góc trên-trái,
+        // portrait to bên phải, tap hint canh giữa phía dưới.
+        bubbleSize = new Vector2(825, 380);
+        bubbleOffset = new Vector2(-11, 476);
+        portraitSize = new Vector2(230, 340);
+        portraitOffset = new Vector2(-25, 20);
 
-        innerOffsetMin = new Vector2(12, 8);
-        innerOffsetMax = new Vector2(-12, -8);
+        innerOffsetMin = new Vector2(40, 30);
+        innerOffsetMax = new Vector2(-40, -70);
 
-        namePosition = new Vector2(18, -8);
-        nameSize = new Vector2(160, 24);
-        messagePosition = new Vector2(18, -34);
-        messageSize = new Vector2(309, 76);
-        tapHintPosition = new Vector2(-37, -165);
-        tapHintSize = new Vector2(250, 22);
+        ribbonOffset = new Vector2(40, -49);
+        ribbonSize = new Vector2(300, 70);
 
-        nameFontSize = 18;
-        messageFontSize = 20;
-        hintFontSize = 14;
+        namePosition = Vector2.zero;
+        nameSize = ribbonSize;
+        messagePosition = new Vector2(32, -90);
+        messageSize = new Vector2(560, 130);
+        tapHintPosition = new Vector2(-94, -20);
+        tapHintSize = new Vector2(603, 110);
 
-        messageLineSpacing = 7f;
+        nameFontSize = 32;
+        messageFontSize = 30;
+        hintFontSize = 25;
+
+        messageLineSpacing = 30f;
         messageMaxLines = 3;
         autoGrowMessageHeight = true;
-        messageLineHeight = 25f;
+        messageLineHeight = 34f;
 
-        showTail = true;
+        showTail = false;
         tailSize = new Vector2(32, 32);
         tailOffset = new Vector2(-8, -18);
         tailRotation = 45f;
@@ -366,7 +401,6 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
         Stretch(rootRT);
 
         BuildClickCatcher(root.transform);
-        BuildPortrait(root.transform);
         BuildBubble(root.transform);
     }
 
@@ -396,6 +430,8 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
         go.transform.SetParent(parent, false);
 
         portraitRT = go.GetComponent<RectTransform>();
+        // Neo bottom-right theo khung thoại (parent = bubble) để ảnh NPC nằm BÊN TRONG khung,
+        // không tràn ra ngoài/xuống dưới như trước.
         SetBottomRight(portraitRT);
 
         portraitImage = go.GetComponent<Image>();
@@ -429,18 +465,35 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
         bubbleInnerImage = inner.GetComponent<Image>();
         bubbleInnerImage.raycastTarget = false;
 
+        // Ruy băng tên NPC - nhô lên góc trên-trái khung, giống ảnh mẫu "PHÓ LÝ"
+        GameObject ribbon = new GameObject("NameRibbon", typeof(RectTransform), typeof(Image));
+        ribbon.transform.SetParent(bubble.transform, false);
+
+        nameRibbonRT = ribbon.GetComponent<RectTransform>();
+        nameRibbonRT.anchorMin = nameRibbonRT.anchorMax = new Vector2(0f, 1f);
+        nameRibbonRT.pivot = new Vector2(0f, 1f);
+
+        nameRibbonImage = ribbon.GetComponent<Image>();
+        nameRibbonImage.raycastTarget = false;
+
         nameText = CreateText(
-            inner.transform,
+            ribbon.transform,
             "NpcNameText",
             npcName,
             namePosition,
             nameSize,
             nameFontSize,
             nameColor,
-            TextAlignmentOptions.Left,
+            TextAlignmentOptions.Center,
             true,
             out nameRT
         );
+        // Ribbon là parent riêng, text phủ toàn bộ ribbon và canh giữa.
+        nameRT.anchorMin = Vector2.zero;
+        nameRT.anchorMax = Vector2.one;
+        nameRT.pivot = new Vector2(0.5f, 0.5f);
+        nameRT.offsetMin = Vector2.zero;
+        nameRT.offsetMax = Vector2.zero;
 
         messageText = CreateText(
             inner.transform,
@@ -460,18 +513,27 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
         tapHintText = CreateText(
             inner.transform,
             "TapHintText",
-            tapHintMessage,
+            BuildTapHintText(),
             tapHintPosition,
             tapHintSize,
             hintFontSize,
             tapHintColor,
-            TextAlignmentOptions.Right,
+            TextAlignmentOptions.Center,
             false,
             out tapHintRT
         );
+        // Tap hint neo theo cạnh dưới, canh giữa theo chiều ngang - giống ảnh mẫu.
+        tapHintRT.anchorMin = new Vector2(0.5f, 0f);
+        tapHintRT.anchorMax = new Vector2(0.5f, 0f);
+        tapHintRT.pivot = new Vector2(0.5f, 0f);
 
         ApplyTapHintTextSettings();
         tapHintText.gameObject.SetActive(false);
+
+        // Ảnh NPC được build SAU cùng, parent = bubble (khung thoại) để nằm BÊN TRONG khung,
+        // và vẽ đè lên trên panel gỗ chứ không nằm ngoài/dưới khung.
+        BuildPortrait(bubble.transform);
+        portraitRT.SetAsLastSibling();
     }
 
     void BuildBubbleTail(Transform bubble)
@@ -560,25 +622,45 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
             portraitImage.preserveAspect = true;
         }
 
+        // Khung thoại: nếu có frameSprite thì dùng sprite 9-slice (giữ nguyên góc chạm khắc),
+        // nếu không thì fallback về màu phẳng + Outline như bản cũ.
         if (bubbleImage != null)
-            bubbleImage.color = bubbleColor;
-
-        if (bubbleOutline != null)
         {
-            bubbleOutline.effectColor = bubbleBorderColor;
-            bubbleOutline.effectDistance = new Vector2(3f, -3f);
-            bubbleOutline.useGraphicAlpha = false;
+            if (frameSprite != null)
+            {
+                bubbleImage.sprite = frameSprite;
+                bubbleImage.type = Image.Type.Sliced;
+                bubbleImage.color = frameTint;
+                if (bubbleOutline != null)
+                    bubbleOutline.enabled = false;
+            }
+            else
+            {
+                bubbleImage.sprite = null;
+                bubbleImage.type = Image.Type.Simple;
+                bubbleImage.color = bubbleColor;
+                if (bubbleOutline != null)
+                {
+                    bubbleOutline.enabled = true;
+                    bubbleOutline.effectColor = bubbleBorderColor;
+                    bubbleOutline.effectDistance = new Vector2(3f, -3f);
+                    bubbleOutline.useGraphicAlpha = false;
+                }
+            }
         }
 
         if (bubbleInnerRT != null)
             Stretch(bubbleInnerRT, innerOffsetMin, innerOffsetMax);
 
         if (bubbleInnerImage != null)
-            bubbleInnerImage.color = bubbleInnerColor;
+        {
+            // Khi đã có frameSprite thật, phần inner không cần lớp màu phủ riêng nữa.
+            bubbleInnerImage.color = frameSprite != null ? Color.clear : bubbleInnerColor;
+        }
 
         if (bubbleTailRT != null)
         {
-            bubbleTailRT.gameObject.SetActive(showTail);
+            bubbleTailRT.gameObject.SetActive(showTail && frameSprite == null);
             bubbleTailRT.sizeDelta = tailSize;
             bubbleTailRT.anchoredPosition = tailOffset;
             bubbleTailRT.localRotation = Quaternion.Euler(0, 0, tailRotation);
@@ -587,12 +669,56 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
         if (bubbleTailImage != null)
             bubbleTailImage.color = tailColor;
 
-        ApplyText(nameText, nameRT, npcName, namePosition, nameSize, nameFontSize, nameColor);
+        // Ruy băng tên
+        if (nameRibbonRT != null)
+        {
+            nameRibbonRT.sizeDelta = ribbonSize;
+            nameRibbonRT.anchoredPosition = ribbonOffset;
+        }
+
+        if (nameRibbonImage != null)
+        {
+            if (!nameRibbonHasBackground)
+            {
+                // Chỉ hiện chữ tên NPC, không có nền/ruy băng phía sau.
+                nameRibbonImage.sprite = null;
+                nameRibbonImage.type = Image.Type.Simple;
+                nameRibbonImage.color = Color.clear;
+            }
+            else if (nameRibbonSprite != null)
+            {
+                nameRibbonImage.sprite = nameRibbonSprite;
+                nameRibbonImage.type = Image.Type.Sliced;
+                nameRibbonImage.color = frameTint;
+            }
+            else
+            {
+                nameRibbonImage.sprite = null;
+                nameRibbonImage.type = Image.Type.Simple;
+                nameRibbonImage.color = ribbonColor;
+            }
+        }
+
+        ApplyTextBasic(nameText, npcName, nameFontSize, nameColor);
         ApplyText(messageText, messageRT, null, messagePosition, GetRuntimeMessageSize(), messageFontSize, messageColor);
-        ApplyText(tapHintText, tapHintRT, tapHintMessage, tapHintPosition, tapHintSize, hintFontSize, tapHintColor);
+        ApplyText(tapHintText, tapHintRT, BuildTapHintText(), tapHintPosition, tapHintSize, hintFontSize, tapHintColor);
 
         ApplyMessageTextSettings();
         ApplyTapHintTextSettings();
+    }
+
+    void ApplyTextBasic(TMP_Text text, string value, int fontSize, Color color)
+    {
+        if (text == null)
+            return;
+
+        text.text = value;
+        text.fontSize = fontSize;
+        text.color = color;
+        text.raycastTarget = false;
+
+        if (vietnameseFont != null)
+            text.font = vietnameseFont;
     }
 
     Vector2 GetRuntimeMessageSize()
@@ -632,6 +758,7 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
         tapHintText.maxVisibleLines = 1;
         tapHintText.lineSpacing = 0f;
         tapHintText.margin = Vector4.zero;
+        tapHintText.alignment = TextAlignmentOptions.Center;
     }
 
     void ApplyText(TMP_Text text, RectTransform rt, string fixedValue, Vector2 pos, Vector2 size, int fontSize, Color color)
