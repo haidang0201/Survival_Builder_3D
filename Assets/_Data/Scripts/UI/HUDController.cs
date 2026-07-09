@@ -142,7 +142,7 @@ public class HUDController : MonoBehaviour
 
         // Kích hoạt hiển thị Text Bay bằng Pool
         ShowFloatingTextOptimized(totalDelta, textTarget, fxColor);
-        
+
         // Kích hoạt hiệu ứng Co giãn/Nháy màu HUD
         PulseOrShake(textTarget, totalDelta);
     }
@@ -188,12 +188,10 @@ public class HUDController : MonoBehaviour
         }
         else
         {
-            text.transform.DOShakeScale(0.15f, 0.3f).SetId(text.transform);
-            
-            DOTween.Kill(text, true);
-            text.DOColor(Color.red, 0.08f)
-                .OnComplete(() => text.DOColor(Color.white, 0.12f))
-                .SetId(text);
+            text.transform.DOShakeScale(0.15f, 0.3f)
+                .SetId(text.transform);
+
+            // Giữ nguyên màu chữ gốc, không đổi sang đỏ
         }
     }
 
@@ -241,7 +239,7 @@ public class HUDController : MonoBehaviour
         DOTween.Kill(woodText);
         DOTween.Kill(stoneText);
         DOTween.Kill(foodText);
-        
+
         if (goldText != null) DOTween.Kill(goldText.transform);
         if (woodText != null) DOTween.Kill(woodText.transform);
         if (stoneText != null) DOTween.Kill(stoneText.transform);

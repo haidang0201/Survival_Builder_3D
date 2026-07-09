@@ -69,14 +69,41 @@ public class ConstructionManager : Singleton<ConstructionManager>
         BuildingCost cost = GetBuildingCost(type);
 
         // 3. Gọi ResourceManager để kiểm tra và trừ tài nguyên tài khoản
+        // 3. Kiểm tra và trừ tài nguyên
+        bool canBuild = false;
+
+
+        // Ưu tiên dùng DialogNPC vì nó đang quản lý resource
         if (DialogNPC.Instance != null)
         {
-            // Truyền Wood, Rice (Food), Stone vào hàm Consume
-            if (!DialogNPC.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost))
+            canBuild = DialogNPC.Instance.Consume(
+                cost.woodCost,
+                cost.foodCost,
+                cost.stoneCost
+            );
+        }
+        else
+        {
+            // Fallback nếu DialogNPC chưa tồn tại
+            if (JsonDataManager.Ins != null)
             {
-                // Nếu không đủ tiền, hàm Consume tự báo Log và dừng đặt nhà tại đây
-                return;
+                if (JsonDataManager.Ins.wood >= cost.woodCost &&
+                    JsonDataManager.Ins.food >= cost.foodCost &&
+                    JsonDataManager.Ins.stone >= cost.stoneCost)
+                {
+                    JsonDataManager.Ins.AddWood(-cost.woodCost);
+                    JsonDataManager.Ins.AddFood(-cost.foodCost);
+                    JsonDataManager.Ins.AddStone(-cost.stoneCost);
+                    canBuild = true;
+                }
             }
+        }
+
+
+        if (!canBuild)
+        {
+            Debug.LogWarning("[ConstructionManager] Không đủ tài nguyên để xây " + type);
+            return;
         }
 
         // 4. Đủ tiền -> Tiến hành sinh nhà thật

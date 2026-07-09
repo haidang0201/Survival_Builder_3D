@@ -36,7 +36,7 @@ public class UpgradeableBuilding : MonoBehaviour
 
     public int CurrentLevel { get; private set; } = 0; // Level hiện tại của công trình
     public int MaxLevel => visualModels != null ? visualModels.Length : 0;
-    
+
     private GameObject[] instantiatedModels;
     public GameObject[] VisualModels => (instantiatedModels != null && instantiatedModels.Length > 0) ? instantiatedModels : visualModels;
 
@@ -86,7 +86,7 @@ public class UpgradeableBuilding : MonoBehaviour
             // Tắt các script AI và chính nó trên clone này để tránh bắn đạn trùng lặp hoặc lỗi đệ quy hình ảnh
             var attackAI = GetComponent<AttackTowerAI>();
             if (attackAI != null) attackAI.enabled = false;
-            
+
             var defenceAI = GetComponent<DefenceTowerAI>();
             if (defenceAI != null) defenceAI.enabled = false;
 
@@ -357,7 +357,7 @@ public class UpgradeableBuilding : MonoBehaviour
             return upgradeCosts[CurrentLevel];
         }
         // Trả về mặc định nếu đạt cấp tối đa
-        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0, upgradeDuration = 0f }; 
+        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0, upgradeDuration = 0f };
     }
 
     /// <summary>
@@ -366,7 +366,7 @@ public class UpgradeableBuilding : MonoBehaviour
     public void StartUpgradeProcess()
     {
         if (IsUpgrading || CurrentLevel >= MaxLevel - 1) return;
-        
+
         UpgradeCost nextCost = GetNextUpgradeCost();
         StartCoroutine(UpgradeRoutine(nextCost.upgradeDuration));
     }
@@ -386,7 +386,7 @@ public class UpgradeableBuilding : MonoBehaviour
         while (timer < duration)
         {
             timer += Time.deltaTime;
-            
+
             // Cập nhật giá trị hiển thị lên UI liên tục mỗi khung hình
             if (UIManager.Ins != null)
             {
@@ -450,7 +450,7 @@ public class UpgradeableBuilding : MonoBehaviour
             {
                 UIManager.Ins.RefreshUpgradePanel(this);
             }
-            
+
             Debug.Log($"[UpgradeableBuilding] {buildingName} đã nâng lên Level {CurrentLevel + 1}");
 
             // Hiện model mới

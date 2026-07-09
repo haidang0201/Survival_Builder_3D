@@ -250,6 +250,9 @@ public class StartupTwoMissionTutorial : MonoBehaviour
         ShowObjective("Đặt Tháp Canh vào vị trí mũi tên chỉ dẫn.");
 
         yield return new WaitUntil(() => watchTowerPlaced);
+        yield return Say(
+    "Tốt lắm. Tháp Canh đã được đặt xong."
+);
 
         IsWaitingForWatchTowerPlacement = false;
 
@@ -278,19 +281,33 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     public void NotifyWatchTowerPlaced()
     {
         if (!IsWaitingForWatchTowerPlacement)
-        {
-            Debug.Log("[StartupTwoMissionTutorial] Đã đặt Tháp Canh nhưng tutorial chưa ở bước chờ đặt.");
             return;
-        }
+
 
         watchTowerPlaced = true;
-        Debug.Log("[StartupTwoMissionTutorial] Tutorial nhận tín hiệu: Tháp Canh đã đặt xong.");
+
+        IsWaitingForWatchTowerPlacement = false;
+
+
+        Debug.Log(
+            "[StartupTwoMissionTutorial] Tháp Canh xây hoàn thành."
+        );
+    }
+    IEnumerator WatchTowerCompleteDialog()
+    {
+        yield return Say(
+            "Tốt lắm. Tháp Canh đã được đặt xong."
+        );
+
+        yield return new WaitForSeconds(0.5f);
+
+        HideNPC();
     }
 
-    public void TestPlaced()
-    {
-        NotifyWatchTowerPlaced();
-    }
+    // public void TestPlaced()
+    // {
+    //     NotifyWatchTowerPlaced();
+    // }
 
     // =====================================================
     // HELPERS

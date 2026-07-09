@@ -31,6 +31,7 @@ public class BuildingCtrl : MonoBehaviour
     [SerializeField] private bool isOccupied = false;
     [SerializeField] private int currentWorkers = 0;
     [SerializeField] private int maxWorkers = 4;
+    internal string type;
 
     // // Thêm vào file BuildingCtrl.cs của bạn
     // public float currentHealth = 100f; 
@@ -183,8 +184,13 @@ public class BuildingCtrl : MonoBehaviour
 
     private void OnBuildComplete()
     {
-        Debug.Log($"[BuildingCtrl] ✅ {buildingType} tại {transform.position} đã xây xong!");
-        // Gọi event, mở UI, v.v. ở đây
+        Debug.Log($"[BuildingCtrl] ✅ {buildingType} đã xây xong!");
+
+
+        if (buildingType == BuildingType.WatchTower)
+        {
+            StartupTwoMissionTutorial.Instance?.NotifyWatchTowerPlaced();
+        }
     }
 
     /// <summary>Snap góc về bội số 90° gần nhất</summary>

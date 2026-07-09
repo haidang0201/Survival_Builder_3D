@@ -958,22 +958,22 @@ public class RoKQuestPanelUI : MonoBehaviour
             if (reward.amount <= 0)
                 continue;
 
-            if (reward.icon == goldIcon)
+            if (reward.icon == goldIcon || reward.icon.name.Contains("gold"))
             {
                 data.AddGold(reward.amount);
                 matchedAnyResource = true;
             }
-            else if (reward.icon == woodIcon)
+            else if (reward.icon == woodIcon || reward.icon.name.Contains("wood"))
             {
                 data.AddWood(reward.amount);
                 matchedAnyResource = true;
             }
-            else if (reward.icon == stoneIcon)
+            else if (reward.icon == stoneIcon || reward.icon.name.Contains("stone"))
             {
                 data.AddStone(reward.amount);
                 matchedAnyResource = true;
             }
-            else if (reward.icon == foodIcon)
+            else if (reward.icon == foodIcon || reward.icon.name.Contains("food"))
             {
                 data.AddFood(reward.amount);
                 matchedAnyResource = true;
@@ -1057,7 +1057,7 @@ public class RoKQuestPanelUI : MonoBehaviour
                     "Gold"
                 );
             }
-            else if (reward.icon == woodIcon)
+            else if (reward.icon == woodIcon || reward.icon.name.Contains("WoodIcon"))
             {
                 matchedAnyResource = true;
 
@@ -1071,7 +1071,7 @@ public class RoKQuestPanelUI : MonoBehaviour
                     "Wood"
                 );
             }
-            else if (reward.icon == stoneIcon)
+            else if (reward.icon == stoneIcon || reward.icon.name.Contains("stone"))
             {
                 matchedAnyResource = true;
 
@@ -1085,7 +1085,7 @@ public class RoKQuestPanelUI : MonoBehaviour
                     "Stone"
                 );
             }
-            else if (reward.icon == foodIcon)
+            else if (reward.icon == foodIcon || reward.icon.name.Contains("food"))
             {
                 matchedAnyResource = true;
 
