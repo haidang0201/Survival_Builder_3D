@@ -7,10 +7,7 @@ using System.Collections.Generic;
  * HUDController.cs
  * Folder: Scripts/UI/
  * Dự án: KHẨN HOANG (PENTA DEV)
- * Người thực hiện: VŨ (Phiên bản Ultimate Optimization - Tối ưu tuyệt đối)
- *
- * NHIỆM VỤ: Hiển thị tài nguyên trên HUD dạng số nguyên, tích hợp Object Pool 
- * và cơ chế Gộp dữ liệu (Throttling) để chống lag tuyệt đối khi thay đổi số lượng lớn.
+ * Người thực hiện: VŨ (Phiên bản Ultimate Optimization - ĐÃ FIX LỖI EVENT HUD)
  */
 
 public class HUDController : MonoBehaviour
@@ -36,16 +33,33 @@ public class HUDController : MonoBehaviour
     // --- CẤU TRÚC GỘP TÀI NGUYÊN (CHỐNG SPAM REBUILD MESH UI) ---
     private Dictionary<TextMeshProUGUI, int> _pendingDeltas = new Dictionary<TextMeshProUGUI, int>();
     private Dictionary<TextMeshProUGUI, float> _cooldownTimers = new Dictionary<TextMeshProUGUI, float>();
-    private const float UI_REFRESH_COOLDOWN = 0.05f; // Chờ 0.05s để gộp các tài nguyên thay đổi quá nhanh
+    private const float UI_REFRESH_COOLDOWN = 0.05f;
+    public static HUDController Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
 
     private void Start()
     {
-        SetTextInstant(goldText, 0);
-        SetTextInstant(woodText, 0);
-        SetTextInstant(stoneText, 0);
-        SetTextInstant(foodText, 0);
-    }
+        // Khởi tạo giá trị ban đầu trực tiếp từ dữ liệu thực tế
+        if (JsonDataManager.Ins != null)
+        {
+            _currentGold = JsonDataManager.Ins.gold;
+            _currentWood = JsonDataManager.Ins.wood;
+            _currentStone = JsonDataManager.Ins.stone;
+            _currentFood = JsonDataManager.Ins.food;
+        }
 
+        SetTextInstant(goldText, _currentGold);
+        SetTextInstant(woodText, _currentWood);
+        SetTextInstant(stoneText, _currentStone);
+        SetTextInstant(foodText, _currentFood);
+
+        Debug.Log("[HUDController] ✅ Khởi tạo HUD thành công với thông số ban đầu.");
+    }
     private void Update()
     {
         // Xử lý bộ đếm thời gian gộp tài nguyên
@@ -57,9 +71,8 @@ public class HUDController : MonoBehaviour
                 _cooldownTimers[textKey] -= Time.deltaTime;
                 if (_cooldownTimers[textKey] <= 0 && _pendingDeltas[textKey] != 0)
                 {
-                    // Hết thời gian chờ -> Tiến hành kích hoạt hiệu ứng Text bay một lần duy nhất cho tổng số dư
                     TriggerFloatingTextAndFx(textKey, _pendingDeltas[textKey]);
-                    _pendingDeltas[textKey] = 0; // Reset số dư chờ
+                    _pendingDeltas[textKey] = 0;
                 }
             }
         }
@@ -69,42 +82,48 @@ public class HUDController : MonoBehaviour
 
     public void UpdateGold(int value)
     {
+        if (goldText == null) return;
         int delta = value - _currentGold;
+
+        // SỬA TẠI ĐÂY: Truyền giá trị CŨ và giá trị MỚI vào thẳng hàm Animate
+        AnimateNumber(goldText, _currentGold, value);
         _currentGold = value;
 
-        AnimateNumber(goldText, value);
         HandleResourceChange(goldText, delta);
     }
 
     public void UpdateWood(int value)
     {
+        if (woodText == null) return;
         int delta = value - _currentWood;
+
+        AnimateNumber(woodText, _currentWood, value);
         _currentWood = value;
 
-        AnimateNumber(woodText, value);
         HandleResourceChange(woodText, delta);
     }
 
     public void UpdateStone(int value)
     {
+        if (stoneText == null) return;
         int delta = value - _currentStone;
+
+        AnimateNumber(stoneText, _currentStone, value);
         _currentStone = value;
 
-        AnimateNumber(stoneText, value);
         HandleResourceChange(stoneText, delta);
     }
 
     public void UpdateFood(int value)
     {
         if (foodText == null) return;
-
         int delta = value - _currentFood;
+
+        AnimateNumber(foodText, _currentFood, value);
         _currentFood = value;
 
-        AnimateNumber(foodText, value);
         HandleResourceChange(foodText, delta);
     }
-
     // ──────────────────────────────────────────────────────────────
     // LOGIC XỬ LÝ GỘP DỮ LIỆU (THROTTLING LOGIC)
     // ──────────────────────────────────────────────────────────────
@@ -113,19 +132,16 @@ public class HUDController : MonoBehaviour
     {
         if (delta == 0 || textTarget == null) return;
 
-        // Khởi tạo nếu chưa có trong Dictionary
         if (!_pendingDeltas.ContainsKey(textTarget)) _pendingDeltas[textTarget] = 0;
         if (!_cooldownTimers.ContainsKey(textTarget)) _cooldownTimers[textTarget] = 0f;
 
-        // Cộng dồn delta (ví dụ nhấn phím liên tục thì số sẽ tích lũy lại thay vì sinh nhiều text bay)
         _pendingDeltas[textTarget] += delta;
 
-        // Nếu không trong thời gian chờ cooldown, xử lý ngay lập tức
         if (_cooldownTimers[textTarget] <= 0f)
         {
             TriggerFloatingTextAndFx(textTarget, _pendingDeltas[textTarget]);
             _pendingDeltas[textTarget] = 0;
-            _cooldownTimers[textTarget] = UI_REFRESH_COOLDOWN; // Đặt thời gian đóng băng tạm thời
+            _cooldownTimers[textTarget] = UI_REFRESH_COOLDOWN;
         }
     }
 
@@ -133,17 +149,13 @@ public class HUDController : MonoBehaviour
     {
         if (totalDelta == 0) return;
 
-        // Lấy màu sắc đặc trưng theo từng loại Text tài nguyên
         Color fxColor = Color.white;
         if (textTarget == goldText) fxColor = new Color(1f, 0.85f, 0f);
         else if (textTarget == woodText) fxColor = new Color(0.6f, 0.35f, 0.1f);
         else if (textTarget == stoneText) fxColor = Color.gray;
         else if (textTarget == foodText) fxColor = new Color(0.2f, 0.8f, 0.2f);
 
-        // Kích hoạt hiển thị Text Bay bằng Pool
         ShowFloatingTextOptimized(totalDelta, textTarget, fxColor);
-
-        // Kích hoạt hiệu ứng Co giãn/Nháy màu HUD
         PulseOrShake(textTarget, totalDelta);
     }
 
@@ -151,20 +163,21 @@ public class HUDController : MonoBehaviour
     // PRIVATE – ANIMATION & POOL (TỐI ƯU ĐỒ HỌA)
     // ──────────────────────────────────────────────────────────────
 
-    private void AnimateNumber(TextMeshProUGUI text, int to)
+    private void AnimateNumber(TextMeshProUGUI text, int fromValue, int toValue)
     {
         if (text == null) return;
 
-        // Ép DOTween dừng luồng chạy số cũ trên Text này để không lỗi Rebuild Mesh UI
+        // Ép hủy các Tween cũ đang chạy trên Text này để không bị đè dữ liệu
         DOTween.Kill(text);
 
-        int temp = int.Parse(text.text);
+        int temp = fromValue; // Dùng trực tiếp giá trị biến hệ thống làm gốc chạy số
+
         DOTween.To(() => temp, x =>
         {
             temp = x;
-            text.text = x.ToString();
-        }, to, 0.15f)
-        .SetEase(Ease.OutCubic)
+            text.text = x.ToString(); // Cập nhật trực tiếp số lên màn hình
+        }, toValue, 0.2f) // Thời gian chạy số 0.2 giây
+        .SetEase(Ease.OutQuad)
         .SetId(text);
     }
 
@@ -190,8 +203,6 @@ public class HUDController : MonoBehaviour
         {
             text.transform.DOShakeScale(0.15f, 0.3f)
                 .SetId(text.transform);
-
-            // Giữ nguyên màu chữ gốc, không đổi sang đỏ
         }
     }
 
@@ -221,7 +232,6 @@ public class HUDController : MonoBehaviour
             ft.Setup(prefix + amount, color);
         }
 
-        // Tạo hiệu ứng chuyển động mượt bằng DOTween và tự thu hồi về Pool
         obj.transform.DOComplete();
         obj.transform.DOMoveY(obj.transform.position.y + 35f, 0.5f)
             .SetEase(Ease.OutQuad)
@@ -234,7 +244,6 @@ public class HUDController : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Giải phóng toàn bộ Tween tránh rò rỉ bộ nhớ (Memory Leak)
         DOTween.Kill(goldText);
         DOTween.Kill(woodText);
         DOTween.Kill(stoneText);

@@ -116,6 +116,10 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         if (targetCanvas == null)
             targetCanvas = FindObjectOfType<Canvas>();
 
+        // Đảm bảo luôn có tham chiếu tới JsonDataManager, kể cả khi quên kéo thả trong Inspector
+        if (jsonDataManager == null)
+            jsonDataManager = JsonDataManager.Ins;
+
         LoadData();
         BuildUI();
         BindEvents();
@@ -129,6 +133,14 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     {
         if (questPanel != null)
             questPanel.onGoPressed.RemoveListener(OnQuestGoPressed);
+
+        // Hủy đăng ký event tài nguyên để tránh leak / lỗi tham chiếu null
+        if (jsonDataManager != null)
+        {
+            jsonDataManager.OnWoodChanged -= OnResourceChanged;
+            jsonDataManager.OnStoneChanged -= OnResourceChanged;
+            jsonDataManager.OnFoodChanged -= OnResourceChanged;
+        }
     }
 
     void BindEvents()
@@ -144,6 +156,31 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
             questPanel.onGoPressed.RemoveListener(OnQuestGoPressed);
             questPanel.onGoPressed.AddListener(OnQuestGoPressed);
         }
+
+        // ===== LIÊN KẾT SỐNG (LIVE LINK) VỚI JsonDataManager =====
+        // Mỗi khi tài nguyên (wood/stone/food) thay đổi ở bất kỳ đâu trong game,
+        // hồ sơ Rok sẽ tự cập nhật ngay lập tức, không cần đợi người chơi mở panel.
+        if (jsonDataManager != null)
+        {
+            jsonDataManager.OnWoodChanged -= OnResourceChanged;
+            jsonDataManager.OnWoodChanged += OnResourceChanged;
+
+            jsonDataManager.OnStoneChanged -= OnResourceChanged;
+            jsonDataManager.OnStoneChanged += OnResourceChanged;
+
+            jsonDataManager.OnFoodChanged -= OnResourceChanged;
+            jsonDataManager.OnFoodChanged += OnResourceChanged;
+        }
+        else
+        {
+            Debug.LogWarning("[RoKProfileQuestAutoUI] Không tìm thấy JsonDataManager để liên kết tài nguyên realtime.");
+        }
+    }
+
+    // Handler chung cho mọi event tài nguyên (nhận giá trị mới nhưng chỉ dùng để trigger refresh)
+    void OnResourceChanged(int _)
+    {
+        UpdateResourceCollected();
     }
 
     void OnQuestGoPressed(string questId)
@@ -514,24 +551,25 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         Debug.Log("[RoKProfileQuestAutoUI] Đã đổi tên: " + currentName);
     }
+
     void UpdateResourceCollected()
     {
         if (jsonDataManager == null)
             return;
 
-
-        // Tổng tài nguyên hiện có trên HUD
+        // Tổng tài nguyên hiện có trên HUD (Wood + Stone + Food)
         resourceCollected =
             jsonDataManager.food +
             jsonDataManager.wood +
             jsonDataManager.stone;
 
-
+        // Cập nhật cả panel Stats chính lẫn panel Hồ sơ chi tiết,
+        // dùng chung FormatNumber để giữ đúng định dạng "1.234"
         if (resourceCollectedText != null)
-        {
-            resourceCollectedText.text =
-                resourceCollected.ToString("#,0");
-        }
+            resourceCollectedText.text = FormatNumber(resourceCollected);
+
+        if (detailResourceText != null)
+            detailResourceText.text = FormatNumber(resourceCollected);
     }
 
     void RefreshUI()
@@ -563,15 +601,14 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         }
 
 
-        armyText.text = armyCount.ToString();
+        if (armyText != null) armyText.text = armyCount.ToString();
         if (uiThapCanh != null)
         {
             watchTowerCount =
                 uiThapCanh.GetWatchTowerCount();
         }
 
-        watchTowerText.text =
-            watchTowerCount.ToString();
+        if (watchTowerText != null) watchTowerText.text = watchTowerCount.ToString();
 
         if (uiPhaoThu != null)
         {
@@ -579,8 +616,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
                 uiPhaoThu.GetCannonCount();
         }
 
-        cannonText.text =
-            cannonCount.ToString();
+        if (cannonText != null) cannonText.text = cannonCount.ToString();
 
         if (uiBuildingCount != null)
         {
@@ -594,8 +630,6 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
             buildingText.text =
                 buildingCount.ToString();
         }
-        if (watchTowerText != null) watchTowerText.text = watchTowerCount.ToString();
-        if (cannonText != null) cannonText.text = cannonCount.ToString();
         if (resourceCollectedText != null) resourceCollectedText.text = FormatNumber(resourceCollected);
         if (enemyDefeatedText != null) enemyDefeatedText.text = enemyDefeated.ToString();
 

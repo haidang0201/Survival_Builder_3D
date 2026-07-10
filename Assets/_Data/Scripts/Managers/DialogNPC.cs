@@ -80,6 +80,11 @@ public class DialogNPC : MonoBehaviour
         JsonDataManager.Ins.AddWood(-woodCost);
         JsonDataManager.Ins.AddFood(-foodCost);
         JsonDataManager.Ins.AddStone(-stoneCost);
+        // Trước khi return true, hãy thêm dòng này:
+        if (JsonDataManager.Ins != null)
+        {
+            JsonDataManager.Ins.BroadcastAllResources();
+        }
 
         Debug.Log($"[RESOURCE_SYSTEM] Tiêu thụ thành công! Kho còn: Gỗ({Wood}), Lúa({Rice}), Đá({Stone})");
         return true;

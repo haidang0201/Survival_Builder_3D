@@ -68,23 +68,26 @@ public class ConstructionManager : Singleton<ConstructionManager>
         // 2. Lấy cấu hình chi phí của nhà này
         BuildingCost cost = GetBuildingCost(type);
 
-        // 3. Gọi ResourceManager để kiểm tra và trừ tài nguyên tài khoản
+        // LOG KIỂM TRA TÀI NGUYÊN TRƯỚC KHI TRỪ
+        if (JsonDataManager.Ins != null)
+        {
+            Debug.Log($"[CHECK] Tài nguyên TRƯỚC khi xây: Gỗ={JsonDataManager.Ins.wood}, Đá={JsonDataManager.Ins.stone}, Thức ăn={JsonDataManager.Ins.food} | Chi phí xây: Gỗ={cost.woodCost}, Đá={cost.stoneCost}, Thức ăn={cost.foodCost}");
+        }
+
         // 3. Kiểm tra và trừ tài nguyên
         bool canBuild = false;
 
-
-        // Ưu tiên dùng DialogNPC vì nó đang quản lý resource
         if (DialogNPC.Instance != null)
         {
-            canBuild = DialogNPC.Instance.Consume(
-                cost.woodCost,
-                cost.foodCost,
-                cost.stoneCost
-            );
+            canBuild = DialogNPC.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost);
+
+            if (canBuild && JsonDataManager.Ins != null)
+            {
+                JsonDataManager.Ins.BroadcastAllResources();
+            }
         }
         else
         {
-            // Fallback nếu DialogNPC chưa tồn tại
             if (JsonDataManager.Ins != null)
             {
                 if (JsonDataManager.Ins.wood >= cost.woodCost &&
@@ -99,20 +102,30 @@ public class ConstructionManager : Singleton<ConstructionManager>
             }
         }
 
-
         if (!canBuild)
         {
             Debug.LogWarning("[ConstructionManager] Không đủ tài nguyên để xây " + type);
             return;
         }
 
+        // LOG XÁC NHẬN ĐÃ TRỪ TÀI NGUYÊN THÀNH CÔNG VÀ LÊN HUD
+        if (JsonDataManager.Ins != null)
+        {
+            Debug.Log($"[XÁC NHẬN] Đã trừ tài nguyên! Tài nguyên HIỆN TẠI: Gỗ={JsonDataManager.Ins.wood}, Đá={JsonDataManager.Ins.stone}, Thức ăn={JsonDataManager.Ins.food}");
+        }
+
         // 4. Đủ tiền -> Tiến hành sinh nhà thật
         var spawned = SpawnBuilding(type, position, rotation);
 
         if (spawned == null)
+        {
             Debug.LogError($"[ConstructionManager] Chưa gán prefab cho: {type}");
+        }
         else
-            Debug.Log($"[ConstructionManager] ✅ Đặt {type} thành công | Đã trừ tài nguyên.");
+        {
+            JsonDataManager.RegisterStat_BuildingConstructed();
+            Debug.Log($"[ConstructionManager] ✅ Đặt {type} thành công | Đã phát Event lên HUD.");
+        }
     }
 
     // ================= PUBLIC – SPAWN =================

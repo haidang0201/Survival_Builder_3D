@@ -169,10 +169,25 @@ public class JsonDataManager : Singleton<JsonDataManager>
 
     public void BroadcastAllResources()
     {
+        // 1. Phát Event cho các hệ thống khác (nếu có)
         OnGoldChanged?.Invoke(gold);
         OnWoodChanged?.Invoke(wood);
         OnStoneChanged?.Invoke(stone);
         OnFoodChanged?.Invoke(food);
+
+        // 2. ÉP TRỰC TIẾP HUD PHẢI CẬP NHẬT (SỬA LỖI ĐỨNG HÌNH UI)
+        if (HUDController.Instance != null)
+        {
+            HUDController.Instance.UpdateGold(gold);
+            HUDController.Instance.UpdateWood(wood);
+            HUDController.Instance.UpdateStone(stone);
+            HUDController.Instance.UpdateFood(food);
+            Debug.Log("[JsonDataManager] ⏩ Đã ép HUD cập nhật trực tiếp thành công!");
+        }
+        else
+        {
+            Debug.LogWarning("[JsonDataManager] ❌ Không tìm thấy HUDController.Instance trong Scene!");
+        }
     }
 
     public IEnumerator LoadData(Action<float> onProgress)
