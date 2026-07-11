@@ -582,6 +582,22 @@ public class UpgradeableBuilding : MonoBehaviour
                 break;
         }
     }
+
+    /// <summary>
+    /// Thiết lập lại cấp độ của công trình khi tải dữ liệu từ file JSON.
+    /// </summary>
+    public void LoadLevel(int level)
+    {
+        StopAllCoroutines(); // Dừng các tiến trình xây dựng hoặc nâng cấp đang chạy
+        IsUpgrading = false;
+        isInitialBuildNeeded = false; // Đã tải dữ liệu từ Save -> Xác nhận đã được xây xong từ trước
+
+        SetActiveModel(CurrentLevel, false);
+        CurrentLevel = Mathf.Clamp(level, 0, MaxLevel - 1);
+        SetActiveModel(CurrentLevel, true);
+        
+        UpdateCivilianBuildingData();
+    }
 }
 
 // Lớp trợ giúp bắt sự kiện click cho các collider con
