@@ -11,10 +11,19 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     [Header("FONT")]
     public TMP_FontAsset vietnameseFont;
+    /// <summary>
+    /// Main: nhiệm vụ chính theo cốt truyện, chạy tuần tự từng giai đoạn.
+    /// Side: nhiệm vụ phụ, làm song song tự do, không liên quan cốt truyện chính.
+    /// Urgent: nhiệm vụ ép buộc/khẩn cấp (vd: đang bị tấn công). Mặc định ẨN,
+    /// chỉ xuất hiện khi bị kích hoạt qua ActivateUrgentQuest(), và khi active
+    /// sẽ CHIẾM TOÀN BỘ panel — ẩn hết mọi nhiệm vụ Main/Side khác cho tới khi
+    /// nhiệm vụ khẩn cấp được xử lý xong.
+    /// </summary>
     public enum QuestType
     {
         Main,
-        Side
+        Side,
+        Urgent
     }
 
     [System.Serializable]
@@ -45,6 +54,12 @@ public class RoKQuestPanelUI : MonoBehaviour
         public int target;
         public bool claimed;
 
+        [Tooltip("Chỉ dùng cho QuestType.Urgent: true khi nhiệm vụ khẩn cấp này đang được kích hoạt bởi sự kiện game (vd bị tấn công). Kích hoạt qua ActivateUrgentQuest().")]
+        public bool isActive = false;
+
+        [Tooltip("Chỉ dùng cho QuestType.Urgent: id của một nhiệm vụ CHÍNH phía sau sẽ tự động được bỏ qua (đánh dấu hoàn thành) khi nhiệm vụ khẩn cấp này được claim, để tránh bắt người chơi làm trùng hành động (vd đã xây Tháp Canh khẩn cấp thì không bắt xây lại ở nhiệm vụ chính).")]
+        public string skipsMainQuestId;
+
         public List<Reward> rewards = new List<Reward>();
 
         public bool IsCompleted()
@@ -70,6 +85,7 @@ public class RoKQuestPanelUI : MonoBehaviour
     public Sprite cannonIcon;
     public Sprite storageIcon;
     public Sprite raidIcon;
+    public Sprite allianceIcon;
 
     [Header("REWARD ICONS")]
     public Sprite speedupIcon;
@@ -90,10 +106,13 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     public Color mainHeaderColor = new Color32(255, 211, 90, 255);   // #FFD35A
     public Color sideHeaderColor = new Color32(242, 179, 90, 255);   // #F2B35A
+    public Color urgentHeaderColor = new Color32(230, 76, 60, 255);  // đỏ cảnh báo - nhiệm vụ khẩn cấp
 
     public Color mainCardColor = new Color32(184, 117, 50, 255);     // #B87532
     public Color sideCardColor = new Color32(122, 74, 36, 255);      // #7A4A24
+    public Color urgentCardColor = new Color32(120, 35, 28, 255);    // nền đỏ sậm - nhiệm vụ khẩn cấp
     public Color cardBorderColor = new Color32(224, 166, 74, 255);   // #E0A64A
+    public Color urgentBorderColor = new Color32(255, 140, 120, 255); // viền đỏ sáng - nhiệm vụ khẩn cấp
 
     public Color titleTextColor = new Color32(255, 241, 194, 255);   // #FFF1C2
     public Color descriptionTextColor = new Color32(232, 212, 162, 255); // #E8D4A2
@@ -140,6 +159,9 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     [Tooltip("Nếu bật: các nhiệm vụ chính đã nhận thưởng (claimed) vẫn được liệt kê lại phía trên nhiệm vụ đang làm, để người chơi xem lại lịch sử. Nếu tắt: nhiệm vụ chính đã nhận thưởng sẽ biến mất khỏi danh sách, chỉ còn nhiệm vụ hiện tại.")]
     public bool keepClaimedMainQuestsAsHistory = false;
+
+    [Tooltip("Khi có 1 nhiệm vụ Urgent đang active (vd đang bị tấn công), panel sẽ chỉ hiển thị DUY NHẤT nhiệm vụ đó, ẩn hết nhiệm vụ Main/Side khác, ép người chơi phải xử lý nó trước. Tắt cờ này để nhiệm vụ Urgent chỉ hiển thị thêm chứ không che các nhiệm vụ khác (không khuyến khích).")]
+    public bool urgentQuestTakesOverPanel = true;
 
     [Header("OPTIONS")]
     public bool closePanelWhenPressGo = true;
@@ -253,6 +275,30 @@ public class RoKQuestPanelUI : MonoBehaviour
             }
         });
 
+        // Nhiệm vụ KHẨN CẤP (ví dụ): kích hoạt bằng ActivateUrgentQuest("urgent_defend_watchtower")
+        // khi làng bị tấn công. Khi active, panel sẽ CHỈ hiển thị một mình nhiệm vụ này.
+        // skipsMainQuestId = "build_watchtower" -> nếu người chơi đã xây Tháp Canh để chống
+        // đợt tấn công khẩn cấp, thì nhiệm vụ chính "Xây Tháp Canh" phía sau sẽ tự động được
+        // bỏ qua (không bắt xây lần 2).
+        AddQuest(new Quest
+        {
+            id = "urgent_defend_watchtower",
+            type = QuestType.Urgent,
+            icon = watchTowerIcon,
+            title = "⚠ Khẩn cấp: Xây Tháp Canh phòng thủ!",
+            current = 0,
+            target = 1,
+            description = "Làng đang bị tấn công! Xây ngay 1 Tháp Canh để phòng thủ.",
+            shortHint = "Ưu tiên tuyệt đối, tạm dừng mọi nhiệm vụ khác.",
+            isActive = false,
+            skipsMainQuestId = "build_watchtower",
+            rewards =
+            {
+                new Reward(woodIcon, 150),
+                new Reward(stoneIcon, 80)
+            }
+        });
+
         AddQuest(new Quest
         {
             id = "unlock_cannon",
@@ -284,6 +330,24 @@ public class RoKQuestPanelUI : MonoBehaviour
             rewards =
             {
                 new Reward(goldIcon, 200)
+            }
+        });
+
+        // Nhiệm vụ chính thứ 5 - đủ số lượng demo cho buổi review tuần sau.
+        AddQuest(new Quest
+        {
+            id = "join_alliance",
+            type = QuestType.Main,
+            icon = allianceIcon,
+            title = "Gia nhập Liên Minh",
+            current = 0,
+            target = 1,
+            description = "Gia nhập 1 Liên Minh để nhận hỗ trợ từ đồng minh",
+            shortHint = "Kết nối cộng đồng, mở khoá tính năng liên minh.",
+            rewards =
+            {
+                new Reward(goldIcon, 300),
+                new Reward(speedupIcon, 2)
             }
         });
 
@@ -369,6 +433,41 @@ public class RoKQuestPanelUI : MonoBehaviour
             {
                 new Reward(stoneIcon, 500),
                 new Reward(foodIcon, 500)
+            }
+        });
+
+        // ---- Thêm nhiệm vụ PHỤ song song, KHÔNG liên quan tới cốt truyện chính ----
+
+        AddQuest(new Quest
+        {
+            id = "expand_land",
+            type = QuestType.Side,
+            icon = scrollIcon,
+            title = "Mở rộng đất đai",
+            current = 0,
+            target = 1,
+            description = "Mở rộng thêm 1 ô đất xây dựng cho lãnh địa",
+            shortHint = "Tăng diện tích lãnh địa, làm bất cứ lúc nào.",
+            rewards =
+            {
+                new Reward(woodIcon, 800),
+                new Reward(goldIcon, 50)
+            }
+        });
+
+        AddQuest(new Quest
+        {
+            id = "trade_caravan",
+            type = QuestType.Side,
+            icon = storageIcon,
+            title = "Đoàn thương buôn",
+            current = 0,
+            target = 1,
+            description = "Gửi 1 đoàn thương buôn ra ngoài giao dịch",
+            shortHint = "Kiếm thêm tài nguyên phụ, không ảnh hưởng nhiệm vụ chính.",
+            rewards =
+            {
+                new Reward(goldIcon, 150)
             }
         });
     }
@@ -553,6 +652,28 @@ public class RoKQuestPanelUI : MonoBehaviour
         scroll.viewport = viewportRT;
         scroll.content = generatedContent;
 
+        // ---- NHIỆM VỤ KHẨN CẤP: ép buộc, chiếm toàn bộ panel nếu đang active ----
+        Quest activeUrgentQuest = GetActiveUrgentQuest();
+
+        if (activeUrgentQuest != null)
+        {
+            CreateSection("⚠ NHIỆM VỤ KHẨN CẤP", urgentHeaderColor);
+            CreateQuestCard(activeUrgentQuest);
+            CreateInfoNotice("Hãy xử lý xong nhiệm vụ khẩn cấp này trước khi tiếp tục các nhiệm vụ khác.");
+
+            if (urgentQuestTakesOverPanel)
+            {
+                // Ép buộc: chỉ hiển thị DUY NHẤT nhiệm vụ khẩn cấp, ẩn hết Main/Side còn lại.
+                LayoutRebuilder.ForceRebuildLayoutImmediate(generatedContent);
+                Canvas.ForceUpdateCanvases();
+
+                if (debugMode)
+                    Debug.Log("[RoKQuestPanelUI] Render xong (chế độ khẩn cấp). Quest khẩn cấp = " + activeUrgentQuest.id);
+
+                return;
+            }
+        }
+
         // ---- NHIỆM VỤ CHÍNH: hiển thị theo giai đoạn (tutorial-style) ----
         List<Quest> visibleMainQuests = GetVisibleMainQuests();
 
@@ -644,6 +765,72 @@ public class RoKQuestPanelUI : MonoBehaviour
         return result;
     }
 
+    /// <summary>
+    /// Trả về nhiệm vụ CHÍNH đang là giai đoạn hiện tại (nhiệm vụ chính đầu tiên
+    /// theo thứ tự khai báo mà chưa được claimed). Trả về null nếu đã hoàn thành
+    /// hết toàn bộ chuỗi nhiệm vụ chính, hoặc không có nhiệm vụ chính nào.
+    /// </summary>
+    Quest GetActiveMainQuest()
+    {
+        foreach (Quest quest in quests)
+        {
+            if (quest.type != QuestType.Main)
+                continue;
+
+            if (!quest.claimed)
+                return quest;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Trả về nhiệm vụ KHẨN CẤP (Urgent) đang active và chưa claimed, nếu có.
+    /// Trả về null nếu không có nhiệm vụ khẩn cấp nào đang diễn ra.
+    /// </summary>
+    Quest GetActiveUrgentQuest()
+    {
+        foreach (Quest quest in quests)
+        {
+            if (quest.type == QuestType.Urgent && quest.isActive && !quest.claimed)
+                return quest;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Ép người chơi phải làm nhiệm vụ CHÍNH đúng theo kịch bản/thứ tự đã setup.
+    /// Nếu người chơi (hoặc hệ thống game) cố cộng tiến độ / hoàn thành cho một
+    /// nhiệm vụ chính chưa tới lượt (nhiệm vụ chính hiện tại chưa được claimed),
+    /// tiến độ đó sẽ bị CHẶN để tránh sai nhịp độ giữa kịch bản và trạng thái quest.
+    /// Nhiệm vụ PHỤ luôn được phép cập nhật tự do vì làm song song.
+    /// Nhiệm vụ KHẨN CẤP chỉ nhận tiến độ khi đang active; khi có 1 nhiệm vụ khẩn
+    /// cấp đang active, mọi tiến độ cho nhiệm vụ CHÍNH bình thường đều bị chặn,
+    /// ép người chơi phải xử lý nhiệm vụ khẩn cấp trước.
+    /// </summary>
+    bool CanReceiveMainQuestProgress(Quest quest)
+    {
+        if (quest == null)
+            return false;
+
+        if (quest.type == QuestType.Urgent)
+            return quest.isActive;
+
+        if (quest.type != QuestType.Main)
+            return true;
+
+        if (GetActiveUrgentQuest() != null)
+            return false;
+
+        if (!sequentialMainQuests)
+            return true;
+
+        Quest activeStage = GetActiveMainQuest();
+
+        return activeStage != null && activeStage.id == quest.id;
+    }
+
     void ClearOldGeneratedUI()
     {
         Transform old = questPanelRoot.transform.Find(GENERATED_ROOT_NAME);
@@ -710,11 +897,16 @@ public class RoKQuestPanelUI : MonoBehaviour
         card.transform.SetParent(generatedContent, false);
 
         Image bg = card.GetComponent<Image>();
-        bg.color = quest.type == QuestType.Main ? mainCardColor : sideCardColor;
+        if (quest.type == QuestType.Main)
+            bg.color = mainCardColor;
+        else if (quest.type == QuestType.Side)
+            bg.color = sideCardColor;
+        else
+            bg.color = urgentCardColor;
         bg.raycastTarget = true;
 
         Outline outline = card.GetComponent<Outline>();
-        outline.effectColor = cardBorderColor;
+        outline.effectColor = quest.type == QuestType.Urgent ? urgentBorderColor : cardBorderColor;
         outline.effectDistance = new Vector2(2f, -2f);
         outline.useGraphicAlpha = false;
 
@@ -1212,6 +1404,10 @@ public class RoKQuestPanelUI : MonoBehaviour
             data.BroadcastAllResources();
 
         quest.claimed = true;
+
+        if (!string.IsNullOrEmpty(quest.skipsMainQuestId))
+            SkipDuplicateMainQuest(quest.skipsMainQuestId);
+
         rewardClaimRunning = false;
 
         RenderQuestList();
@@ -1440,12 +1636,101 @@ public class RoKQuestPanelUI : MonoBehaviour
         Debug.Log("[RoKQuestPanelUI] Đã cộng xu/vàng: +" + amount);
     }
 
+    /// <summary>
+    /// Gọi khi có sự kiện game bắt buộc người chơi phải xử lý ngay (vd: làng bị tấn công).
+    /// Kích hoạt nhiệm vụ Urgent có id tương ứng -> panel sẽ chỉ hiển thị mỗi nhiệm vụ này
+    /// cho tới khi được xử lý xong (theo urgentQuestTakesOverPanel).
+    /// </summary>
+    public void ActivateUrgentQuest(string questId)
+    {
+        if (!questMap.ContainsKey(questId))
+        {
+            Debug.LogWarning("[RoKQuestPanelUI] Không tìm thấy nhiệm vụ khẩn cấp: " + questId);
+            return;
+        }
+
+        Quest quest = questMap[questId];
+
+        if (quest.type != QuestType.Urgent)
+        {
+            Debug.LogWarning("[RoKQuestPanelUI] Quest '" + questId + "' không phải QuestType.Urgent, không thể kích hoạt khẩn cấp.");
+            return;
+        }
+
+        quest.isActive = true;
+        quest.claimed = false;
+
+        if (debugMode)
+            Debug.Log("[RoKQuestPanelUI] Kích hoạt nhiệm vụ khẩn cấp: " + questId);
+
+        RenderQuestList();
+    }
+
+    /// <summary>
+    /// Huỷ kích hoạt nhiệm vụ Urgent (vd: đợt tấn công đã bị đẩy lùi bởi hệ thống khác,
+    /// không cần bắt người chơi hoàn thành nhiệm vụ khẩn cấp nữa).
+    /// </summary>
+    public void DeactivateUrgentQuest(string questId)
+    {
+        if (!questMap.ContainsKey(questId))
+            return;
+
+        Quest quest = questMap[questId];
+
+        if (quest.type != QuestType.Urgent)
+            return;
+
+        quest.isActive = false;
+
+        if (debugMode)
+            Debug.Log("[RoKQuestPanelUI] Huỷ kích hoạt nhiệm vụ khẩn cấp: " + questId);
+
+        RenderQuestList();
+    }
+
+    /// <summary>
+    /// Đánh dấu hoàn thành ngầm một nhiệm vụ CHÍNH bị trùng hành động với nhiệm vụ Urgent
+    /// vừa claim (vd: đã xây Tháp Canh khẩn cấp thì bỏ qua nhiệm vụ chính "Xây Tháp Canh"),
+    /// tránh ép người chơi làm lại đúng hành động đó lần 2.
+    /// Lưu ý: không cộng thêm phần thưởng riêng của nhiệm vụ bị bỏ qua — nếu muốn người chơi
+    /// vẫn nhận thưởng tương đương, hãy cộng thêm phần thưởng đó ngay trong nhiệm vụ Urgent.
+    /// </summary>
+    void SkipDuplicateMainQuest(string questId)
+    {
+        if (!questMap.ContainsKey(questId))
+            return;
+
+        Quest target = questMap[questId];
+
+        if (target.claimed)
+            return;
+
+        target.current = target.target;
+        target.claimed = true;
+
+        if (debugMode)
+            Debug.Log("[RoKQuestPanelUI] Bỏ qua nhiệm vụ chính trùng lặp '" + questId + "' vì hành động đã được hoàn thành thông qua nhiệm vụ khẩn cấp.");
+    }
+
     public void SetProgress(string questId, int value)
     {
         if (!questMap.ContainsKey(questId))
             return;
 
         Quest quest = questMap[questId];
+
+        if (!CanReceiveMainQuestProgress(quest))
+        {
+            if (debugMode)
+            {
+                Quest activeStage = GetActiveMainQuest();
+                string activeId = activeStage != null ? activeStage.id : "(đã xong hết chuỗi chính)";
+                Debug.LogWarning($"[RoKQuestPanelUI] Bỏ qua SetProgress cho '{questId}' vì chưa tới lượt (giai đoạn hiện tại: {activeId}). Người chơi phải hoàn thành nhiệm vụ chính trước đó trước.");
+            }
+
+            return;
+        }
+
         quest.current = Mathf.Clamp(value, 0, quest.target);
         RenderQuestList();
     }
@@ -1456,6 +1741,19 @@ public class RoKQuestPanelUI : MonoBehaviour
             return;
 
         Quest quest = questMap[questId];
+
+        if (!CanReceiveMainQuestProgress(quest))
+        {
+            if (debugMode)
+            {
+                Quest activeStage = GetActiveMainQuest();
+                string activeId = activeStage != null ? activeStage.id : "(đã xong hết chuỗi chính)";
+                Debug.LogWarning($"[RoKQuestPanelUI] Bỏ qua AddProgress cho '{questId}' vì chưa tới lượt (giai đoạn hiện tại: {activeId}). Người chơi phải hoàn thành nhiệm vụ chính trước đó trước.");
+            }
+
+            return;
+        }
+
         quest.current = Mathf.Clamp(quest.current + amount, 0, quest.target);
         RenderQuestList();
     }
@@ -1466,6 +1764,19 @@ public class RoKQuestPanelUI : MonoBehaviour
             return;
 
         Quest quest = questMap[questId];
+
+        if (!CanReceiveMainQuestProgress(quest))
+        {
+            if (debugMode)
+            {
+                Quest activeStage = GetActiveMainQuest();
+                string activeId = activeStage != null ? activeStage.id : "(đã xong hết chuỗi chính)";
+                Debug.LogWarning($"[RoKQuestPanelUI] Bỏ qua CompleteQuest cho '{questId}' vì chưa tới lượt (giai đoạn hiện tại: {activeId}). Người chơi phải hoàn thành nhiệm vụ chính trước đó trước.");
+            }
+
+            return;
+        }
+
         quest.current = quest.target;
         RenderQuestList();
     }

@@ -13,6 +13,31 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     public Sprite avatarSprite;
     public Sprite avatarFrameSprite;
 
+    // =====================================================
+    // BACKGROUND SPRITES - dùng để đồng bộ style khung gỗ (ảnh mẫu)
+    // Nếu để trống (None) thì các ô sẽ tự động fallback về tô màu phẳng
+    // như code cũ (không thay đổi gì nếu bạn không gán sprite).
+    // =====================================================
+    [Header("BACKGROUND SPRITES (đồng bộ style khung gỗ)")]
+    public Sprite mainWindowBgSprite;
+    public Sprite headerBgSprite;
+    public Sprite leftPanelBgSprite;
+    public Sprite infoPanelBgSprite;
+    public Sprite statsPanelBgSprite;
+
+    public Sprite renameWindowBgSprite;
+    public Sprite achievementWindowBgSprite;
+    public Sprite detailWindowBgSprite;
+
+    public Sprite achievementRowBgSprite;
+    public Sprite detailRowBgSprite;
+
+    public Sprite actionButtonBgSprite;     // nút "Đổi tên" / "Thành tích" / "Hồ sơ chi tiết"
+    public Sprite closeButtonBgSprite;      // nút X đóng panel
+    public Sprite confirmButtonBgSprite;    // nút "Xác nhận"
+    public Sprite cancelButtonBgSprite;     // nút "Hủy"
+    public Sprite inputFieldBgSprite;       // khung nhập tên
+
     [Header("FONT")]
     public TMP_FontAsset vietnameseFont;
 
@@ -252,17 +277,17 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         root.GetComponent<Image>().color = rootColor;
 
-        RectTransform window = CreatePanel(root.transform, "ProfileWindow", new Vector2(1150, 720), Vector2.zero, panelColor, true);
+        RectTransform window = CreatePanel(root.transform, "ProfileWindow", new Vector2(1150, 720), Vector2.zero, panelColor, true, mainWindowBgSprite);
 
         // Header
-        RectTransform header = CreatePanel(window, "Header", new Vector2(1150, 90), new Vector2(0, 315), headerColor, true);
+        RectTransform header = CreatePanel(window, "Header", new Vector2(1150, 90), new Vector2(0, 315), headerColor, true, headerBgSprite);
         CreateText(header, "HeaderTitleText", "Hồ sơ thống đốc", new Vector2(0, 0), new Vector2(900, 70), 44, titleColor, TextAlignmentOptions.Center, true);
 
-        Button closeButton = CreateButton(header, "CloseProfileButton", "X", new Vector2(520, 0), new Vector2(60, 60), new Color32(170, 0, 0, 255));
+        Button closeButton = CreateButton(header, "CloseProfileButton", "X", new Vector2(520, 0), new Vector2(60, 60), new Color32(170, 0, 0, 255), closeButtonBgSprite);
         closeButton.onClick.AddListener(CloseProfile);
 
         // Left panel
-        RectTransform left = CreatePanel(window, "LeftAvatarPanel", new Vector2(330, 500), new Vector2(-385, -35), headerColor, true);
+        RectTransform left = CreatePanel(window, "LeftAvatarPanel", new Vector2(330, 500), new Vector2(-385, -35), headerColor, true, leftPanelBgSprite);
 
         Image avatarFrame = CreateImage(left, "AvatarFrameImage", avatarFrameSprite, new Vector2(0, 150), new Vector2(190, 190), Color.white);
         avatarFrame.preserveAspect = true;
@@ -278,7 +303,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         CreateText(left, "OnlineStatusText", "● Đang online", new Vector2(0, -10), new Vector2(240, 35), 22, new Color32(90, 255, 80, 255), TextAlignmentOptions.Center, true);
 
         // Info panel
-        RectTransform info = CreatePanel(window, "InfoPanel", new Vector2(730, 250), new Vector2(185, 140), cardColor, true);
+        RectTransform info = CreatePanel(window, "InfoPanel", new Vector2(730, 250), new Vector2(185, 140), cardColor, true, infoPanelBgSprite);
 
         CreateLabelValue(info, "Tên thống đốc", out governorNameText, new Vector2(-244, 75), currentName);
         CreateLabelValue(info, "ID", out governorIdText, new Vector2(-244, 25), governorId.ToString());
@@ -289,7 +314,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         CreateLabelValue(info, "Ngày đăng nhập", out loginDayText, new Vector2(60, -75), loginDays.ToString());
 
         // Stats panel
-        RectTransform stats = CreatePanel(window, "StatsPanel", new Vector2(730, 210), new Vector2(185, -130), darkCardColor, true);
+        RectTransform stats = CreatePanel(window, "StatsPanel", new Vector2(730, 210), new Vector2(185, -130), darkCardColor, true, statsPanelBgSprite);
 
         CreateTopStat(stats, "Worker", out workerText, new Vector2(-280, 55), workerCurrent + "/" + workerMax);
         CreateTopStat(stats, "Quân đội", out armyText, new Vector2(-140, 55), armyCount.ToString());
@@ -304,13 +329,13 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         enemyDefeatedText = CreateText(stats, "EnemyDefeatedText", enemyDefeated.ToString(), new Vector2(190, -85), new Vector2(280, 45), 34, valueColor, TextAlignmentOptions.Center, true);
 
         // Bottom buttons
-        Button renameButton = CreateButton(window, "RenameButton", "Đổi tên", new Vector2(-300, -315), new Vector2(250, 60), buttonColor);
+        Button renameButton = CreateButton(window, "RenameButton", "Đổi tên", new Vector2(-300, -315), new Vector2(250, 60), buttonColor, actionButtonBgSprite);
         renameButton.onClick.AddListener(OpenRenamePanel);
 
-        Button achievementButton = CreateButton(window, "AchievementButton", "Thành tích", new Vector2(0, -315), new Vector2(250, 60), buttonColor);
+        Button achievementButton = CreateButton(window, "AchievementButton", "Thành tích", new Vector2(0, -315), new Vector2(250, 60), buttonColor, actionButtonBgSprite);
         achievementButton.onClick.AddListener(OpenAchievementPanel);
 
-        Button detailButton = CreateButton(window, "DetailButton", "Hồ sơ chi tiết", new Vector2(300, -315), new Vector2(250, 60), buttonColor);
+        Button detailButton = CreateButton(window, "DetailButton", "Hồ sơ chi tiết", new Vector2(300, -315), new Vector2(250, 60), buttonColor, actionButtonBgSprite);
         detailButton.onClick.AddListener(OpenDetailPanel);
 
         BuildRenamePanel(window);
@@ -331,7 +356,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         renameRoot.GetComponent<Image>().color = new Color32(0, 0, 0, 150);
 
-        RectTransform renameWindow = CreatePanel(renameRoot.transform, "RenameWindow", new Vector2(500, 300), Vector2.zero, headerColor, true);
+        RectTransform renameWindow = CreatePanel(renameRoot.transform, "RenameWindow", new Vector2(500, 300), Vector2.zero, headerColor, true, renameWindowBgSprite);
 
         CreateText(renameWindow, "RenameTitleText", "Đổi tên", new Vector2(0, 105), new Vector2(450, 45), 34, titleColor, TextAlignmentOptions.Center, true);
 
@@ -339,10 +364,10 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         warningText = CreateText(renameWindow, "WarningText", "", new Vector2(0, -15), new Vector2(400, 30), 20, valueColor, TextAlignmentOptions.Center, false);
 
-        Button confirm = CreateButton(renameWindow, "ConfirmRenameButton", "Xác nhận", new Vector2(-90, -95), new Vector2(150, 50), buttonColor);
+        Button confirm = CreateButton(renameWindow, "ConfirmRenameButton", "Xác nhận", new Vector2(-90, -95), new Vector2(150, 50), buttonColor, confirmButtonBgSprite);
         confirm.onClick.AddListener(ConfirmRename);
 
-        Button cancel = CreateButton(renameWindow, "CancelRenameButton", "Hủy", new Vector2(90, -95), new Vector2(150, 50), new Color32(122, 74, 36, 255));
+        Button cancel = CreateButton(renameWindow, "CancelRenameButton", "Hủy", new Vector2(90, -95), new Vector2(150, 50), new Color32(122, 74, 36, 255), cancelButtonBgSprite);
         cancel.onClick.AddListener(CloseRenamePanel);
 
         renameRoot.SetActive(false);
@@ -361,11 +386,11 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         achievementRoot.GetComponent<Image>().color = new Color32(0, 0, 0, 150);
 
-        RectTransform window = CreatePanel(achievementRoot.transform, "AchievementWindow", new Vector2(780, 540), Vector2.zero, headerColor, true);
+        RectTransform window = CreatePanel(achievementRoot.transform, "AchievementWindow", new Vector2(780, 540), Vector2.zero, headerColor, true, achievementWindowBgSprite);
 
         CreateText(window, "AchievementTitleText", "Thành tích", new Vector2(0, 230), new Vector2(650, 50), 36, titleColor, TextAlignmentOptions.Center, true);
 
-        Button close = CreateButton(window, "CloseAchievementButton", "X", new Vector2(340, 230), new Vector2(52, 52), new Color32(170, 0, 0, 255));
+        Button close = CreateButton(window, "CloseAchievementButton", "X", new Vector2(340, 230), new Vector2(52, 52), new Color32(170, 0, 0, 255), closeButtonBgSprite);
         close.onClick.AddListener(CloseAchievementPanel);
 
         CreateAchievementRow(window, "Bài học đầu", "Xây công trình đầu tiên.", "Hoàn thành", new Vector2(0, 155));
@@ -391,11 +416,11 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         detailRoot.GetComponent<Image>().color = new Color32(0, 0, 0, 150);
 
-        RectTransform window = CreatePanel(detailRoot.transform, "DetailWindow", new Vector2(820, 560), Vector2.zero, headerColor, true);
+        RectTransform window = CreatePanel(detailRoot.transform, "DetailWindow", new Vector2(820, 560), Vector2.zero, headerColor, true, detailWindowBgSprite);
 
         CreateText(window, "DetailTitleText", "Hồ sơ chi tiết", new Vector2(0, 240), new Vector2(680, 50), 36, titleColor, TextAlignmentOptions.Center, true);
 
-        Button close = CreateButton(window, "CloseDetailButton", "X", new Vector2(360, 240), new Vector2(52, 52), new Color32(170, 0, 0, 255));
+        Button close = CreateButton(window, "CloseDetailButton", "X", new Vector2(360, 240), new Vector2(52, 52), new Color32(170, 0, 0, 255), closeButtonBgSprite);
         close.onClick.AddListener(CloseDetailPanel);
 
         CreateDetailRow(window, "Tên thống đốc", out detailNameText, currentName, new Vector2(-207, 165));
@@ -568,33 +593,22 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     void UpdateResourceCollected()
     {
-        // Luôn lấy JsonDataManager runtime
         if (jsonDataManager == null)
-        {
-            jsonDataManager = JsonDataManager.Ins;
-        }
-
-
-        if (jsonDataManager == null)
-        {
-            Debug.LogWarning(
-                "[RoKProfileQuestAutoUI] Không tìm thấy JsonDataManager"
-            );
             return;
-        }
 
-
+        // Tổng tài nguyên hiện có trên HUD (Wood + Stone + Food)
         resourceCollected =
             jsonDataManager.food +
             jsonDataManager.wood +
             jsonDataManager.stone;
 
-
+        // Cập nhật cả panel Stats chính lẫn panel Hồ sơ chi tiết,
+        // dùng chung FormatNumber để giữ đúng định dạng "1.234"
         if (resourceCollectedText != null)
-        {
-            resourceCollectedText.text =
-                FormatNumber(resourceCollected);
-        }
+            resourceCollectedText.text = FormatNumber(resourceCollected);
+
+        if (detailResourceText != null)
+            detailResourceText.text = FormatNumber(resourceCollected);
     }
 
     void RefreshUI()
@@ -679,7 +693,11 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     // CREATE HELPERS
     // =====================================================
 
-    RectTransform CreatePanel(Transform parent, string name, Vector2 size, Vector2 pos, Color color, bool outline)
+    // Đã thêm tham số "bgSprite" (mặc định null) để hỗ trợ nền dạng ảnh (khung gỗ) đồng bộ style.
+    // Nếu bgSprite == null -> hành vi giữ nguyên y hệt bản gốc (tô màu phẳng + Outline).
+    // Nếu bgSprite != null -> dùng ảnh khung làm nền (Image.Type.Sliced), không cộng thêm Outline
+    // vì viền hoa văn đã có sẵn trong ảnh.
+    RectTransform CreatePanel(Transform parent, string name, Vector2 size, Vector2 pos, Color color, bool outline, Sprite bgSprite = null)
     {
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image));
         go.transform.SetParent(parent, false);
@@ -691,14 +709,24 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         rt.anchoredPosition = pos;
 
         Image img = go.GetComponent<Image>();
-        img.color = color;
 
-        if (outline)
+        if (bgSprite != null)
         {
-            Outline o = go.AddComponent<Outline>();
-            o.effectColor = borderColor;
-            o.effectDistance = new Vector2(2f, -2f);
-            o.useGraphicAlpha = false;
+            img.sprite = bgSprite;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+        else
+        {
+            img.color = color;
+
+            if (outline)
+            {
+                Outline o = go.AddComponent<Outline>();
+                o.effectColor = borderColor;
+                o.effectDistance = new Vector2(2f, -2f);
+                o.useGraphicAlpha = false;
+            }
         }
 
         return rt;
@@ -753,9 +781,11 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         return text;
     }
 
-    Button CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, Color color)
+    // Đã thêm tham số "bgSprite" (mặc định null) để hỗ trợ nền dạng ảnh cho nút bấm.
+    // Nếu bgSprite == null -> hành vi giữ nguyên y hệt bản gốc.
+    Button CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, Color color, Sprite bgSprite = null)
     {
-        GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button), typeof(Outline));
+        GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(parent, false);
 
         RectTransform rt = go.GetComponent<RectTransform>();
@@ -765,20 +795,33 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         rt.anchoredPosition = pos;
 
         Image img = go.GetComponent<Image>();
-        img.color = color;
 
-        Outline outline = go.GetComponent<Outline>();
-        outline.effectColor = borderColor;
-        outline.effectDistance = new Vector2(2f, -2f);
-        outline.useGraphicAlpha = false;
+        Color normal = color;
+
+        if (bgSprite != null)
+        {
+            img.sprite = bgSprite;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+            normal = Color.white;
+        }
+        else
+        {
+            img.color = color;
+
+            Outline outline = go.AddComponent<Outline>();
+            outline.effectColor = borderColor;
+            outline.effectDistance = new Vector2(2f, -2f);
+            outline.useGraphicAlpha = false;
+        }
 
         Button btn = go.GetComponent<Button>();
 
         ColorBlock cb = btn.colors;
-        cb.normalColor = color;
-        cb.highlightedColor = buttonHighlightColor;
-        cb.pressedColor = new Color32(145, 70, 16, 255);
-        cb.selectedColor = buttonHighlightColor;
+        cb.normalColor = normal;
+        cb.highlightedColor = bgSprite != null ? new Color(0.9f, 0.9f, 0.9f, 1f) : buttonHighlightColor;
+        cb.pressedColor = bgSprite != null ? new Color(0.75f, 0.75f, 0.75f, 1f) : new Color32(145, 70, 16, 255);
+        cb.selectedColor = cb.highlightedColor;
         cb.colorMultiplier = 1f;
         btn.colors = cb;
 
@@ -799,7 +842,17 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         rt.anchoredPosition = pos;
 
         Image img = go.GetComponent<Image>();
-        img.color = darkCardColor;
+
+        if (inputFieldBgSprite != null)
+        {
+            img.sprite = inputFieldBgSprite;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+        else
+        {
+            img.color = darkCardColor;
+        }
 
         TMP_InputField input = go.GetComponent<TMP_InputField>();
         input.characterLimit = maxNameLength;
@@ -825,7 +878,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     void CreateAchievementRow(Transform parent, string title, string description, string status, Vector2 pos)
     {
-        RectTransform row = CreatePanel(parent, "Achievement_" + title, new Vector2(670, 54), pos, darkCardColor, true);
+        RectTransform row = CreatePanel(parent, "Achievement_" + title, new Vector2(670, 54), pos, darkCardColor, true, achievementRowBgSprite);
 
         CreateText(row, title + "Title", title, new Vector2(-230, 10), new Vector2(210, 28), 22, titleColor, TextAlignmentOptions.Left, true);
         CreateText(row, title + "Desc", description, new Vector2(20, 10), new Vector2(330, 28), 18, bodyColor, TextAlignmentOptions.Left, false);
@@ -834,7 +887,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     void CreateDetailRow(Transform parent, string label, out TMP_Text valueText, string value, Vector2 pos)
     {
-        RectTransform row = CreatePanel(parent, "Detail_" + label, new Vector2(360, 42), pos, darkCardColor, true);
+        RectTransform row = CreatePanel(parent, "Detail_" + label, new Vector2(360, 42), pos, darkCardColor, true, detailRowBgSprite);
 
         CreateText(row, label + "Label", label, new Vector2(-95, 0), new Vector2(150, 30), 20, bodyColor, TextAlignmentOptions.Left, false);
         valueText = CreateText(row, label + "Value", value, new Vector2(105, 0), new Vector2(175, 30), 22, valueColor, TextAlignmentOptions.Left, true);
