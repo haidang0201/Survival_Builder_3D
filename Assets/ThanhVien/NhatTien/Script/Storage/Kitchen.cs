@@ -17,8 +17,10 @@ public class Kitchen : MonoBehaviour
     public int maxCapacity = 3;
 
     [Header("Penta Dev - Civil Workers Setup")]
-    [Tooltip("Cấu hình số lượng worker tối đa nghỉ ngơi hoặc làm việc tăng cấp qua từng level")]
+    [Tooltip("Cấu hình TỔNG SỐ WORKER được spawn tối đa qua từng level (KHÔNG liên quan đến slot nghỉ trong bếp — xem maxCapacity ở trên)")]
     public int[] maxWorkersLevels = new int[] { 3, 5, 8 };
+    [Tooltip("FIX: tách riêng khỏi maxCapacity. maxCapacity = giới hạn slot nghỉ trong bếp; maxWorkerPopulation = giới hạn tổng số worker được spawn theo level.")]
+    public int maxWorkerPopulation = 0;
     public int currentWorkersCount = 0;
 
     [Header("Spawn Settings")]
@@ -71,16 +73,18 @@ public class Kitchen : MonoBehaviour
 
     /// <summary>
     /// Hàm nhận diện nâng cấp đồng bộ cấu trúc cho công trình dân sự từ UpgradeableBuilding
+    /// FIX: maxWorkersLevels chỉ dùng để giới hạn TỔNG SỐ WORKER SPAWN (maxWorkerPopulation).
+    /// Trước đây nó ghi đè lên maxCapacity (giới hạn slot nghỉ trong bếp), khiến số lượng
+    /// worker được phép vào nghỉ nhảy loạn theo level nâng cấp dù restSlots không đổi.
     /// </summary>
     public void SetupLevel(int levelIndex)
     {
         currentLevelIndex = levelIndex;
 
-        // Đồng bộ biến maxCapacity của logic nghỉ ngơi với giá trị cấu hình mảng tùy chỉnh
         if (maxWorkersLevels != null && levelIndex < maxWorkersLevels.Length)
         {
-            maxCapacity = maxWorkersLevels[levelIndex];
-            onWorkersChanged?.Invoke(currentWorkersCount, maxCapacity);
+            maxWorkerPopulation = maxWorkersLevels[levelIndex];
+            onWorkersChanged?.Invoke(currentWorkersCount, maxWorkerPopulation);
         }
 
         SpawnWorkersForLevel(levelIndex);
@@ -95,16 +99,26 @@ public class Kitchen : MonoBehaviour
 
         for (int i = 0; i < amountToSpawn; i++)
         {
-            // Kiểm tra tránh vượt quá giới hạn cấp hiện hành
-            if (currentWorkersCount >= maxCapacity) break;
+            // FIX: kiểm tra giới hạn tổng số worker (maxWorkerPopulation), KHÔNG phải maxCapacity (slot nghỉ)
+            if (currentWorkersCount >= maxWorkerPopulation) break;
 
             GameObject newWorker = Instantiate(workerPrefab, point.position, point.rotation);
             currentWorkersCount++;
-            
+
             Debug.Log($"[Kitchen Spawn] Đã tạo thành công worker mới: {newWorker.name} tại Cấp {levelIndex + 1}");
         }
 
-        onWorkersChanged?.Invoke(currentWorkersCount, maxCapacity);
+        onWorkersChanged?.Invoke(currentWorkersCount, maxWorkerPopulation);
+    }
+
+    /// <summary>
+    /// FIX: gọi hàm này khi 1 worker bị destroy/chết để currentWorkersCount không tăng ảo
+    /// vĩnh viễn. Hiện tại chưa có hệ thống worker chết nên chưa nơi nào gọi tới — để sẵn hook.
+    /// </summary>
+    public void NotifyWorkerRemoved()
+    {
+        currentWorkersCount = Mathf.Max(0, currentWorkersCount - 1);
+        onWorkersChanged?.Invoke(currentWorkersCount, maxWorkerPopulation);
     }
 
     /// <summary>
@@ -146,7 +160,13 @@ public class Kitchen : MonoBehaviour
                       $"Slot còn trống: {maxCapacity - workersInside.Count}/{maxCapacity}");
     }
 
-    /// <summary>Round-robin — tránh nhiều worker chồng lên cùng 1 slot.</summary>
+    /// <summary>
+    /// Round-robin — tránh nhiều worker chồng lên cùng 1 slot.
+    /// FIX: fallback về EntrancePosition (cửa bếp) thay vì transform.position (tâm bếp).
+    /// Trước đây khi restSlots rỗng, worker chỉ cần lảng vảng trong interactionRadius quanh
+    /// TÂM Kitchen (thường nằm giữa building, xa cửa thật) là đã bị tính "đã tới nơi" và
+    /// kitchen.Enter() được gọi sớm, khiến model bị ẩn dù chưa thực sự đi tới cửa bếp.
+    /// </summary>
     public Vector3 GetRestPosition()
     {
         if (restSlots != null && restSlots.Length > 0)
@@ -161,7 +181,7 @@ public class Kitchen : MonoBehaviour
                 }
             }
         }
-        return transform.position;
+        return EntrancePosition;
     }
 
     void OnDrawGizmosSelected()

@@ -41,15 +41,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 7.6584854
+      value: 10.18
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.952
+      value: 2.98591
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -7.895607
+      value: -8.540512
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       propertyPath: m_LocalRotation.w
@@ -105,6 +105,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8305230404701861977}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3366759517700990960}
   m_SourcePrefab: {fileID: 100100000, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
 --- !u!4 &3556482953104484147 stripped
 Transform:
@@ -231,6 +234,30 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &3366759517700990960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4184119805880974729}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac8774c2e77651743bea7d6b05a8029e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorkerEnemyFlee
+  enemyTag: Enemy
+  detectRadius: 8
+  detectInterval: 0.25
+  safeExtraRadius: 2
+  arriveDistance: 2
+  house: {fileID: 0}
+  fallbackHomeSpot: {fileID: 0}
+  workerModel: {fileID: 4884473633011549685}
+  extraModelsToHide: []
+  animator: {fileID: 5858714908411763539}
+  speedParamName: Speed
+  fleeBoolName: 
 --- !u!1 &4884473633011549685 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8437689587053184301, guid: 05a53c33c75019b4b9966c7e4c5dbae6, type: 3}
