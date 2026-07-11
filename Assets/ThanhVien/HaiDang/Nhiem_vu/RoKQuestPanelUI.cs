@@ -60,6 +60,9 @@ public class RoKQuestPanelUI : MonoBehaviour
         [Tooltip("Chỉ dùng cho QuestType.Urgent: id của một nhiệm vụ CHÍNH phía sau sẽ tự động được bỏ qua (đánh dấu hoàn thành) khi nhiệm vụ khẩn cấp này được claim, để tránh bắt người chơi làm trùng hành động (vd đã xây Tháp Canh khẩn cấp thì không bắt xây lại ở nhiệm vụ chính).")]
         public string skipsMainQuestId;
 
+        [Tooltip("Danh sách id các nhiệm vụ ĐIỀU KIỆN (có thể là Main hoặc Side) phải được claim xong thì nhiệm vụ này mới được MỞ KHOÁ (hiển thị + nhận tiến độ). Để trống nếu nhiệm vụ không phụ thuộc nhiệm vụ nào khác. Dùng để tạo liên kết chặt chẽ giữa các nhiệm vụ, không giới hạn trong 1 loại (Main có thể phụ thuộc Side và ngược lại).")]
+        public List<string> prerequisiteQuestIds = new List<string>();
+
         public List<Reward> rewards = new List<Reward>();
 
         public bool IsCompleted()
@@ -334,6 +337,9 @@ public class RoKQuestPanelUI : MonoBehaviour
         });
 
         // Nhiệm vụ chính thứ 5 - đủ số lượng demo cho buổi review tuần sau.
+        // prerequisiteQuestIds: minh hoạ liên kết CHÉO - nhiệm vụ CHÍNH này phụ thuộc
+        // vào 1 nhiệm vụ PHỤ ("civilization_land") đã claim xong, không chỉ phụ thuộc
+        // thứ tự tuyến tính của chuỗi Main.
         AddQuest(new Quest
         {
             id = "join_alliance",
@@ -344,6 +350,7 @@ public class RoKQuestPanelUI : MonoBehaviour
             target = 1,
             description = "Gia nhập 1 Liên Minh để nhận hỗ trợ từ đồng minh",
             shortHint = "Kết nối cộng đồng, mở khoá tính năng liên minh.",
+            prerequisiteQuestIds = { "civilization_land" },
             rewards =
             {
                 new Reward(goldIcon, 300),
@@ -379,6 +386,7 @@ public class RoKQuestPanelUI : MonoBehaviour
             target = 2,
             description = "Đánh bại 2 đội quân Man Di trên bản đồ",
             shortHint = "Dọn sạch hiểm họa quanh làng.",
+            prerequisiteQuestIds = { "first_raid" },
             rewards =
             {
                 new Reward(woodIcon, 2000),
@@ -429,6 +437,7 @@ public class RoKQuestPanelUI : MonoBehaviour
             target = 1,
             description = "Nâng cấp Kho chứa gỗ lên cấp 3",
             shortHint = "Bảo vệ tài nguyên.",
+            prerequisiteQuestIds = { "gather_wood" },
             rewards =
             {
                 new Reward(stoneIcon, 500),
@@ -448,6 +457,7 @@ public class RoKQuestPanelUI : MonoBehaviour
             target = 1,
             description = "Mở rộng thêm 1 ô đất xây dựng cho lãnh địa",
             shortHint = "Tăng diện tích lãnh địa, làm bất cứ lúc nào.",
+            prerequisiteQuestIds = { "build_watchtower" },
             rewards =
             {
                 new Reward(woodIcon, 800),
@@ -465,6 +475,7 @@ public class RoKQuestPanelUI : MonoBehaviour
             target = 1,
             description = "Gửi 1 đoàn thương buôn ra ngoài giao dịch",
             shortHint = "Kiếm thêm tài nguyên phụ, không ảnh hưởng nhiệm vụ chính.",
+            prerequisiteQuestIds = { "unlock_cannon" },
             rewards =
             {
                 new Reward(goldIcon, 150)
@@ -686,19 +697,32 @@ public class RoKQuestPanelUI : MonoBehaviour
                 CreateQuestCard(quest);
             }
         }
-        else if (HasAnyMainQuest())
+        else
         {
-            // Đã hoàn thành hết toàn bộ chuỗi nhiệm vụ chính hiện có
-            CreateSection("◆ Nhiệm vụ chính", mainHeaderColor);
-            CreateInfoNotice("Bạn đã hoàn thành tất cả nhiệm vụ chính hiện tại!");
+            Quest pendingStage = GetActiveMainQuest();
+
+            if (pendingStage != null)
+            {
+                // Vẫn còn nhiệm vụ chính, nhưng giai đoạn hiện tại đang bị KHOÁ vì
+                // chưa đủ điều kiện liên kết (prerequisiteQuestIds chưa hoàn thành).
+                CreateSection("◆ Nhiệm vụ chính", mainHeaderColor);
+                CreateInfoNotice("🔒 " + BuildLockedRequirementMessage(pendingStage));
+            }
+            else if (HasAnyMainQuest())
+            {
+                // Đã hoàn thành hết toàn bộ chuỗi nhiệm vụ chính hiện có
+                CreateSection("◆ Nhiệm vụ chính", mainHeaderColor);
+                CreateInfoNotice("Bạn đã hoàn thành tất cả nhiệm vụ chính hiện tại!");
+            }
         }
 
         // ---- NHIỆM VỤ PHỤ: luôn hiển thị song song, không theo giai đoạn ----
+        // (chỉ hiện những nhiệm vụ phụ đã MỞ KHOÁ theo prerequisiteQuestIds)
         CreateSection("◆ Nhiệm vụ phụ", sideHeaderColor);
 
         foreach (Quest quest in quests)
         {
-            if (quest.type == QuestType.Side)
+            if (quest.type == QuestType.Side && IsQuestUnlocked(quest))
                 CreateQuestCard(quest);
         }
 
@@ -721,9 +745,69 @@ public class RoKQuestPanelUI : MonoBehaviour
     }
 
     /// <summary>
+    /// Kiểm tra nhiệm vụ đã được MỞ KHOÁ chưa, dựa trên prerequisiteQuestIds.
+    /// Một nhiệm vụ chỉ mở khoá khi TẤT CẢ nhiệm vụ điều kiện (Main hoặc Side,
+    /// không phân biệt loại) đã được claimed. Không có điều kiện -> luôn mở khoá.
+    /// Đây là cơ chế tạo liên kết chặt chẽ giữa các nhiệm vụ với nhau.
+    /// </summary>
+    bool IsQuestUnlocked(Quest quest)
+    {
+        if (quest == null)
+            return false;
+
+        if (quest.prerequisiteQuestIds == null || quest.prerequisiteQuestIds.Count == 0)
+            return true;
+
+        foreach (string prerequisiteId in quest.prerequisiteQuestIds)
+        {
+            if (string.IsNullOrEmpty(prerequisiteId))
+                continue;
+
+            if (!questMap.TryGetValue(prerequisiteId, out Quest prerequisite))
+            {
+                if (debugMode)
+                    Debug.LogWarning($"[RoKQuestPanelUI] Quest '{quest.id}' có prerequisite '{prerequisiteId}' không tồn tại trong danh sách quest.");
+
+                return false;
+            }
+
+            if (!prerequisite.claimed)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Dựng chuỗi text liệt kê tên các nhiệm vụ điều kiện CHƯA hoàn thành,
+    /// dùng để thông báo cho người chơi biết cần làm gì trước để mở khoá.
+    /// </summary>
+    string BuildLockedRequirementMessage(Quest quest)
+    {
+        List<string> missingTitles = new List<string>();
+
+        if (quest.prerequisiteQuestIds != null)
+        {
+            foreach (string prerequisiteId in quest.prerequisiteQuestIds)
+            {
+                if (questMap.TryGetValue(prerequisiteId, out Quest prerequisite) && !prerequisite.claimed)
+                    missingTitles.Add(prerequisite.title);
+            }
+        }
+
+        if (missingTitles.Count == 0)
+            return "Nhiệm vụ tiếp theo sắp được mở khoá.";
+
+        return "Hoàn thành trước: " + string.Join(", ", missingTitles);
+    }
+
+    /// <summary>
     /// Trả về danh sách nhiệm vụ CHÍNH sẽ được hiển thị trong panel.
     /// Nhiệm vụ chính chạy theo giai đoạn: nhiệm vụ chính kế tiếp chỉ xuất hiện
-    /// sau khi nhiệm vụ chính trước đó đã được nhận thưởng (claimed).
+    /// sau khi nhiệm vụ chính trước đó đã được nhận thưởng (claimed), VÀ chỉ khi
+    /// nhiệm vụ đó đã được MỞ KHOÁ (đã đủ điều kiện prerequisiteQuestIds — có thể
+    /// là nhiệm vụ Main hoặc Side khác). Nếu giai đoạn hiện tại chưa mở khoá,
+    /// danh sách trả về rỗng — RenderQuestList() sẽ hiện thông báo yêu cầu thay vào đó.
     /// Thứ tự giai đoạn = thứ tự nhiệm vụ chính được thêm vào trong BuildDefaultQuestList().
     /// </summary>
     List<Quest> GetVisibleMainQuests()
@@ -732,10 +816,10 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         if (!sequentialMainQuests)
         {
-            // Chế độ cũ: hiển thị hết toàn bộ nhiệm vụ chính cùng lúc.
+            // Chế độ cũ: hiển thị hết toàn bộ nhiệm vụ chính đã mở khoá cùng lúc.
             foreach (Quest quest in quests)
             {
-                if (quest.type == QuestType.Main)
+                if (quest.type == QuestType.Main && IsQuestUnlocked(quest))
                     result.Add(quest);
             }
 
@@ -756,9 +840,11 @@ public class RoKQuestPanelUI : MonoBehaviour
                 continue;
             }
 
-            // Đây là giai đoạn hiện tại (chưa nhận thưởng) -> hiển thị và dừng lại,
-            // các nhiệm vụ chính phía sau chưa tới lượt sẽ không hiển thị.
-            result.Add(quest);
+            // Đây là giai đoạn hiện tại theo thứ tự (chưa nhận thưởng).
+            // Chỉ hiển thị nếu đã mở khoá; các nhiệm vụ chính phía sau luôn bị ẩn.
+            if (IsQuestUnlocked(quest))
+                result.Add(quest);
+
             break;
         }
 
@@ -766,9 +852,10 @@ public class RoKQuestPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Trả về nhiệm vụ CHÍNH đang là giai đoạn hiện tại (nhiệm vụ chính đầu tiên
-    /// theo thứ tự khai báo mà chưa được claimed). Trả về null nếu đã hoàn thành
-    /// hết toàn bộ chuỗi nhiệm vụ chính, hoặc không có nhiệm vụ chính nào.
+    /// Trả về nhiệm vụ CHÍNH đang là giai đoạn hiện tại theo THỨ TỰ khai báo
+    /// (nhiệm vụ chính đầu tiên chưa được claimed) — bất kể đã mở khoá hay chưa.
+    /// Dùng để biết "đang chờ điều kiện gì" khi giai đoạn hiện tại bị khoá.
+    /// Trả về null nếu đã hoàn thành hết toàn bộ chuỗi nhiệm vụ chính.
     /// </summary>
     Quest GetActiveMainQuest()
     {
@@ -800,18 +887,22 @@ public class RoKQuestPanelUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Ép người chơi phải làm nhiệm vụ CHÍNH đúng theo kịch bản/thứ tự đã setup.
-    /// Nếu người chơi (hoặc hệ thống game) cố cộng tiến độ / hoàn thành cho một
-    /// nhiệm vụ chính chưa tới lượt (nhiệm vụ chính hiện tại chưa được claimed),
-    /// tiến độ đó sẽ bị CHẶN để tránh sai nhịp độ giữa kịch bản và trạng thái quest.
-    /// Nhiệm vụ PHỤ luôn được phép cập nhật tự do vì làm song song.
-    /// Nhiệm vụ KHẨN CẤP chỉ nhận tiến độ khi đang active; khi có 1 nhiệm vụ khẩn
-    /// cấp đang active, mọi tiến độ cho nhiệm vụ CHÍNH bình thường đều bị chặn,
-    /// ép người chơi phải xử lý nhiệm vụ khẩn cấp trước.
+    /// Cổng kiểm soát duy nhất cho việc nhận tiến độ (SetProgress/AddProgress/CompleteQuest).
+    /// Áp dụng cho MỌI loại nhiệm vụ (Main, Side, Urgent):
+    /// 1) Nhiệm vụ phải được MỞ KHOÁ (đủ prerequisiteQuestIds) — đây là cơ chế liên kết
+    ///    chặt chẽ giữa các nhiệm vụ: 1 nhiệm vụ Side có thể khoá 1 nhiệm vụ Main và
+    ///    ngược lại, không giới hạn trong cùng 1 loại.
+    /// 2) Nhiệm vụ CHÍNH còn phải đúng thứ tự giai đoạn (sequentialMainQuests) và không
+    ///    có nhiệm vụ Urgent nào khác đang active (Urgent luôn được ưu tiên xử lý trước).
+    /// 3) Nhiệm vụ PHỤ (đã mở khoá) luôn được cập nhật tự do vì làm song song.
+    /// 4) Nhiệm vụ Urgent chỉ nhận tiến độ khi đang active.
     /// </summary>
     bool CanReceiveMainQuestProgress(Quest quest)
     {
         if (quest == null)
+            return false;
+
+        if (!IsQuestUnlocked(quest))
             return false;
 
         if (quest.type == QuestType.Urgent)
