@@ -134,6 +134,13 @@ public class RoKQuestPanelUI : MonoBehaviour
     public float sectionHeight = 42f;
     public float spacing = 14f;
 
+    [Header("MAIN QUEST STAGE FLOW")]
+    [Tooltip("Bật để nhiệm vụ CHÍNH hiển thị theo từng giai đoạn (giống tutorial): chỉ hiện nhiệm vụ chính đang cần làm, các nhiệm vụ chính phía sau sẽ ẩn cho tới khi tới lượt.")]
+    public bool sequentialMainQuests = true;
+
+    [Tooltip("Nếu bật: các nhiệm vụ chính đã nhận thưởng (claimed) vẫn được liệt kê lại phía trên nhiệm vụ đang làm, để người chơi xem lại lịch sử. Nếu tắt: nhiệm vụ chính đã nhận thưởng sẽ biến mất khỏi danh sách, chỉ còn nhiệm vụ hiện tại.")]
+    public bool keepClaimedMainQuestsAsHistory = false;
+
     [Header("OPTIONS")]
     public bool closePanelWhenPressGo = true;
     public bool debugMode = true;
@@ -546,14 +553,26 @@ public class RoKQuestPanelUI : MonoBehaviour
         scroll.viewport = viewportRT;
         scroll.content = generatedContent;
 
-        CreateSection("◆ Nhiệm vụ chính", mainHeaderColor);
+        // ---- NHIỆM VỤ CHÍNH: hiển thị theo giai đoạn (tutorial-style) ----
+        List<Quest> visibleMainQuests = GetVisibleMainQuests();
 
-        foreach (Quest quest in quests)
+        if (visibleMainQuests.Count > 0)
         {
-            if (quest.type == QuestType.Main)
+            CreateSection("◆ Nhiệm vụ chính", mainHeaderColor);
+
+            foreach (Quest quest in visibleMainQuests)
+            {
                 CreateQuestCard(quest);
+            }
+        }
+        else if (HasAnyMainQuest())
+        {
+            // Đã hoàn thành hết toàn bộ chuỗi nhiệm vụ chính hiện có
+            CreateSection("◆ Nhiệm vụ chính", mainHeaderColor);
+            CreateInfoNotice("Bạn đã hoàn thành tất cả nhiệm vụ chính hiện tại!");
         }
 
+        // ---- NHIỆM VỤ PHỤ: luôn hiển thị song song, không theo giai đoạn ----
         CreateSection("◆ Nhiệm vụ phụ", sideHeaderColor);
 
         foreach (Quest quest in quests)
@@ -567,6 +586,62 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         if (debugMode)
             Debug.Log("[RoKQuestPanelUI] Render xong. Quest count = " + quests.Count);
+    }
+
+    bool HasAnyMainQuest()
+    {
+        foreach (Quest quest in quests)
+        {
+            if (quest.type == QuestType.Main)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Trả về danh sách nhiệm vụ CHÍNH sẽ được hiển thị trong panel.
+    /// Nhiệm vụ chính chạy theo giai đoạn: nhiệm vụ chính kế tiếp chỉ xuất hiện
+    /// sau khi nhiệm vụ chính trước đó đã được nhận thưởng (claimed).
+    /// Thứ tự giai đoạn = thứ tự nhiệm vụ chính được thêm vào trong BuildDefaultQuestList().
+    /// </summary>
+    List<Quest> GetVisibleMainQuests()
+    {
+        List<Quest> result = new List<Quest>();
+
+        if (!sequentialMainQuests)
+        {
+            // Chế độ cũ: hiển thị hết toàn bộ nhiệm vụ chính cùng lúc.
+            foreach (Quest quest in quests)
+            {
+                if (quest.type == QuestType.Main)
+                    result.Add(quest);
+            }
+
+            return result;
+        }
+
+        foreach (Quest quest in quests)
+        {
+            if (quest.type != QuestType.Main)
+                continue;
+
+            if (quest.claimed)
+            {
+                if (keepClaimedMainQuestsAsHistory)
+                    result.Add(quest);
+
+                // Đã xong giai đoạn này, tiếp tục xét giai đoạn kế tiếp.
+                continue;
+            }
+
+            // Đây là giai đoạn hiện tại (chưa nhận thưởng) -> hiển thị và dừng lại,
+            // các nhiệm vụ chính phía sau chưa tới lượt sẽ không hiển thị.
+            result.Add(quest);
+            break;
+        }
+
+        return result;
     }
 
     void ClearOldGeneratedUI()
@@ -602,6 +677,30 @@ public class RoKQuestPanelUI : MonoBehaviour
         LayoutElement le = go.GetComponent<LayoutElement>();
         le.minHeight = sectionHeight;
         le.preferredHeight = sectionHeight;
+        le.flexibleWidth = 1;
+    }
+
+    void CreateInfoNotice(string message)
+    {
+        GameObject go = new GameObject("InfoNotice", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
+        go.transform.SetParent(generatedContent, false);
+
+        TMP_Text text = go.GetComponent<TMP_Text>();
+        text.text = message;
+        text.color = descriptionTextColor;
+        text.fontSize = 22;
+        text.fontStyle = FontStyles.Italic;
+        text.alignment = TextAlignmentOptions.Left;
+        text.raycastTarget = false;
+        text.enableWordWrapping = true;
+        if (vietnameseFont != null)
+        {
+            text.font = vietnameseFont;
+        }
+
+        LayoutElement le = go.GetComponent<LayoutElement>();
+        le.minHeight = 40f;
+        le.preferredHeight = 40f;
         le.flexibleWidth = 1;
     }
 
