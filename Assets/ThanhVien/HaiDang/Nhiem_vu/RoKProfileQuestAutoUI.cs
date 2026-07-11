@@ -116,14 +116,28 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         if (targetCanvas == null)
             targetCanvas = FindObjectOfType<Canvas>();
 
-        // Đảm bảo luôn có tham chiếu tới JsonDataManager, kể cả khi quên kéo thả trong Inspector
+
+        // AUTO LINK JSON DATA MANAGER
         if (jsonDataManager == null)
+        {
             jsonDataManager = JsonDataManager.Ins;
+        }
+
+
+        if (jsonDataManager == null)
+        {
+            jsonDataManager = FindObjectOfType<JsonDataManager>();
+        }
+
 
         LoadData();
+
         BuildUI();
+
         BindEvents();
+
         RefreshUI();
+
 
         if (root != null)
             root.SetActive(false);
@@ -554,22 +568,33 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     void UpdateResourceCollected()
     {
+        // Luôn lấy JsonDataManager runtime
         if (jsonDataManager == null)
-            return;
+        {
+            jsonDataManager = JsonDataManager.Ins;
+        }
 
-        // Tổng tài nguyên hiện có trên HUD (Wood + Stone + Food)
+
+        if (jsonDataManager == null)
+        {
+            Debug.LogWarning(
+                "[RoKProfileQuestAutoUI] Không tìm thấy JsonDataManager"
+            );
+            return;
+        }
+
+
         resourceCollected =
             jsonDataManager.food +
             jsonDataManager.wood +
             jsonDataManager.stone;
 
-        // Cập nhật cả panel Stats chính lẫn panel Hồ sơ chi tiết,
-        // dùng chung FormatNumber để giữ đúng định dạng "1.234"
-        if (resourceCollectedText != null)
-            resourceCollectedText.text = FormatNumber(resourceCollected);
 
-        if (detailResourceText != null)
-            detailResourceText.text = FormatNumber(resourceCollected);
+        if (resourceCollectedText != null)
+        {
+            resourceCollectedText.text =
+                FormatNumber(resourceCollected);
+        }
     }
 
     void RefreshUI()
