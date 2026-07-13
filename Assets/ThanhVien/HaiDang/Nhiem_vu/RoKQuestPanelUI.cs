@@ -98,6 +98,25 @@ public class RoKQuestPanelUI : MonoBehaviour
     public Sprite goldIcon;
     public Sprite chestIcon;
 
+    // =====================================================
+    // UI SPRITES - gán ảnh trực tiếp trong Inspector giống file hồ sơ.
+    // Nếu để trống, code giữ nguyên màu nền và Outline cũ.
+    // =====================================================
+    [Header("UI SPRITES")]
+    public Sprite panelBackgroundSprite;
+    public Sprite headerBackgroundSprite;
+    public Sprite scrollBackgroundSprite;
+
+    public Sprite mainQuestCardSprite;
+    public Sprite sideQuestCardSprite;
+    public Sprite urgentQuestCardSprite;
+
+    public Sprite goButtonSprite;
+    public Sprite claimButtonSprite;
+    public Sprite claimedButtonSprite;
+
+    public Sprite closeButtonSprite;
+
     [Header("WOOD THEME")]
     [Tooltip("Bật để tự ép toàn bộ bảng nhiệm vụ sang màu vàng gỗ khi Play.")]
     public bool forceWoodThemeOnStart = true;
@@ -579,14 +598,30 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         Image rootImage = questPanelRoot.GetComponent<Image>();
         if (rootImage != null)
-            rootImage.color = panelColor;
+        {
+            ApplyOptionalSprite(rootImage, panelBackgroundSprite, panelColor);
+        }
 
         Transform header = questPanelRoot.transform.Find("Header");
         if (header != null)
         {
             Image headerImage = header.GetComponent<Image>();
             if (headerImage != null)
-                headerImage.color = headerColor;
+            {
+                ApplyOptionalSprite(headerImage, headerBackgroundSprite, headerColor);
+            }
+        }
+
+        if (closeButton != null)
+        {
+            Image closeImage = closeButton.GetComponent<Image>();
+            if (closeImage != null && closeButtonSprite != null)
+            {
+                closeImage.sprite = closeButtonSprite;
+                closeImage.type = Image.Type.Simple;
+                closeImage.color = Color.white;
+                closeImage.preserveAspect = true;
+            }
         }
     }
 
@@ -616,7 +651,7 @@ public class RoKQuestPanelUI : MonoBehaviour
         scrollRT.offsetMax = new Vector2(-rightOffset, -topOffset);
 
         Image scrollBg = scrollGO.GetComponent<Image>();
-        scrollBg.color = scrollBgColor;
+        ApplyOptionalSprite(scrollBg, scrollBackgroundSprite, scrollBgColor);
 
         ScrollRect scroll = scrollGO.GetComponent<ScrollRect>();
         scroll.horizontal = false;
@@ -988,18 +1023,34 @@ public class RoKQuestPanelUI : MonoBehaviour
         card.transform.SetParent(generatedContent, false);
 
         Image bg = card.GetComponent<Image>();
+
+        Sprite cardSprite = null;
+        Color fallbackCardColor = sideCardColor;
+
         if (quest.type == QuestType.Main)
-            bg.color = mainCardColor;
+        {
+            cardSprite = mainQuestCardSprite;
+            fallbackCardColor = mainCardColor;
+        }
         else if (quest.type == QuestType.Side)
-            bg.color = sideCardColor;
+        {
+            cardSprite = sideQuestCardSprite;
+            fallbackCardColor = sideCardColor;
+        }
         else
-            bg.color = urgentCardColor;
+        {
+            cardSprite = urgentQuestCardSprite;
+            fallbackCardColor = urgentCardColor;
+        }
+
+        ApplyOptionalSprite(bg, cardSprite, fallbackCardColor);
         bg.raycastTarget = true;
 
         Outline outline = card.GetComponent<Outline>();
         outline.effectColor = quest.type == QuestType.Urgent ? urgentBorderColor : cardBorderColor;
         outline.effectDistance = new Vector2(2f, -2f);
         outline.useGraphicAlpha = false;
+        outline.enabled = cardSprite == null;
 
         RectTransform rt = card.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(0, itemHeight);
@@ -1127,20 +1178,38 @@ public class RoKQuestPanelUI : MonoBehaviour
         rt.sizeDelta = new Vector2(130, 55);
 
         Image img = go.GetComponent<Image>();
-        img.color = normalColor;
+
+        Sprite stateSprite = GetQuestButtonSprite(quest);
+        ApplyOptionalSprite(img, stateSprite, normalColor);
 
         Outline outline = go.GetComponent<Outline>();
         outline.effectColor = quest.claimed ? new Color32(120, 95, 70, 255) : cardBorderColor;
         outline.effectDistance = quest.IsCompleted() && !quest.claimed ? new Vector2(3f, -3f) : new Vector2(2f, -2f);
         outline.useGraphicAlpha = false;
+        outline.enabled = stateSprite == null;
 
         Button btn = go.GetComponent<Button>();
         ColorBlock colors = btn.colors;
-        colors.normalColor = normalColor;
-        colors.highlightedColor = highlightColor;
-        colors.selectedColor = highlightColor;
-        colors.pressedColor = pressedColor;
-        colors.disabledColor = claimedButtonColor;
+
+        if (stateSprite != null)
+        {
+            // Dùng nguyên ảnh đã vẽ, không đổi màu khi hover/press.
+            colors.normalColor = Color.white;
+            colors.highlightedColor = Color.white;
+            colors.selectedColor = Color.white;
+            colors.pressedColor = Color.white;
+            colors.disabledColor = Color.white;
+            btn.transition = Selectable.Transition.None;
+        }
+        else
+        {
+            colors.normalColor = normalColor;
+            colors.highlightedColor = highlightColor;
+            colors.selectedColor = highlightColor;
+            colors.pressedColor = pressedColor;
+            colors.disabledColor = claimedButtonColor;
+        }
+
         colors.colorMultiplier = 1f;
         btn.colors = colors;
 
@@ -1214,6 +1283,39 @@ public class RoKQuestPanelUI : MonoBehaviour
             return claimButtonTextColor;
 
         return goButtonTextColor;
+    }
+
+    Sprite GetQuestButtonSprite(Quest quest)
+    {
+        if (quest == null)
+            return null;
+
+        if (quest.claimed)
+            return claimedButtonSprite;
+
+        if (quest.IsCompleted())
+            return claimButtonSprite;
+
+        return goButtonSprite;
+    }
+
+    void ApplyOptionalSprite(Image image, Sprite sprite, Color fallbackColor)
+    {
+        if (image == null)
+            return;
+
+        if (sprite != null)
+        {
+            image.sprite = sprite;
+            image.type = Image.Type.Sliced;
+            image.color = Color.white;
+        }
+        else
+        {
+            image.sprite = null;
+            image.type = Image.Type.Simple;
+            image.color = fallbackColor;
+        }
     }
 
     // =====================================================

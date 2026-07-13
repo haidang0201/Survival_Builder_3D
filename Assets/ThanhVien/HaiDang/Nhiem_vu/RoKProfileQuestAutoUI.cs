@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -32,7 +33,13 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     public Sprite achievementRowBgSprite;
     public Sprite detailRowBgSprite;
 
-    public Sprite actionButtonBgSprite;     // nút "Đổi tên" / "Thành tích" / "Hồ sơ chi tiết"
+    public Sprite actionButtonBgSprite;     // giữ lại để không ảnh hưởng dữ liệu cũ
+
+    [Header("CUSTOM BOTTOM BUTTON SPRITES")]
+    public Sprite renameButtonSprite;        // ảnh nút Đổi tên đã có sẵn chữ
+    public Sprite achievementButtonSprite;   // ảnh nút Thành tích đã có sẵn chữ
+    public Sprite detailButtonSprite;        // ảnh nút Hồ sơ chi tiết đã có sẵn chữ
+
     public Sprite closeButtonBgSprite;      // nút X đóng panel
     public Sprite confirmButtonBgSprite;    // nút "Xác nhận"
     public Sprite cancelButtonBgSprite;     // nút "Hủy"
@@ -71,6 +78,17 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     public UIPhaoThu uiPhaoThu;
     public UIWorkerCount uiWorkerCount;
     public UIBuildingCount uiBuildingCount;
+
+    [Header("JSON AUTO RECONNECT")]
+    [Tooltip("Tự tìm lại JsonDataManager nếu nó được tạo sau UI hoặc bị thay instance khi Play.")]
+    public bool autoReconnectJson = true;
+
+    [Tooltip("Khoảng thời gian kiểm tra lại liên kết JsonDataManager.")]
+    [Min(0.1f)]
+    public float jsonReconnectInterval = 0.5f;
+
+    JsonDataManager subscribedJsonDataManager;
+    Coroutine jsonReconnectCoroutine;
 
     [Header("STYLE")]
     public Color rootColor = new Color32(0, 0, 0, 130);
@@ -141,31 +159,35 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         if (targetCanvas == null)
             targetCanvas = FindObjectOfType<Canvas>();
 
-
-        // AUTO LINK JSON DATA MANAGER
-        if (jsonDataManager == null)
-        {
-            jsonDataManager = JsonDataManager.Ins;
-        }
-
-
-        if (jsonDataManager == null)
-        {
-            jsonDataManager = FindObjectOfType<JsonDataManager>();
-        }
-
-
         LoadData();
-
         BuildUI();
-
         BindEvents();
+
+        // Không phụ thuộc Script Execution Order.
+        // Nếu JsonDataManager chưa Awake xong, coroutine sẽ tự nối lại sau.
+        TryReconnectJsonDataManager(true);
 
         RefreshUI();
 
-
         if (root != null)
             root.SetActive(false);
+    }
+
+    void OnEnable()
+    {
+        TryReconnectJsonDataManager(false);
+
+        if (autoReconnectJson && jsonReconnectCoroutine == null)
+            jsonReconnectCoroutine = StartCoroutine(JsonReconnectLoop());
+    }
+
+    void OnDisable()
+    {
+        if (jsonReconnectCoroutine != null)
+        {
+            StopCoroutine(jsonReconnectCoroutine);
+            jsonReconnectCoroutine = null;
+        }
     }
 
     void OnDestroy()
@@ -173,13 +195,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         if (questPanel != null)
             questPanel.onGoPressed.RemoveListener(OnQuestGoPressed);
 
-        // Hủy đăng ký event tài nguyên để tránh leak / lỗi tham chiếu null
-        if (jsonDataManager != null)
-        {
-            jsonDataManager.OnWoodChanged -= OnResourceChanged;
-            jsonDataManager.OnStoneChanged -= OnResourceChanged;
-            jsonDataManager.OnFoodChanged -= OnResourceChanged;
-        }
+        UnsubscribeJsonEvents();
     }
 
     void BindEvents()
@@ -196,24 +212,110 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
             questPanel.onGoPressed.AddListener(OnQuestGoPressed);
         }
 
-        // ===== LIÊN KẾT SỐNG (LIVE LINK) VỚI JsonDataManager =====
-        // Mỗi khi tài nguyên (wood/stone/food) thay đổi ở bất kỳ đâu trong game,
-        // hồ sơ Rok sẽ tự cập nhật ngay lập tức, không cần đợi người chơi mở panel.
-        if (jsonDataManager != null)
-        {
-            jsonDataManager.OnWoodChanged -= OnResourceChanged;
-            jsonDataManager.OnWoodChanged += OnResourceChanged;
+        // JsonDataManager được nối riêng bằng TryReconnectJsonDataManager().
+        // Cách này xử lý cả trường hợp manager được tạo sau UI hoặc đổi instance khi Play.
+        TryReconnectJsonDataManager(false);
+    }
 
-            jsonDataManager.OnStoneChanged -= OnResourceChanged;
-            jsonDataManager.OnStoneChanged += OnResourceChanged;
+    IEnumerator JsonReconnectLoop()
+    {
+        WaitForSeconds wait = new WaitForSeconds(Mathf.Max(0.1f, jsonReconnectInterval));
 
-            jsonDataManager.OnFoodChanged -= OnResourceChanged;
-            jsonDataManager.OnFoodChanged += OnResourceChanged;
-        }
-        else
+        while (enabled)
         {
-            Debug.LogWarning("[RoKProfileQuestAutoUI] Không tìm thấy JsonDataManager để liên kết tài nguyên realtime.");
+            TryReconnectJsonDataManager(false);
+            yield return wait;
         }
+
+        jsonReconnectCoroutine = null;
+    }
+
+    void TryReconnectJsonDataManager(bool logIfMissing)
+    {
+        JsonDataManager candidate = null;
+
+        // Ưu tiên singleton hiện tại.
+        candidate = JsonDataManager.Ins;
+
+        // Nếu singleton chưa sẵn sàng, giữ liên kết Inspector nếu object còn sống.
+        if (candidate == null && jsonDataManager != null)
+            candidate = jsonDataManager;
+
+        // Tìm object active trong scene.
+        if (candidate == null)
+            candidate = FindObjectOfType<JsonDataManager>();
+
+        // Tìm cả object inactive trong scene, tránh mất link do thứ tự bật GameObject.
+        if (candidate == null)
+        {
+            JsonDataManager[] allManagers = Resources.FindObjectsOfTypeAll<JsonDataManager>();
+
+            for (int i = 0; i < allManagers.Length; i++)
+            {
+                JsonDataManager manager = allManagers[i];
+
+                if (manager != null &&
+                    manager.gameObject.scene.IsValid() &&
+                    manager.gameObject.scene.isLoaded)
+                {
+                    candidate = manager;
+                    break;
+                }
+            }
+        }
+
+        // Không đổi gì nếu đang nối đúng instance.
+        if (candidate != null && candidate == subscribedJsonDataManager)
+        {
+            jsonDataManager = candidate;
+            return;
+        }
+
+        // Instance cũ bị destroy/thay mới: tháo event cũ trước.
+        UnsubscribeJsonEvents();
+
+        jsonDataManager = candidate;
+
+        if (jsonDataManager == null)
+        {
+            if (logIfMissing)
+                Debug.LogWarning("[RoKProfileQuestAutoUI] JsonDataManager chưa tồn tại. UI sẽ tiếp tục tự tìm và nối lại.");
+
+            return;
+        }
+
+        SubscribeJsonEvents(jsonDataManager);
+        UpdateResourceCollected();
+
+        Debug.Log("[RoKProfileQuestAutoUI] Đã liên kết JsonDataManager: " + jsonDataManager.name);
+    }
+
+    void SubscribeJsonEvents(JsonDataManager manager)
+    {
+        if (manager == null)
+            return;
+
+        subscribedJsonDataManager = manager;
+
+        // Trừ trước để bảo đảm không bị đăng ký trùng listener.
+        manager.OnWoodChanged -= OnResourceChanged;
+        manager.OnStoneChanged -= OnResourceChanged;
+        manager.OnFoodChanged -= OnResourceChanged;
+
+        manager.OnWoodChanged += OnResourceChanged;
+        manager.OnStoneChanged += OnResourceChanged;
+        manager.OnFoodChanged += OnResourceChanged;
+    }
+
+    void UnsubscribeJsonEvents()
+    {
+        if (subscribedJsonDataManager == null)
+            return;
+
+        subscribedJsonDataManager.OnWoodChanged -= OnResourceChanged;
+        subscribedJsonDataManager.OnStoneChanged -= OnResourceChanged;
+        subscribedJsonDataManager.OnFoodChanged -= OnResourceChanged;
+        subscribedJsonDataManager = null;
     }
 
     // Handler chung cho mọi event tài nguyên (nhận giá trị mới nhưng chỉ dùng để trigger refresh)
@@ -281,13 +383,13 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         // Header
         RectTransform header = CreatePanel(window, "Header", new Vector2(1150, 90), new Vector2(0, 315), headerColor, true, headerBgSprite);
-        CreateText(header, "HeaderTitleText", "Hồ sơ thống đốc", new Vector2(0, 0), new Vector2(900, 70), 44, titleColor, TextAlignmentOptions.Center, true);
+        CreateText(header, "HeaderTitleText", "Hồ sơ thống đốc", new Vector2(0, -10), new Vector2(900, 70), 44, titleColor, TextAlignmentOptions.Center, true);
 
         Button closeButton = CreateButton(header, "CloseProfileButton", "X", new Vector2(520, 0), new Vector2(60, 60), new Color32(170, 0, 0, 255), closeButtonBgSprite);
         closeButton.onClick.AddListener(CloseProfile);
 
         // Left panel
-        RectTransform left = CreatePanel(window, "LeftAvatarPanel", new Vector2(330, 500), new Vector2(-385, -35), headerColor, true, leftPanelBgSprite);
+        RectTransform left = CreatePanel(window, "LeftAvatarPanel", new Vector2(330, 522), new Vector2(-385, -20), headerColor, true, leftPanelBgSprite);
 
         Image avatarFrame = CreateImage(left, "AvatarFrameImage", avatarFrameSprite, new Vector2(0, 150), new Vector2(190, 190), Color.white);
         avatarFrame.preserveAspect = true;
@@ -322,20 +424,26 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         CreateTopStat(stats, "Tháp canh", out watchTowerText, new Vector2(140, 55), watchTowerCount.ToString());
         CreateTopStat(stats, "Pháo thủ", out cannonText, new Vector2(280, 55), cannonCount.ToString());
 
-        CreateText(stats, "ResourceCollectedLabel", "Tài nguyên thu thập", new Vector2(-180, -45), new Vector2(280, 30), 21, bodyColor, TextAlignmentOptions.Center, false);
-        resourceCollectedText = CreateText(stats, "ResourceCollectedText", FormatNumber(resourceCollected), new Vector2(-180, -85), new Vector2(280, 45), 34, valueColor, TextAlignmentOptions.Center, true);
+        CreateText(stats, "ResourceCollectedLabel", "Tài nguyên thu thập", new Vector2(-180, -28), new Vector2(280, 30), 21, bodyColor, TextAlignmentOptions.Center, false);
+        resourceCollectedText = CreateText(stats, "ResourceCollectedText", FormatNumber(resourceCollected), new Vector2(-180, -58), new Vector2(280, 45), 34, valueColor, TextAlignmentOptions.Center, true);
 
-        CreateText(stats, "EnemyDefeatedLabel", "Kẻ địch đánh bại", new Vector2(190, -45), new Vector2(280, 30), 21, bodyColor, TextAlignmentOptions.Center, false);
-        enemyDefeatedText = CreateText(stats, "EnemyDefeatedText", enemyDefeated.ToString(), new Vector2(190, -85), new Vector2(280, 45), 34, valueColor, TextAlignmentOptions.Center, true);
+        CreateText(stats, "EnemyDefeatedLabel", "Kẻ địch đánh bại", new Vector2(180, -28), new Vector2(280, 30), 21, bodyColor, TextAlignmentOptions.Center, false);
+        enemyDefeatedText = CreateText(stats, "EnemyDefeatedText", enemyDefeated.ToString(), new Vector2(180, -58), new Vector2(280, 45), 34, valueColor, TextAlignmentOptions.Center, true);
 
-        // Bottom buttons
-        Button renameButton = CreateButton(window, "RenameButton", "Đổi tên", new Vector2(-300, -315), new Vector2(250, 60), buttonColor, actionButtonBgSprite);
+        // Bottom buttons: dùng trực tiếp ảnh đã vẽ, không tạo text và không có hiệu ứng hover/press
+        Button renameButton = CreateStaticImageButton(
+            window, "RenameButton", renameButtonSprite,
+            new Vector2(-300, -315), new Vector2(250, 60));
         renameButton.onClick.AddListener(OpenRenamePanel);
 
-        Button achievementButton = CreateButton(window, "AchievementButton", "Thành tích", new Vector2(0, -315), new Vector2(250, 60), buttonColor, actionButtonBgSprite);
+        Button achievementButton = CreateStaticImageButton(
+            window, "AchievementButton", achievementButtonSprite,
+            new Vector2(0, -315), new Vector2(250, 60));
         achievementButton.onClick.AddListener(OpenAchievementPanel);
 
-        Button detailButton = CreateButton(window, "DetailButton", "Hồ sơ chi tiết", new Vector2(300, -315), new Vector2(250, 60), buttonColor, actionButtonBgSprite);
+        Button detailButton = CreateStaticImageButton(
+            window, "DetailButton", detailButtonSprite,
+            new Vector2(300, -315), new Vector2(250, 60));
         detailButton.onClick.AddListener(OpenDetailPanel);
 
         BuildRenamePanel(window);
@@ -450,6 +558,8 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     public void OpenProfile()
     {
+        TryReconnectJsonDataManager(false);
+
         if (root == null)
             BuildUI();
 
@@ -593,6 +703,9 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     void UpdateResourceCollected()
     {
+        if (jsonDataManager == null || jsonDataManager != subscribedJsonDataManager)
+            TryReconnectJsonDataManager(false);
+
         if (jsonDataManager == null)
             return;
 
@@ -828,6 +941,45 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         CreateText(go.transform, "Text", label, Vector2.zero, size, 28, titleColor, TextAlignmentOptions.Center, true);
 
         return btn;
+    }
+
+    // Nút dùng nguyên ảnh đã vẽ:
+    // - Không tạo TMP text
+    // - Không đổi màu khi hover
+    // - Không có trạng thái pressed/selected
+    Button CreateStaticImageButton(
+        Transform parent,
+        string name,
+        Sprite sprite,
+        Vector2 pos,
+        Vector2 size)
+    {
+        GameObject go = new GameObject(
+            name,
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(Button)
+        );
+
+        go.transform.SetParent(parent, false);
+
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = size;
+        rt.anchoredPosition = pos;
+
+        Image image = go.GetComponent<Image>();
+        image.sprite = sprite;
+        image.type = Image.Type.Simple;
+        image.color = Color.white;
+        image.raycastTarget = true;
+
+        Button button = go.GetComponent<Button>();
+        button.targetGraphic = image;
+        button.transition = Selectable.Transition.None;
+
+        return button;
     }
 
     TMP_InputField CreateInputField(Transform parent, string name, Vector2 pos, Vector2 size)
