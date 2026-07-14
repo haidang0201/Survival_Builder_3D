@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
+using System.Linq;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class WorkerCarrier : MonoBehaviour
@@ -13,14 +15,14 @@ public class WorkerCarrier : MonoBehaviour
     [Header("References")]
     public NavMeshAgent agent;
     public Transform    handPoint;
-    public Transform    warehousePoint;
+    public Transform    warehousePoint; // Fallback thủ công nếu không tìm được theo Tag
 
     [Header("Resource Pools")]
     public ObjectPool woodPool;
     public ObjectPool ricePool;
     public ObjectPool stonePool;
 
-    [Header("Storage Points (Optional)")]
+    [Header("Storage Points (Optional - fallback thủ công)")]
     public Transform woodStoragePoint;
     public Transform riceStoragePoint;
     public Transform stoneStoragePoint;
@@ -39,10 +41,6 @@ public class WorkerCarrier : MonoBehaviour
     public float stuckTimeout     = 2f;
 
     private WorkerStamina    stamina;
-    private WoodStorage      woodStorage;
-    private RiceStorage      riceStorage;
-    private StoneStorage     stoneStorage;
-    private WarehouseStorage warehouseStorage;
 
     private GameObject   currentVisualObject;
     private bool         isCarrying    = false;
@@ -58,15 +56,19 @@ public class WorkerCarrier : MonoBehaviour
     private enum State { Wander, MoveToStorage, MoveToWarehouse }
     private State currentState = State.Wander;
 
-    private Transform    targetStoragePoint;
+    // Storage/warehouse cụ thể (kho + điểm giao hàng) được chọn động theo khoảng cách
+    private Transform    targetStoragePoint;   // = DeliveryPoint của kho tạm đã chọn
+    private object        targetStorageComponent; // WoodStorage/RiceStorage/StoneStorage tương ứng, dùng object vì 3 kiểu khác nhau
     private ResourceType targetResourceType = ResourceType.None;
+
+    private Transform         targetWarehousePoint;   // = DeliveryPoint của warehouse đã chọn
+    private WarehouseStorage  targetWarehouseStorage;
 
     void Start()
     {
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         stamina = GetComponent<WorkerStamina>() ?? GetComponentInChildren<WorkerStamina>() ?? GetComponentInParent<WorkerStamina>();
-        
-        FindReferences();
+
         anchorPosition = transform.position;
         EnterWander();
     }
@@ -134,6 +136,7 @@ public class WorkerCarrier : MonoBehaviour
         currentState       = State.Wander;
         wanderTimer        = wanderInterval;
         targetStoragePoint = null;
+        targetStorageComponent = null;
         targetResourceType = ResourceType.None;
         if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
         
@@ -165,43 +168,121 @@ public class WorkerCarrier : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Với mỗi loại resource (Wood/Rice/Stone) được role cho phép, tìm kho GẦN NHẤT còn hàng
+    /// (cùng Tag tương ứng). Sau đó so sánh CurrentAmount giữa 3 loại để chọn loại cần dọn nhất,
+    /// giữ đúng tiêu chí ưu tiên cũ (loại nào tồn nhiều hơn thì ưu tiên loại đó).
+    /// </summary>
     bool TrySelectStorageToClear()
     {
         int          maxAmount = 0;
         ResourceType bestType  = ResourceType.None;
         Transform    bestPoint = null;
+        object       bestStorage = null;
 
-        if ((role == CarrierRole.Universal || role == CarrierRole.WoodOnly)
-            && woodStorage != null && !woodStorage.IsEmpty && woodStorage.CurrentAmount > maxAmount)
+        if (role == CarrierRole.Universal || role == CarrierRole.WoodOnly)
         {
-            maxAmount = woodStorage.CurrentAmount;
-            bestType  = ResourceType.Wood;
-            bestPoint = woodStoragePoint;
+            var (ws, point) = FindNearestNonEmptyStorage<WoodStorage>("Storage", woodStoragePoint,
+                s => !s.IsEmpty, s => s.CurrentAmount);
+            if (ws != null && ws.CurrentAmount > maxAmount)
+            {
+                maxAmount   = ws.CurrentAmount;
+                bestType    = ResourceType.Wood;
+                bestPoint   = point;
+                bestStorage = ws;
+            }
         }
 
-        if ((role == CarrierRole.Universal || role == CarrierRole.RiceOnly)
-            && riceStorage != null && !riceStorage.IsEmpty && riceStorage.CurrentAmount > maxAmount)
+        if (role == CarrierRole.Universal || role == CarrierRole.RiceOnly)
         {
-            maxAmount = riceStorage.CurrentAmount;
-            bestType  = ResourceType.Rice;
-            bestPoint = riceStoragePoint;
+            var (rs, point) = FindNearestNonEmptyStorage<RiceStorage>("RiceStorage", riceStoragePoint,
+                s => !s.IsEmpty, s => s.CurrentAmount);
+            if (rs != null && rs.CurrentAmount > maxAmount)
+            {
+                maxAmount   = rs.CurrentAmount;
+                bestType    = ResourceType.Rice;
+                bestPoint   = point;
+                bestStorage = rs;
+            }
         }
 
-        if ((role == CarrierRole.Universal || role == CarrierRole.StoneOnly)
-            && stoneStorage != null && !stoneStorage.IsEmpty && stoneStorage.CurrentAmount > maxAmount)
+        if (role == CarrierRole.Universal || role == CarrierRole.StoneOnly)
         {
-            maxAmount = stoneStorage.CurrentAmount;
-            bestType  = ResourceType.Stone;
-            
-            // ĐÃ SỬA LỖI Ở DÒNG NÀY: bestPoint = stoneStoragePoint (thay vì riceStoragePoint)
-            bestPoint = stoneStoragePoint; 
+            var (ss, point) = FindNearestNonEmptyStorage<StoneStorage>("StoneStorage", stoneStoragePoint,
+                s => !s.IsEmpty, s => s.CurrentAmount);
+            if (ss != null && ss.CurrentAmount > maxAmount)
+            {
+                maxAmount   = ss.CurrentAmount;
+                bestType    = ResourceType.Stone;
+                bestPoint   = point;
+                bestStorage = ss;
+            }
         }
 
         if (bestType == ResourceType.None) return false;
 
-        targetResourceType = bestType;
-        targetStoragePoint = bestPoint;
+        targetResourceType     = bestType;
+        targetStoragePoint     = bestPoint;
+        targetStorageComponent = bestStorage;
         return true;
+    }
+
+    /// <summary>
+    /// Quét tất cả GameObject có Tag chỉ định, lấy component T, sắp gần -> xa tính từ vị trí worker,
+    /// và trả về kho GẦN NHẤT thỏa điều kiện isEligible (ví dụ: không rỗng).
+    /// Điểm trả về là DeliveryPoint (child) của kho, không phải tâm kho.
+    /// Nếu không tìm được gì theo Tag, fallback về Transform thủ công đã gán (nếu có).
+    /// </summary>
+    (T storage, Transform point) FindNearestNonEmptyStorage<T>(string tag, Transform manualFallback, System.Func<T, bool> isEligible, System.Func<T, int> amountSelector) where T : Component
+    {
+        GameObject[] candidates = GameObject.FindGameObjectsWithTag(tag);
+        List<(T storage, Transform point, float dist)> found = new List<(T, Transform, float)>();
+
+        if (candidates != null)
+        {
+            foreach (GameObject obj in candidates)
+            {
+                T storage = obj.GetComponent<T>() ?? obj.GetComponentInChildren<T>();
+                if (storage == null || !isEligible(storage)) continue;
+
+                Transform deliveryPoint = FindDeliveryPoint(obj.transform);
+                float d = Vector3.Distance(transform.position, deliveryPoint.position);
+                found.Add((storage, deliveryPoint, d));
+            }
+        }
+
+        if (found.Count > 0)
+        {
+            var nearest = found.OrderBy(f => f.dist).First();
+            return (nearest.storage, nearest.point);
+        }
+
+        // Fallback: Transform gán tay thủ công trong Inspector
+        if (manualFallback != null)
+        {
+            T storage = manualFallback.GetComponent<T>() ?? manualFallback.GetComponentInChildren<T>() ?? manualFallback.GetComponentInParent<T>();
+            if (storage != null && isEligible(storage))
+                return (storage, FindDeliveryPoint(manualFallback));
+        }
+
+        return (null, null);
+    }
+
+    /// <summary>
+    /// Tìm child Transform tên "DeliveryPoint" bên trong 1 kho/warehouse (cửa vào, nơi worker thực sự đi tới).
+    /// Nếu không có, fallback về chính transform gốc để không bị null.
+    /// </summary>
+    Transform FindDeliveryPoint(Transform root)
+    {
+        Transform dp = root.Find("DeliveryPoint");
+        if (dp != null) return dp;
+
+        foreach (Transform child in root.GetComponentsInChildren<Transform>())
+        {
+            if (child.name == "DeliveryPoint") return child;
+        }
+
+        return root;
     }
 
     void EnterMoveToStorage()
@@ -234,9 +315,9 @@ public class WorkerCarrier : MonoBehaviour
 
         switch (targetResourceType)
         {
-            case ResourceType.Wood:  if (woodStorage  != null) taken = woodStorage.TakeWood(maxCarryCapacity);   break;
-            case ResourceType.Rice:  if (riceStorage  != null) taken = riceStorage.TakeRice(maxCarryCapacity);   break;
-            case ResourceType.Stone: if (stoneStorage != null) taken = stoneStorage.TakeStone(maxCarryCapacity); break;
+            case ResourceType.Wood:  if (targetStorageComponent is WoodStorage  ws) taken = ws.TakeWood(maxCarryCapacity);   break;
+            case ResourceType.Rice:  if (targetStorageComponent is RiceStorage  rs) taken = rs.TakeRice(maxCarryCapacity);   break;
+            case ResourceType.Stone: if (targetStorageComponent is StoneStorage ss) taken = ss.TakeStone(maxCarryCapacity);  break;
         }
 
         if (taken <= 0)
@@ -258,7 +339,13 @@ public class WorkerCarrier : MonoBehaviour
 
     void EnterMoveToWarehouse()
     {
-        if (warehousePoint == null || !agent.isOnNavMesh)
+        var (wh, point) = FindNearestNonEmptyStorage<WarehouseStorage>("Warehouse", warehousePoint,
+            s => true, s => 0); // Warehouse luôn hợp lệ để nộp hàng, không cần điều kiện rỗng/đầy ở đây
+
+        targetWarehouseStorage = wh;
+        targetWarehousePoint   = point;
+
+        if (targetWarehousePoint == null || !agent.isOnNavMesh)
         {
             ReturnResourcesToStorage();
             EnterWander();
@@ -266,7 +353,7 @@ public class WorkerCarrier : MonoBehaviour
         }
         currentState    = State.MoveToWarehouse;
         agent.isStopped = false;
-        agent.SetDestination(warehousePoint.position);
+        agent.SetDestination(targetWarehousePoint.position);
 
         stamina?.SetDraining(true); 
     }
@@ -279,13 +366,13 @@ public class WorkerCarrier : MonoBehaviour
 
         agent.isStopped = true;
 
-        if (warehouseStorage != null)
+        if (targetWarehouseStorage != null)
         {
             switch (carriedType)
             {
-                case ResourceType.Wood:  warehouseStorage.AddWood(carriedAmount);  break;
-                case ResourceType.Rice:  warehouseStorage.AddRice(carriedAmount);  break;
-                case ResourceType.Stone: warehouseStorage.AddStone(carriedAmount); break;
+                case ResourceType.Wood:  targetWarehouseStorage.AddWood(carriedAmount);  break;
+                case ResourceType.Rice:  targetWarehouseStorage.AddRice(carriedAmount);  break;
+                case ResourceType.Stone: targetWarehouseStorage.AddStone(carriedAmount); break;
             }
         }
 
@@ -314,9 +401,9 @@ public class WorkerCarrier : MonoBehaviour
     {
         switch (targetResourceType)
         {
-            case ResourceType.Wood:  return woodStorage  == null || woodStorage.IsEmpty;
-            case ResourceType.Rice:  return riceStorage  == null || riceStorage.IsEmpty;
-            case ResourceType.Stone: return stoneStorage == null || stoneStorage.IsEmpty;
+            case ResourceType.Wood:  return !(targetStorageComponent is WoodStorage  ws && !ws.IsEmpty);
+            case ResourceType.Rice:  return !(targetStorageComponent is RiceStorage  rs && !rs.IsEmpty);
+            case ResourceType.Stone: return !(targetStorageComponent is StoneStorage ss && !ss.IsEmpty);
             default: return true;
         }
     }
@@ -412,11 +499,21 @@ public class WorkerCarrier : MonoBehaviour
 
     void ReturnResourcesToStorage()
     {
+        // Trả hàng về kho gần nhất còn tương ứng loại (fallback an toàn nếu warehouse không tới được)
         switch (carriedType)
         {
-            case ResourceType.Wood:  woodStorage?.AddWood(carriedAmount);   break;
-            case ResourceType.Rice:  riceStorage?.AddRice(carriedAmount);   break;
-            case ResourceType.Stone: stoneStorage?.AddStone(carriedAmount); break;
+            case ResourceType.Wood:
+                var (ws, _) = FindNearestNonEmptyStorage<WoodStorage>("Storage", woodStoragePoint, s => true, s => 0);
+                ws?.AddWood(carriedAmount);
+                break;
+            case ResourceType.Rice:
+                var (rs, _) = FindNearestNonEmptyStorage<RiceStorage>("RiceStorage", riceStoragePoint, s => true, s => 0);
+                rs?.AddRice(carriedAmount);
+                break;
+            case ResourceType.Stone:
+                var (ss, _) = FindNearestNonEmptyStorage<StoneStorage>("StoneStorage", stoneStoragePoint, s => true, s => 0);
+                ss?.AddStone(carriedAmount);
+                break;
         }
         ReturnVisualToPool();
         ResetCarry();
@@ -428,42 +525,5 @@ public class WorkerCarrier : MonoBehaviour
         carriedAmount = 0;
         carriedType   = ResourceType.None;
         if (stamina != null) stamina.isCarryingResources = false;
-    }
-
-    void FindReferences()
-    {
-        if (agent == null) agent = GetComponent<NavMeshAgent>();
-
-        if (warehousePoint == null)
-        {
-            GameObject wh = GameObject.FindWithTag("Warehouse");
-            if (wh != null) warehousePoint = wh.transform;
-        }
-        if (warehousePoint != null)
-            warehouseStorage = warehousePoint.GetComponent<WarehouseStorage>() ?? warehousePoint.GetComponentInChildren<WarehouseStorage>() ?? warehousePoint.GetComponentInParent<WarehouseStorage>();
-
-        if (woodStoragePoint == null)
-        {
-            GameObject obj = GameObject.FindWithTag("Storage");
-            if (obj != null) woodStoragePoint = obj.transform;
-        }
-        if (woodStoragePoint != null)
-            woodStorage = woodStoragePoint.GetComponent<WoodStorage>() ?? woodStoragePoint.GetComponentInChildren<WoodStorage>() ?? woodStoragePoint.GetComponentInParent<WoodStorage>();
-
-        if (riceStoragePoint == null)
-        {
-            GameObject obj = GameObject.FindWithTag("RiceStorage");
-            if (obj != null) riceStoragePoint = obj.transform;
-        }
-        if (riceStoragePoint != null)
-            riceStorage = riceStoragePoint.GetComponent<RiceStorage>() ?? riceStoragePoint.GetComponentInChildren<RiceStorage>() ?? riceStoragePoint.GetComponentInParent<RiceStorage>();
-
-        if (stoneStoragePoint == null)
-        {
-            GameObject obj = GameObject.FindWithTag("StoneStorage");
-            if (obj != null) stoneStoragePoint = obj.transform;
-        }
-        if (stoneStoragePoint != null)
-            stoneStorage = stoneStoragePoint.GetComponent<StoneStorage>() ?? stoneStoragePoint.GetComponentInChildren<StoneStorage>() ?? stoneStoragePoint.GetComponentInParent<StoneStorage>();
     }
 }
