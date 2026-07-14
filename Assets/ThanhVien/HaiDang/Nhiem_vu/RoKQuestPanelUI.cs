@@ -226,9 +226,73 @@ public class RoKQuestPanelUI : MonoBehaviour
     public RoKQuestItemUI questItemPrefab;
 
     private const string GENERATED_ROOT_NAME = "GeneratedQuestScroll";
+    [Header("GLOBAL UI THEME")]
+    public UIThemeManager theme;
+
+
+    Color TitleColor
+    {
+        get
+        {
+            if (theme != null)
+                return theme.title;
+
+            if (UIThemeManager.Instance != null)
+                return UIThemeManager.Instance.title;
+
+            return new Color32(255, 238, 190, 255);
+        }
+    }
+
+
+    Color BodyColor
+    {
+        get
+        {
+            if (theme != null)
+                return theme.description;
+
+            if (UIThemeManager.Instance != null)
+                return UIThemeManager.Instance.description;
+
+            return new Color32(120, 88, 55, 255);
+        }
+    }
+
+
+    Color ValueColor
+    {
+        get
+        {
+            if (theme != null)
+                return theme.value;
+
+            if (UIThemeManager.Instance != null)
+                return UIThemeManager.Instance.value;
+
+            return new Color32(190, 140, 45, 255);
+        }
+    }
+
+
+    Color RewardColor
+    {
+        get
+        {
+            if (theme != null)
+                return theme.reward;
+
+            if (UIThemeManager.Instance != null)
+                return UIThemeManager.Instance.reward;
+
+            return new Color32(180, 125, 35, 255);
+        }
+    }
 
     void Start()
     {
+        if (theme == null)
+            theme = UIThemeManager.Instance;
         if (openButton != null)
         {
             openButton.onClick.RemoveListener(OpenPanel);
@@ -976,7 +1040,7 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         TMP_Text text = go.GetComponent<TMP_Text>();
         text.text = title;
-        text.color = color;
+        text.color = TitleColor;
         text.fontSize = 28;
         text.fontStyle = FontStyles.Bold;
         text.alignment = TextAlignmentOptions.Left;
@@ -1000,7 +1064,7 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         TMP_Text text = go.GetComponent<TMP_Text>();
         text.text = message;
-        text.color = descriptionTextColor;
+        text.color = BodyColor;
         text.fontSize = 22;
         text.fontStyle = FontStyles.Italic;
         text.alignment = TextAlignmentOptions.Left;
@@ -1124,7 +1188,7 @@ public class RoKQuestPanelUI : MonoBehaviour
     {
         TMP_Text title = CreateText(parent, "QuestTitleText", quest.title, new Vector2(130, -18), new Vector2(700, 34), 30, Anchor.TopLeft);
         title.fontStyle = FontStyles.Bold;
-        title.color = titleTextColor;
+        title.color = TitleColor;
 
         TMP_Text progress = CreateText(
             parent,
@@ -1135,16 +1199,16 @@ public class RoKQuestPanelUI : MonoBehaviour
             22,
             Anchor.TopLeft
         );
-        progress.color = descriptionTextColor;
+        progress.color = BodyColor;
 
         TMP_Text hint = CreateText(parent, "QuestDescriptionText", quest.shortHint, new Vector2(130, -80), new Vector2(780, 26), 19, Anchor.TopLeft);
-        hint.color = descriptionTextColor;
+        hint.color = BodyColor;
     }
 
     void CreateRewards(Transform parent, Quest quest)
     {
         TMP_Text label = CreateText(parent, "RewardLabelText", "Thưởng", new Vector2(130, -112), new Vector2(90, 26), 20, Anchor.TopLeft);
-        label.color = rewardTextColor;
+        label.color = RewardColor;
 
         for (int i = 0; i < quest.rewards.Count; i++)
         {
@@ -1157,7 +1221,7 @@ public class RoKQuestPanelUI : MonoBehaviour
 
             TMP_Text amount = CreateText(parent, "RewardText_" + i, FormatAmount(quest.rewards[i].amount), new Vector2(x + 36, -106), new Vector2(85, 26), 20, Anchor.TopLeft);
             amount.fontStyle = FontStyles.Bold;
-            amount.color = rewardTextColor;
+            amount.color = RewardColor;
         }
     }
 
@@ -1359,7 +1423,14 @@ public class RoKQuestPanelUI : MonoBehaviour
         TMP_Text text = go.GetComponent<TMP_Text>();
         text.text = value;
         text.fontSize = fontSize;
-        text.color = textColor;
+        text.color = BodyColor;
+        if (theme != null)
+        {
+            theme.Apply(
+                text,
+                DetectTextType(name)
+            );
+        }
         if (vietnameseFont != null)
         {
             text.font = vietnameseFont;
@@ -1371,6 +1442,22 @@ public class RoKQuestPanelUI : MonoBehaviour
         text.overflowMode = TextOverflowModes.Overflow;
 
         return text;
+    }
+    UI_TEXT_TYPE DetectTextType(string name)
+    {
+        if (name.Contains("Title"))
+            return UI_TEXT_TYPE.Title;
+
+        if (name.Contains("Label"))
+            return UI_TEXT_TYPE.Label;
+
+        if (name.Contains("Value"))
+            return UI_TEXT_TYPE.Value;
+
+        if (name.Contains("Reward"))
+            return UI_TEXT_TYPE.Reward;
+
+        return UI_TEXT_TYPE.Description;
     }
 
     void SetAnchor(RectTransform rt, Anchor anchor)

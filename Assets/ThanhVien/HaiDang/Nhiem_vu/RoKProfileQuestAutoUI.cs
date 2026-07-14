@@ -9,6 +9,19 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     public Canvas targetCanvas;
     public RoKQuestPanelUI questPanel;
     public Button profileButton;
+    [Header("Achievement Text Style")]
+    public Color achievementTitleColor = new Color32(245, 232, 200, 255);
+    public Color achievementDescColor = new Color32(186, 158, 112, 255);
+    public Color achievementStatusColor = new Color32(232, 190, 82, 255);
+
+    [Header("Detail Row Text Style")]
+    // Nhãn: màu sáng kem, nổi rõ trên nền hàng gỗ tối (darkCardColor / detailRowBgSprite).
+    public Color detailLabelColor = new Color32(226, 210, 178, 255);
+    // Giá trị: vàng sáng, tương phản mạnh, dễ đọc và nổi bật hơn nhãn.
+    public Color detailValueColor = new Color32(255, 199, 84, 255);
+
+    public Color textOutlineColor = new Color32(45, 25, 10, 200);
+    public Vector2 textShadowDistance = new Vector2(1.2f, -1.2f);
 
     [Header("SPRITES")]
     public Sprite avatarSprite;
@@ -97,9 +110,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
     public Color cardColor = new Color32(184, 117, 50, 255);
     public Color darkCardColor = new Color32(43, 26, 16, 235);
     public Color borderColor = new Color32(224, 166, 74, 255);
-    public Color titleColor = new Color32(255, 241, 194, 255);
-    public Color bodyColor = new Color32(232, 212, 162, 255);
-    public Color valueColor = new Color32(255, 224, 138, 255);
+    public UIThemeManager theme;
     public Color buttonColor = new Color32(199, 106, 27, 255);
     public Color buttonHighlightColor = new Color32(240, 167, 58, 255);
 
@@ -172,6 +183,49 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         if (root != null)
             root.SetActive(false);
     }
+    Color TitleColor
+    {
+        get
+        {
+            if (theme != null)
+                return theme.title;
+
+            if (UIThemeManager.Instance != null)
+                return UIThemeManager.Instance.title;
+
+            return new Color32(255, 238, 190, 255);
+        }
+    }
+
+
+    Color BodyColor
+    {
+        get
+        {
+            if (theme != null)
+                return theme.description;
+
+            if (UIThemeManager.Instance != null)
+                return UIThemeManager.Instance.description;
+
+            return new Color32(120, 88, 55, 255);
+        }
+    }
+
+
+    Color ValueColor
+    {
+        get
+        {
+            if (theme != null)
+                return theme.value;
+
+            if (UIThemeManager.Instance != null)
+                return UIThemeManager.Instance.value;
+
+            return new Color32(190, 140, 45, 255);
+        }
+    }
 
     void OnEnable()
     {
@@ -179,6 +233,23 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         if (autoReconnectJson && jsonReconnectCoroutine == null)
             jsonReconnectCoroutine = StartCoroutine(JsonReconnectLoop());
+    }
+    void ApplyReadableTextStyle(TMP_Text txt, Color faceColor, float outlineWidth = 0.18f)
+    {
+        if (txt == null) return;
+
+        txt.color = faceColor;
+        txt.fontStyle = FontStyles.Bold;
+        txt.enableWordWrapping = false;
+        txt.overflowMode = TextOverflowModes.Ellipsis;
+
+        txt.outlineWidth = outlineWidth;
+        txt.outlineColor = textOutlineColor;
+
+        var shadow = txt.GetComponent<Shadow>();
+        if (shadow == null) shadow = txt.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.35f);
+        shadow.effectDistance = textShadowDistance;
     }
 
     void OnDisable()
@@ -383,9 +454,9 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         // Header
         RectTransform header = CreatePanel(window, "Header", new Vector2(1150, 90), new Vector2(0, 315), headerColor, true, headerBgSprite);
-        CreateText(header, "HeaderTitleText", "Hồ sơ thống đốc", new Vector2(0, -10), new Vector2(900, 70), 44, titleColor, TextAlignmentOptions.Center, true);
+        CreateText(header, "HeaderTitleText", "Hồ sơ thống đốc", new Vector2(0, -10), new Vector2(900, 70), 44, TitleColor, TextAlignmentOptions.Center, true);
 
-        Button closeButton = CreateButton(header, "CloseProfileButton", "X", new Vector2(520, 0), new Vector2(60, 60), new Color32(170, 0, 0, 255), closeButtonBgSprite);
+        Button closeButton = CreateButton(header, "CloseProfileButton", "", new Vector2(520, 0), new Vector2(60, 60), new Color32(170, 0, 0, 255), closeButtonBgSprite);
         closeButton.onClick.AddListener(CloseProfile);
 
         // Left panel
@@ -397,7 +468,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         Image avatar = CreateImage(left, "AvatarImage", avatarSprite, new Vector2(0, 150), new Vector2(150, 150), Color.white);
         avatar.preserveAspect = true;
 
-        CreateText(left, "LevelBadgeText", governorLevel.ToString(), new Vector2(0, 45), new Vector2(80, 45), 28, titleColor, TextAlignmentOptions.Center, true);
+        CreateText(left, "LevelBadgeText", governorLevel.ToString(), new Vector2(0, 45), new Vector2(80, 45), 28, TitleColor, TextAlignmentOptions.Center, true);
 
         allianceText = CreateInfoBlock(left, "Liên minh", allianceName, new Vector2(27, -82));
         civilizationText = CreateInfoBlock(left, "Văn minh", civilizationName, new Vector2(27, -151));
@@ -424,11 +495,11 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         CreateTopStat(stats, "Tháp canh", out watchTowerText, new Vector2(140, 55), watchTowerCount.ToString());
         CreateTopStat(stats, "Pháo thủ", out cannonText, new Vector2(280, 55), cannonCount.ToString());
 
-        CreateText(stats, "ResourceCollectedLabel", "Tài nguyên thu thập", new Vector2(-180, -28), new Vector2(280, 30), 21, bodyColor, TextAlignmentOptions.Center, false);
-        resourceCollectedText = CreateText(stats, "ResourceCollectedText", FormatNumber(resourceCollected), new Vector2(-180, -58), new Vector2(280, 45), 34, valueColor, TextAlignmentOptions.Center, true);
+        CreateText(stats, "ResourceCollectedLabel", "Tài nguyên thu thập", new Vector2(-180, -28), new Vector2(280, 30), 21, BodyColor, TextAlignmentOptions.Center, false);
+        resourceCollectedText = CreateText(stats, "ResourceCollectedText", FormatNumber(resourceCollected), new Vector2(-180, -58), new Vector2(280, 45), 34, ValueColor, TextAlignmentOptions.Center, true);
 
-        CreateText(stats, "EnemyDefeatedLabel", "Kẻ địch đánh bại", new Vector2(180, -28), new Vector2(280, 30), 21, bodyColor, TextAlignmentOptions.Center, false);
-        enemyDefeatedText = CreateText(stats, "EnemyDefeatedText", enemyDefeated.ToString(), new Vector2(180, -58), new Vector2(280, 45), 34, valueColor, TextAlignmentOptions.Center, true);
+        CreateText(stats, "EnemyDefeatedLabel", "Kẻ địch đánh bại", new Vector2(180, -28), new Vector2(280, 30), 21, BodyColor, TextAlignmentOptions.Center, false);
+        enemyDefeatedText = CreateText(stats, "EnemyDefeatedText", enemyDefeated.ToString(), new Vector2(180, -58), new Vector2(280, 45), 34, ValueColor, TextAlignmentOptions.Center, true);
 
         // Bottom buttons: dùng trực tiếp ảnh đã vẽ, không tạo text và không có hiệu ứng hover/press
         Button renameButton = CreateStaticImageButton(
@@ -466,16 +537,16 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         RectTransform renameWindow = CreatePanel(renameRoot.transform, "RenameWindow", new Vector2(500, 300), Vector2.zero, headerColor, true, renameWindowBgSprite);
 
-        CreateText(renameWindow, "RenameTitleText", "Đổi tên", new Vector2(0, 105), new Vector2(450, 45), 34, titleColor, TextAlignmentOptions.Center, true);
+        CreateText(renameWindow, "RenameTitleText", "", new Vector2(0, 105), new Vector2(450, 45), 34, TitleColor, TextAlignmentOptions.Center, true);
 
         nameInput = CreateInputField(renameWindow, "NameInputField", new Vector2(0, 45), new Vector2(360, 55));
 
-        warningText = CreateText(renameWindow, "WarningText", "", new Vector2(0, -15), new Vector2(400, 30), 20, valueColor, TextAlignmentOptions.Center, false);
+        warningText = CreateText(renameWindow, "WarningText", "", new Vector2(0, -15), new Vector2(400, 30), 20, ValueColor, TextAlignmentOptions.Center, false);
 
-        Button confirm = CreateButton(renameWindow, "ConfirmRenameButton", "Xác nhận", new Vector2(-90, -95), new Vector2(150, 50), buttonColor, confirmButtonBgSprite);
+        Button confirm = CreateButton(renameWindow, "ConfirmRenameButton", "", new Vector2(-90, -95), new Vector2(150, 50), buttonColor, confirmButtonBgSprite);
         confirm.onClick.AddListener(ConfirmRename);
 
-        Button cancel = CreateButton(renameWindow, "CancelRenameButton", "Hủy", new Vector2(90, -95), new Vector2(150, 50), new Color32(122, 74, 36, 255), cancelButtonBgSprite);
+        Button cancel = CreateButton(renameWindow, "CancelRenameButton", "", new Vector2(90, -95), new Vector2(150, 50), new Color32(122, 74, 36, 255), cancelButtonBgSprite);
         cancel.onClick.AddListener(CloseRenamePanel);
 
         renameRoot.SetActive(false);
@@ -494,19 +565,21 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         achievementRoot.GetComponent<Image>().color = new Color32(0, 0, 0, 150);
 
-        RectTransform window = CreatePanel(achievementRoot.transform, "AchievementWindow", new Vector2(780, 540), Vector2.zero, headerColor, true, achievementWindowBgSprite);
+        // Tăng chiều cao cửa sổ (540 -> 620) để chứa các hàng đã giãn cách rộng hơn, tránh tràn/chồng chữ.
+        RectTransform window = CreatePanel(achievementRoot.transform, "AchievementWindow", new Vector2(780, 620), Vector2.zero, headerColor, true, achievementWindowBgSprite);
 
-        CreateText(window, "AchievementTitleText", "Thành tích", new Vector2(0, 230), new Vector2(650, 50), 36, titleColor, TextAlignmentOptions.Center, true);
+        CreateText(window, "AchievementTitleText", "", new Vector2(0, 260), new Vector2(650, 50), 36, TitleColor, TextAlignmentOptions.Center, true);
 
-        Button close = CreateButton(window, "CloseAchievementButton", "X", new Vector2(340, 230), new Vector2(52, 52), new Color32(170, 0, 0, 255), closeButtonBgSprite);
+        Button close = CreateButton(window, "CloseAchievementButton", "", new Vector2(340, 260), new Vector2(52, 52), new Color32(170, 0, 0, 255), closeButtonBgSprite);
         close.onClick.AddListener(CloseAchievementPanel);
 
-        CreateAchievementRow(window, "Bài học đầu", "Xây công trình đầu tiên.", "Hoàn thành", new Vector2(0, 155));
-        CreateAchievementRow(window, "Người chỉ huy", "Huấn luyện đội quân đầu tiên.", armyCount > 0 ? "Hoàn thành" : "Chưa xong", new Vector2(0, 90));
-        CreateAchievementRow(window, "Lá chắn làng", "Xây Tháp Canh để bảo vệ dân làng.", watchTowerCount > 0 ? "Hoàn thành" : "Chưa xong", new Vector2(0, 25));
-        CreateAchievementRow(window, "Hỏa lực phòng thủ", "Mở khóa Pháo Thủ.", cannonCount > 0 ? "Hoàn thành" : "Chưa xong", new Vector2(0, -40));
-        CreateAchievementRow(window, "Nhà khai thác", "Thu thập 5.000 tài nguyên.", resourceCollected >= 5000 ? "Hoàn thành" : FormatNumber(resourceCollected) + "/5.000", new Vector2(0, -105));
-        CreateAchievementRow(window, "Dẹp loạn", "Đánh bại 10 kẻ địch.", enemyDefeated >= 10 ? "Hoàn thành" : enemyDefeated + "/10", new Vector2(0, -170));
+        // Giãn khoảng cách các hàng (65 -> 76) cho khớp với chiều cao hàng mới (70), tránh hàng nọ đè hàng kia.
+        CreateAchievementRow(window, "Bài học đầu", "Xây công trình đầu tiên.", "Hoàn thành", new Vector2(0, 175));
+        CreateAchievementRow(window, "Người chỉ huy", "Huấn luyện đội quân đầu tiên.", armyCount > 0 ? "Hoàn thành" : "Chưa xong", new Vector2(0, 99));
+        CreateAchievementRow(window, "Lá chắn làng", "Xây Tháp Canh để bảo vệ dân làng.", watchTowerCount > 0 ? "Hoàn thành" : "Chưa xong", new Vector2(0, 23));
+        CreateAchievementRow(window, "Hỏa lực phòng thủ", "Mở khóa Pháo Thủ.", cannonCount > 0 ? "Hoàn thành" : "Chưa xong", new Vector2(0, -53));
+        CreateAchievementRow(window, "Nhà khai thác", "Thu thập 5.000 tài nguyên.", resourceCollected >= 5000 ? "Hoàn thành" : FormatNumber(resourceCollected) + "/5.000", new Vector2(0, -129));
+        CreateAchievementRow(window, "Dẹp loạn", "Đánh bại 10 kẻ địch.", enemyDefeated >= 10 ? "Hoàn thành" : enemyDefeated + "/10", new Vector2(0, -205));
 
         achievementRoot.SetActive(false);
     }
@@ -526,17 +599,17 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
         RectTransform window = CreatePanel(detailRoot.transform, "DetailWindow", new Vector2(820, 560), Vector2.zero, headerColor, true, detailWindowBgSprite);
 
-        CreateText(window, "DetailTitleText", "Hồ sơ chi tiết", new Vector2(0, 240), new Vector2(680, 50), 36, titleColor, TextAlignmentOptions.Center, true);
+        CreateText(window, "DetailTitleText", "", new Vector2(0, 240), new Vector2(680, 50), 36, TitleColor, TextAlignmentOptions.Center, true);
 
-        Button close = CreateButton(window, "CloseDetailButton", "X", new Vector2(360, 240), new Vector2(52, 52), new Color32(170, 0, 0, 255), closeButtonBgSprite);
+        Button close = CreateButton(window, "CloseDetailButton", "", new Vector2(360, 240), new Vector2(52, 52), new Color32(170, 0, 0, 255), closeButtonBgSprite);
         close.onClick.AddListener(CloseDetailPanel);
 
-        CreateDetailRow(window, "Tên thống đốc", out detailNameText, currentName, new Vector2(-207, 165));
+        CreateDetailRow(window, "Tên", out detailNameText, currentName, new Vector2(-207, 165));
         CreateDetailRow(window, "ID", out detailIdText, governorId.ToString(), new Vector2(-207, 110));
-        CreateDetailRow(window, "Cấp thống đốc", out detailLevelText, governorLevel.ToString(), new Vector2(-207, 55));
+        CreateDetailRow(window, "Cấp", out detailLevelText, governorLevel.ToString(), new Vector2(-207, 55));
         CreateDetailRow(window, "Sức mạnh", out detailPowerText, FormatNumber(power), new Vector2(-207, 0));
         CreateDetailRow(window, "Danh hiệu", out detailTitleText, governorTitle, new Vector2(-207, -55));
-        CreateDetailRow(window, "Ngày đăng nhập", out detailLoginDayText, loginDays.ToString(), new Vector2(-207, -110));
+        CreateDetailRow(window, "Ngày ĐN", out detailLoginDayText, loginDays.ToString(), new Vector2(-207, -110));
 
         CreateDetailRow(window, "Liên minh", out detailAllianceText, allianceName, new Vector2(213, 165));
         CreateDetailRow(window, "Văn minh", out detailCivilizationText, civilizationName, new Vector2(213, 110));
@@ -546,8 +619,8 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         CreateDetailRow(window, "Tháp canh", out detailWatchTowerText, watchTowerCount.ToString(), new Vector2(213, -110));
         CreateDetailRow(window, "Pháo thủ", out detailCannonText, cannonCount.ToString(), new Vector2(213, -165));
 
-        CreateDetailRow(window, "Tài nguyên thu thập", out detailResourceText, FormatNumber(resourceCollected), new Vector2(-207, -165));
-        CreateDetailRow(window, "Kẻ địch đánh bại", out detailEnemyText, enemyDefeated.ToString(), new Vector2(-207, -220));
+        CreateDetailRow(window, "Tài nguyên", out detailResourceText, FormatNumber(resourceCollected), new Vector2(-207, -165));
+        CreateDetailRow(window, "Địch bại", out detailEnemyText, enemyDefeated.ToString(), new Vector2(-207, -220));
 
         detailRoot.SetActive(false);
     }
@@ -879,6 +952,14 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         text.text = value;
         text.fontSize = fontSize;
         text.color = color;
+
+        if (theme != null)
+        {
+            theme.Apply(
+                text,
+                DetectTextType(name)
+            );
+        }
         text.alignment = align;
         text.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
         text.raycastTarget = false;
@@ -892,6 +973,28 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         text.outlineWidth = 0.15f;
 
         return text;
+    }
+    UI_TEXT_TYPE DetectTextType(string name)
+    {
+
+        if (name.Contains("Title"))
+            return UI_TEXT_TYPE.Title;
+
+
+        if (name.Contains("Label"))
+            return UI_TEXT_TYPE.Label;
+
+
+        if (name.Contains("Value"))
+            return UI_TEXT_TYPE.Value;
+
+
+        if (name.Contains("Reward"))
+            return UI_TEXT_TYPE.Reward;
+
+
+        return UI_TEXT_TYPE.Description;
+
     }
 
     // Đã thêm tham số "bgSprite" (mặc định null) để hỗ trợ nền dạng ảnh cho nút bấm.
@@ -938,7 +1041,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         cb.colorMultiplier = 1f;
         btn.colors = cb;
 
-        CreateText(go.transform, "Text", label, Vector2.zero, size, 28, titleColor, TextAlignmentOptions.Center, true);
+        CreateText(go.transform, "Text", label, Vector2.zero, size, 28, TitleColor, TextAlignmentOptions.Center, true);
 
         return btn;
     }
@@ -1018,8 +1121,8 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
         viewport.offsetMin = new Vector2(12, 5);
         viewport.offsetMax = new Vector2(-12, -5);
 
-        TMP_Text inputText = CreateText(viewportGO.transform, "Text", "", Vector2.zero, size, 24, titleColor, TextAlignmentOptions.MidlineLeft, false);
-        TMP_Text placeholder = CreateText(viewportGO.transform, "Placeholder", "Nhập tên mới...", Vector2.zero, size, 22, bodyColor, TextAlignmentOptions.MidlineLeft, false);
+        TMP_Text inputText = CreateText(viewportGO.transform, "Text", "", Vector2.zero, size, 24, TitleColor, TextAlignmentOptions.MidlineLeft, false);
+        TMP_Text placeholder = CreateText(viewportGO.transform, "Placeholder", "Nhập tên mới...", Vector2.zero, size, 22, BodyColor, TextAlignmentOptions.MidlineLeft, false);
 
         input.textViewport = viewport;
         input.textComponent = inputText;
@@ -1030,19 +1133,42 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     void CreateAchievementRow(Transform parent, string title, string description, string status, Vector2 pos)
     {
-        RectTransform row = CreatePanel(parent, "Achievement_" + title, new Vector2(670, 54), pos, darkCardColor, true, achievementRowBgSprite);
+        // Tăng chiều cao hàng (54 -> 70) và tách "Tiêu đề + Trạng thái" (dòng trên)
+        // ra khỏi "Mô tả" (dòng dưới) thay vì để chung 1 hàng ngang như trước.
+        // Đây là nguyên nhân khiến tiêu đề dài (VD "Hòa lực phòng thủ") tràn đè lên mô tả.
+        RectTransform row = CreatePanel(parent, "Achievement_" + title, new Vector2(670, 70), pos, darkCardColor, true, achievementRowBgSprite);
 
-        CreateText(row, title + "Title", title, new Vector2(-230, 10), new Vector2(210, 28), 22, titleColor, TextAlignmentOptions.Left, true);
-        CreateText(row, title + "Desc", description, new Vector2(20, 10), new Vector2(330, 28), 18, bodyColor, TextAlignmentOptions.Left, false);
-        CreateText(row, title + "Status", status, new Vector2(275, -8), new Vector2(140, 24), 18, valueColor, TextAlignmentOptions.Center, true);
+        // Dòng trên - trái: Tiêu đề. Dùng chung màu detailLabelColor với bảng Hồ sơ chi tiết để đồng bộ tông màu.
+        TMP_Text titleText = CreateText(row, title + "Title", title, new Vector2(-125, 15), new Vector2(380, 26), 22, detailLabelColor, TextAlignmentOptions.Left, true);
+        titleText.color = detailLabelColor;
+        titleText.overflowMode = TextOverflowModes.Ellipsis;
+
+        // Dòng trên - phải: Trạng thái. Dùng chung màu detailValueColor (vàng sáng) với giá trị bên bảng chi tiết.
+        TMP_Text statusText = CreateText(row, title + "Status", status, new Vector2(235, 15), new Vector2(160, 26), 19, detailValueColor, TextAlignmentOptions.Right, true);
+        statusText.color = detailValueColor;
+        statusText.overflowMode = TextOverflowModes.Ellipsis;
+
+        // Dòng dưới: Mô tả cũng dùng detailLabelColor cho đồng bộ với phần nhãn/mô tả của bảng chi tiết.
+        TMP_Text descText = CreateText(row, title + "Desc", description, new Vector2(0, -16), new Vector2(630, 26), 18, detailLabelColor, TextAlignmentOptions.Left, false);
+        descText.color = detailLabelColor;
+        descText.overflowMode = TextOverflowModes.Ellipsis;
     }
 
     void CreateDetailRow(Transform parent, string label, out TMP_Text valueText, string value, Vector2 pos)
     {
         RectTransform row = CreatePanel(parent, "Detail_" + label, new Vector2(360, 42), pos, darkCardColor, true, detailRowBgSprite);
 
-        CreateText(row, label + "Label", label, new Vector2(-95, 0), new Vector2(150, 30), 20, bodyColor, TextAlignmentOptions.Left, false);
-        valueText = CreateText(row, label + "Value", value, new Vector2(105, 0), new Vector2(175, 30), 22, valueColor, TextAlignmentOptions.Left, true);
+        // Thu hẹp box nhãn + lùi vào 15px so với viền trái, giảm cỡ chữ (20 -> 18)
+        // và bật Ellipsis để nhãn dài (VD "Tài nguyên", "Ngày ĐN") không còn tràn đè vào giá trị.
+        TMP_Text labelText = CreateText(row, label + "Label", label, new Vector2(-100, 0), new Vector2(130, 30), 18, detailLabelColor, TextAlignmentOptions.Left, false);
+        labelText.color = detailLabelColor;
+        labelText.overflowMode = TextOverflowModes.Ellipsis;
+
+        // Giá trị lùi vào trong viền phải (thay vì tràn ra ngoài như trước), màu vàng sáng để nổi
+        // rõ trên nền hàng gỗ tối, không còn phụ thuộc theme (tránh bị ghi đè về màu nhạt).
+        valueText = CreateText(row, label + "Value", value, new Vector2(92, 0), new Vector2(150, 30), 20, detailValueColor, TextAlignmentOptions.Left, true);
+        valueText.color = detailValueColor;
+        valueText.overflowMode = TextOverflowModes.Ellipsis;
     }
 
     void RefreshAchievementPanel()
@@ -1062,8 +1188,8 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     TMP_Text CreateInfoBlock(Transform parent, string label, string value, Vector2 pos)
     {
-        CreateText(parent, label + "Title", label, pos, new Vector2(250, 30), 22, bodyColor, TextAlignmentOptions.Left, false);
-        return CreateText(parent, label + "Text", value, pos + new Vector2(0, -35), new Vector2(250, 40), 26, valueColor, TextAlignmentOptions.Left, true);
+        CreateText(parent, label + "Title", label, pos, new Vector2(250, 30), 22, BodyColor, TextAlignmentOptions.Left, false);
+        return CreateText(parent, label + "Text", value, pos + new Vector2(0, -35), new Vector2(250, 40), 26, ValueColor, TextAlignmentOptions.Left, true);
     }
 
     void CreateLabelValue(Transform parent, string label, out TMP_Text valueText, Vector2 pos, string value)
@@ -1075,7 +1201,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
             pos,
             new Vector2(180, 30),
             22,
-            bodyColor,
+            BodyColor,
             TextAlignmentOptions.Left,
             false
         );
@@ -1087,7 +1213,7 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
             pos + new Vector2(220, 0),
             new Vector2(250, 35),
             26,
-            valueColor,
+            ValueColor,
             TextAlignmentOptions.Left,
             true
         );
@@ -1095,8 +1221,8 @@ public class RoKProfileQuestAutoUI : MonoBehaviour
 
     void CreateTopStat(Transform parent, string label, out TMP_Text valueText, Vector2 pos, string value)
     {
-        CreateText(parent, label + "Label", label, pos, new Vector2(120, 25), 19, bodyColor, TextAlignmentOptions.Center, false);
-        valueText = CreateText(parent, label + "Value", value, pos + new Vector2(0, -35), new Vector2(120, 40), 28, valueColor, TextAlignmentOptions.Center, true);
+        CreateText(parent, label + "Label", label, pos, new Vector2(120, 25), 19, BodyColor, TextAlignmentOptions.Center, false);
+        valueText = CreateText(parent, label + "Value", value, pos + new Vector2(0, -35), new Vector2(120, 40), 28, ValueColor, TextAlignmentOptions.Center, true);
     }
 
     string FormatNumber(int value)

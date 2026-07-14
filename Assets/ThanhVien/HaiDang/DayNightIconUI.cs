@@ -6,32 +6,113 @@ public class DayNightIconUI : MonoBehaviour
     public GameObject dayIcon;
     public GameObject nightIcon;
 
+
     [Header("REFERENCE")]
     public DayNightManager dayNight;
 
+
+    private bool lastDayState;
+
+
+    void Awake()
+    {
+        FindDayNightManager();
+    }
+
+
     void Start()
     {
-        UpdateIcon();
+        UpdateIcon(true);
     }
+
+
+    void OnEnable()
+    {
+        FindDayNightManager();
+    }
+
 
     void Update()
     {
-        if (dayNight == null) return;
+        // fallback nếu DayNightManager spawn sau
+        if (dayNight == null)
+        {
+            FindDayNightManager();
+            return;
+        }
 
-        UpdateIcon();
+
+        bool currentDay = dayNight.IsDay();
+
+
+        // chỉ update khi trạng thái đổi
+        if (currentDay != lastDayState)
+        {
+            UpdateIcon(false);
+        }
     }
 
-    void UpdateIcon()
+
+
+    void FindDayNightManager()
     {
-        if (dayNight.IsDay())
+        if (dayNight != null)
+            return;
+
+
+        dayNight = FindObjectOfType<DayNightManager>();
+
+
+        if (dayNight == null)
         {
-            if (dayIcon != null) dayIcon.SetActive(true);
-            if (nightIcon != null) nightIcon.SetActive(false);
+            Debug.LogWarning(
+                "[DayNightIconUI] Không tìm thấy DayNightManager"
+            );
+        }
+    }
+
+
+
+    void UpdateIcon(bool force)
+    {
+        if (dayNight == null)
+            return;
+
+
+        bool isDay = dayNight.IsDay();
+
+
+        if (!force && isDay == lastDayState)
+            return;
+
+
+        lastDayState = isDay;
+
+
+
+        if (isDay)
+        {
+            if (dayIcon != null)
+                dayIcon.SetActive(true);
+
+
+            if (nightIcon != null)
+                nightIcon.SetActive(false);
         }
         else
         {
-            if (dayIcon != null) dayIcon.SetActive(false);
-            if (nightIcon != null) nightIcon.SetActive(true);
+            if (dayIcon != null)
+                dayIcon.SetActive(false);
+
+
+            if (nightIcon != null)
+                nightIcon.SetActive(true);
         }
+
+
+        Debug.Log(
+            "[DayNightIconUI] Current: " +
+            (isDay ? "DAY" : "NIGHT")
+        );
     }
 }
