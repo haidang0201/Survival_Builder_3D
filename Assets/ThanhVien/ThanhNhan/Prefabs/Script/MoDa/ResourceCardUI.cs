@@ -60,9 +60,17 @@ public class ResourceCardUI : MonoBehaviour
                 : new Color(1f, 0.35f, 0.35f);
         }
 
-        // Dòng 2: sản lượng
+        // Dòng 2: sản lượng — ẩn nếu productionRate = -1 (ví dụ: LandUnlockManager)
         if (productionText != null)
-            productionText.text = $"<b>+{productionRate} đá/phút</b>";
+        {
+            if (productionRate < 0)
+                productionText.transform.parent.gameObject.SetActive(false);
+            else
+            {
+                productionText.transform.parent.gameObject.SetActive(true);
+                productionText.text = $"<b>+{productionRate} đá/phút</b>";
+            }
+        }
 
         // Dòng 3: worker hiện tại / tối đa (đỏ nếu chưa đủ worker)
         if (workerCountText != null)
