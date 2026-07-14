@@ -8,9 +8,9 @@ using TMPro;
  * EndGameUI.cs
  * Folder: Scripts/UI/
  * Dự án: KHẨN HOANG (PENTA DEV)
- * Tính năng mới: 
- * 1. Hiệu ứng chữ số chạy tăng dần (Count-up) sinh động.
- * 2. Hệ thống Text đánh giá ngắn gọn theo mốc ngày sinh tồn thực tế.
+ * Tính năng: 
+ * 1. Đọc chỉ số End Game trực tiếp từ JsonDataManager (JSON).
+ * 2. Hiệu ứng chữ số chạy tăng dần (Count-up) sinh động.
  */
 
 public class EndGameUI : MonoBehaviour
@@ -23,7 +23,7 @@ public class EndGameUI : MonoBehaviour
     [Header("Thống kê Thành tích")]
     [SerializeField] private TMP_Text survivalDaysText;
     [SerializeField] private TMP_Text totalBuildingsText;
-    [SerializeField] private TMP_Text rankEvaluationText; // <-- Text đánh giá danh hiệu ngắn gọn mới thêm
+    [SerializeField] private TMP_Text rankEvaluationText; 
 
     [Header("Chi tiết Tài nguyên đã khai thác")]
     [SerializeField] private TMP_Text totalWoodText;
@@ -65,11 +65,13 @@ public class EndGameUI : MonoBehaviour
 
     public void TriggerEndGame(int finalDaysSurvived)
     {
-        // Đồng bộ số ngày sống sót thực tế vào hệ thống lưu trữ
-        PlayerPrefs.SetInt("Stat_Survival_Days", finalDaysSurvived);
-        PlayerPrefs.Save();
-
         if (endGamePanelContainer == null) return;
+
+        // 1. Lưu số ngày sống sót vào file JSON
+        JsonDataManager.RegisterStat_DaysSurvived(finalDaysSurvived);
+
+        // 2. ĐỒNG BỘ NGAY LẬP TỨC tài nguyên từ HUD vào file JSON Endgame
+        JsonDataManager.SaveFinalSessionStats();
 
         // Dừng thời gian thế giới 3D phía sau để tập trung xem UI
         Time.timeScale = 0f; 
@@ -80,16 +82,18 @@ public class EndGameUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Coroutine xử lý chạy số tăng dần từ 0 và đổ text đánh giá
+    /// Coroutine xử lý chạy số tăng dần từ file JSON của JsonDataManager
     /// </summary>
     private IEnumerator AnimateEndGameUI(int targetDays)
     {
-        // 1. Lấy dữ liệu thật từ hệ thống ra trước
-        int targetBuildings = PlayerPrefs.GetInt("Stat_Total_Buildings", 0);
-        int targetWood = PlayerPrefs.GetInt("Stat_Total_Wood", 0);
-        int targetStone = PlayerPrefs.GetInt("Stat_Total_Stone", 0);
-        int targetFood = PlayerPrefs.GetInt("Stat_Total_Food", 0);
-        int targetGold = PlayerPrefs.GetInt("Stat_Total_Gold", 0);
+        // 1. Đọc dữ liệu từ file JSON Endgame thông qua JsonDataManager
+        JsonDataManager.EndGameStats stats = JsonDataManager.LoadEndGameStats();
+
+        int targetBuildings = stats.totalBuildings;
+        int targetWood = stats.totalWood;
+        int targetStone = stats.totalStone;
+        int targetFood = stats.totalFood;
+        int targetGold = stats.totalGold;
 
         // Đặt toàn bộ văn bản về 0 trước khi chạy hiệu ứng
         SetTextValue(survivalDaysText, 0, " Ngày");
@@ -104,10 +108,10 @@ public class EndGameUI : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < countDuration)
         {
-            elapsed += Time.unscaledDeltaTime; // Dùng unscaledDeltaTime vì Time.timeScale đang bằng 0
+            elapsed += Time.unscaledDeltaTime; 
             float progress = Mathf.Clamp01(elapsed / countDuration);
 
-            // Nội suy giá trị từ 0 đến đích dựa trên tiến độ ( progress )
+            // Nội suy giá trị từ 0 đến đích dựa trên tiến độ
             SetTextValue(survivalDaysText, Mathf.FloorToInt(targetDays * progress), " Ngày");
             SetTextValue(totalBuildingsText, Mathf.FloorToInt(targetBuildings * progress));
             SetTextValue(totalWoodText, Mathf.FloorToInt(targetWood * progress));
@@ -118,7 +122,7 @@ public class EndGameUI : MonoBehaviour
             yield return null; 
         }
 
-        // 3. Đảm bảo gán chính xác giá trị đích cuối cùng tránh sai sót làm tròn số
+        // 3. Đảm bảo gán chính xác giá trị đích cuối cùng
         SetTextValue(survivalDaysText, targetDays, " Ngày");
         SetTextValue(totalBuildingsText, targetBuildings);
         SetTextValue(totalWoodText, targetWood);
@@ -126,16 +130,13 @@ public class EndGameUI : MonoBehaviour
         SetTextValue(totalFoodText, targetFood);
         SetTextValue(totalGoldText, targetGold);
 
-        // 4. Cập nhật Text đánh giá dựa trên số ngày thực tế sau khi đếm số xong
+        // 4. Cập nhật Text đánh giá dựa trên số ngày thực tế
         if (rankEvaluationText != null)
         {
             rankEvaluationText.text = GetRankEvaluation(targetDays);
         }
     }
 
-    /// <summary>
-    /// Hàm xử lý logic phân bậc đánh giá theo ngày sinh tồn
-    /// </summary>
     private string GetRankEvaluation(int days)
     {
         if (days >= 0 && days < 5)
@@ -150,13 +151,12 @@ public class EndGameUI : MonoBehaviour
         {
             return "<color=#55FF55>NHÀ KIẾN THIẾT</color>\n(Khai phá xuất sắc! Bản làng của bạn đã vững mạnh.)";
         }
-        else // Từ 20 ngày trở lên
+        else 
         {
-            return "<color=#FFFF55> huyền thoại khẩn hoang </color>\n(Kẻ chinh phục tối cao! Không gì có thể khuất phục bạn.)";
+            return "<color=#FFFF55> HUYỀN THOẠI KHẨN HOANG </color>\n(Kẻ chinh phục tối cao! Không gì có thể khuất phục bạn.)";
         }
     }
 
-    // Hàm tiện ích bổ trợ thiết lập Text nhanh
     private void SetTextValue(TMP_Text textComponent, int value, string suffix = "")
     {
         if (textComponent != null)
@@ -179,14 +179,20 @@ public class EndGameUI : MonoBehaviour
     private void OnClickRestart()
     {
         Time.timeScale = 1f;
-        JsonDataManager.ResetEndGameStats();
+        
+        // Dọn dẹp file JSON lưu trữ thành tích cũ để chuẩn bị màn chơi mới
+        JsonDataManager.ResetEndGameStats(); 
+
         SceneManager.LoadScene(gameplaySceneName);
     }
 
     private void OnClickMainMenu()
     {
         Time.timeScale = 1f;
-        JsonDataManager.ResetEndGameStats();
+        
+        // Dọn dẹp file JSON lưu trữ thành tích cũ
+        JsonDataManager.ResetEndGameStats(); 
+
         SceneManager.LoadScene(mainMenuSceneName);
     }
 }

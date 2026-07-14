@@ -38,6 +38,7 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private Button upgradeButton;
     [SerializeField] private TMP_Text upgradeButtonText;
     [SerializeField] private Button moveButton;
+    [SerializeField] private Button repairButton; // PENTA DEV - THÊM BIẾN NÀY ĐỂ KÉO THẢ NÚT SỬA CHỮA TRONG INSPECTOR
 
     [Header("New Features – Preview UI Elements")]
     [SerializeField] private Image currentBuildingPreviewImage;
@@ -174,7 +175,7 @@ public class UIManager : Singleton<UIManager>
         RefreshUpgradePanel(building);
     }
 
-    public void RefreshUpgradePanel(UpgradeableBuilding building)
+   public void RefreshUpgradePanel(UpgradeableBuilding building)
     {
         if (building == null) return;
 
@@ -186,7 +187,36 @@ public class UIManager : Singleton<UIManager>
         if (buildingNameText != null) buildingNameText.text = building.buildingName;
         if (levelText != null) levelText.text = $"Cấp {displayLevel} / {building.MaxLevel}";
 
-        if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel && !isCurrentlyUpgrading;
+        // ====================================================================
+        // PENTA DEV - LUỒNG XỬ LÝ CHUYỂN ĐỔI NÚT NÂNG CẤP / SỬA CHỮA TỰ ĐỘNG
+        // ====================================================================
+        if (building.IsRuined) // Nếu nhà đang bị sập thành tàn tích
+        {
+            // 1. Ẩn nút nâng cấp, hiện nút sửa chữa lên
+            if (upgradeButton != null) upgradeButton.gameObject.SetActive(false);
+            if (repairButton != null)
+            {
+                repairButton.gameObject.SetActive(true);
+                repairButton.interactable = !isCurrentlyUpgrading;
+
+                // 2. Làm sạch sự kiện cũ và gán lệnh bắt đầu sửa chữa khi nhấn nút
+                repairButton.onClick.RemoveAllListeners();
+                repairButton.onClick.AddListener(() => {
+                    building.StartRepair();
+                    HideUpgradePanel(); // Ẩn panel để người chơi thấy thanh đếm giây thi công trên đầu nhà
+                });
+            }
+        }
+        else // Nếu nhà bình thường, hoạt động ổn định
+        {
+            // Hiện lại nút nâng cấp, ẩn nút sửa chữa đi
+            if (upgradeButton != null) upgradeButton.gameObject.SetActive(true);
+            if (repairButton != null) repairButton.gameObject.SetActive(false);
+
+            if (upgradeButton != null) upgradeButton.interactable = !isMaxLevel && !isCurrentlyUpgrading;
+        }
+        // ====================================================================
+
         if (moveButton != null) moveButton.interactable = !isCurrentlyUpgrading;
 
         if (upgradeButtonText != null)
@@ -226,13 +256,13 @@ public class UIManager : Singleton<UIManager>
                               building.buildingType == BuildingType.Cannon;
 
         // Chỉ hiển thị thông số chi tiết khi đã đạt Max cấp HOẶC khi người chơi nhấn nút Nâng cấp lần 1
-        if (isMaxLevel || upgradeClickCount == 1)
+        // LƯU Ý: Nếu đang sập (IsRuined) thì ẩn panel chỉ số đi để tránh hiển thị nhầm thông số nâng cấp
+        if ((isMaxLevel || upgradeClickCount == 1) && !building.IsRuined)
         {
             if (chiso_panel != null) chiso_panel.SetActive(true);
 
             if (isDefenseTower)
             {
-                // Reset text nhãn về mặc định của Tháp phòng thủ
                 ResetStatLabels("Sát thương", "Tầm bắn", "Tốc độ");
                 if (txt_Label_ChiSo3 != null) txt_Label_ChiSo3.gameObject.SetActive(true);
                 if (txt_TocDo_HienTai != null) txt_TocDo_HienTai.gameObject.SetActive(true);
@@ -241,7 +271,6 @@ public class UIManager : Singleton<UIManager>
             }
             else
             {
-                // Xử lý đổ dữ liệu cho các công trình Dân sự
                 HandleCivilianBuildingUI(building, isMaxLevel);
             }
         }
@@ -250,15 +279,23 @@ public class UIManager : Singleton<UIManager>
             if (chiso_panel != null) chiso_panel.SetActive(false);
         }
 
-        // --- LUỒNG HIỂN THỊ CHI PHÍ ---
+        // --- LUỒNG HIỂN THỊ CHI PHÍ TÀI NGUYÊN ---
         if (isMaxLevel)
         {
             if (woodCostText != null) woodCostText.text = "-";
             if (stoneCostText != null) stoneCostText.text = "-";
             if (foodCostText != null) foodCostText.text = "-";
         }
+        else if (building.IsRuined)
+        {
+            // NẾU ĐANG SẬP: Hiển thị chi phí sửa chữa cố định (Ví dụ: 30 Gỗ, 30 Đá)
+            if (woodCostText != null) woodCostText.text = "30";
+            if (stoneCostText != null) stoneCostText.text = "30";
+            if (foodCostText != null) foodCostText.text = "0"; // Sửa nhà không tốn lương thực
+        }
         else
         {
+            // NẾU BÌNH THƯỜNG: Hiện chi phí nâng cấp lên cấp tiếp theo như cũ
             UpgradeableBuilding.UpgradeCost cost = building.GetNextUpgradeCost();
             if (woodCostText != null) woodCostText.text = MathUtility_FormatCost(cost.woodCost);
             if (stoneCostText != null) stoneCostText.text = MathUtility_FormatCost(cost.stoneCost);
