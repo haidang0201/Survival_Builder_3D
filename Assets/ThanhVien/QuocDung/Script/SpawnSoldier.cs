@@ -201,4 +201,27 @@ public class SpawnSoldier : MonoBehaviour
 
     // Property để đọc Level hiện tại từ các script khác
     public int CurrentLevel => currentLevel;
+
+    // Hàm lấy số lượng lính thực tế đang hoạt động (không bị null)
+    public int GetActiveSoldiersCount()
+    {
+        if (spawnedSoldiers == null) return 0;
+        int count = 0;
+        foreach (GameObject soldier in spawnedSoldiers)
+        {
+            if (soldier != null)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Hàm phục vụ việc load: xóa lính cũ, đồng bộ level và spawn lại đúng số lượng đã lưu
+    public void LoadAndSpawnSoldiers(int count, int buildingLevel)
+    {
+        ClearSpawnedSoldiers();
+        currentLevel = buildingLevel + 1; // Đồng bộ level spawner
+        SpawnSoldiers(count);
+    }
 }

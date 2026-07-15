@@ -34,6 +34,7 @@ public class EnemyAI : MonoBehaviour
     public Transform firePoint;
     public float projectileSpeed = 15f;
     public float rangedAttackRange = 8f;
+    public float projectileSpawnDelay = 0.35f;
 
     public float CurrentAttackRange => (attackType == EnemyAttackType.Ranged) ? rangedAttackRange : attackRange;
 
@@ -604,36 +605,50 @@ public class EnemyAI : MonoBehaviour
         }
         else if (attackType == EnemyAttackType.Ranged)
         {
-            if (projectilePrefab != null)
-            {
-                Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position + Vector3.up * 1.5f;
-                Collider targetCollider = target.GetComponentInChildren<Collider>();
-                Vector3 targetCenter = targetCollider != null ? targetCollider.bounds.center : target.position + Vector3.up * 1f;
-                Vector3 direction = (targetCenter - spawnPos).normalized;
-                Quaternion spawnRot = Quaternion.LookRotation(direction);
+            StartCoroutine(SpawnProjectileDelayed(target, projectileSpawnDelay));
+        }
+    }
 
-                GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
-                
-                Arrow arrowComp = proj.GetComponent<Arrow>();
-                if (arrowComp != null)
+    private System.Collections.IEnumerator SpawnProjectileDelayed(Transform target, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (target != null && target.gameObject.activeInHierarchy)
+        {
+            IDamageable damageable = target.GetComponentInParent<IDamageable>();
+            bool isAlive = damageable == null || damageable.CurrentHealth > 0f;
+            if (isAlive)
+            {
+                if (projectilePrefab != null)
                 {
-                    arrowComp.SetLauncher(gameObject);
-                    arrowComp.SetDamage(attackDamage);
-                    arrowComp.SetTarget(target, projectileSpeed);
+                    Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position + Vector3.up * 1.5f;
+                    Collider targetCollider = target.GetComponentInChildren<Collider>();
+                    Vector3 targetCenter = targetCollider != null ? targetCollider.bounds.center : target.position + Vector3.up * 1f;
+                    Vector3 direction = (targetCenter - spawnPos).normalized;
+                    Quaternion spawnRot = Quaternion.LookRotation(direction);
+
+                    GameObject proj = Instantiate(projectilePrefab, spawnPos, spawnRot);
+                    
+                    Arrow arrowComp = proj.GetComponent<Arrow>();
+                    if (arrowComp != null)
+                    {
+                        arrowComp.SetLauncher(gameObject);
+                        arrowComp.SetDamage(attackDamage);
+                        arrowComp.SetTarget(target, projectileSpeed);
+                    }
+                    else
+                    {
+                        Rigidbody rb = proj.GetComponent<Rigidbody>();
+                        if (rb == null) rb = proj.AddComponent<Rigidbody>();
+                        rb.linearVelocity = direction * projectileSpeed;
+                    }
                 }
                 else
                 {
-                    Rigidbody rb = proj.GetComponent<Rigidbody>();
-                    if (rb == null) rb = proj.AddComponent<Rigidbody>();
-                    rb.linearVelocity = direction * projectileSpeed;
-                }
-            }
-            else
-            {
-                IDamageable damageable = target.GetComponentInParent<IDamageable>();
-                if (damageable != null)
-                {
-                    damageable.TakeDamage(attackDamage, target.position);
+                    if (damageable != null)
+                    {
+                        damageable.TakeDamage(attackDamage, target.position);
+                    }
                 }
             }
         }
@@ -825,7 +840,14 @@ public class EnemyAI : MonoBehaviour
             }
             else
             {
-                StartCoroutine(TriggerBoolAnimation(paramToSet));
+                if (attackType == EnemyAttackType.Ranged)
+                {
+                    animator.SetBool(paramToSet, true);
+                }
+                else
+                {
+                    StartCoroutine(TriggerBoolAnimation(paramToSet));
+                }
             }
         }
     }
@@ -866,6 +888,55 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    private bool IsShooting()
+    {
+        if (attackType != EnemyAttackType.Ranged) return false;
+        if (chaseTarget == null || !chaseTarget.gameObject.activeInHierarchy) return false;
+
+        IDamageable damageable = chaseTarget.GetComponentInParent<IDamageable>();
+        bool isAlive = damageable == null || damageable.CurrentHealth > 0f;
+        if (!isAlive) return false;
+
+        float distToTarget = GetDistanceToCollider(chaseTarget.gameObject);
+        if (distToTarget > CurrentAttackRange) return false;
+
+        if (agent != null && !agent.isStopped) return false;
+
+        return true;
+    }
+
+    private bool IsInShootState()
+    {
+        if (animator == null) return false;
+
+        // Check if currently playing "Shoot" state
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Shoot"))
+        {
+            // If transitioning away from "Shoot" state, we are leaving it
+            if (animator.IsInTransition(0))
+            {
+                var nextState = animator.GetNextAnimatorStateInfo(0);
+                if (!nextState.IsName("Shoot"))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Check if transitioning into "Shoot" state
+        if (animator.IsInTransition(0))
+        {
+            var nextState = animator.GetNextAnimatorStateInfo(0);
+            if (nextState.IsName("Shoot"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void UpdateAnimationState()
     {
         if (animator == null) return;
@@ -887,6 +958,52 @@ public class EnemyAI : MonoBehaviour
         }
 
         animator.SetBool(moveBoolParam, isMoving);
+
+        if (!string.IsNullOrWhiteSpace(shootBoolParam))
+        {
+            bool isShooting = IsShooting();
+            if (isShooting)
+            {
+                // Force the animator to stay in the "Shoot" state by looping it manually
+                var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+                if (stateInfo.IsName("Shoot"))
+                {
+                    if (stateInfo.normalizedTime >= 0.9f && !animator.IsInTransition(0))
+                    {
+                        animator.Play("Shoot", 0, 0f);
+                    }
+                }
+                else
+                {
+                    if (!animator.IsInTransition(0) || !animator.GetNextAnimatorStateInfo(0).IsName("Shoot"))
+                    {
+                        animator.Play("Shoot", 0, 0f);
+                    }
+                }
+
+                // Set/Keep trigger or bool state active
+                if (HasAnimatorParameter(animator, shootBoolParam, AnimatorControllerParameterType.Trigger))
+                {
+                    animator.SetTrigger(shootBoolParam);
+                }
+                else if (HasAnimatorParameter(animator, shootBoolParam, AnimatorControllerParameterType.Bool))
+                {
+                    animator.SetBool(shootBoolParam, true);
+                }
+            }
+            else
+            {
+                // Reset trigger or bool state when not shooting
+                if (HasAnimatorParameter(animator, shootBoolParam, AnimatorControllerParameterType.Trigger))
+                {
+                    animator.ResetTrigger(shootBoolParam);
+                }
+                else if (HasAnimatorParameter(animator, shootBoolParam, AnimatorControllerParameterType.Bool))
+                {
+                    animator.SetBool(shootBoolParam, false);
+                }
+            }
+        }
 
         if (debugLogs && Time.time >= nextDebugLogTime)
         {

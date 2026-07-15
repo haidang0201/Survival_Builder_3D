@@ -38,6 +38,10 @@ public class EnemySpawn : MonoBehaviour
     [Tooltip("The minimum wave interval limit.")]
     [SerializeField] private float minWaveInterval = 2f;
 
+    [Header("Warning Icon Settings")]
+    [SerializeField] private GameObject warningIconPrefab;
+    [SerializeField] private float warningIconHeightOffset = 3f;
+
     private Coroutine waveSpawnCoroutine;
 
     private void Start()
@@ -187,6 +191,18 @@ public class EnemySpawn : MonoBehaviour
     private void SpawnAtSourceWithScaling(Transform source, int currentDay)
     {
         List<EnemyAI> squadList = new List<EnemyAI>();
+
+        if (warningIconPrefab != null && source != null)
+        {
+            Vector3 warningPos = source.position + Vector3.up * warningIconHeightOffset;
+            GameObject warningObj = Instantiate(warningIconPrefab, warningPos, Quaternion.identity);
+            UIWarning uiWarning = warningObj.GetComponent<UIWarning>();
+            if (uiWarning == null)
+            {
+                uiWarning = warningObj.AddComponent<UIWarning>();
+            }
+            uiWarning.Initialize(source.position);
+        }
 
         if (useGridSpawn)
         {

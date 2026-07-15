@@ -37,6 +37,7 @@ public class UnitController : MonoBehaviour
     [SerializeField] GameObject projectilePrefab;
     [SerializeField] Transform firePoint;
     [SerializeField] float projectileSpeed = 15f;
+    [SerializeField] float projectileSpawnDelay = 0.35f;
     private float nextAttackTime;
     public UnitState currentState = UnitState.Idle;
     public GameObject currentTarget;
@@ -63,6 +64,12 @@ public class UnitController : MonoBehaviour
     private Coroutine lowFreqCoroutine;
     private Vector3 lastDestinationPos = Vector3.positiveInfinity;
     private int currentTargetInstanceId = 0;
+
+    [Header("Warning Response State")]
+    [SerializeField] private bool isRespondingToWarning = false;
+    [SerializeField] private bool isReturning = false;
+    [SerializeField] private Vector3 returnPosition;
+    [SerializeField] private Vector3 warningPosition;
 
     float GetAttackStopDistance()
     {
@@ -264,6 +271,50 @@ public class UnitController : MonoBehaviour
             }
         }
 
+        // Cập nhật và xử lý logic Cảnh báo
+        if (isRespondingToWarning)
+        {
+            if (currentTarget == null)
+            {
+                if (!AnyEnemyAlive())
+                {
+                    isRespondingToWarning = false;
+                    isReturning = true;
+                    currentState = UnitState.Moving;
+                    SetDestination(returnPosition);
+                }
+                else
+                {
+                    // Nếu vẫn còn địch trên bản đồ nhưng đã mất dấu địch hiện tại,
+                    // và chúng ta chưa tới điểm cảnh báo, hãy tiếp tục di chuyển tới đó
+                    float distToWarning = Vector3.Distance(transform.position, warningPosition);
+                    if (distToWarning > GetAttackStopDistance() && agent != null && agent.isOnNavMesh && Vector3.Distance(agent.destination, warningPosition) > 0.5f)
+                    {
+                        SetDestination(warningPosition);
+                        currentState = UnitState.Moving;
+                    }
+                }
+            }
+        }
+        else if (isReturning)
+        {
+            if (currentTarget == null)
+            {
+                // Kiểm tra xem đã về tới vị trí cũ chưa
+                if (agent != null && agent.isOnNavMesh && !agent.pathPending && (agent.remainingDistance <= agent.stoppingDistance || !agent.hasPath))
+                {
+                    isReturning = false;
+                    currentState = UnitState.Idle;
+                }
+                else if (agent != null && agent.isOnNavMesh && Vector3.Distance(agent.destination, returnPosition) > 0.5f)
+                {
+                    // Đảm bảo vẫn đang di chuyển về vị trí cũ
+                    SetDestination(returnPosition);
+                    currentState = UnitState.Moving;
+                }
+            }
+        }
+
         switch (currentState)
         {
             case UnitState.Attacking:
@@ -291,6 +342,44 @@ public class UnitController : MonoBehaviour
 
         SetDestination(target.transform.position);
         lastDestinationPos = target.transform.position;
+    }
+
+    public void RespondToWarning(Vector3 targetPosition)
+    {
+        if (!isRespondingToWarning && !isReturning)
+        {
+            returnPosition = transform.position;
+        }
+        warningPosition = targetPosition;
+        isRespondingToWarning = true;
+        isReturning = false;
+        currentState = UnitState.Moving;
+        SetDestination(targetPosition);
+    }
+
+    private bool AnyEnemyAlive()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
+        foreach (var enemy in enemies)
+        {
+            if (enemy != null && enemy.activeInHierarchy)
+            {
+                var hp = enemy.GetComponentInParent<EnemyHealth>();
+                if (hp != null)
+                {
+                    if (hp.CurrentHealth > 0f) return true;
+                    continue;
+                }
+                var dam = enemy.GetComponentInParent<IDamageable>();
+                if (dam != null)
+                {
+                    if (dam.CurrentHealth > 0f) return true;
+                    continue;
+                }
+                return true; // assumed alive if no health component
+            }
+        }
+        return false;
     }
 
     void HandleAttacking()
@@ -502,6 +591,16 @@ public class UnitController : MonoBehaviour
         }
         else if (attackMode == AttackMode.Ranged)
         {
+            StartCoroutine(SpawnProjectileDelayed(target, projectileSpawnDelay));
+        }
+    }
+
+    private IEnumerator SpawnProjectileDelayed(Transform target, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (target != null && target.gameObject.activeInHierarchy && IsEnemyAlive(target.gameObject))
+        {
             if (projectilePrefab != null)
             {
                 Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position + Vector3.up * 1.5f;
@@ -542,7 +641,14 @@ public class UnitController : MonoBehaviour
             }
             else
             {
-                StartCoroutine(TriggerBoolAnimation(paramToSet));
+                if (attackMode == AttackMode.Ranged)
+                {
+                    animator.SetBool(paramToSet, true);
+                }
+                else
+                {
+                    StartCoroutine(TriggerBoolAnimation(paramToSet));
+                }
             }
         }
     }
@@ -562,6 +668,21 @@ public class UnitController : MonoBehaviour
         animator.SetBool(paramName, true);
         yield return new WaitForSeconds(0.1f);
         animator.SetBool(paramName, false);
+    }
+
+    private bool IsShooting()
+    {
+        if (attackMode != AttackMode.Ranged) return false;
+        if (currentTarget == null || !currentTarget.activeInHierarchy) return false;
+        if (!IsEnemyAlive(currentTarget)) return false;
+
+        float stopDistance = GetAttackStopDistance();
+        float sqrDistance = (transform.position - currentTarget.transform.position).sqrMagnitude;
+        if (sqrDistance > stopDistance * stopDistance) return false;
+
+        if (agent != null && !agent.isStopped) return false;
+
+        return true;
     }
 
     private void UpdateAnimationState()
@@ -585,6 +706,52 @@ public class UnitController : MonoBehaviour
         }
 
         animator.SetBool(moveBoolParam, isMoving);
+
+        if (!string.IsNullOrWhiteSpace(shootBoolParam))
+        {
+            bool isShooting = IsShooting();
+            if (isShooting)
+            {
+                // Force the animator to stay in the "Shoot" state by looping it manually
+                var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+                if (stateInfo.IsName("Shoot"))
+                {
+                    if (stateInfo.normalizedTime >= 0.9f && !animator.IsInTransition(0))
+                    {
+                        animator.Play("Shoot", 0, 0f);
+                    }
+                }
+                else
+                {
+                    if (!animator.IsInTransition(0) || !animator.GetNextAnimatorStateInfo(0).IsName("Shoot"))
+                    {
+                        animator.Play("Shoot", 0, 0f);
+                    }
+                }
+
+                // Set/Keep trigger or bool state active
+                if (HasAnimatorParameter(animator, shootBoolParam, AnimatorControllerParameterType.Trigger))
+                {
+                    animator.SetTrigger(shootBoolParam);
+                }
+                else if (HasAnimatorParameter(animator, shootBoolParam, AnimatorControllerParameterType.Bool))
+                {
+                    animator.SetBool(shootBoolParam, true);
+                }
+            }
+            else
+            {
+                // Reset trigger or bool state when not shooting
+                if (HasAnimatorParameter(animator, shootBoolParam, AnimatorControllerParameterType.Trigger))
+                {
+                    animator.ResetTrigger(shootBoolParam);
+                }
+                else if (HasAnimatorParameter(animator, shootBoolParam, AnimatorControllerParameterType.Bool))
+                {
+                    animator.SetBool(shootBoolParam, false);
+                }
+            }
+        }
     }
 
     public void SetAttackDamage(float damage)
