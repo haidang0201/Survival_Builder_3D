@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
+using System.Linq;
 
 public class WorkerCarryRice : MonoBehaviour
 {
@@ -13,8 +15,9 @@ public class WorkerCarryRice : MonoBehaviour
 
     void Start()
     {
-        riceStorage = FindRiceStorage();
         workerStamina = GetComponent<WorkerStamina>();
+        riceStorage = FindNearestRiceStorage(out Transform point);
+        if (riceStorage != null) riceStoragePoint = point;
     }
 
     void OnDisable()
@@ -36,34 +39,69 @@ public class WorkerCarryRice : MonoBehaviour
         }
     }
 
-    RiceStorage FindRiceStorage()
+    /// <summary>
+    /// Quét tất cả GameObject có Tag "RiceStorage", chọn kho GẦN NHẤT còn chỗ (chưa IsFull).
+    /// Nếu tất cả đều đầy, trả về kho gần nhất (dù đầy) để không bị null.
+    /// </summary>
+    RiceStorage FindNearestRiceStorage(out Transform chosenPoint)
     {
-        if (riceStoragePoint != null)
+        chosenPoint = null;
+
+        GameObject[] candidates = GameObject.FindGameObjectsWithTag("RiceStorage");
+        if (candidates == null || candidates.Length == 0)
         {
-            RiceStorage rs = riceStoragePoint.GetComponent<RiceStorage>() ?? riceStoragePoint.GetComponentInParent<RiceStorage>() ?? riceStoragePoint.GetComponentInChildren<RiceStorage>();
-            if (rs != null) return rs;
+            if (riceStoragePoint != null)
+            {
+                RiceStorage rs = riceStoragePoint.GetComponent<RiceStorage>() ?? riceStoragePoint.GetComponentInParent<RiceStorage>() ?? riceStoragePoint.GetComponentInChildren<RiceStorage>();
+                if (rs != null) { chosenPoint = riceStoragePoint; return rs; }
+            }
+            RiceStorage fallback = FindObjectOfType<RiceStorage>();
+            if (fallback != null) { chosenPoint = FindDeliveryPoint(fallback.transform); return fallback; }
+            return null;
         }
 
-        GameObject obj = GameObject.FindWithTag("RiceStorage");
-        if (obj != null)
+        List<(RiceStorage storage, Transform point, float dist)> found = new List<(RiceStorage, Transform, float)>();
+        foreach (GameObject obj in candidates)
         {
             RiceStorage rs = obj.GetComponent<RiceStorage>() ?? obj.GetComponentInChildren<RiceStorage>();
-            if (rs != null) 
-            {
-                riceStoragePoint = obj.transform;
-                return rs;
-            }
+            if (rs == null) continue;
+
+            // Dùng cửa kho (child "DeliveryPoint") làm điểm đến thay vì tâm kho
+            Transform deliveryPoint = FindDeliveryPoint(obj.transform);
+            float d = Vector3.Distance(transform.position, deliveryPoint.position);
+            found.Add((rs, deliveryPoint, d));
         }
 
-        RiceStorage fallback = FindObjectOfType<RiceStorage>();
-        if (fallback != null)
+        if (found.Count == 0) return null;
+
+        var ordered = found.OrderBy(f => f.dist).ToList();
+
+        var notFull = ordered.FirstOrDefault(f => !f.storage.IsFull);
+        if (notFull.storage != null)
         {
-            riceStoragePoint = fallback.transform;
-            return fallback;
+            chosenPoint = notFull.point;
+            return notFull.storage;
         }
 
-        riceStoragePoint = null;
-        return null;
+        chosenPoint = ordered[0].point;
+        return ordered[0].storage;
+    }
+
+    /// <summary>
+    /// Tìm child Transform tên "DeliveryPoint" bên trong kho (cửa kho, nơi worker thực sự đi tới).
+    /// Nếu không có, fallback về chính transform của kho để không bị null.
+    /// </summary>
+    Transform FindDeliveryPoint(Transform storageRoot)
+    {
+        Transform dp = storageRoot.Find("DeliveryPoint");
+        if (dp != null) return dp;
+
+        foreach (Transform child in storageRoot.GetComponentsInChildren<Transform>())
+        {
+            if (child.name == "DeliveryPoint") return child;
+        }
+
+        return storageRoot;
     }
 
     public bool IsCarrying() => currentRice != null;
@@ -75,6 +113,14 @@ public class WorkerCarryRice : MonoBehaviour
         currentRice = rice;
         currentRice.Pickup(handPoint);
         agent.ResetPath();
+
+        // Chọn kho gần nhất còn chỗ tại thời điểm nhặt xong (1 lần duy nhất cho chuyến này)
+        RiceStorage chosen = FindNearestRiceStorage(out Transform point);
+        if (chosen != null)
+        {
+            riceStorage = chosen;
+            riceStoragePoint = point;
+        }
 
         if (workerStamina != null) workerStamina.isCarryingResources = true;
     }

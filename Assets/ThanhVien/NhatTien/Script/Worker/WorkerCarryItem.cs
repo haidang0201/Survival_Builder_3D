@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
+using System.Linq;
 
 public class WorkerCarryItem : MonoBehaviour
 {
@@ -13,8 +15,10 @@ public class WorkerCarryItem : MonoBehaviour
 
     void Start()
     {
-        woodStorage = FindWoodStorage();
         workerStamina = GetComponent<WorkerStamina>(); // Lấy tham chiếu
+        // Chọn tạm 1 kho làm mặc định (sẽ được chọn lại chính xác khi PickupWood)
+        woodStorage = FindNearestWoodStorage(out Transform point);
+        if (woodStorage != null) woodStoragePoint = point;
     }
 
     void OnDisable()
@@ -36,34 +40,74 @@ public class WorkerCarryItem : MonoBehaviour
         }
     }
 
-    WoodStorage FindWoodStorage()
+    /// <summary>
+    /// Quét tất cả GameObject có Tag "Storage", sắp xếp theo khoảng cách gần -> xa
+    /// tính từ vị trí worker hiện tại, và chọn kho GẦN NHẤT còn chỗ (chưa IsFull).
+    /// Nếu tất cả đều đầy, trả về kho gần nhất (dù đầy) để không bị null.
+    /// </summary>
+    WoodStorage FindNearestWoodStorage(out Transform chosenPoint)
     {
-        if (woodStoragePoint != null)
+        chosenPoint = null;
+
+        GameObject[] candidates = GameObject.FindGameObjectsWithTag("Storage");
+        if (candidates == null || candidates.Length == 0)
         {
-            WoodStorage ws = woodStoragePoint.GetComponent<WoodStorage>() ?? woodStoragePoint.GetComponentInParent<WoodStorage>() ?? woodStoragePoint.GetComponentInChildren<WoodStorage>();
-            if (ws != null) return ws;
+            // Fallback: dùng field cũ nếu có gán tay, hoặc FindObjectOfType
+            if (woodStoragePoint != null)
+            {
+                WoodStorage ws = woodStoragePoint.GetComponent<WoodStorage>() ?? woodStoragePoint.GetComponentInParent<WoodStorage>() ?? woodStoragePoint.GetComponentInChildren<WoodStorage>();
+                if (ws != null) { chosenPoint = woodStoragePoint; return ws; }
+            }
+            WoodStorage fallback = FindObjectOfType<WoodStorage>();
+            if (fallback != null) { chosenPoint = FindDeliveryPoint(fallback.transform); return fallback; }
+            return null;
         }
 
-        GameObject obj = GameObject.FindWithTag("Storage");
-        if (obj != null)
+        List<(WoodStorage storage, Transform point, float dist)> found = new List<(WoodStorage, Transform, float)>();
+        foreach (GameObject obj in candidates)
         {
             WoodStorage ws = obj.GetComponent<WoodStorage>() ?? obj.GetComponentInChildren<WoodStorage>();
-            if (ws != null)
-            {
-                woodStoragePoint = obj.transform;
-                return ws;
-            }
+            if (ws == null) continue;
+
+            // Dùng cửa kho (child "DeliveryPoint") làm điểm đến thay vì tâm kho
+            Transform deliveryPoint = FindDeliveryPoint(obj.transform);
+            float d = Vector3.Distance(transform.position, deliveryPoint.position);
+            found.Add((ws, deliveryPoint, d));
         }
 
-        WoodStorage fallback = FindObjectOfType<WoodStorage>();
-        if (fallback != null)
+        if (found.Count == 0) return null;
+
+        var ordered = found.OrderBy(f => f.dist).ToList();
+
+        // Ưu tiên kho gần nhất còn chỗ
+        var notFull = ordered.FirstOrDefault(f => !f.storage.IsFull);
+        if (notFull.storage != null)
         {
-            woodStoragePoint = fallback.transform;
-            return fallback;
+            chosenPoint = notFull.point;
+            return notFull.storage;
         }
 
-        woodStoragePoint = null;
-        return null;
+        // Tất cả đều đầy -> chọn kho gần nhất
+        chosenPoint = ordered[0].point;
+        return ordered[0].storage;
+    }
+
+    /// <summary>
+    /// Tìm child Transform tên "DeliveryPoint" bên trong kho (cửa kho, nơi worker thực sự đi tới).
+    /// Nếu không có, fallback về chính transform của kho để không bị null.
+    /// </summary>
+    Transform FindDeliveryPoint(Transform storageRoot)
+    {
+        Transform dp = storageRoot.Find("DeliveryPoint");
+        if (dp != null) return dp;
+
+        // Tìm sâu hơn trong trường hợp DeliveryPoint không phải con trực tiếp
+        foreach (Transform child in storageRoot.GetComponentsInChildren<Transform>())
+        {
+            if (child.name == "DeliveryPoint") return child;
+        }
+
+        return storageRoot;
     }
 
     public bool IsCarrying() => currentWood != null;
@@ -75,6 +119,14 @@ public class WorkerCarryItem : MonoBehaviour
         currentWood = wood;
         currentWood.Pickup(handPoint);
         agent.ResetPath();
+
+        // Chọn kho gần nhất còn chỗ tại thời điểm nhặt xong (1 lần duy nhất cho chuyến này)
+        WoodStorage chosen = FindNearestWoodStorage(out Transform point);
+        if (chosen != null)
+        {
+            woodStorage = chosen;
+            woodStoragePoint = point;
+        }
 
         // Báo cho Stamina biết đã cầm đồ
         if (workerStamina != null) workerStamina.isCarryingResources = true;

@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
+using System.Linq;
 
 public class WorkerCarryStone : MonoBehaviour
 {
@@ -13,8 +15,9 @@ public class WorkerCarryStone : MonoBehaviour
 
     void Start()
     {
-        stoneStorage = FindStoneStorage();
         workerStamina = GetComponent<WorkerStamina>();
+        stoneStorage = FindNearestStoneStorage(out Transform point);
+        if (stoneStorage != null) stoneStoragePoint = point;
     }
 
     void OnDisable()
@@ -36,34 +39,69 @@ public class WorkerCarryStone : MonoBehaviour
         }
     }
 
-    StoneStorage FindStoneStorage()
+    /// <summary>
+    /// Quét tất cả GameObject có Tag "StoneStorage", chọn kho GẦN NHẤT còn chỗ (chưa IsFull).
+    /// Nếu tất cả đều đầy, trả về kho gần nhất (dù đầy) để không bị null.
+    /// </summary>
+    StoneStorage FindNearestStoneStorage(out Transform chosenPoint)
     {
-        if (stoneStoragePoint != null)
+        chosenPoint = null;
+
+        GameObject[] candidates = GameObject.FindGameObjectsWithTag("StoneStorage");
+        if (candidates == null || candidates.Length == 0)
         {
-            StoneStorage ss = stoneStoragePoint.GetComponent<StoneStorage>() ?? stoneStoragePoint.GetComponentInParent<StoneStorage>() ?? stoneStoragePoint.GetComponentInChildren<StoneStorage>();
-            if (ss != null) return ss;
+            if (stoneStoragePoint != null)
+            {
+                StoneStorage ss = stoneStoragePoint.GetComponent<StoneStorage>() ?? stoneStoragePoint.GetComponentInParent<StoneStorage>() ?? stoneStoragePoint.GetComponentInChildren<StoneStorage>();
+                if (ss != null) { chosenPoint = stoneStoragePoint; return ss; }
+            }
+            StoneStorage fallback = FindObjectOfType<StoneStorage>();
+            if (fallback != null) { chosenPoint = FindDeliveryPoint(fallback.transform); return fallback; }
+            return null;
         }
 
-        GameObject obj = GameObject.FindWithTag("StoneStorage");
-        if (obj != null)
+        List<(StoneStorage storage, Transform point, float dist)> found = new List<(StoneStorage, Transform, float)>();
+        foreach (GameObject obj in candidates)
         {
             StoneStorage ss = obj.GetComponent<StoneStorage>() ?? obj.GetComponentInChildren<StoneStorage>();
-            if (ss != null)
-            {
-                stoneStoragePoint = obj.transform;
-                return ss;
-            }
+            if (ss == null) continue;
+
+            // Dùng cửa kho (child "DeliveryPoint") làm điểm đến thay vì tâm kho
+            Transform deliveryPoint = FindDeliveryPoint(obj.transform);
+            float d = Vector3.Distance(transform.position, deliveryPoint.position);
+            found.Add((ss, deliveryPoint, d));
         }
 
-        StoneStorage fallback = FindObjectOfType<StoneStorage>();
-        if (fallback != null)
+        if (found.Count == 0) return null;
+
+        var ordered = found.OrderBy(f => f.dist).ToList();
+
+        var notFull = ordered.FirstOrDefault(f => !f.storage.IsFull);
+        if (notFull.storage != null)
         {
-            stoneStoragePoint = fallback.transform;
-            return fallback;
+            chosenPoint = notFull.point;
+            return notFull.storage;
         }
-        
-        stoneStoragePoint = null;
-        return null;
+
+        chosenPoint = ordered[0].point;
+        return ordered[0].storage;
+    }
+
+    /// <summary>
+    /// Tìm child Transform tên "DeliveryPoint" bên trong kho (cửa kho, nơi worker thực sự đi tới).
+    /// Nếu không có, fallback về chính transform của kho để không bị null.
+    /// </summary>
+    Transform FindDeliveryPoint(Transform storageRoot)
+    {
+        Transform dp = storageRoot.Find("DeliveryPoint");
+        if (dp != null) return dp;
+
+        foreach (Transform child in storageRoot.GetComponentsInChildren<Transform>())
+        {
+            if (child.name == "DeliveryPoint") return child;
+        }
+
+        return storageRoot;
     }
 
     public bool IsCarrying() => currentStone != null;
@@ -75,6 +113,14 @@ public class WorkerCarryStone : MonoBehaviour
         currentStone = stone;
         currentStone.Pickup(handPoint);
         agent.ResetPath();
+
+        // Chọn kho gần nhất còn chỗ tại thời điểm nhặt xong (1 lần duy nhất cho chuyến này)
+        StoneStorage chosen = FindNearestStoneStorage(out Transform point);
+        if (chosen != null)
+        {
+            stoneStorage = chosen;
+            stoneStoragePoint = point;
+        }
 
         if (workerStamina != null) workerStamina.isCarryingResources = true;
     }
