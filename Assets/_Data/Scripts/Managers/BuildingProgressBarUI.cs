@@ -7,8 +7,7 @@ using TMPro;
  * Folder: Scripts/UI/
  * Dự án: KHẨN HOANG (PENTA DEV)
  * Người thực hiện chỉnh sửa: VŨ (Luồng UI)
- * * GIẢI QUYẾT TRIỆT ĐỂ: Biến AudioSource thành mảng có cộng trừ độc lập cho từng luồng VFX.
- * CHỈ SỬA DUY NHẤT FILE NÀY – AN TOÀN TUYỆT ĐỐI CHO HỆ THỐNG GỐC CỦA NHÓM.
+ * * NÂNG CẤP MỚI: Tích hợp âm thanh hoàn thành xây dựng & giới hạn thời gian phát âm thanh thi công.
  */
 public class BuildingProgressBarUI : MonoBehaviour
 {
@@ -26,9 +25,6 @@ public class BuildingProgressBarUI : MonoBehaviour
     [Tooltip("Chức năng 3: Ánh sáng aura quét dọc thân nhà (Chỉ Active và quét 1 lần duy nhất khi vừa hoàn thành)")]
     public ParticleSystem completionAuraVFX;      
 
-    // [Header("[Cấu Hình Thời Gian Xây Dựng]")]
-    // [SerializeField] private float buildDuration = 7f; 
-
     [Header("[HỆ THỐNG NGUỒN ÂM THANH ĐỘC LẬP (CÓ CỘNG TRỪ)]")]
     [Tooltip("Mảng AudioSource chuyên trị tiếng LOOP nâng cấp (Bấm dấu + để thêm nhiều nguồn phát song song)")]
     [SerializeField] private AudioSource[] upgradeAudioSources;
@@ -36,12 +32,22 @@ public class BuildingProgressBarUI : MonoBehaviour
     [Tooltip("Mảng AudioSource chuyên trị tiếng ĐẶT NHÀ (Bấm dấu + để tách riêng, không đụng hàng với luồng nâng cấp)")]
     [SerializeField] private AudioSource[] placementAudioSources;
 
+    [Tooltip("Mảng AudioSource chuyên trị tiếng HOÀN THÀNH XÂY DỰNG")]
+    [SerializeField] private AudioSource[] completionAudioSources;
+
     [Header("[DANH SÁCH FILE ÂM THANH - PENTA DEV]")]
     [Tooltip("Danh sách file âm thanh nâng cấp lặp (Sẽ phát tương ứng theo thứ tự ô AudioSource ở trên)")]
     [SerializeField] private AudioClip[] upgradeLoopSFXPool;
     
     [Tooltip("Âm thanh đặt nhà xuống hoặc di chuyển xong đặt xuống (Chỉ dùng 1 file duy nhất)")]
     [SerializeField] private AudioClip placementSFX;
+
+    [Tooltip("Âm thanh phát ra khi hoàn thành xây dựng/nâng cấp (Chỉ phát 1 lần duy nhất)")]
+    [SerializeField] private AudioClip completionSFX;
+
+    [Header("[ĐIỀU CHỈNH THỜI GIAN ÂM THANH]")]
+    [Tooltip("Thời gian duy trì tối đa của âm thanh xây dựng lặp (giây). Ví dụ đặt bằng 3 thì tiếng búa chỉ gõ trong 3s đầu rồi tắt. Đặt <= 0 để phát suốt cả quá trình.")]
+    [SerializeField] private float maxConstructionSoundDuration = 4f;
 
     private UpgradeableBuilding _ownerBuilding;
     private bool _isBuildingNew = false;
@@ -58,6 +64,7 @@ public class BuildingProgressBarUI : MonoBehaviour
         // Tự động bảo vệ: Tắt toàn bộ playOnAwake của hệ thống âm thanh nếu có
         InitAudioSources(upgradeAudioSources);
         InitAudioSources(placementAudioSources);
+        InitAudioSources(completionAudioSources);
 
         HideProgress();
     }
@@ -163,39 +170,64 @@ public class BuildingProgressBarUI : MonoBehaviour
             constructionLoopVFX.Play();
         }
 
-        // ĐỒNG BỘ MẢNG ÂM THANH: Phát nhạc loop thi công cho cả lúc Upgrading hoặc đang Xây mới ban đầu
+        // ĐỒNG BỘ MẢNG ÂM THANH THI CÔNG (Có kiểm tra giới hạn thời gian duy trì)
         if (_ownerBuilding != null && (_ownerBuilding.IsUpgrading || _ownerBuilding.IsInitialBuildNeeded))
         {
-            if (upgradeAudioSources != null && upgradeLoopSFXPool != null)
-            {
-                int loopCount = Mathf.Min(upgradeAudioSources.Length, upgradeLoopSFXPool.Length);
-                for (int i = 0; i < loopCount; i++)
-                {
-                    AudioSource src = upgradeAudioSources[i];
-                    AudioClip clip = upgradeLoopSFXPool[i];
+            // Kiểm tra xem thời gian thi công hiện tại đã vượt mốc giới hạn cho phép phát tiếng gõ hay chưa
+            bool isSoundWithinDuration = maxConstructionSoundDuration <= 0f || currentTimer < maxConstructionSoundDuration;
 
-                    if (src != null && clip != null && !src.isPlaying)
+            if (isSoundWithinDuration)
+            {
+                if (upgradeAudioSources != null && upgradeLoopSFXPool != null)
+                {
+                    int loopCount = Mathf.Min(upgradeAudioSources.Length, upgradeLoopSFXPool.Length);
+                    for (int i = 0; i < loopCount; i++)
                     {
-                        src.clip = clip;
-                        src.loop = true;
-                        src.Play();
+                        AudioSource src = upgradeAudioSources[i];
+                        AudioClip clip = upgradeLoopSFXPool[i];
+
+                        if (src != null && clip != null && !src.isPlaying)
+                        {
+                            src.clip = clip;
+                            src.loop = true;
+                            src.Play();
+                        }
                     }
                 }
+            }
+            else
+            {
+                // Đã quá thời gian duy trì tối đa cấu hình -> Tự động dừng tiếng gõ dồn dập lại cho êm tai
+                StopAllUpgradeLoopSFX();
             }
         }
     }
 
     public void HandleCompleteSequence()
     {
+        // 1. Tắt hết tiếng ồn ào khi gõ công trình lặp
         StopAllUpgradeLoopSFX();
 
         if (constructionLoopVFX != null) constructionLoopVFX.gameObject.SetActive(false);
 
+        // 2. Chạy hiệu ứng hào quang Aura hoàn thành
         if (completionAuraVFX != null)
         {
             completionAuraVFX.gameObject.SetActive(true);
             completionAuraVFX.Stop();
             completionAuraVFX.Play();
+        }
+
+        // 3. PHÁT TIẾNG HOÀN THÀNH XÂY DỰNG (ĐỘC LẬP 100%)
+        if (completionSFX != null && completionAudioSources != null && completionAudioSources.Length > 0)
+        {
+            foreach (var src in completionAudioSources)
+            {
+                if (src != null)
+                {
+                    src.PlayOneShot(completionSFX);
+                }
+            }
         }
 
         HideProgress();

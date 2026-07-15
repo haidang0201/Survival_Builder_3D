@@ -5,22 +5,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-/// <summary>
-/// LandUnlockManager.cs
-/// Người làm: ThanhNhan
-///
-/// Quản lý panel mở khóa vùng đất mới dựa trên TÀI NGUYÊN (Gỗ + Worker).
-/// - Đọc config từ building_config.json (entry "LandZone") nếu có
-/// - Kiểm tra wood và worker hiện tại của player
-/// - Khi đủ: cho phép click [Khai Hoang] → hiện LandConqueredPanel
-/// - Việc trừ gỗ + unlock thực sự do LandConqueredUI xử lý khi bấm [Chiếm Đóng]
-///
-/// Setup trong Unity Inspector:
-///   1. Gán script này lên GameObject LandUnlockPanel
-///   2. Kéo các field UI vào: cardUI, confirmButton, cancelButton, backgroundButton
-///   3. Kéo LandConqueredPanel vào field landConqueredPanel
-///   4. Đặt requiredWood và requiredWorkers theo ý muốn
-/// </summary>
+/*
+ * LandUnlockManager.cs
+ * Người làm: ThanhNhan
+ * Người tối ưu Real-time: VŨ
+ *
+ * Quản lý panel mở khóa vùng đất mới dựa trên TÀI NGUYÊN (Gỗ) và DÂN SỐ thực tế (Tag Worker).
+ * - Đọc config từ building_config.json (entry "LandZone") nếu có
+ * - Đếm trực tiếp số Worker thực tế đang có trên Scene
+ * - Cập nhật UI thời gian thực mỗi 0.3 giây
+ */
 public class LandUnlockManager : MonoBehaviour
 {
     [Header("Panel References")]
@@ -34,15 +28,17 @@ public class LandUnlockManager : MonoBehaviour
     public GameObject landConqueredPanel;
 
     [Header("Unlock Requirements")]
-    [Tooltip("Số gỗ cần để khai hoang — tự đặt")]
+    [Tooltip("Số gỗ cần để khai hoang — tự đặt hoặc đọc từ JSON")]
     public int requiredWood = 50;
-    [Tooltip("Số worker cần để khai hoang — tự đặt")]
+    [Tooltip("Số worker thực tế cần có trên Scene để khai hoang")]
     public int requiredWorkers = 2;
-    [Tooltip("Fallback max worker nếu không đọc được save JSON")]
-    public int maxWorkersFallback = 4;
+
+    [Header("Worker Tag Configuration")]
+    [Tooltip("Tag chính xác của các nhân vật Worker trên Scene")]
+    public string workerTag = "Worker";
 
     [Header("[DEBUG]")]
-    [Tooltip("-1 = đọc từ save JSON | ≥ 0 = giả lập số worker để test")]
+    [Tooltip("-1 = chạy realtime | ≥ 0 = giả lập số worker để test")]
     public int debugWorkerOverride = -1;
     [Tooltip("Bỏ qua building_config.json, chỉ dùng giá trị Inspector")]
     public bool debugIgnoreJsonConfig = false;
@@ -55,8 +51,8 @@ public class LandUnlockManager : MonoBehaviour
     private CanvasGroup _canvasGroup;
     private RectTransform _rectTransform;
     private Coroutine _animCoroutine;
+    private float _nextUpdateTime = 0f; // Bộ đếm thời gian quét Real-time
 
-    // ─── Inner classes để đọc building_config.json ───────────────────────────
     [Serializable]
     private class LandConfigRoot
     {
@@ -127,34 +123,55 @@ public class LandUnlockManager : MonoBehaviour
             backgroundButton.gameObject.SetActive(false);
     }
 
+    // 🌟 THỜI GIAN THỰC: Tự động đếm lại Tag mỗi 0.3 giây khi Panel đang bật
+    private void Update()
+    {
+        if (Time.time >= _nextUpdateTime)
+        {
+            _nextUpdateTime = Time.time + 0.3f;
+            RefreshPanelData();
+        }
+    }
+
     // ─── Public API ──────────────────────────────────────────────────────────
 
     /// <summary>Bind LandZone trước khi bật panel.</summary>
     public void BindTargetZone(LandZone zone) => _targetZone = zone;
 
-    /// <summary>Refresh toàn bộ UI dựa vào tài nguyên hiện tại của player.</summary>
+    /// <summary>Refresh toàn bộ UI dựa trên tài nguyên và số lượng Worker thực tế.</summary>
     public void RefreshPanelData()
     {
+        // 1. Lấy gỗ hiện tại từ RAM
         int currentWood = (JsonDataManager.Ins != null) ? JsonDataManager.Ins.wood : 0;
 
-        int currentWorkers, maxWorkers;
-        ReadWorkersFromSave(out currentWorkers, out maxWorkers);
+        // 2. ĐẾM TRỰC TIẾP WORKER TRÊN SCENE BẰNG TAG
+        int currentWorkers = GameObject.FindGameObjectsWithTag(workerTag).Length;
 
         if (debugWorkerOverride >= 0)
         {
             currentWorkers = debugWorkerOverride;
-            maxWorkers = maxWorkersFallback;
             Debug.LogWarning($"[LandUnlockManager] ⚠️ DEBUG: currentWorkers={debugWorkerOverride}");
         }
 
+        // 3. Đánh giá điều kiện
         bool enoughWood    = currentWood    >= requiredWood;
         bool enoughWorkers = currentWorkers >= requiredWorkers;
         bool canUnlock     = enoughWood && enoughWorkers;
 
-        // Dùng lại ResourceCardUI — productionRate = -1 để ẩn dòng sản lượng
+        // 4. Đổ dữ liệu lên UI:
+        // - Truyền requiredWorkers vào vị trí maxWorkers để UI hiển thị dạng "Hiện có/Yêu cầu" (Ví dụ: 1/2)
         if (cardUI != null)
-            cardUI.SetResourceUnlockData(currentWood, requiredWood, -1, canUnlock,
-                                         currentWorkers, maxWorkers, enoughWorkers);
+        {
+            cardUI.SetResourceUnlockData(
+                currentWood, 
+                requiredWood, 
+                -1, // productionRate = -1 để tự động ẩn dòng sản lượng đá/phút
+                canUnlock,
+                currentWorkers, 
+                requiredWorkers, 
+                enoughWorkers
+            );
+        }
 
         if (confirmButton != null)
             confirmButton.interactable = canUnlock;
@@ -175,24 +192,12 @@ public class LandUnlockManager : MonoBehaviour
 
     // ─── Private Logic ───────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Đọc config LandZone từ StreamingAssets/building_config.json.
-    /// Entry cần có buildingType = "LandZone".
-    /// </summary>
     private void LoadConfigFromJson()
     {
-        if (debugIgnoreJsonConfig)
-        {
-            Debug.LogWarning("[LandUnlockManager] ⚠️ DEBUG: Bỏ qua JSON, dùng giá trị Inspector.");
-            return;
-        }
+        if (debugIgnoreJsonConfig) return;
 
         string configPath = Path.Combine(Application.streamingAssetsPath, "building_config.json");
-        if (!File.Exists(configPath))
-        {
-            Debug.LogWarning("[LandUnlockManager] Không tìm thấy building_config.json. Dùng giá trị mặc định.");
-            return;
-        }
+        if (!File.Exists(configPath)) return;
 
         try
         {
@@ -201,11 +206,7 @@ public class LandUnlockManager : MonoBehaviour
             if (root == null || root.buildingConfigs == null) return;
 
             var entry = root.buildingConfigs.Find(c => c.buildingType == "LandZone");
-            if (entry == null)
-            {
-                Debug.LogWarning("[LandUnlockManager] Không tìm thấy entry 'LandZone' trong building_config.json.");
-                return;
-            }
+            if (entry == null) return;
 
             if (entry.requiredWood    > 0) requiredWood    = entry.requiredWood;
             if (entry.requiredWorkers > 0) requiredWorkers = entry.requiredWorkers;
@@ -218,50 +219,9 @@ public class LandUnlockManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Đọc số worker hiện tại từ save JSON (builder.json).
-    /// Lấy worker từ StoneMine — hoặc building đầu tiên có worker trong save.
-    /// </summary>
-    private void ReadWorkersFromSave(out int currentWorkers, out int maxWorkers)
-    {
-        currentWorkers = 0;
-        maxWorkers = maxWorkersFallback;
-
-        if (JsonDataManager.Ins == null) return;
-
-        string savePath = Path.Combine(Application.persistentDataPath, JsonDataManager.Ins.saveFileName);
-        if (!File.Exists(savePath)) return;
-
-        try
-        {
-            string json = File.ReadAllText(savePath);
-            var save = JsonUtility.FromJson<JsonDataManager.GameSaveData>(json);
-            if (save == null || save.buildings == null) return;
-
-            // Tìm từ cuối danh sách (entry mới nhất)
-            for (int i = save.buildings.Count - 1; i >= 0; i--)
-            {
-                var state = save.buildings[i];
-                if (state == null) continue;
-
-                currentWorkers = Mathf.Max(0, state.currentWorkers);
-                maxWorkers     = state.maxWorkers > 0 ? state.maxWorkers : maxWorkersFallback;
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogWarning("[LandUnlockManager] Không đọc được save JSON: " + ex.Message);
-        }
-    }
-
     private void OnClickUnlock()
     {
         if (confirmButton != null && !confirmButton.interactable) return;
-
-        // KHÔNG trừ gỗ và KHÔNG unlock ở đây!
-        // → Việc trừ gỗ + unlock sẽ do LandConqueredUI xử lý khi player bấm [Chiếm Đóng]
-        // → Nếu player bấm [Thả Đó], đất vẫn bị khóa và có thể mở lại
 
         // Tắt overlay
         if (backgroundButton != null)
@@ -320,7 +280,6 @@ public class LandUnlockManager : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    /// <summary>Đóng panel unlock → chờ animation xong → bật LandConqueredPanel.</summary>
     private IEnumerator AnimateCloseAndShowConquered()
     {
         _canvasGroup.interactable = false;
@@ -342,7 +301,6 @@ public class LandUnlockManager : MonoBehaviour
 
         gameObject.SetActive(false);
 
-        // Hiện panel thành công — truyền cả zone và requiredWood để LandConqueredUI xử lý
         if (landConqueredPanel != null)
         {
             string zoneName = _targetZone != null ? _targetZone.gameObject.name : "Vùng Đất Mới";
