@@ -75,22 +75,58 @@ public class FontReplacer : EditorWindow
         }
     }
 
+    // Trả về full path trong Hierarchy để dễ tìm object bị lỗi (VD: "Canvas/Dropdown/Template/Item").
+    string GetHierarchyPath(Transform t)
+    {
+        if (t == null)
+            return "(null)";
+
+        string path = t.name;
+        Transform current = t.parent;
+
+        while (current != null)
+        {
+            path = current.name + "/" + path;
+            current = current.parent;
+        }
+
+        return path;
+    }
+
     void ReplaceAllInScene()
     {
         if (newFont == null) { Debug.LogError("Chưa chọn font!"); return; }
 
-        var allTMP = FindObjectsByType<TMP_Text>(FindObjectsSortMode.None);
+        var allTMP = FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         int count = 0;
+        int skipped = 0;
 
         foreach (var tmp in allTMP)
         {
-            Undo.RecordObject(tmp, "Replace Font");
-            ApplyStyle(tmp);
-            EditorUtility.SetDirty(tmp);
-            count++;
+            if (tmp == null)
+                continue;
+
+            try
+            {
+                Undo.RecordObject(tmp, "Replace Font");
+                ApplyStyle(tmp);
+                EditorUtility.SetDirty(tmp);
+                count++;
+            }
+            catch (System.Exception ex)
+            {
+                // Một số object (thường là template ẩn của TMP_Dropdown, hoặc object đang
+                // inactive chưa từng OnEnable) chưa được Unity khởi tạo CanvasRenderer/material,
+                // gây UnassignedReferenceException khi gán font. Bỏ qua object đó và log cảnh báo
+                // thay vì để lỗi dừng ngang cả vòng lặp (đó là lý do trước đây chỉ vài object
+                // được đổi trong khi các object còn lại bị bỏ sót không rõ lý do).
+                skipped++;
+                Debug.LogWarning($"[FontReplacer] Bỏ qua '{GetHierarchyPath(tmp.transform)}' vì lỗi: {ex.Message}");
+            }
         }
 
-        Debug.Log($"✅ Đã thay font cho {count} TMP objects trong Scene.");
+        Debug.Log($"✅ Đã thay font cho {count} TMP objects trong Scene." +
+                  (skipped > 0 ? $" ⚠ Bỏ qua {skipped} object bị lỗi (xem Console để biết chi tiết)." : ""));
     }
 
     void ReplaceAllInPrefabs()
@@ -99,6 +135,7 @@ public class FontReplacer : EditorWindow
 
         string[] guids = AssetDatabase.FindAssets("t:Prefab");
         int count = 0;
+        int skipped = 0;
 
         foreach (string guid in guids)
         {
@@ -112,10 +149,22 @@ public class FontReplacer : EditorWindow
             bool changed = false;
             foreach (var tmp in tmps)
             {
-                ApplyStyle(tmp);
-                EditorUtility.SetDirty(tmp);
-                changed = true;
-                count++;
+                if (tmp == null)
+                    continue;
+
+                try
+                {
+                    ApplyStyle(tmp);
+                    EditorUtility.SetDirty(tmp);
+                    changed = true;
+                    count++;
+                }
+                catch (System.Exception ex)
+                {
+                    // Xem giải thích ở ReplaceAllInScene(): bỏ qua object lỗi thay vì dừng cả loop.
+                    skipped++;
+                    Debug.LogWarning($"[FontReplacer] Bỏ qua '{path} -> {GetHierarchyPath(tmp.transform)}' vì lỗi: {ex.Message}");
+                }
             }
 
             if (changed)
@@ -123,7 +172,8 @@ public class FontReplacer : EditorWindow
         }
 
         AssetDatabase.SaveAssets();
-        Debug.Log($"✅ Đã thay font cho {count} TMP objects trong Prefabs.");
+        Debug.Log($"✅ Đã thay font cho {count} TMP objects trong Prefabs." +
+                  (skipped > 0 ? $" ⚠ Bỏ qua {skipped} object bị lỗi (xem Console để biết chi tiết)." : ""));
     }
 }
 #endif
