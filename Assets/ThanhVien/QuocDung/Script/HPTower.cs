@@ -3,11 +3,11 @@ using UnityEngine.UI;
 
 public class HPTower : MonoBehaviour, IDamageable
 {
-    [Header("Cấu hình máu (HP)")]
+    [Header("Penta Dev - Cấu hình máu (HP)")]
     [SerializeField] private float maxHealth = 200f;
-    [SerializeField] private GameObject destroyVFXPrefab; // Hiệu ứng khi công trình bị phá hủy (nếu có)
+    [SerializeField] private GameObject destroyVFXPrefab; // Hiệu ứng khi công trình bị phá hủy
 
-    [Header("Cấu hình UI Máu (HP Bar)")]
+    [Header("Penta Dev - Cấu hình UI Máu tự vẽ (Runtime UI)")]
     [SerializeField] private float hpBarHeightOffset = 4f;
     [SerializeField] private Vector2 hpBarSize = new Vector2(2f, 0.25f);
     [SerializeField] private Color hpBarColor = Color.red;
@@ -18,8 +18,10 @@ public class HPTower : MonoBehaviour, IDamageable
 
     private bool isDestroyed = false;
 
+    // Các thành phần UI được khởi tạo hoàn toàn bằng code lúc chạy game
     private Canvas hpCanvas;
     private Image hpFillImage;
+    private Image hpBgImage;
     private Transform camTransform;
     private Sprite whiteSprite;
 
@@ -28,85 +30,73 @@ public class HPTower : MonoBehaviour, IDamageable
         MaxHealth = maxHealth;
         CurrentHealth = MaxHealth;
 
-        // Tạo sprite trắng 1x1 tại runtime để gán cho các Image của Canvas (bắt buộc đối với Image.Type.Filled)
+        // Tạo sprite trắng 1x1 tại runtime để gán cho Image (bắt buộc đối với Image.Type.Filled)
         Texture2D tex = new Texture2D(1, 1);
         tex.SetPixel(0, 0, Color.white);
         tex.Apply();
         whiteSprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
-
-        CreateHPBar();
     }
 
-    private void CreateHPBar()
+    private void Start()
     {
+        // Gán camera chính để làm hệ thống xoay thanh máu (Billboarding)
         if (Camera.main != null)
         {
             camTransform = Camera.main.transform;
         }
 
-        // Tự động quy đổi kích thước sang pixel để hiển thị sắc nét và mượt mà
-        Vector2 finalPixelSize = hpBarSize;
-        float baseScale = 0.01f;
+        // TỰ ĐỘNG KHỞI TẠO CỤM CANVAS MÁU BẰNG CODE
+        CreateRuntimeHPBar();
+    }
 
-        if (hpBarSize.x < 10f)
-        {
-            finalPixelSize = hpBarSize * 100f; // Ví dụ: (2, 0.25) -> (200, 25)
-            baseScale = 0.01f;
-        }
-        else
-        {
-            baseScale = 2f / hpBarSize.x;
-        }
-
-        // Tạo Canvas Game Object
-        GameObject canvasObj = new GameObject("HPBar_Canvas");
+    /// <summary>
+    /// Hàm xây dựng Canvas World Space và cấu hình thanh Image Filled nguyên bản bằng code
+    /// </summary>
+    private void CreateRuntimeHPBar()
+    {
+        // 1. Tạo GameObject làm Canvas gốc và đặt làm con của công trình
+        GameObject canvasObj = new GameObject("Runtime_HPBar_Canvas");
         canvasObj.transform.SetParent(transform);
         canvasObj.transform.localPosition = new Vector3(0, hpBarHeightOffset, 0);
-        canvasObj.transform.localRotation = Quaternion.identity;
-
-        // Bù trừ tỉ lệ co giãn của cha (transform.lossyScale) để chống méo mó
-        Vector3 parentScale = transform.lossyScale;
-        float scaleX = parentScale.x > 0.0001f ? (baseScale / parentScale.x) : baseScale;
-        float scaleY = parentScale.y > 0.0001f ? (baseScale / parentScale.y) : baseScale;
-        float scaleZ = parentScale.z > 0.0001f ? (baseScale / parentScale.z) : baseScale;
-        canvasObj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
 
         hpCanvas = canvasObj.AddComponent<Canvas>();
         hpCanvas.renderMode = RenderMode.WorldSpace;
+        canvasObj.AddComponent<CanvasScaler>();
 
-        RectTransform canvasRect = canvasObj.GetComponent<RectTransform>();
-        canvasRect.sizeDelta = finalPixelSize;
-
-        // Tạo Background GameObject
-        GameObject bgObj = new GameObject("Background");
+        // 2. Tạo GameObject làm nền đen cho thanh máu (Background)
+        GameObject bgObj = new GameObject("HP_Background");
         bgObj.transform.SetParent(canvasObj.transform, false);
-        Image bgImage = bgObj.AddComponent<Image>();
-        bgImage.sprite = whiteSprite; // Gán sprite trắng
-        bgImage.color = new Color(0.15f, 0.15f, 0.15f, 0.85f); // Nền xám đen mờ
-        RectTransform bgRect = bgObj.GetComponent<RectTransform>();
-        bgRect.anchorMin = Vector2.zero;
-        bgRect.anchorMax = Vector2.one;
-        bgRect.sizeDelta = Vector2.zero;
+        
+        hpBgImage = bgObj.AddComponent<Image>();
+        hpBgImage.sprite = whiteSprite;
+        hpBgImage.color = new Color(0f, 0f, 0f, 0.6f); // Màu đen mờ làm nền
 
-        // Tạo Fill GameObject
-        GameObject fillObj = new GameObject("Fill");
-        fillObj.transform.SetParent(canvasObj.transform, false);
+        RectTransform bgRect = bgObj.GetComponent<RectTransform>();
+        bgRect.sizeDelta = hpBarSize;
+
+        // 3. Tạo GameObject làm thanh máu chính co giãn (Fill Image)
+        GameObject fillObj = new GameObject("HP_Fill");
+        fillObj.transform.SetParent(bgObj.transform, false);
+
         hpFillImage = fillObj.AddComponent<Image>();
-        hpFillImage.sprite = whiteSprite; // Gán sprite trắng để sử dụng được Type.Filled
+        hpFillImage.sprite = whiteSprite;
         hpFillImage.color = hpBarColor;
+        
+        // Cấu hình chế độ Filled rút thanh máu theo chiều ngang từ trái sang phải
         hpFillImage.type = Image.Type.Filled;
         hpFillImage.fillMethod = Image.FillMethod.Horizontal;
-        hpFillImage.fillAmount = 1f;
+        hpFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
 
+        // Ép thanh Fill căng tràn theo kích thước của thanh nền Background
         RectTransform fillRect = fillObj.GetComponent<RectTransform>();
         fillRect.anchorMin = Vector2.zero;
         fillRect.anchorMax = Vector2.one;
         fillRect.sizeDelta = Vector2.zero;
 
-        // Ẩn thanh máu lúc đầu nếu được cấu hình ẩn khi đầy máu
+        // Thiết lập trạng thái ẩn hiện ban đầu dựa theo cấu hình
         if (hideHpBarWhenFull)
         {
-            canvasObj.SetActive(false);
+            hpCanvas.gameObject.SetActive(false);
         }
     }
 
@@ -117,8 +107,18 @@ public class HPTower : MonoBehaviour, IDamageable
         CurrentHealth -= amount;
         Debug.Log($"[HPTower] {gameObject.name} nhận {amount} sát thương tại {hitPoint}. HP còn lại: {CurrentHealth}/{MaxHealth}");
 
-        // Kích hoạt hiệu ứng rung lắc hoặc va chạm nhẹ ở đây nếu cần thiết
-        UpdateHPBar();
+        // CẬP NHẬT THANH MÁU ĐÃ VẼ BẰNG CODE
+        if (hpFillImage != null)
+        {
+            hpFillImage.fillAmount = CurrentHealth / MaxHealth;
+        }
+
+        // Kiểm tra ẩn hiện UX: Chỉ hiện khi mất máu, đầy hoặc sập hẳn thì ẩn đi
+        if (hpCanvas != null)
+        {
+            bool shouldShow = CurrentHealth < MaxHealth && CurrentHealth > 0;
+            hpCanvas.gameObject.SetActive(shouldShow);
+        }
 
         if (CurrentHealth <= 0f)
         {
@@ -127,68 +127,67 @@ public class HPTower : MonoBehaviour, IDamageable
         }
     }
 
-    private void UpdateHPBar()
-    {
-        if (hpFillImage == null) return;
-
-        float ratio = Mathf.Clamp01(CurrentHealth / MaxHealth);
-        hpFillImage.fillAmount = ratio;
-
-        if (hpCanvas != null)
-        {
-            bool shouldShow = ratio > 0f && (!hideHpBarWhenFull || ratio < 1f);
-            if (hpCanvas.gameObject.activeSelf != shouldShow)
-            {
-                hpCanvas.gameObject.SetActive(shouldShow);
-            }
-        }
-    }
-
-    private void LateUpdate()
-    {
-        if (hpCanvas != null && hpCanvas.gameObject.activeSelf)
-        {
-            if (camTransform == null && Camera.main != null)
-            {
-                camTransform = Camera.main.transform;
-            }
-
-            if (camTransform != null)
-            {
-                // Xoay Canvas luôn đối diện với camera
-                hpCanvas.transform.rotation = camTransform.rotation;
-            }
-
-            // Bù trừ tỉ lệ co giãn của cha nếu cha thay đổi scale để tránh méo mó
-            Vector3 parentScale = transform.lossyScale;
-            float baseScale = (hpBarSize.x < 10f) ? 0.01f : (2f / hpBarSize.x);
-            float scaleX = parentScale.x > 0.0001f ? (baseScale / parentScale.x) : baseScale;
-            float scaleY = parentScale.y > 0.0001f ? (baseScale / parentScale.y) : baseScale;
-            float scaleZ = parentScale.z > 0.0001f ? (baseScale / parentScale.z) : baseScale;
-            hpCanvas.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
-        }
-    }
-
     public void OnDeath()
     {
         if (isDestroyed) return;
         isDestroyed = true;
 
-        Debug.Log($"[HPTower] {gameObject.name} đã bị phá hủy hoàn toàn!");
+        Debug.Log($"[HPTower] {gameObject.name} đã lọt vào trạng thái sụp đổ!");
 
-        // Tạo hiệu ứng phá hủy nếu có gán prefab
+        // Sinh hiệu ứng khói bụi phá hủy nhà nếu có gán prefab
         if (destroyVFXPrefab != null)
         {
             GameObject vfx = Instantiate(destroyVFXPrefab, transform.position, transform.rotation);
-            Destroy(vfx, 2f);
+            Destroy(vfx, 3f);
         }
 
-        // Hủy đối tượng công trình
-        Destroy(gameObject);
+        // Tắt Canvas máu đi khi nhà sập
+        if (hpCanvas != null) hpCanvas.gameObject.SetActive(false);
+
+        // PHỐI HỢP LOGIC SẬP NHÀ VỚI UPGRADEABLEBUILDING
+        UpgradeableBuilding building = GetComponent<UpgradeableBuilding>();
+        if (building != null)
+        {
+            building.TriggerDestructionSequence();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void LateUpdate()
+    {
+        // Giữ thanh máu tự vẽ luôn nhìn thẳng về Camera (Billboarding) chống méo hình
+        if (hpCanvas != null && hpCanvas.gameObject.activeSelf && camTransform != null)
+        {
+            hpCanvas.transform.LookAt(hpCanvas.transform.position + camTransform.rotation * Vector3.forward, camTransform.rotation * Vector3.up);
+        }
+    }
+
+    /// <summary>
+    /// Được gọi từ UpgradeableBuilding sau khi người chơi sửa nhà xong để tái tạo trạng thái ban đầu
+    /// </summary>
+    public void ResetHealth()
+    {
+        isDestroyed = false;
+        CurrentHealth = MaxHealth;
+
+        if (hpFillImage != null)
+        {
+            hpFillImage.fillAmount = 1f; // Đầy cây fill
+        }
+
+        if (hpCanvas != null)
+        {
+            // Nếu cấu hình ẩn khi đầy máu thì tắt canvas đi, ngược lại thì bật lên
+            hpCanvas.gameObject.SetActive(!hideHpBarWhenFull);
+        }
     }
 
     private void OnDestroy()
     {
+        // Dọn dẹp bộ nhớ Runtime chống leak bộ nhớ do Sprite/Texture tự tạo ra
         if (whiteSprite != null)
         {
             if (whiteSprite.texture != null)
@@ -199,4 +198,3 @@ public class HPTower : MonoBehaviour, IDamageable
         }
     }
 }
-

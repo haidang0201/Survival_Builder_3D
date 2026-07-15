@@ -78,6 +78,21 @@ public class UpgradeableBuilding : MonoBehaviour
 
     public Sprite[] BuildingIcons => buildingIcons;
     // --------------------------------
+// ====================================================================
+    // PENTA DEV - PHÂN KHU PHỐI HỢP HỆ THỐNG TÀN TÍCH & SỬA CHỮA
+    // ====================================================================
+    
+    [Header("Penta Dev - Giao Diện Tàn Tích")]
+    [Tooltip("Kéo Model nhà nát (Xác nhà đổ nát) vào đây")]
+    [SerializeField] private GameObject ruinedVisualModel;
+
+    [Header("Penta Dev - Chi Phí Sửa Chữa")]
+    [SerializeField] private int repairWoodCost = 30;
+    [SerializeField] private int repairStoneCost = 30;
+    [SerializeField] private float repairDuration = 5f;
+
+    // Property để hệ thống kiểm tra trạng thái công trình xem có đang bị hỏng không
+    public bool IsRuined { get; private set; } = false;
 
     private void Awake()
     {
@@ -116,6 +131,8 @@ public class UpgradeableBuilding : MonoBehaviour
 
         foreach (Transform child in transform)
         {
+            // THÊM DÒNG NÀY VÀO ĐÂY: Bỏ qua model tàn tích không lưu vào danh sách gốc
+            if (ruinedVisualModel != null && child.gameObject == ruinedVisualModel) continue;
             // Không tính các visual model khác được kéo sẵn vào (nếu có)
             bool isOtherVisualModel = false;
             if (visualModels != null)
@@ -270,6 +287,9 @@ public class UpgradeableBuilding : MonoBehaviour
 
             foreach (Transform child in transform)
             {
+                // THÊM DÒNG NÀY VÀO ĐÂY: Nếu là nhà nát thì bỏ qua, không được tắt MeshRenderer
+                 if (ruinedVisualModel != null && child.gameObject == ruinedVisualModel) continue;
+
                 bool isVisualModel = false;
                 foreach (var im in instantiatedModels)
                 {
@@ -426,6 +446,116 @@ public class UpgradeableBuilding : MonoBehaviour
         {
             UIManager.Ins.HideUpgradeProgress();
             UIManager.Ins.RefreshUpgradePanel(this);
+        }
+    }
+
+
+
+    /// <summary>
+    /// Được gọi tự động từ hàm OnDeath() của HPTower khi công trình bị hết máu
+    /// </summary>
+    public void TriggerDestructionSequence()
+    {
+        IsRuined = true;
+
+        // 1. Ẩn Model đồ họa cấp độ hiện tại của nhà đi
+        SetActiveModel(CurrentLevel, false);
+
+        // 2. Bật Model tàn tích đổ nát lên
+        if (ruinedVisualModel != null)
+        {
+            ruinedVisualModel.SetActive(true);
+        }
+
+        // 3. Tắt hoạt động AI tháp phòng thủ (nếu có) để ngừng bắn quái
+        ToggleBuildingLogic(false);
+
+        // 4. KIỂM TRA ĐIỀU KIỆN NHÀ CHÍNH SẬP ĐỂ HIỆN BẢNG TỔNG KẾT (GAME OVER)
+        if (buildingName.Contains("Nhà Chính"))
+        {
+            Debug.LogError("[Penta Dev] 🔥 NHÀ CHÍNH ĐÃ BỊ PHÁ HỦY! Kích hoạt bảng tổng kết chiến dịch...");
+            // Thêm luồng gọi bảng UI tổng kết của nhóm Vũ tại đây, ví dụ:
+            // if (UIManager.Ins != null) UIManager.Ins.ShowSummaryPanel();
+        }
+    }
+
+
+    /// <summary>
+    /// Hàm ra lệnh bắt đầu sửa chữa (Được gọi từ nút Sửa Chữa trên giao diện UI)
+    /// </summary>
+    public void StartRepair()
+    {
+        if (!IsRuined || IsUpgrading) return; // Đang bận nâng cấp hoặc nhà chưa hỏng thì bỏ qua
+
+        // Gọi trừ tài nguyên tại đây (Ví dụ kết nối với hệ thống kho tài nguyên của nhóm)
+        // ResourceManager.Ins.SubtractResources(repairWoodCost, repairStoneCost);
+
+        StartCoroutine(RepairRoutine());
+    }
+
+    private IEnumerator RepairRoutine()
+    {
+        // Sử dụng cầu nối BuildingProgressBridge có sẵn của Vũ để tìm đúng UI bar trên đầu nhà
+        var targetProgressUI = BuildingProgressBridge.GetUI(this);
+        float timer = 0f;
+
+        // Vòng lặp chạy thanh tiến trình đếm ngược thời gian sửa chữa y hệt luồng nâng cấp
+        while (timer < repairDuration)
+        {
+            timer += Time.deltaTime;
+            if (targetProgressUI != null)
+            {
+                // Đẩy số giây chạy lên slider và text
+                targetProgressUI.UpdateProgress(timer, repairDuration);
+            }
+            yield return null;
+        }
+
+        // --- HOÀN THÀNH TIẾN TRÌNH SỬA CHỮA ---
+        IsRuined = false;
+
+        // 1. Gọi HPTower hồi lại toàn bộ máu và thiết lập lại trạng thái sinh tồn
+        HPTower hpComponent = GetComponent<HPTower>();
+        if (hpComponent != null)
+        {
+            hpComponent.ResetHealth();
+        }
+
+        // 2. Ẩn model xác nhà nát đi
+        if (ruinedVisualModel != null) ruinedVisualModel.SetActive(false);
+
+        // 3. Hiển thị lại Model nhà nguyên bản theo đúng Cấp độ hiện tại
+        UpdateVisualModel();
+
+        // 4. Kích hoạt bật lại các đoạn code AI bắn đạn tháp phòng thủ
+        ToggleBuildingLogic(true);
+
+        // 5. Chạy hiệu ứng hào quang hoàn thành (Aura VFX) và ẩn thanh đếm
+        if (targetProgressUI != null)
+        {
+            targetProgressUI.HandleCompleteSequence();
+        }
+
+        // Làm mới lại bảng thông tin nâng cấp trên UI
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.RefreshUpgradePanel(this);
+        }
+
+        Debug.Log($"[Penta Dev] 🛠️ Công trình {buildingName} đã được sửa chữa và phục hồi trạng thái hoạt động!");
+    }
+
+    /// <summary>
+    /// Hàm phụ trợ Tắt/Bật code AI hoạt động của tháp
+    /// </summary>
+    private void ToggleBuildingLogic(bool active)
+    {
+        if (towerLevelScripts != null)
+        {
+            foreach (var towerScript in towerLevelScripts)
+            {
+                if (towerScript != null) towerScript.enabled = active;
+            }
         }
     }
 

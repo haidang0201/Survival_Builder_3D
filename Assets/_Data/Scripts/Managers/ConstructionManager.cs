@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro; // ĐÃ THÊM: Thư viện TextMeshPro
 
 /*
  * ConstructionManager.cs
@@ -18,12 +19,20 @@ public class ConstructionManager : Singleton<ConstructionManager>
         public int woodCost;
         public int stoneCost;
         public int foodCost; // Đồng bộ tên food giống JsonDataManager
+
+        [Header("UI Text Hiển Thị Giá Riêng (Kéo thả TextMeshPro vào đây)")]
+        public TextMeshProUGUI uiWoodText;  // Thay đổi thành TextMeshProUGUI
+        public TextMeshProUGUI uiStoneText; // Thay đổi thành TextMeshProUGUI
+        public TextMeshProUGUI uiFoodText;  // Thay đổi thành TextMeshProUGUI
     }
 
     // ================= INSPECTOR =================
 
     [Header("Cấu hình chi phí xây dựng nhà")]
     public List<BuildingCost> constructionCosts = new List<BuildingCost>();
+
+    [Header("Cấu hình tăng trưởng giá")]
+    [Range(0f, 100f)] public float costIncreasePercentage = 10f; // Số phần trăm tăng thêm (Ví dụ: 10 nghĩa là +10% mỗi nhà)
 
     [Header("Prefab thật - Dân sự")]
     public GameObject housePrefab;
@@ -44,14 +53,90 @@ public class ConstructionManager : Singleton<ConstructionManager>
     public GameObject barracksArcherPrefab;
     public GameObject barracksSpearPrefab;
 
-    // Hàm phụ trợ để lấy nhanh chi phí của một loại nhà
+    private Dictionary<BuildingType, int> buildingCounts = new Dictionary<BuildingType, int>();
+
+    private void Start()
+    {
+        BuildingCtrl[] existingBuildings = FindObjectsOfType<BuildingCtrl>();
+        foreach (BuildingCtrl building in existingBuildings)
+        {
+            BuildingType type = building.buildingType;
+            if (!buildingCounts.ContainsKey(type))
+            {
+                buildingCounts[type] = 0;
+            }
+            buildingCounts[type]++;
+        }
+
+        // Tự động cập nhật hiển thị giá cho toàn bộ các Text UI ngay khi vào game
+        UpdateAllCostUI();
+    }
+
+    public void ResetBuildingCounts()
+    {
+        buildingCounts.Clear();
+    }
+
+    // Hàm phụ trợ để lấy nhanh chi phí của một loại nhà (Đã tính toán +% tăng dần)
     public BuildingCost GetBuildingCost(BuildingType type)
+    {
+        BuildingCost baseCost = new BuildingCost { buildingType = type, woodCost = 0, stoneCost = 0, foodCost = 0 };
+        foreach (var cost in constructionCosts)
+        {
+            if (cost.buildingType == type)
+            {
+                baseCost = cost;
+                break;
+            }
+        }
+        int count = 0;
+        if (buildingCounts.ContainsKey(type))
+        {
+            count = buildingCounts[type];
+        }
+        if (count > 0)
+        {
+            float rate = costIncreasePercentage / 100f;
+            float multiplier = 1f + (rate * count);
+            baseCost.woodCost = Mathf.RoundToInt(baseCost.woodCost * multiplier);
+            baseCost.stoneCost = Mathf.RoundToInt(baseCost.stoneCost * multiplier);
+            baseCost.foodCost = Mathf.RoundToInt(baseCost.foodCost * multiplier);
+        }
+        return baseCost;
+    }
+
+    // CẬP NHẬT UI TEXT THEO TỪNG CÔNG TRÌNH CỤ THỂ
+    public void UpdateCostUI(BuildingType type)
+    {
+        // Lấy chi phí thực tế sau khi đã tăng %
+        BuildingCost realCost = GetBuildingCost(type);
+
+        // Tìm phần tử trong list cấu hình gốc để lấy đúng các biến UI Text đã kéo thả
+        for (int i = 0; i < constructionCosts.Count; i++)
+        {
+            if (constructionCosts[i].buildingType == type)
+            {
+                if (constructionCosts[i].uiWoodText != null) 
+                    constructionCosts[i].uiWoodText.text = realCost.woodCost.ToString();
+
+                if (constructionCosts[i].uiStoneText != null) 
+                    constructionCosts[i].uiStoneText.text = realCost.stoneCost.ToString();
+
+                if (constructionCosts[i].uiFoodText != null) 
+                    constructionCosts[i].uiFoodText.text = realCost.foodCost.ToString();
+                
+                break;
+            }
+        }
+    }
+
+    // CẬP NHẬT TOÀN BỘ CÁC TEXT UI TRÊN MÀN HÌNH
+    public void UpdateAllCostUI()
     {
         foreach (var cost in constructionCosts)
         {
-            if (cost.buildingType == type) return cost;
+            UpdateCostUI(cost.buildingType);
         }
-        return new BuildingCost { buildingType = type, woodCost = 0, stoneCost = 0, foodCost = 0 };
     }
 
     // ================= PUBLIC – ĐẶT MỚI =================
@@ -123,6 +208,15 @@ public class ConstructionManager : Singleton<ConstructionManager>
         }
         else
         {
+            if (!buildingCounts.ContainsKey(type))
+            {
+                buildingCounts[type] = 0;
+            }
+            buildingCounts[type]++;
+
+            // Cập nhật lại UI hiển thị của riêng loại nhà này ngay sau khi xây xong (vì giá đã tăng lên 10%)
+            UpdateCostUI(type);
+
             JsonDataManager.RegisterStat_BuildingConstructed();
             Debug.Log($"[ConstructionManager] ✅ Đặt {type} thành công | Đã phát Event lên HUD.");
         }

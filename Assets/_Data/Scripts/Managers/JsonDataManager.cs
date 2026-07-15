@@ -248,39 +248,137 @@ public class JsonDataManager : Singleton<JsonDataManager>
         File.WriteAllText(path, json);
     }
     // Thêm vào cuối class JsonDataManager.cs để các script khác dễ dàng ghi nhận thành tích
+    // ──────────────────────────────────────────────
+    // CẤU TRÚC LƯU TRỮ CHỈ SỐ END GAME BẰNG JSON
+    // ──────────────────────────────────────────────
+    [Serializable]
+    public class EndGameStats
+    {
+        public int totalWood = 0;
+        public int totalStone = 0;
+        public int totalFood = 0;
+        public int totalGold = 0;
+        public int totalBuildings = 0;
+        public int survivalDays = 0;
+    }
+
+    private static string EndGameStatsPath => Path.Combine(Application.persistentDataPath, "endgame_stats.json");
+
+    /// <summary>
+    /// Đọc dữ liệu End Game từ file JSON
+    /// </summary>
+    public static EndGameStats LoadEndGameStats()
+    {
+        try
+        {
+            if (File.Exists(EndGameStatsPath))
+            {
+                string json = File.ReadAllText(EndGameStatsPath);
+                return JsonUtility.FromJson<EndGameStats>(json);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[JsonDataManager] Lỗi Load EndGameStats: " + ex.Message);
+        }
+        return new EndGameStats(); // Trả về data trống nếu chưa có file
+    }
+
+    /// <summary>
+    /// Ghi dữ liệu End Game vào file JSON
+    /// </summary>
+    public static void SaveEndGameStats(EndGameStats data)
+    {
+        try
+        {
+            string json = JsonUtility.ToJson(data, true);
+            File.WriteAllText(EndGameStatsPath, json);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[JsonDataManager] Lỗi Save EndGameStats: " + ex.Message);
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // CÁC HÀM ĐĂNG KÝ THÀNH TÍCH (ĐÃ CHUYỂN SANG JSON)
+    // ──────────────────────────────────────────────
+
     public static void RegisterStat_ResourceCollected(string resourceType, int amount)
     {
         if (amount <= 0) return;
-        string key = "Stat_Total_" + resourceType; // Ví dụ: Stat_Total_Wood
-        int currentTotal = PlayerPrefs.GetInt(key, 0);
-        PlayerPrefs.SetInt(key, currentTotal + amount);
-        PlayerPrefs.Save();
+        
+        EndGameStats stats = LoadEndGameStats();
+        
+        switch (resourceType.ToLower())
+        {
+            case "wood": stats.totalWood += amount; break;
+            case "stone": stats.totalStone += amount; break;
+            case "food": stats.totalFood += amount; break;
+            case "gold": stats.totalGold += amount; break;
+        }
+        
+        SaveEndGameStats(stats);
     }
 
     public static void RegisterStat_BuildingConstructed()
     {
-        int currentTotal = PlayerPrefs.GetInt("Stat_Total_Buildings", 0);
-        PlayerPrefs.SetInt("Stat_Total_Buildings", currentTotal + 1);
-        PlayerPrefs.Save();
+        EndGameStats stats = LoadEndGameStats();
+        stats.totalBuildings += 1;
+        SaveEndGameStats(stats);
     }
 
     public static void RegisterStat_DaysSurvived(int days)
     {
-        // Cập nhật số ngày sống sót cao nhất hoặc hiện tại
-        PlayerPrefs.SetInt("Stat_Survival_Days", days);
-        PlayerPrefs.Save();
+        EndGameStats stats = LoadEndGameStats();
+        stats.survivalDays = days;
+        SaveEndGameStats(stats);
     }
 
-    // Hàm dọn dẹp data cũ khi bấm nút Chơi Lại (Restart)
+    /// <summary>
+    /// Reset sạch sẽ file JSON khi bấm Restart hoặc Về Menu
+    /// </summary>
     public static void ResetEndGameStats()
     {
-        PlayerPrefs.DeleteKey("Stat_Total_Wood");
-        PlayerPrefs.DeleteKey("Stat_Total_Stone");
-        PlayerPrefs.DeleteKey("Stat_Total_Food");
-        PlayerPrefs.DeleteKey("Stat_Total_Gold");
-        PlayerPrefs.DeleteKey("Stat_Total_Buildings");
-        PlayerPrefs.DeleteKey("Stat_Survival_Days");
-        PlayerPrefs.Save();
+        try
+        {
+            if (File.Exists(EndGameStatsPath))
+            {
+                File.Delete(EndGameStatsPath);
+                Debug.Log("[JsonDataManager] 🧹 Đã dọn dẹp sạch sẽ file JSON EndGame!");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[JsonDataManager] Không thể xóa file JSON EndGame: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Đồng bộ toàn bộ tài nguyên hiện tại từ HUD/Runtime vào file JSON Endgame
+    /// </summary>
+    public static void SaveFinalSessionStats()
+    {
+        if (Ins == null) return;
+
+        EndGameStats stats = LoadEndGameStats();
+
+        // LỰA CHỌN 1: Hiện đúng số tài nguyên đang có trên HUD lúc bấm F kết thúc game (Nên dùng)
+        stats.totalWood = Ins.wood;
+        stats.totalStone = Ins.stone;
+        stats.totalFood = Ins.food;
+        stats.totalGold = Ins.gold;
+
+        /* 
+        // LỰA CHỌN 2: Nếu Vũ muốn chỉ hiện lượng tài nguyên thực tế ĐÃ KHAI THÁC được trong trận 
+        // (Nếu chọn cách này, tài nguyên mặc định lúc vào game sẽ không được tính)
+        stats.totalWood = Instance.TotalWoodCollected;
+        stats.totalStone = Instance.TotalStoneCollected;
+        stats.totalFood = Instance.TotalFoodCollected;
+        stats.totalGold = Instance.TotalGoldCollected;
+        */
+
+        SaveEndGameStats(stats);
     }
 
     [Serializable] public class GameSaveData { public string sceneName; public long savedAtUnix; public List<BuildingState> buildings; public List<ResourceData> resources; }
