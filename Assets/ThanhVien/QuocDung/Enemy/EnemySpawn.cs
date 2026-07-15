@@ -130,6 +130,12 @@ public class EnemySpawn : MonoBehaviour
                         Transform source = sources[targetIndex];
                         if (source != null)
                         {
+                            if (!CanSpawnAt(source.position))
+                            {
+                                Debug.Log($"[EnemySpawn] Skipping spawn at point {targetIndex}: {source.name} because it already has active warnings or enemies.");
+                                continue;
+                            }
+
                             Debug.Log($"[EnemySpawn] Spawning wave at point {targetIndex}: {source.name} (Day {currentDay})");
                             SpawnAtSourceWithScaling(source, currentDay);
                         }
@@ -159,9 +165,38 @@ public class EnemySpawn : MonoBehaviour
         {
             if (source != null)
             {
+                if (!CanSpawnAt(source.position))
+                {
+                    continue;
+                }
                 SpawnAtSourceWithScaling(source, currentDay);
             }
         }
+    }
+
+    private bool CanSpawnAt(Vector3 position)
+    {
+        // Don't spawn if there's already an active warning icon at this position
+        UIWarning[] warnings = FindObjectsOfType<UIWarning>();
+        foreach (var warning in warnings)
+        {
+            if (warning != null && Vector3.Distance(warning.GetSpawnPosition(), position) < 1f)
+            {
+                return false;
+            }
+        }
+
+        // Don't spawn if there are still enemies very close to the spawn point
+        EnemyAI[] enemies = FindObjectsOfType<EnemyAI>();
+        foreach (var enemy in enemies)
+        {
+            if (enemy != null && Vector3.Distance(enemy.transform.position, position) < 5f)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private List<Transform> GetSpawnSources()
@@ -201,7 +236,7 @@ public class EnemySpawn : MonoBehaviour
             {
                 uiWarning = warningObj.AddComponent<UIWarning>();
             }
-            uiWarning.Initialize(source.position);
+            uiWarning.Initialize(source.position, warningPos);
         }
 
         if (useGridSpawn)
