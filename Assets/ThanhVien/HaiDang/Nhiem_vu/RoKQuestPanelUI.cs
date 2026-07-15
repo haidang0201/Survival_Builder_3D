@@ -85,7 +85,7 @@ public class RoKQuestPanelUI : MonoBehaviour
     public Sprite barbarianIcon;
     public Sprite renameIcon;
     public Sprite watchTowerIcon;
-    public Sprite cannonIcon;
+    public Sprite StonesIcon;
     public Sprite storageIcon;
     public Sprite raidIcon;
     public Sprite allianceIcon;
@@ -291,6 +291,15 @@ public class RoKQuestPanelUI : MonoBehaviour
 
     void Start()
     {
+        sequentialMainQuests = true;
+
+        if (theme == null)
+            theme = UIThemeManager.Instance;
+        if (openButton != null)
+        {
+            openButton.onClick.RemoveListener(OpenPanel);
+            openButton.onClick.AddListener(OpenPanel);
+        }
         if (theme == null)
             theme = UIThemeManager.Instance;
         if (openButton != null)
@@ -333,8 +342,8 @@ public class RoKQuestPanelUI : MonoBehaviour
             icon = trainArcherIcon,
             title = "Huấn luyện cung thủ",
             current = 0,
-            target = 20,
-            description = "Huấn luyện 20 đơn vị cung thủ",
+            target = 10,
+            description = "Huấn luyện 10 đơn vị cung thủ",
             shortHint = "Chuẩn bị lực lượng tầm xa.",
             rewards =
             {
@@ -350,15 +359,15 @@ public class RoKQuestPanelUI : MonoBehaviour
             type = QuestType.Main,
             icon = watchTowerIcon,
             title = "Xây Tháp Canh",
-            current = 0,
+            current = 1,   // ← đổi từ 0 thành 1 để hiện sẵn nút "Nhận", khỏi cần xây thật khi demo
             target = 1,
             description = "Xây 1 Tháp Canh để phát hiện kẻ địch",
             shortHint = "Mở tầm nhìn phòng thủ.",
             rewards =
-            {
-                new Reward(woodIcon, 100),
-                new Reward(stoneIcon, 50)
-            }
+    {
+        new Reward(woodIcon, 100),
+        new Reward(stoneIcon, 50)
+    }
         });
 
         // Nhiệm vụ KHẨN CẤP (ví dụ): kích hoạt bằng ActivateUrgentQuest("urgent_defend_watchtower")
@@ -387,14 +396,14 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         AddQuest(new Quest
         {
-            id = "unlock_cannon",
+            id = "unlock_quarry",
             type = QuestType.Main,
-            icon = cannonIcon,
-            title = "Mở khóa Pháo Thủ",
+            icon = StonesIcon,
+            title = "Mở khóa Mỏ Đá",
             current = 0,
             target = 1,
-            description = "Mở khóa công trình Pháo Thủ",
-            shortHint = "Tăng sức mạnh phòng thủ.",
+            description = "Mở khóa vùng đất mỏ đá",
+            shortHint = "Tăng tài nguyên nâng cấp.",
             rewards =
             {
                 //new Reward(chestIcon, 1),
@@ -447,7 +456,7 @@ public class RoKQuestPanelUI : MonoBehaviour
             type = QuestType.Side,
             icon = scrollIcon,
             title = "Đại địa chủ",
-            current = 199,
+            current = 499,
             target = 500,
             description = "Đạt 500 sản lượng Lúa ngoài bản đồ",
             shortHint = "Tăng nguồn lương thực.",
@@ -1297,12 +1306,12 @@ public class RoKQuestPanelUI : MonoBehaviour
     string GetQuestButtonLabel(Quest quest)
     {
         if (quest.claimed)
-            return "Xong";
+            return "";
 
         if (quest.IsCompleted())
-            return "Nhận";
+            return "";
 
-        return "Đi";
+        return "";
     }
 
     Color GetQuestButtonNormalColor(Quest quest)
@@ -2036,6 +2045,65 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         quest.current = Mathf.Clamp(quest.current + amount, 0, quest.target);
         RenderQuestList();
+    }
+    public void ReportQuarryUnlocked()
+    {
+        CompleteQuest("unlock_quarry");
+    }
+
+    /// <summary>
+    /// Cho phép nhận thưởng một nhiệm vụ đã hoàn thành ("current >= target") mà KHÔNG
+    /// cần người chơi bấm nút "Nhận" trong bảng nhiệm vụ - dùng khi muốn tự động trao
+    /// thưởng ngay sau 1 sự kiện game (vd thắng trận đánh cướp).
+    /// </summary>
+    public void AutoClaimQuestReward(string questId, RectTransform clickSource = null)
+    {
+        if (!questMap.TryGetValue(questId, out Quest quest))
+            return;
+
+        if (quest.claimed)
+            return;
+
+        if (!quest.IsCompleted())
+            return;
+
+        if (rewardClaimRunning)
+            return;
+
+        StartCoroutine(ClaimQuestRewardRoutine(quest, clickSource));
+    }
+
+    /// <summary>
+    /// Dựng chuỗi text tóm tắt phần thưởng của 1 nhiệm vụ, dùng để hiện trong
+    /// thông báo NPC (vd "Bạn nhận được: 200 Vàng").
+    /// </summary>
+    public string GetQuestRewardSummary(string questId)
+    {
+        if (!questMap.TryGetValue(questId, out Quest quest))
+            return "";
+
+        List<string> parts = new List<string>();
+
+        foreach (Reward r in quest.rewards)
+        {
+            if (r.amount <= 0)
+                continue;
+
+            parts.Add($"{FormatAmount(r.amount)} {GetResourceName(r.icon)}");
+        }
+
+        return string.Join(", ", parts);
+    }
+
+    string GetResourceName(Sprite icon)
+    {
+        if (icon == goldIcon) return "Vàng";
+        if (icon == woodIcon) return "Gỗ";
+        if (icon == stoneIcon) return "Đá";
+        if (icon == foodIcon) return "Lương thực";
+        if (icon == speedupIcon) return "Tăng tốc";
+        if (icon == chestIcon) return "Rương";
+        return "Phần thưởng";
     }
 
     public void CompleteQuest(string questId)
