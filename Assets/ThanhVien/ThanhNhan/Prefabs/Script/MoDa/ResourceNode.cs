@@ -11,20 +11,23 @@ public class ResourceNode : MonoBehaviour
     [Header("UI Panel Ref")]
     public GameObject moDaCardPanel; // Kéo thả cái bảng trắng MoDaCard vào đây
 
-    private StoneMineUnlockPanelController panelController;
+    private StoneMineUnlockManager panelController;
     private bool _ignorePanelOpen = false;
     private Coroutine _ignoreCoroutine;
 
     void Start()
     {
-        // Ban đầu cập nhật trạng thái ổ khóa lơ lửng trên đầu
+        // Load trạng thái mở khóa từ PlayerPrefs (bền vững qua các lần restart)
+        LoadLockState();
+
+        // Cập nhật trạng thái ổ khóa lơ lừng trên đầu
         UpdateLockStatus();
         
         // Đảm bảo bảng thông tin MoDaCard luôn ẩn lúc vào game
         if (moDaCardPanel != null)
         {
             moDaCardPanel.SetActive(false);
-            panelController = moDaCardPanel.GetComponent<StoneMineUnlockPanelController>();
+            panelController = moDaCardPanel.GetComponent<StoneMineUnlockManager>();
         }
     }
 
@@ -41,8 +44,44 @@ public class ResourceNode : MonoBehaviour
     {
         isLocked = false;
         UpdateLockStatus();
+        SaveLockState();   // Lưu trạng thái đã mở khóa
         Debug.Log("Mỏ đá đã được mở khóa thành công.");
     }
+
+    // ─── Save / Load trạng thái mở khóa ─────────────────────────────────
+    // Key theo tên GameObject → mỗi mỏ đá có 1 key riêng
+    private string SaveKey => $"StoneMine_Unlocked_{gameObject.name}";
+
+    private void SaveLockState()
+    {
+        PlayerPrefs.SetInt(SaveKey, isLocked ? 0 : 1);
+        PlayerPrefs.Save();
+        Debug.Log($"[ResourceNode] Đã lưu trạng thái: {gameObject.name} = unlocked");
+    }
+
+    private void LoadLockState()
+    {
+        // Nếu chưa có key → dùng giá trị Inspector mặc định (isLocked = true)
+        if (!PlayerPrefs.HasKey(SaveKey)) return;
+
+        isLocked = PlayerPrefs.GetInt(SaveKey, 1) == 0;
+        Debug.Log($"[ResourceNode] Load trạng thái: {gameObject.name} = {(isLocked ? "locked" : "unlocked")}");
+    }
+
+    /// <summary>
+    /// [DEBUG] Reset mỏ đá về trạng thái khóa để test lại.
+    /// Dùng: chuột phải vào component ResourceNode → "Reset Unlock State (Debug)"
+    /// </summary>
+    [ContextMenu("Reset Unlock State (Debug)")]
+    private void DebugResetLockState()
+    {
+        PlayerPrefs.DeleteKey(SaveKey);
+        PlayerPrefs.Save();
+        isLocked = true;
+        UpdateLockStatus();
+        Debug.Log($"[ResourceNode] 🔄 Reset: {gameObject.name} đã khóa lại. Bấm Play lại để test.");
+    }
+
 
     void Update()
     {
@@ -88,11 +127,11 @@ public class ResourceNode : MonoBehaviour
             }
 
             if (panelController == null)
-                panelController = moDaCardPanel.GetComponent<StoneMineUnlockPanelController>();
+                panelController = moDaCardPanel.GetComponent<StoneMineUnlockManager>();
 
             if (panelController == null)
             {
-                Debug.LogError("[ResourceNode] Không tìm thấy StoneMineUnlockPanelController trên " + moDaCardPanel.name);
+                Debug.LogError("[ResourceNode] Không tìm thấy StoneMineUnlockManager trên " + moDaCardPanel.name);
                 return;
             }
 
