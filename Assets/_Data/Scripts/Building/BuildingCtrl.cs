@@ -115,6 +115,7 @@ public class BuildingCtrl : MonoBehaviour
         if (IsBuilt) return;
 
         buildProgress = Mathf.Clamp01(buildProgress + amount);
+        Debug.Log($"[BuildingCtrl] {buildingType} buildProgress = {buildProgress}"); // thêm dòng này
 
         if (IsBuilt) OnBuildComplete();
     }
@@ -186,10 +187,9 @@ public class BuildingCtrl : MonoBehaviour
     {
         Debug.Log($"[BuildingCtrl] ✅ {buildingType} đã xây xong!");
 
-
         if (buildingType == BuildingType.WatchTower)
         {
-            StartupTwoMissionTutorial.Instance?.NotifyWatchTowerPlaced();
+            StartupTwoMissionTutorial.Instance?.NotifyWatchTowerBuilt(); // ĐỔI TỪ NotifyWatchTowerPlaced() SANG HÀM MỚI
         }
     }
 

@@ -78,10 +78,10 @@ public class UpgradeableBuilding : MonoBehaviour
 
     public Sprite[] BuildingIcons => buildingIcons;
     // --------------------------------
-// ====================================================================
+    // ====================================================================
     // PENTA DEV - PHÂN KHU PHỐI HỢP HỆ THỐNG TÀN TÍCH & SỬA CHỮA
     // ====================================================================
-    
+
     [Header("Penta Dev - Giao Diện Tàn Tích")]
     [Tooltip("Kéo Model nhà nát (Xác nhà đổ nát) vào đây")]
     [SerializeField] private GameObject ruinedVisualModel;
@@ -288,7 +288,7 @@ public class UpgradeableBuilding : MonoBehaviour
             foreach (Transform child in transform)
             {
                 // THÊM DÒNG NÀY VÀO ĐÂY: Nếu là nhà nát thì bỏ qua, không được tắt MeshRenderer
-                 if (ruinedVisualModel != null && child.gameObject == ruinedVisualModel) continue;
+                if (ruinedVisualModel != null && child.gameObject == ruinedVisualModel) continue;
 
                 bool isVisualModel = false;
                 foreach (var im in instantiatedModels)
@@ -429,6 +429,13 @@ public class UpgradeableBuilding : MonoBehaviour
             if (targetUI != null)
             {
                 targetUI.HandleCompleteSequence();
+            }
+
+            // >>> THÊM MỚI: Báo cho BuildingCtrl biết công trình đã xây xong thật sự
+            var buildingCtrl = GetComponent<BuildingCtrl>();
+            if (buildingCtrl != null)
+            {
+                buildingCtrl.AddProgress(1f);
             }
 
             Debug.Log($"[Penta Dev] 🏠 Công trình {buildingName} đã hoàn thành xây dựng lần đầu tiên thành công!");
@@ -725,7 +732,7 @@ public class UpgradeableBuilding : MonoBehaviour
         SetActiveModel(CurrentLevel, false);
         CurrentLevel = Mathf.Clamp(level, 0, MaxLevel - 1);
         SetActiveModel(CurrentLevel, true);
-        
+
         UpdateCivilianBuildingData();
     }
 }

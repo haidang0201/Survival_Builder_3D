@@ -6,6 +6,8 @@ using UnityEngine.UI;
 public class StartupTwoMissionTutorial : MonoBehaviour
 {
     public static StartupTwoMissionTutorial Instance { get; private set; }
+    [Header("References")]
+    public BuildingCtrl watchTowerCtrl; // Kéo prefab tháp canh thật vào đây 
 
     [Header("CORE")]
     public RoKNpcMissionDialogUI npc;
@@ -114,6 +116,12 @@ public class StartupTwoMissionTutorial : MonoBehaviour
         HideArrow();
         ClearHighlight();
 
+        // ===== LỜI CHÀO MỪNG (MỚI) =====
+        yield return Say("Chào mừng tân trưởng làng đến với thuộc đia của chúng ta!");
+        yield return Say("Ta là Phó Lý, sẽ luôn ở bên hướng dẫn cậu trong những bước đầu tiên.");
+        yield return Say("Trước tiên, chúng ta cần một đôi mắt canh gác cho vùng đất này.");
+        // ================================
+
         yield return Say("Nhiệm vụ đầu tiên: hãy xây Tháp Canh để phát hiện kẻ địch từ xa.");
 
         yield return Step_OpenBuildPanel();
@@ -122,7 +130,7 @@ public class StartupTwoMissionTutorial : MonoBehaviour
 
         yield return Step_PlaceWatchTower();
 
-        yield return Say("Tốt lắm. Tháp Canh đã được đặt xong.");
+        //yield return Say("Tốt lắm. Tháp Canh đã được đặt xong.");
 
         MarkWatchTowerQuestCompleteForClaim();
 
@@ -249,12 +257,14 @@ public class StartupTwoMissionTutorial : MonoBehaviour
         // Không hiện nút Tiếp tục. Người chơi phải đặt Tháp Canh xuống đất.
         ShowObjective("Đặt Tháp Canh vào vị trí mũi tên chỉ dẫn.");
 
+        Debug.Log("[StartupTwoMissionTutorial] Bắt đầu chờ watchTowerPlaced..."); // THÊM
         yield return new WaitUntil(() => watchTowerPlaced);
-        yield return Say(
-    "Tốt lắm. Tháp Canh đã được đặt xong."
-);
+        Debug.Log("[StartupTwoMissionTutorial] watchTowerPlaced = true, chuẩn bị Say dialog Tốt lắm"); // THÊM
 
         IsWaitingForWatchTowerPlacement = false;
+
+        yield return Say("Tốt lắm!\nTháp Canh đã được đặt xong.");
+        Debug.Log("[StartupTwoMissionTutorial] Đã Say xong dialog Tốt lắm"); // THÊM
 
         HideNPC();
         HideArrow();
@@ -278,36 +288,91 @@ public class StartupTwoMissionTutorial : MonoBehaviour
     }
 
     // Gọi hàm này khi THÁP CANH THẬT được đặt xuống đất thành công
+    // Gọi hàm này khi THÁP CANH THẬT được đặt xuống đất thành công
+    // Gọi hàm này khi THÁP CANH THẬT được đặt xuống đất thành công
+    // Gọi hàm này khi THÁP CANH THẬT được đặt xuống đất thành công
+    // Gọi hàm này khi THÁP CANH THẬT được ĐẶT XUỐNG đất (chưa chắc xây xong)
+    // -> do WatchTowerTutorialNotifier gọi lúc người chơi thả tháp xuống
     public void NotifyWatchTowerPlaced()
     {
         if (!IsWaitingForWatchTowerPlacement)
+        {
+            Debug.Log("[StartupTwoMissionTutorial] Đã đặt Tháp Canh nhưng tutorial chưa ở bước chờ đặt.");
             return;
+        }
 
+        Debug.Log("[StartupTwoMissionTutorial] Tutorial nhận tín hiệu: Tháp Canh đã đặt xuống, đang chờ xây xong.");
 
-        watchTowerPlaced = true;
+        // Tắt icon mũi tên NGAY khi đặt xuống đất
+        if (worldArrow != null)
+            worldArrow.Hide();
 
-        IsWaitingForWatchTowerPlacement = false;
-
-
-        Debug.Log(
-            "[StartupTwoMissionTutorial] Tháp Canh xây hoàn thành."
-        );
-    }
-    IEnumerator WatchTowerCompleteDialog()
-    {
-        yield return Say(
-            "Tốt lắm. Tháp Canh đã được đặt xong."
-        );
-
-        yield return new WaitForSeconds(0.5f);
-
+        // Ẩn dialog "Đặt Tháp Canh..." ngay lập tức. Trong lúc đang xây không hiện dialog nào cả.
         HideNPC();
+
+        // KHÔNG set watchTowerPlaced ở đây nữa.
+        // Chờ NotifyWatchTowerBuilt() được gọi khi tháp THẬT SỰ xây xong.
     }
 
-    // public void TestPlaced()
+    // Gọi hàm này khi THÁP CANH THẬT ĐÃ XÂY XONG HOÀN TOÀN (buildProgress = 1)
+    // -> do chính BuildingCtrl.OnBuildComplete() của tháp vừa xây xong gọi, luôn đúng object thật
+    public void NotifyWatchTowerBuilt()
+    {
+        if (!IsWaitingForWatchTowerPlacement)
+        {
+            Debug.Log("[StartupTwoMissionTutorial] Tháp Canh xây xong nhưng tutorial không còn chờ nữa (bỏ qua).");
+            return;
+        }
+
+        Debug.Log("[StartupTwoMissionTutorial] Tháp Canh đã xây xong thật sự -> đánh dấu hoàn thành bước đặt tháp.");
+        watchTowerPlaced = true;
+    }
+
+    // Coroutine đợi build xong rồi mới đánh dấu đặt tháp hoàn tất
+    // private IEnumerator WaitAndShowDialog()
     // {
-    //     NotifyWatchTowerPlaced();
+    //     yield return new WaitUntil(() => watchTowerCtrl != null && watchTowerCtrl.IsBuilt);
+    //     watchTowerPlaced = true;
     // }
+    // Coroutine đợi build xong
+
+
+    // Coroutine đợi build xong
+    // Coroutine đợi build xong
+    // private IEnumerator WaitAndShowDialog()
+    // {
+    //     yield return new WaitUntil(() => watchTowerCtrl != null && watchTowerCtrl.buildProgress >= 1f);
+    //     CompleteWatchTowerPlacement();
+    // }
+
+    // Đánh dấu đặt tháp hoàn tất + hiện thoại, chỉ được gọi đúng 1 lần khi tháp đã xây xong
+    // void CompleteWatchTowerPlacement()
+    // {
+    //     watchTowerPlaced = true;
+    //     StartCoroutine(Say("Tốt lắm!\nTháp Canh đã được đặt xong."));
+    // }
+
+    // Coroutine đợi build xong
+    // private IEnumerator WaitAndShowDialog()
+    // {
+    //     yield return new WaitUntil(() => watchTowerCtrl != null && watchTowerCtrl.buildProgress >= 1f);
+    //     StartCoroutine(Say("Tốt lắm!\nTháp Canh đã được đặt xong."));
+    // }
+    // IEnumerator WatchTowerCompleteDialog()
+    // {
+    //     yield return Say(
+    //         "Tốt lắm. Tháp Canh đã được đặt xong."
+    //     );
+
+    //     yield return new WaitForSeconds(0.5f);
+
+    //     HideNPC();
+    // }
+
+    public void TestPlaced()
+    {
+        NotifyWatchTowerPlaced();
+    }
 
     // =====================================================
     // HELPERS
