@@ -20,6 +20,17 @@ public class RoKQuestCompletePopupUI : MonoBehaviour
     public Color buttonColor = new Color32(199, 106, 27, 255);
     public Color buttonHighlightColor = new Color32(240, 167, 58, 255);
 
+    // =====================================================
+    // SPRITES - kéo ảnh vào Inspector để thay nền/nút bằng ảnh vẽ sẵn.
+    // Để trống (None) thì giữ nguyên hành vi cũ (tô màu phẳng + Outline).
+    // =====================================================
+    [Header("SPRITES")]
+    public Sprite windowBgSprite;
+    public Sprite headerBgSprite;
+    public Sprite bodyCardBgSprite;
+    public Sprite openButtonBgSprite;
+    public Sprite closeButtonBgSprite;
+
     GameObject root;
     TMP_Text titleText;
     TMP_Text bodyText;
@@ -86,9 +97,9 @@ public class RoKQuestCompletePopupUI : MonoBehaviour
         Image overlay = root.GetComponent<Image>();
         overlay.color = overlayColor;
 
-        RectTransform window = CreatePanel(root.transform, "PopupWindow", new Vector2(680, 330), Vector2.zero, panelColor, true);
+        RectTransform window = CreatePanel(root.transform, "PopupWindow", new Vector2(680, 330), Vector2.zero, panelColor, true, windowBgSprite);
 
-        RectTransform header = CreatePanel(window, "Header", new Vector2(680, 80), new Vector2(0, 125), headerColor, true);
+        RectTransform header = CreatePanel(window, "Header", new Vector2(680, 80), new Vector2(0, 125), headerColor, true, headerBgSprite);
 
         titleText = CreateText(
             header,
@@ -102,7 +113,7 @@ public class RoKQuestCompletePopupUI : MonoBehaviour
             true
         );
 
-        RectTransform bodyCard = CreatePanel(window, "BodyCard", new Vector2(600, 135), new Vector2(0, 20), cardColor, true);
+        RectTransform bodyCard = CreatePanel(window, "BodyCard", new Vector2(600, 135), new Vector2(0, 20), cardColor, true, bodyCardBgSprite);
 
         bodyText = CreateText(
             bodyCard,
@@ -119,10 +130,11 @@ public class RoKQuestCompletePopupUI : MonoBehaviour
         Button openButton = CreateButton(
             window,
             "OpenQuestButton",
-            "Mở bảng nhiệm vụ",
+            "",
             new Vector2(0, -115),
             new Vector2(260, 58),
-            buttonColor
+            buttonColor,
+            openButtonBgSprite
         );
 
         openButton.onClick.AddListener(OpenQuestPanel);
@@ -130,16 +142,21 @@ public class RoKQuestCompletePopupUI : MonoBehaviour
         Button closeButton = CreateButton(
             window,
             "CloseButton",
-            "X",
+            "",
             new Vector2(315, 125),
             new Vector2(54, 54),
-            new Color32(170, 0, 0, 255)
+            new Color32(170, 0, 0, 255),
+            closeButtonBgSprite
         );
 
         closeButton.onClick.AddListener(Hide);
     }
 
-    RectTransform CreatePanel(Transform parent, string name, Vector2 size, Vector2 pos, Color color, bool outline)
+    // Đã thêm tham số "bgSprite" (mặc định null) để hỗ trợ nền dạng ảnh.
+    // Nếu bgSprite == null -> hành vi giữ nguyên y hệt bản gốc (tô màu phẳng + Outline).
+    // Nếu bgSprite != null -> dùng ảnh làm nền (Image.Type.Sliced), không cộng thêm Outline
+    // vì viền hoa văn đã có sẵn trong ảnh.
+    RectTransform CreatePanel(Transform parent, string name, Vector2 size, Vector2 pos, Color color, bool outline, Sprite bgSprite = null)
     {
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image));
         go.transform.SetParent(parent, false);
@@ -151,15 +168,25 @@ public class RoKQuestCompletePopupUI : MonoBehaviour
         rt.anchoredPosition = pos;
 
         Image img = go.GetComponent<Image>();
-        img.color = color;
         img.raycastTarget = true;
 
-        if (outline)
+        if (bgSprite != null)
         {
-            Outline o = go.AddComponent<Outline>();
-            o.effectColor = borderColor;
-            o.effectDistance = new Vector2(2, -2);
-            o.useGraphicAlpha = false;
+            img.sprite = bgSprite;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+        else
+        {
+            img.color = color;
+
+            if (outline)
+            {
+                Outline o = go.AddComponent<Outline>();
+                o.effectColor = borderColor;
+                o.effectDistance = new Vector2(2, -2);
+                o.useGraphicAlpha = false;
+            }
         }
 
         return rt;
@@ -193,9 +220,11 @@ public class RoKQuestCompletePopupUI : MonoBehaviour
         return text;
     }
 
-    Button CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, Color color)
+    // Đã thêm tham số "bgSprite" (mặc định null) để hỗ trợ nền dạng ảnh cho nút bấm.
+    // Nếu bgSprite == null -> hành vi giữ nguyên y hệt bản gốc.
+    Button CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, Color color, Sprite bgSprite = null)
     {
-        GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button), typeof(Outline));
+        GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(parent, false);
 
         RectTransform rt = go.GetComponent<RectTransform>();
@@ -205,19 +234,32 @@ public class RoKQuestCompletePopupUI : MonoBehaviour
         rt.anchoredPosition = pos;
 
         Image img = go.GetComponent<Image>();
-        img.color = color;
 
-        Outline outline = go.GetComponent<Outline>();
-        outline.effectColor = borderColor;
-        outline.effectDistance = new Vector2(2, -2);
-        outline.useGraphicAlpha = false;
+        Color normal = color;
+
+        if (bgSprite != null)
+        {
+            img.sprite = bgSprite;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+            normal = Color.white;
+        }
+        else
+        {
+            img.color = color;
+
+            Outline outline = go.AddComponent<Outline>();
+            outline.effectColor = borderColor;
+            outline.effectDistance = new Vector2(2, -2);
+            outline.useGraphicAlpha = false;
+        }
 
         Button btn = go.GetComponent<Button>();
         ColorBlock cb = btn.colors;
-        cb.normalColor = color;
-        cb.highlightedColor = buttonHighlightColor;
-        cb.pressedColor = new Color32(145, 70, 16, 255);
-        cb.selectedColor = buttonHighlightColor;
+        cb.normalColor = normal;
+        cb.highlightedColor = bgSprite != null ? new Color(0.9f, 0.9f, 0.9f, 1f) : buttonHighlightColor;
+        cb.pressedColor = bgSprite != null ? new Color(0.75f, 0.75f, 0.75f, 1f) : new Color32(145, 70, 16, 255);
+        cb.selectedColor = cb.highlightedColor;
         cb.colorMultiplier = 1;
         btn.colors = cb;
 

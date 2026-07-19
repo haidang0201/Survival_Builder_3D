@@ -325,14 +325,14 @@ public class RoKNpcMissionDialogUI : MonoBehaviour
         innerOffsetMin = new Vector2(40, 30);
         innerOffsetMax = new Vector2(-40, -70);
 
-        ribbonOffset = new Vector2(40, -49);
+        ribbonOffset = new Vector2(-10, -72);
         ribbonSize = new Vector2(300, 70);
 
         namePosition = Vector2.zero;
         nameSize = ribbonSize;
         messagePosition = new Vector2(32, -90);
         messageSize = new Vector2(560, 130);
-        tapHintPosition = new Vector2(-94, -20);
+        tapHintPosition = new Vector2(-94, -10);
         tapHintSize = new Vector2(603, 110);
 
         nameFontSize = 32;

@@ -1,8 +1,8 @@
-using System;
+
 using UnityEditor;
+using UnityEngine;
 
 #if UNITY_EDITOR
-using UnityEngine;
 #endif
 
 namespace Harpia.CampingPack
@@ -18,7 +18,7 @@ namespace Harpia.CampingPack
     {
         public static Texture2D test;
         private Texture2D _downloadedTexture;
-        
+
 
         async void LoadTexture(string link, Texture2D tex)
         {
@@ -53,8 +53,8 @@ namespace Harpia.CampingPack
 
             GUILayout.Label("Check out our other tools:");
             GUILayout.Space(5);
-            
-            
+
+
             if (GUILayout.Button("Level Design Tool"))
             {
                 Application.OpenURL(CampingPackCanvas.prefabBrushLink);

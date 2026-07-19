@@ -18,6 +18,10 @@ public class RoKCoinRewardFlyEffect : MonoBehaviour
     public float flyDuration = 0.75f;
     public float spawnInterval = 0.035f;
 
+    [Header("SORTING (đảm bảo coin luôn bay TRÊN mọi UI khác)")]
+    public bool forceOnTop = true;
+    public int overrideSortingOrder = 32767;
+
     [Header("SOUND")]
     public AudioSource audioSource;
     public AudioClip coinSfx;
@@ -114,8 +118,30 @@ public class RoKCoinRewardFlyEffect : MonoBehaviour
         if (delay > 0f)
             yield return new WaitForSeconds(delay);
 
-        GameObject go = new GameObject("FlyingGoldCoin", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+        GameObject go = new GameObject(
+            "FlyingGoldCoin",
+            typeof(RectTransform),
+            typeof(CanvasGroup),
+            typeof(Image)
+        );
         go.transform.SetParent(flyRoot, false);
+
+        // Đảm bảo coin luôn nằm trên cùng trong cùng 1 Canvas
+        go.transform.SetAsLastSibling();
+
+        // Đảm bảo coin luôn vẽ TRÊN mọi Canvas khác (kể cả bảng nhiệm vụ
+        // nằm trên 1 Canvas/Panel riêng có sorting order khác nhau).
+        if (forceOnTop)
+        {
+            Canvas coinCanvas = go.AddComponent<Canvas>();
+            coinCanvas.overrideSorting = true;
+            coinCanvas.sortingOrder = overrideSortingOrder;
+
+            // Cần GraphicRaycaster đi kèm Canvas override để UI không bị lỗi raycast,
+            // nhưng coin không nhận raycast nên tắt luôn cho nhẹ.
+            GraphicRaycaster gr = go.AddComponent<GraphicRaycaster>();
+            gr.enabled = false;
+        }
 
         RectTransform rt = go.GetComponent<RectTransform>();
         rt.sizeDelta = coinSize;
@@ -158,6 +184,7 @@ public class RoKCoinRewardFlyEffect : MonoBehaviour
         onDone?.Invoke();
     }
 
+
     Vector2 GetLocalPoint(RectTransform rect)
     {
         Camera cam = null;
@@ -186,6 +213,7 @@ public class RoKCoinRewardFlyEffect : MonoBehaviour
         audioSource.PlayOneShot(coinSfx);
     }
     public void PlayResourceFly(
+
     RectTransform from,
     RectTransform to,
     Sprite resourceSprite,

@@ -7,13 +7,15 @@ using TMPro;
 /// UI huấn luyện Cung Thủ: chọn số lượng -> trừ Gỗ/Vàng -> chờ theo thời gian
 /// -> huấn luyện xong tự cộng tiến độ vào nhiệm vụ "train_archer" trong RoKQuestPanelUI.
 ///
-/// CÁCH DÙNG:
-/// 1. Gắn script này vào 1 GameObject trống trong scene.
-/// 2. Gán targetCanvas, questPanelUI (kéo GameObject có RoKQuestPanelUI vào).
-/// 3. Nếu tên field tài nguyên trong JsonDataManager của bạn khác "wood"/"gold",
-///    sửa lại 2 hàm CurrentWood()/CurrentGold() bên dưới cho khớp.
-/// 4. Gọi OpenPanel() từ nút "Đi" của quest "train_archer" (hoặc từ nút mở
-///    trại huấn luyện trên bản đồ) để hiện UI này ra.
+/// GHI CHÚ CHỈNH LAYOUT (bản cập nhật):
+///    Toàn bộ khối nội dung giữa header và nút Huấn Luyện (dòng "Cung thủ hiện
+///    có", icon cung thủ, bộ chọn số lượng -/+, dòng chi phí gỗ/vàng, dòng cảnh
+///    báo) đã được dịch lên trên (~20-30px) so với bản gốc để đỡ dồn sát nhau
+///    và chừa thêm khoảng trống phía dưới cho nút Huấn Luyện + thanh tiến trình.
+///    Muốn chỉnh thêm, chỉ cần sửa các hằng số trong hàm BuildUI():
+///    currentCountY, iconY, quantityRowY, costRowY, statusY — số càng NHỎ thì
+///    phần tử càng dịch lên GẦN header hơn (các giá trị này đo từ mép TRÊN
+///    panel xuống).
 /// </summary>
 public class RoKArcherTrainingUI : MonoBehaviour
 {
@@ -22,13 +24,10 @@ public class RoKArcherTrainingUI : MonoBehaviour
     public int sortingOrder = 9200;
 
     [Header("LINK QUEST")]
-    [Tooltip("Kéo GameObject có RoKQuestPanelUI vào đây để tự động cộng tiến độ nhiệm vụ.")]
     public RoKQuestPanelUI questPanelUI;
-    [Tooltip("Id nhiệm vụ sẽ được cộng tiến độ mỗi khi huấn luyện xong 1 lính.")]
     public string questIdToReport = "train_archer";
 
     [Header("DATA")]
-    [Tooltip("Để trống sẽ tự FindObjectOfType lúc Awake.")]
     public JsonDataManager jsonData;
 
     [Header("FONT & ICON")]
@@ -36,6 +35,16 @@ public class RoKArcherTrainingUI : MonoBehaviour
     public Sprite archerIcon;
     public Sprite woodIcon;
     public Sprite goldIcon;
+
+    [Header("HÌNH ẢNH TUỲ CHỌN")]
+    public Sprite panelBackgroundSprite;
+    public Sprite headerBackgroundSprite;
+    public Sprite closeButtonSprite;
+    public Sprite minusButtonSprite;
+    public Sprite plusButtonSprite;
+    public Sprite trainButtonSprite;
+    public Sprite progressBarBackgroundSprite;
+    public Sprite progressBarFillSprite;
 
     [Header("COST / TIME PER ARCHER")]
     public int woodCostPerArcher = 20;
@@ -47,17 +56,12 @@ public class RoKArcherTrainingUI : MonoBehaviour
     public int maxQuantity = 20;
 
     [Header("SINH LÍNH RA BẢN ĐỒ (tuỳ chọn)")]
-    [Tooltip("Prefab lính Cung Thủ sẽ được Instantiate khi huấn luyện xong. Để trống nếu bạn chưa có prefab, script vẫn cập nhật số lượng bình thường.")]
     public GameObject archerUnitPrefab;
-    [Tooltip("Vị trí sinh lính ra (thường là cổng doanh trại). Để trống sẽ dùng vị trí của chính GameObject này.")]
     public Transform archerSpawnPoint;
-    [Tooltip("Khoảng cách giữa các lính khi sinh ra hàng loạt, tránh chồng lên nhau.")]
     public float spawnSpacing = 1.2f;
 
     [Header("SỐ LÍNH HIỆN CÓ")]
-    [Tooltip("Khoá lưu PlayerPrefs cho số cung thủ hiện có, đổi khác nếu bạn có nhiều loại lính.")]
     public string archerCountSaveKey = "RoK_ArcherCount";
-    [Tooltip("Tổng số Cung Thủ hiện có (đọc/ghi runtime, tự lưu qua PlayerPrefs).")]
     public int currentArcherCount = 0;
 
     [Header("STYLE - GỖ")]
@@ -91,6 +95,7 @@ public class RoKArcherTrainingUI : MonoBehaviour
     Button plusButton;
 
     GameObject progressBarRoot;
+    Image progressBarBackgroundImage;
     Image progressBarFill;
     TMP_Text progressBarText;
 
@@ -99,19 +104,23 @@ public class RoKArcherTrainingUI : MonoBehaviour
 
     const string ROOT_NAME = "RoK_ArcherTrainingUI_AutoRoot";
 
+    const float PANEL_WIDTH = 640f;
+    const float PANEL_HEIGHT = 600f;
+
     void Awake()
     {
-        // Không cần tự tìm jsonData ở đây nữa — GetJsonData() sẽ tự tìm lại
-        // mỗi khi cần dùng, kể cả khi JsonDataManager khởi tạo chậm hơn hoặc
-        // bị destroy/tạo lại khi đổi scene.
-
-        // Đọc lại số Cung Thủ hiện có đã lưu từ trước (nếu có)
         currentArcherCount = PlayerPrefs.GetInt(archerCountSaveKey, currentArcherCount);
 
         EnsureCanvas();
         BuildUI();
         RefreshAll();
         ClosePanel();
+
+        // Cảnh báo NGAY từ đầu (thay vì đợi tới lúc bấm Huấn Luyện) nếu prefab
+        // lính chưa được gán, để bạn luôn biết chắc script còn liên kết đúng
+        // với prefab hay không.
+        if (archerUnitPrefab == null)
+            Debug.LogWarning("[RoKArcherTrainingUI] Chưa gán 'Archer Unit Prefab' trong Inspector — lính sẽ KHÔNG được sinh ra ngoài bản đồ khi huấn luyện xong (số lượng vẫn cộng bình thường).");
     }
 
     void EnsureCanvas()
@@ -119,10 +128,6 @@ public class RoKArcherTrainingUI : MonoBehaviour
         if (targetCanvas == null)
             targetCanvas = FindObjectOfType<Canvas>();
     }
-
-    // =====================================================
-    // PUBLIC API
-    // =====================================================
 
     public void OpenPanel()
     {
@@ -142,10 +147,6 @@ public class RoKArcherTrainingUI : MonoBehaviour
             root.SetActive(false);
     }
 
-    // =====================================================
-    // BUILD UI
-    // =====================================================
-
     void BuildUI()
     {
         if (targetCanvas == null)
@@ -164,7 +165,6 @@ public class RoKArcherTrainingUI : MonoBehaviour
         rootRT = root.GetComponent<RectTransform>();
         Stretch(rootRT);
 
-        // Nền mờ phía sau, bấm ra ngoài để đóng
         GameObject dim = new GameObject("Dim", typeof(RectTransform), typeof(Image), typeof(Button));
         dim.transform.SetParent(root.transform, false);
         RectTransform dimRT = dim.GetComponent<RectTransform>();
@@ -174,39 +174,49 @@ public class RoKArcherTrainingUI : MonoBehaviour
         Button dimBtn = dim.GetComponent<Button>();
         dimBtn.onClick.AddListener(ClosePanel);
 
-        // Panel chính
         GameObject panel = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(Outline));
         panel.transform.SetParent(root.transform, false);
         RectTransform panelRT = panel.GetComponent<RectTransform>();
         panelRT.anchorMin = panelRT.anchorMax = new Vector2(0.5f, 0.5f);
         panelRT.pivot = new Vector2(0.5f, 0.5f);
-        panelRT.sizeDelta = new Vector2(620, 460);
+        panelRT.sizeDelta = new Vector2(PANEL_WIDTH, PANEL_HEIGHT);
         panelRT.anchoredPosition = Vector2.zero;
 
         Image panelImg = panel.GetComponent<Image>();
-        panelImg.color = panelColor;
+        ApplySpriteOrColor(panelImg, panelBackgroundSprite, panelColor);
 
         Outline panelOutline = panel.GetComponent<Outline>();
         panelOutline.effectColor = borderColor;
         panelOutline.effectDistance = new Vector2(4f, -4f);
         panelOutline.useGraphicAlpha = false;
 
-        // Header
+        // ---- Bố cục theo trục dọc, tính từ mép TRÊN của panel xuống (top = 0) ----
+        // ĐÃ DỊCH LÊN TRÊN so với bản gốc (currentCountY 105->85, iconY 205->175,
+        // quantityRowY 325->300, costRowY 393->365, statusY 441->410).
+        const float headerHeight = 74f;
+        const float currentCountY = 85f;
+        const float iconY = 175f;
+        const float iconSize = 140f;
+        const float quantityRowY = 300f;
+        const float costRowY = 345f; // nhích lên thêm cho thoáng, tránh sát mép dưới
+        const float statusY = 410f;
+        const float trainButtonBottomOffset = 100f;
+        const float progressBarBottomOffset = 25f;
+
         GameObject header = new GameObject("Header", typeof(RectTransform), typeof(Image));
         header.transform.SetParent(panel.transform, false);
         RectTransform headerRT = header.GetComponent<RectTransform>();
         headerRT.anchorMin = new Vector2(0f, 1f);
         headerRT.anchorMax = new Vector2(1f, 1f);
         headerRT.pivot = new Vector2(0.5f, 1f);
-        headerRT.sizeDelta = new Vector2(0, 70);
+        headerRT.sizeDelta = new Vector2(0, headerHeight);
         headerRT.anchoredPosition = Vector2.zero;
-        header.GetComponent<Image>().color = headerColor;
+        ApplySpriteOrColor(header.GetComponent<Image>(), headerBackgroundSprite, headerColor);
 
         TMP_Text headerText = CreateText(header.transform, "HeaderText", "Huấn Luyện Cung Thủ",
-            Vector2.zero, new Vector2(500, 70), 34, titleColor, TextAlignmentOptions.Center, true);
+            Vector2.zero, new Vector2(500, headerHeight), 34, titleColor, TextAlignmentOptions.Center, true);
         StretchInside(headerText.rectTransform);
 
-        // Nút đóng
         GameObject closeGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
         closeGO.transform.SetParent(header.transform, false);
         RectTransform closeRT = closeGO.GetComponent<RectTransform>();
@@ -214,79 +224,114 @@ public class RoKArcherTrainingUI : MonoBehaviour
         closeRT.pivot = new Vector2(1f, 0.5f);
         closeRT.anchoredPosition = new Vector2(-15, 0);
         closeRT.sizeDelta = new Vector2(50, 50);
-        closeGO.GetComponent<Image>().color = new Color32(180, 60, 45, 255);
+        ApplySpriteOrColor(closeGO.GetComponent<Image>(), closeButtonSprite, new Color32(180, 60, 45, 255));
         closeGO.GetComponent<Button>().onClick.AddListener(ClosePanel);
 
-        TMP_Text closeText = CreateText(closeGO.transform, "X", "X", Vector2.zero, new Vector2(50, 50), 28,
-            Color.white, TextAlignmentOptions.Center, true);
+        TMP_Text closeText = CreateText(closeGO.transform, "", closeButtonSprite != null ? "" : "",
+            Vector2.zero, new Vector2(50, 50), 28, Color.white, TextAlignmentOptions.Center, true);
         StretchInside(closeText.rectTransform);
 
-        // Số Cung Thủ hiện có
         currentArcherCountText = CreateText(panel.transform, "CurrentArcherCountText",
-            BuildCurrentArcherCountLabel(), new Vector2(0, -40), new Vector2(400, 34),
+            BuildCurrentArcherCountLabel(), Vector2.zero, new Vector2(500, 34),
             24, bodyColor, TextAlignmentOptions.Center, false);
         SetAnchorTopCenter(currentArcherCountText.rectTransform);
-        currentArcherCountText.rectTransform.anchoredPosition = new Vector2(0, -40);
+        currentArcherCountText.rectTransform.anchoredPosition = new Vector2(0, -currentCountY);
 
-        // Icon cung thủ
         GameObject iconGO = new GameObject("ArcherIcon", typeof(RectTransform), typeof(Image));
         iconGO.transform.SetParent(panel.transform, false);
         RectTransform iconRT = iconGO.GetComponent<RectTransform>();
         iconRT.anchorMin = iconRT.anchorMax = new Vector2(0.5f, 1f);
         iconRT.pivot = new Vector2(0.5f, 1f);
-        iconRT.anchoredPosition = new Vector2(0, -90);
-        iconRT.sizeDelta = new Vector2(110, 110);
+        iconRT.anchoredPosition = new Vector2(0, -iconY);
+        iconRT.sizeDelta = new Vector2(iconSize, iconSize);
         Image iconImg = iconGO.GetComponent<Image>();
         iconImg.sprite = archerIcon;
         iconImg.color = archerIcon != null ? Color.white : new Color32(255, 210, 45, 255);
         iconImg.preserveAspect = true;
 
-        // Bộ chọn số lượng: [ - ]  Số lượng  [ + ]
-        minusButton = CreateQtyButton(panel.transform, "MinusButton", "-", new Vector2(-140, -230));
+        minusButton = CreateQtyButton(panel.transform, "MinusButton", "-", new Vector2(-150, -quantityRowY), minusButtonSprite);
         minusButton.onClick.AddListener(() => ChangeQuantity(-1));
 
         quantityText = CreateText(panel.transform, "QuantityText", quantity.ToString(),
-            new Vector2(0, -230), new Vector2(120, 55), 34, titleColor, TextAlignmentOptions.Center, true);
-        SetAnchorCenter(quantityText.rectTransform);
-        quantityText.rectTransform.anchoredPosition = new Vector2(0, -230);
+            Vector2.zero, new Vector2(120, 55), 34, titleColor, TextAlignmentOptions.Center, true);
+        SetAnchorTopCenter(quantityText.rectTransform);
+        quantityText.rectTransform.anchoredPosition = new Vector2(0, -quantityRowY);
 
-        plusButton = CreateQtyButton(panel.transform, "PlusButton", "+", new Vector2(140, -230));
+        plusButton = CreateQtyButton(panel.transform, "PlusButton", "+", new Vector2(150, -quantityRowY), plusButtonSprite);
         plusButton.onClick.AddListener(() => ChangeQuantity(1));
 
-        // Chi phí: gỗ + vàng
-        GameObject woodRow = CreateImage(panel.transform, "WoodCostIcon", new Vector2(-90, -300), new Vector2(30, 30));
-        woodRow.GetComponent<Image>().sprite = woodIcon;
-        woodRow.GetComponent<Image>().color = woodIcon != null ? Color.white : new Color32(150, 98, 50, 255);
-
-        woodCostText = CreateText(panel.transform, "WoodCostText", "0", new Vector2(-50, -300),
-            new Vector2(100, 30), 24, bodyColor, TextAlignmentOptions.Left, false);
-        SetAnchorTopCenter(woodCostText.rectTransform);
-        woodCostText.rectTransform.anchoredPosition = new Vector2(-50, -300);
+        // GHI CHÚ: kéo 2 cụm Gỗ/Vàng lại gần nhau hơn ở giữa (trước đó cách
+        // nhau ~78px trông rời rạc). Icon-số trong từng cụm vẫn giữ đệm ~8px
+        // để không bao giờ đè chữ; chỉ thu hẹp khoảng cách GIỮA 2 cụm.
+        GameObject woodRow = CreateImage(panel.transform, "WoodCostIcon", Vector2.zero, new Vector2(34, 34));
+        Image woodRowImg = woodRow.GetComponent<Image>();
+        woodRowImg.sprite = woodIcon;
+        woodRowImg.color = woodIcon != null ? Color.white : new Color32(150, 98, 50, 255);
+        woodRowImg.preserveAspect = true;
         SetAnchorTopCenter(woodRow.GetComponent<RectTransform>());
-        woodRow.GetComponent<RectTransform>().anchoredPosition = new Vector2(-90, -300);
+        woodRow.GetComponent<RectTransform>().anchoredPosition = new Vector2(-95, -costRowY);
 
-        GameObject goldRow = CreateImage(panel.transform, "GoldCostIcon", new Vector2(60, -300), new Vector2(30, 30));
-        goldRow.GetComponent<Image>().sprite = goldIcon;
-        goldRow.GetComponent<Image>().color = goldIcon != null ? Color.white : new Color32(255, 210, 45, 255);
+        woodCostText = CreateText(panel.transform, "WoodCostText", "0", Vector2.zero,
+            new Vector2(60, 34), 24, bodyColor, TextAlignmentOptions.Left, false);
+        SetAnchorTopCenter(woodCostText.rectTransform);
+        woodCostText.rectTransform.anchoredPosition = new Vector2(-40, -costRowY);
+
+        GameObject goldRow = CreateImage(panel.transform, "GoldCostIcon", Vector2.zero, new Vector2(34, 34));
+        Image goldRowImg = goldRow.GetComponent<Image>();
+        goldRowImg.sprite = goldIcon;
+        goldRowImg.color = goldIcon != null ? Color.white : new Color32(255, 210, 45, 255);
+        goldRowImg.preserveAspect = true;
         SetAnchorTopCenter(goldRow.GetComponent<RectTransform>());
-        goldRow.GetComponent<RectTransform>().anchoredPosition = new Vector2(60, -300);
+        goldRow.GetComponent<RectTransform>().anchoredPosition = new Vector2(20, -costRowY);
 
-        goldCostText = CreateText(panel.transform, "GoldCostText", "0", new Vector2(100, -300),
-            new Vector2(100, 30), 24, bodyColor, TextAlignmentOptions.Left, false);
+        goldCostText = CreateText(panel.transform, "GoldCostText", "0", Vector2.zero,
+            new Vector2(60, 34), 24, bodyColor, TextAlignmentOptions.Left, false);
         SetAnchorTopCenter(goldCostText.rectTransform);
-        goldCostText.rectTransform.anchoredPosition = new Vector2(100, -300);
+        goldCostText.rectTransform.anchoredPosition = new Vector2(75, -costRowY);
 
-        // Nút Huấn luyện
         GameObject trainGO = new GameObject("TrainButton", typeof(RectTransform), typeof(Image), typeof(Button), typeof(Outline));
         trainGO.transform.SetParent(panel.transform, false);
         RectTransform trainRT = trainGO.GetComponent<RectTransform>();
         trainRT.anchorMin = trainRT.anchorMax = new Vector2(0.5f, 0f);
         trainRT.pivot = new Vector2(0.5f, 0f);
-        trainRT.anchoredPosition = new Vector2(0, 90);
-        trainRT.sizeDelta = new Vector2(260, 70);
+        trainRT.anchoredPosition = new Vector2(0, trainButtonBottomOffset);
 
         trainButtonImage = trainGO.GetComponent<Image>();
-        trainButtonImage.color = affordableButtonColor;
+        if (trainButtonSprite != null)
+        {
+            // SỬA LỖI BÓP MÉO: trước đây ép cứng sprite vào khung 260x74 (hình
+            // chữ nhật dẹt) bằng Image.Type.Sliced — nếu ảnh gốc là hình vuông/
+            // hình thoi (như icon kim cương chéo kiếm) thì bị kéo bẹp ngang rất
+            // xấu. Nay dùng Image.Type.Simple + preserveAspect=true và TỰ TÍNH
+            // kích thước khung theo đúng tỉ lệ Width/Height gốc của sprite (giới
+            // hạn trong một khung tối đa) để hình luôn hiển thị tròn trịa, không
+            // méo, dù bạn gán bất kỳ ảnh nào (chữ nhật dài hay vuông/thoi).
+            trainButtonImage.sprite = trainButtonSprite;
+            trainButtonImage.type = Image.Type.Simple;
+            trainButtonImage.preserveAspect = true;
+            trainButtonImage.color = Color.white;
+
+            const float maxTrainButtonWidth = 220f;
+            const float maxTrainButtonHeight = 130f;
+            float spriteAspect = trainButtonSprite.rect.width / trainButtonSprite.rect.height;
+
+            float w = maxTrainButtonWidth;
+            float h = w / spriteAspect;
+            if (h > maxTrainButtonHeight)
+            {
+                h = maxTrainButtonHeight;
+                w = h * spriteAspect;
+            }
+
+            trainRT.sizeDelta = new Vector2(w, h);
+        }
+        else
+        {
+            // Không có sprite riêng -> dùng khung chữ nhật màu phẳng như cũ,
+            // trường hợp này không có nguy cơ bị méo vì không kéo giãn ảnh.
+            trainButtonImage.color = affordableButtonColor;
+            trainRT.sizeDelta = new Vector2(260, 74);
+        }
 
         Outline trainOutline = trainGO.GetComponent<Outline>();
         trainOutline.effectColor = borderColor;
@@ -296,67 +341,138 @@ public class RoKArcherTrainingUI : MonoBehaviour
         trainButton = trainGO.GetComponent<Button>();
         trainButton.onClick.AddListener(OnTrainButtonClicked);
 
-        trainButtonText = CreateText(trainGO.transform, "TrainButtonText", "Huấn Luyện",
-            Vector2.zero, new Vector2(260, 70), 30, Color.white, TextAlignmentOptions.Center, true);
+        trainButtonText = CreateText(trainGO.transform, "TrainButtonText", "",
+            Vector2.zero, trainRT.sizeDelta, 30, Color.white, TextAlignmentOptions.Center, true);
         StretchInside(trainButtonText.rectTransform);
 
-        // Thanh tiến trình (ẩn cho tới khi bắt đầu huấn luyện)
         progressBarRoot = new GameObject("ProgressBarRoot", typeof(RectTransform), typeof(Image));
         progressBarRoot.transform.SetParent(panel.transform, false);
         RectTransform barRootRT = progressBarRoot.GetComponent<RectTransform>();
         barRootRT.anchorMin = barRootRT.anchorMax = new Vector2(0.5f, 0f);
         barRootRT.pivot = new Vector2(0.5f, 0f);
-        barRootRT.anchoredPosition = new Vector2(0, 30);
-        barRootRT.sizeDelta = new Vector2(480, 34);
-        progressBarRoot.GetComponent<Image>().color = new Color32(30, 20, 12, 255);
+        barRootRT.anchoredPosition = new Vector2(0, progressBarBottomOffset);
+        barRootRT.sizeDelta = new Vector2(500, 34);
+        progressBarBackgroundImage = progressBarRoot.GetComponent<Image>();
+        ApplySpriteOrColor(progressBarBackgroundImage, progressBarBackgroundSprite, new Color32(30, 20, 12, 255));
 
+        // Thanh fill kiểu SLIDER thật: dùng Image.Type.Filled (Horizontal, gốc Trái)
+        // thay vì kéo giãn RectTransform. Cách này chạy mượt, không bị vỡ/méo
+        // sprite ở hai đầu thanh, và animate y hệt cơ chế của UI Slider chuẩn
+        // trong Unity (chỉ cần đổi fillAmount từ 0 -> 1).
         GameObject fillGO = new GameObject("ProgressBarFill", typeof(RectTransform), typeof(Image));
         fillGO.transform.SetParent(progressBarRoot.transform, false);
         RectTransform fillRT = fillGO.GetComponent<RectTransform>();
-        fillRT.anchorMin = new Vector2(0f, 0f);
-        fillRT.anchorMax = new Vector2(0f, 1f);
-        fillRT.pivot = new Vector2(0f, 0.5f);
+        // Stretch kín toàn bộ rãnh thanh tiến trình — phần "chạy" sẽ do fillAmount
+        // của Image quyết định, không phải kích thước RectTransform.
+        fillRT.anchorMin = Vector2.zero;
+        fillRT.anchorMax = Vector2.one;
         fillRT.offsetMin = Vector2.zero;
         fillRT.offsetMax = Vector2.zero;
-        fillRT.sizeDelta = new Vector2(0, 0);
         progressBarFill = fillGO.GetComponent<Image>();
-        progressBarFill.color = progressBarColor;
+        ApplyFillSpriteOrColor(progressBarFill, progressBarFillSprite, progressBarColor);
+        progressBarFill.fillAmount = 0f;
 
         progressBarText = CreateText(progressBarRoot.transform, "ProgressBarText", "",
-            Vector2.zero, new Vector2(480, 34), 20, titleColor, TextAlignmentOptions.Center, true);
+            Vector2.zero, new Vector2(500, 34), 20, titleColor, TextAlignmentOptions.Center, true);
         StretchInside(progressBarText.rectTransform);
 
         progressBarRoot.SetActive(false);
 
-        // Dòng trạng thái (báo thiếu tài nguyên, v.v.)
-        statusText = CreateText(panel.transform, "StatusText", "", new Vector2(0, -350),
-            new Vector2(520, 30), 20, new Color32(230, 120, 100, 255), TextAlignmentOptions.Center, false);
+        statusText = CreateText(panel.transform, "StatusText", "", Vector2.zero,
+            new Vector2(560, 30), 20, new Color32(230, 120, 100, 255), TextAlignmentOptions.Center, false);
         SetAnchorTopCenter(statusText.rectTransform);
-        statusText.rectTransform.anchoredPosition = new Vector2(0, -350);
+        statusText.rectTransform.anchoredPosition = new Vector2(0, -statusY);
     }
 
-    Button CreateQtyButton(Transform parent, string name, string label, Vector2 pos)
+    void ApplySpriteOrColor(Image img, Sprite sprite, Color fallbackColor)
+    {
+        if (img == null)
+            return;
+
+        if (sprite != null)
+        {
+            img.sprite = sprite;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+        else
+        {
+            img.sprite = null;
+            img.type = Image.Type.Simple;
+            img.color = fallbackColor;
+        }
+    }
+
+    // Sprite trắng 1x1 dùng làm dự phòng cho thanh fill kiểu Filled khi bạn
+    // chưa gán ảnh riêng — Image.Type.Filled cần có sprite hợp lệ mới fill
+    // đúng, nếu để sprite = null thì fillAmount có thể không hiển thị đúng.
+    static Sprite s_fallbackWhiteSprite;
+
+    static Sprite GetFallbackWhiteSprite()
+    {
+        if (s_fallbackWhiteSprite == null)
+        {
+            Texture2D tex = new Texture2D(4, 4, TextureFormat.RGBA32, false);
+            Color32[] pixels = new Color32[16];
+            for (int i = 0; i < pixels.Length; i++)
+                pixels[i] = new Color32(255, 255, 255, 255);
+            tex.SetPixels32(pixels);
+            tex.Apply();
+
+            s_fallbackWhiteSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+        }
+
+        return s_fallbackWhiteSprite;
+    }
+
+    /// <summary>
+    /// Gán sprite + kiểu Filled (Horizontal, gốc Trái) cho thanh fill kiểu
+    /// SLIDER thật. Nếu có sprite riêng thì dùng màu trắng để không ám màu
+    /// ảnh gốc; nếu không có thì dùng sprite trắng dự phòng + màu tuỳ chỉnh.
+    /// Sau khi gọi hàm này, chỉ cần đổi img.fillAmount (0..1) để chạy thanh,
+    /// không cần đụng tới RectTransform nữa.
+    /// </summary>
+    void ApplyFillSpriteOrColor(Image img, Sprite sprite, Color fallbackColor)
+    {
+        if (img == null)
+            return;
+
+        if (sprite != null)
+        {
+            img.sprite = sprite;
+            img.color = Color.white;
+        }
+        else
+        {
+            img.sprite = GetFallbackWhiteSprite();
+            img.color = fallbackColor;
+        }
+
+        img.type = Image.Type.Filled;
+        img.fillMethod = Image.FillMethod.Horizontal;
+        img.fillOrigin = (int)Image.OriginHorizontal.Left;
+        img.fillClockwise = true;
+        img.raycastTarget = false;
+    }
+
+    Button CreateQtyButton(Transform parent, string name, string label, Vector2 pos, Sprite overrideSprite)
     {
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(parent, false);
 
         RectTransform rt = go.GetComponent<RectTransform>();
-        SetAnchorCenter(rt);
+        SetAnchorTopCenter(rt);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(60, 55);
+        rt.sizeDelta = new Vector2(64, 58);
 
-        go.GetComponent<Image>().color = quantityButtonColor;
+        ApplySpriteOrColor(go.GetComponent<Image>(), overrideSprite, quantityButtonColor);
 
-        TMP_Text text = CreateText(go.transform, name + "Text", label, Vector2.zero, new Vector2(60, 55), 32,
-            Color.white, TextAlignmentOptions.Center, true);
+        TMP_Text text = CreateText(go.transform, name + "Text", overrideSprite != null ? "" : label,
+            Vector2.zero, new Vector2(64, 58), 32, Color.white, TextAlignmentOptions.Center, true);
         StretchInside(text.rectTransform);
 
         return go.GetComponent<Button>();
     }
-
-    // =====================================================
-    // LOGIC SỐ LƯỢNG / CHI PHÍ
-    // =====================================================
 
     void ChangeQuantity(int delta)
     {
@@ -383,7 +499,7 @@ public class RoKArcherTrainingUI : MonoBehaviour
 
         bool canAfford = CurrentWood() >= totalWood && CurrentGold() >= totalGold;
 
-        if (trainButtonImage != null)
+        if (trainButtonImage != null && trainButtonSprite == null)
             trainButtonImage.color = canAfford ? affordableButtonColor : notAffordableButtonColor;
 
         if (trainButton != null)
@@ -407,15 +523,6 @@ public class RoKArcherTrainingUI : MonoBehaviour
         return "Cung thủ hiện có: " + currentArcherCount.ToString("#,0").Replace(",", ".");
     }
 
-    // =====================================================
-    // JSON DATA MANAGER — LUÔN TỰ TÌM LẠI NẾU BỊ MẤT LIÊN KẾT
-    // =====================================================
-
-    /// <summary>
-    /// Luôn dùng hàm này thay vì gọi thẳng field "jsonData", vì nó tự động tìm lại
-    /// JsonDataManager nếu bị null (do thứ tự Awake khác nhau, đổi scene, object bị
-    /// destroy/tạo lại...). Giúp script không bao giờ "mất liên kết" tài nguyên.
-    /// </summary>
     JsonDataManager GetJsonData()
     {
         if (jsonData == null)
@@ -427,29 +534,17 @@ public class RoKArcherTrainingUI : MonoBehaviour
         return jsonData;
     }
 
-    // =====================================================
-    // TÀI NGUYÊN — ĐỔI THEO TÊN FIELD THẬT TRONG JsonDataManager CỦA BẠN
-    // =====================================================
-
     int CurrentWood()
     {
-        // TODO: nếu JsonDataManager của bạn dùng tên khác (vd currentWood, Wood...),
-        // sửa lại dòng dưới cho khớp.
         JsonDataManager data = GetJsonData();
         return data != null ? data.wood : 0;
     }
 
     int CurrentGold()
     {
-        // TODO: nếu JsonDataManager của bạn dùng tên khác (vd currentGold, Gold...),
-        // sửa lại dòng dưới cho khớp.
         JsonDataManager data = GetJsonData();
         return data != null ? data.gold : 0;
     }
-
-    // =====================================================
-    // HUẤN LUYỆN
-    // =====================================================
 
     void OnTrainButtonClicked()
     {
@@ -473,7 +568,6 @@ public class RoKArcherTrainingUI : MonoBehaviour
             return;
         }
 
-        // Trừ tài nguyên ngay khi bắt đầu huấn luyện
         data.AddWood(-totalWood);
         data.AddGold(-totalGold);
         data.BroadcastAllResources();
@@ -492,25 +586,34 @@ public class RoKArcherTrainingUI : MonoBehaviour
         float totalTime = count * trainSecondsPerArcher;
         float elapsed = 0f;
 
-        RectTransform fillRT = progressBarFill.rectTransform;
-        RectTransform barRootRT = progressBarRoot.GetComponent<RectTransform>();
+        // Reset về 0 mỗi lần bắt đầu mẻ huấn luyện mới.
+        progressBarFill.fillAmount = 0f;
 
         while (elapsed < totalTime)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / totalTime);
 
-            fillRT.sizeDelta = new Vector2(barRootRT.sizeDelta.x * t, 0);
+            // Dùng SmoothStep thay vì tuyến tính để thanh chạy có "đà" (chậm rãi
+            // vào/ra), giống cảm giác một thanh Slider thật đang được kéo, thay
+            // vì chạy đều đều máy móc. Vẫn chạm đúng 0 -> 1 sau đúng totalTime.
+            progressBarFill.fillAmount = Mathf.SmoothStep(0f, 1f, t);
             progressBarText.text = $"Huấn luyện... {Mathf.CeilToInt(totalTime - elapsed)}s";
 
             yield return null;
         }
 
-        // Huấn luyện xong -> sinh lính ra bản đồ + cộng số lính hiện có
+        // Đảm bảo chạm mốc đầy 100% chính xác khi kết thúc, tránh sai số cộng dồn
+        // của Time.deltaTime khiến fillAmount dừng ở ~0.98 thay vì 1.0.
+        progressBarFill.fillAmount = 1f;
+
+        // Slider vừa chạy đầy 100% (huấn luyện xong) -> LUÔN gọi sinh lính từ
+        // prefab (SpawnTrainedArchers) trước, rồi mới cộng số lượng hiện có.
+        // Thứ tự này đảm bảo prefab lính luôn gắn liền với kết quả huấn luyện,
+        // không bị tách rời hay gọi nhầm chỗ khác trong code.
         SpawnTrainedArchers(count);
         AddCurrentArcherCount(count);
 
-        // Báo tiến độ về quest
         if (questPanelUI != null && !string.IsNullOrEmpty(questIdToReport))
             questPanelUI.AddProgress(questIdToReport, count);
 
@@ -518,7 +621,7 @@ public class RoKArcherTrainingUI : MonoBehaviour
         yield return new WaitForSeconds(0.6f);
 
         progressBarRoot.SetActive(false);
-        trainButtonText.text = "Huấn Luyện";
+        trainButtonText.text = "";
         isTraining = false;
 
         RefreshAll();
@@ -526,31 +629,31 @@ public class RoKArcherTrainingUI : MonoBehaviour
         Debug.Log($"[RoKArcherTrainingUI] Đã huấn luyện xong {count} cung thủ. Tổng hiện có: {currentArcherCount}.");
     }
 
-    /// <summary>
-    /// Instantiate ra bản đối "count" lính Cung Thủ tại archerSpawnPoint (hoặc vị trí
-    /// của chính GameObject này nếu chưa gán). Nếu chưa gán archerUnitPrefab thì bỏ qua
-    /// bước sinh lính (chỉ cộng số lượng lính hiện có).
-    /// </summary>
+    // GHI CHÚ LIÊN KẾT PREFAB LÍNH: hàm này LUÔN được gọi ngay sau khi thanh
+    // tiến trình (slider) chạy đầy 100% trong TrainRoutine(), trước cả bước
+    // cộng currentArcherCount — nghĩa là lính CHỈ được sinh ra khi huấn luyện
+    // thật sự hoàn tất, không bao giờ bị tách rời khỏi luồng huấn luyện.
+    // Nếu bạn thấy lính không hiện ra ngoài bản đồ, kiểm tra Console: script
+    // sẽ cảnh báo rõ ràng nếu archerUnitPrefab chưa được kéo vào Inspector,
+    // thay vì âm thầm bỏ qua như trước.
     void SpawnTrainedArchers(int count)
     {
         if (archerUnitPrefab == null)
+        {
+            Debug.LogWarning("[RoKArcherTrainingUI] Chưa gán 'Archer Unit Prefab' trong Inspector nên KHÔNG sinh lính ra bản đồ được (số Cung Thủ hiện có vẫn cộng bình thường). Hãy kéo prefab lính Cung Thủ vào field này để bật tính năng sinh lính.");
             return;
+        }
 
         Vector3 basePos = archerSpawnPoint != null ? archerSpawnPoint.position : transform.position;
         Quaternion baseRot = archerSpawnPoint != null ? archerSpawnPoint.rotation : transform.rotation;
 
         for (int i = 0; i < count; i++)
         {
-            // Xếp lính thành hàng ngang, cách đều nhau spawnSpacing, tránh chồng lên nhau.
             Vector3 offset = new Vector3((i - (count - 1) / 2f) * spawnSpacing, 0f, 0f);
             Instantiate(archerUnitPrefab, basePos + offset, baseRot);
         }
     }
 
-    /// <summary>
-    /// Cộng thêm số Cung Thủ hiện có và lưu lại qua PlayerPrefs để giữ nguyên
-    /// sau khi tắt/mở lại game.
-    /// </summary>
     void AddCurrentArcherCount(int amount)
     {
         currentArcherCount += amount;
@@ -558,18 +661,10 @@ public class RoKArcherTrainingUI : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    /// <summary>
-    /// Lấy số Cung Thủ hiện có, dùng cho các script khác (vd hiển thị lên HUD chính,
-    /// dùng để tính sức mạnh quân đội...).
-    /// </summary>
     public int GetCurrentArcherCount()
     {
         return currentArcherCount;
     }
-
-    // =====================================================
-    // HELPERS
-    // =====================================================
 
     TMP_Text CreateText(Transform parent, string name, string value, Vector2 pos, Vector2 size,
         int fontSize, Color color, TextAlignmentOptions align, bool bold)
