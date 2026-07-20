@@ -17,6 +17,8 @@ using TMPro;
 /// 2. targetCanvas       -> Canvas chính (Screen Space - Overlay hoặc Camera).
 /// 3. archerTrainingUI   -> GameObject đang gắn RoKArcherTrainingUI.
 /// 4. vietnameseFont     -> font TMP tiếng Việt bạn đang dùng (tuỳ chọn).
+/// 5. buttonBackgroundSprite -> (tuỳ chọn) ảnh nền riêng cho nút nổi, nếu để
+///    trống thì dùng màu phẳng buttonColor như cũ.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class RoKBarracksBuildingUI : MonoBehaviour
@@ -38,6 +40,13 @@ public class RoKBarracksBuildingUI : MonoBehaviour
     public Color buttonBorderColor = new Color32(224, 166, 74, 255);
     public Color buttonTextColor = new Color32(255, 241, 194, 255);
 
+    [Header("HÌNH ẢNH TUỲ CHỌN")]
+    [Tooltip("Nếu gán sprite ở đây, nút nổi sẽ dùng ảnh này làm nền thay vì màu phẳng buttonColor. Kéo file ảnh (đã import làm Sprite 2D) vào field này trong Inspector.")]
+    public Sprite buttonBackgroundSprite;
+
+    [Tooltip("Kiểu hiển thị ảnh nền: Sliced (kéo giãn giữ mép, hợp cho nút bo góc/khung viền) hoặc Simple (giữ nguyên tỉ lệ ảnh gốc).")]
+    public Image.Type buttonBackgroundImageType = Image.Type.Sliced;
+
     [Header("OPTIONS")]
     [Tooltip("Nếu bật: bấm building lần nữa khi nút đang hiện sẽ ẩn nút đi (toggle). Nếu tắt: bấm building luôn hiện nút.")]
     public bool toggleOnClick = true;
@@ -45,6 +54,7 @@ public class RoKBarracksBuildingUI : MonoBehaviour
     GameObject floatingButtonGO;
     RectTransform floatingButtonRT;
     Button floatingButton;
+    Image floatingButtonImage;
 
     bool isButtonVisible = false;
 
@@ -115,8 +125,8 @@ public class RoKBarracksBuildingUI : MonoBehaviour
         floatingButtonRT.pivot = new Vector2(0.5f, 0.5f);
         floatingButtonRT.sizeDelta = buttonSize;
 
-        Image bg = floatingButtonGO.GetComponent<Image>();
-        bg.color = buttonColor;
+        floatingButtonImage = floatingButtonGO.GetComponent<Image>();
+        ApplyButtonBackground();
 
         Outline outline = floatingButtonGO.GetComponent<Outline>();
         outline.effectColor = buttonBorderColor;
@@ -144,6 +154,27 @@ public class RoKBarracksBuildingUI : MonoBehaviour
 
         if (vietnameseFont != null)
             text.font = vietnameseFont;
+    }
+
+    // Gán ảnh nền (nếu có) hoặc màu phẳng cho nút nổi. Tách riêng thành hàm
+    // để có thể gọi lại (ví dụ nếu bạn đổi sprite lúc runtime qua code khác).
+    void ApplyButtonBackground()
+    {
+        if (floatingButtonImage == null)
+            return;
+
+        if (buttonBackgroundSprite != null)
+        {
+            floatingButtonImage.sprite = buttonBackgroundSprite;
+            floatingButtonImage.type = buttonBackgroundImageType;
+            floatingButtonImage.color = Color.white; // giữ đúng màu ảnh gốc, không ám màu
+        }
+        else
+        {
+            floatingButtonImage.sprite = null;
+            floatingButtonImage.type = Image.Type.Simple;
+            floatingButtonImage.color = buttonColor;
+        }
     }
 
     void ShowFloatingButton()

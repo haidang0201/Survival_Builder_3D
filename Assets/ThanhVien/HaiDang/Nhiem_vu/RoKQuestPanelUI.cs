@@ -220,6 +220,52 @@ public class RoKQuestPanelUI : MonoBehaviour
     [Header("EVENT")]
     public QuestGoEvent onGoPressed;
 
+    // =====================================================
+    // NÚT "ĐI" -> LIA CAMERA TỚI VỊ TRÍ NHIỆM VỤ
+    // Gán 1 danh sách questId -> vị trí trên bản đồ. Khi người chơi bấm "Đi"
+    // với 1 quest có id khớp trong danh sách, camera sẽ tự động lia mượt tới
+    // vị trí đó (vd: id "train_archer" -> kéo Transform của Trại Lính vào).
+    // Không tìm thấy id tương ứng thì bỏ qua, giữ nguyên hành vi cũ.
+    // =====================================================
+    [System.Serializable]
+    public class QuestGoLocation
+    {
+        [Tooltip("Id nhiệm vụ (trùng với Quest.id), vd: train_archer")]
+        public string questId;
+
+        [Tooltip("Vị trí camera sẽ lia tới khi bấm nút Đi của nhiệm vụ này (vd: Transform của Trại Lính).")]
+        public Transform targetLocation;
+    }
+
+    [Header("CAMERA GO-TO (NÚT ĐI)")]
+    [Tooltip("Camera sẽ được lia khi bấm nút Đi. Để trống -> tự dùng Camera.main.")]
+    public Camera goCamera;
+
+    [Tooltip("Danh sách vị trí ứng với từng questId. Kéo Transform trại lính vào đây với questId = train_archer.")]
+    public List<QuestGoLocation> questGoLocations = new List<QuestGoLocation>();
+
+    [Tooltip("Thời gian (giây) camera lia mượt tới vị trí nhiệm vụ.")]
+    public float goCameraPanDuration = 0.8f;
+
+    private Coroutine goCameraPanRoutine;
+
+    // =====================================================
+    // BADGE THÔNG BÁO ĐỎ TRÊN NÚT MỞ NHIỆM VỤ (giống Rise of Kingdoms)
+    // Tự động hiện chấm đỏ đè lên góc nút "openButton" khi có ít nhất 1
+    // nhiệm vụ đã HOÀN THÀNH (current >= target) nhưng CHƯA nhận thưởng
+    // (claimed = false). Tự ẩn khi không còn nhiệm vụ nào chờ nhận thưởng.
+    // =====================================================
+    [Header("BADGE THÔNG BÁO (ICON MỞ NHIỆM VỤ)")]
+    [Tooltip("Ảnh chấm đỏ thông báo. Để trống -> dùng hình tròn màu đỏ mặc định.")]
+    public Sprite notificationBadgeSprite;
+    public Color notificationBadgeColor = new Color32(230, 60, 40, 255);
+    public Vector2 notificationBadgeSize = new Vector2(15, 15);
+    public Vector2 notificationBadgeOffset = new Vector2(2, -16);
+
+    private GameObject notificationBadgeGO;
+    private RectTransform notificationBadgeRT;
+    private Image notificationBadgeImage;
+
     private RectTransform generatedContent;
     private readonly List<Quest> quests = new List<Quest>();
     private readonly Dictionary<string, Quest> questMap = new Dictionary<string, Quest>();
@@ -324,6 +370,9 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         if (questPanelRoot != null)
             questPanelRoot.SetActive(false);
+
+        CreateNotificationBadge();
+        UpdateNotificationBadge();
     }
 
     // =====================================================
@@ -582,6 +631,92 @@ public class RoKQuestPanelUI : MonoBehaviour
     }
 
     // =====================================================
+    // BADGE THÔNG BÁO ĐỎ (ICON MỞ NHIỆM VỤ)
+    // =====================================================
+
+    /// <summary>
+    /// Tạo 1 chấm đỏ nhỏ ở góc trên-phải của openButton (nút mở bảng nhiệm vụ).
+    /// Chỉ tạo 1 lần, mặc định ẩn — UpdateNotificationBadge() sẽ bật/tắt sau.
+    /// </summary>
+    void CreateNotificationBadge()
+    {
+        if (openButton == null)
+            return;
+
+        if (notificationBadgeGO != null)
+            return;
+
+        notificationBadgeGO = new GameObject("OpenButtonNotificationBadge", typeof(RectTransform), typeof(Image));
+        notificationBadgeGO.transform.SetParent(openButton.transform, false);
+        notificationBadgeGO.transform.SetAsLastSibling();
+
+        RectTransform badgeRT = notificationBadgeGO.GetComponent<RectTransform>();
+        badgeRT.anchorMin = badgeRT.anchorMax = new Vector2(1f, 1f);
+        badgeRT.pivot = new Vector2(1f, 1f);
+        badgeRT.anchoredPosition = notificationBadgeOffset;
+        badgeRT.sizeDelta = notificationBadgeSize;
+
+        Image badgeImg = notificationBadgeGO.GetComponent<Image>();
+        ApplyOptionalSprite(badgeImg, notificationBadgeSprite, notificationBadgeColor);
+        badgeImg.raycastTarget = false;
+
+        notificationBadgeRT = badgeRT;
+        notificationBadgeImage = badgeImg;
+
+        notificationBadgeGO.SetActive(false);
+    }
+
+    /// <summary>
+    /// Kiểm tra có nhiệm vụ nào ĐÃ HOÀN THÀNH (current >= target) nhưng CHƯA
+    /// nhận thưởng (claimed = false) hay không, để quyết định bật/tắt badge.
+    /// </summary>
+    bool HasAnyClaimableQuest()
+    {
+        foreach (Quest quest in quests)
+        {
+            if (!quest.claimed && quest.IsCompleted())
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Bật/tắt chấm đỏ trên nút mở nhiệm vụ theo trạng thái claimable hiện tại.
+    /// Gọi hàm này bất cứ khi nào dữ liệu quest có thể thay đổi (tiến độ,
+    /// nhận thưởng, kích hoạt/huỷ khẩn cấp...).
+    /// </summary>
+    void UpdateNotificationBadge()
+    {
+        if (notificationBadgeGO == null)
+            return;
+
+        notificationBadgeGO.SetActive(HasAnyClaimableQuest());
+    }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// CHỈ chạy trong Editor lúc bấm Play: liên tục đồng bộ vị trí/kích thước/màu
+    /// badge theo đúng giá trị đang chỉnh tay trong Inspector (notificationBadgeOffset,
+    /// notificationBadgeSize, notificationBadgeColor, notificationBadgeSprite).
+    /// Nhờ vậy bạn có thể vừa Play vừa kéo số trong Inspector để canh badge cho
+    /// đúng ý, thấy kết quả ngay lập tức mà không cần dừng Play / build lại code.
+    /// Không ảnh hưởng bản build thật (không tồn tại trong build vì bọc UNITY_EDITOR).
+    /// </summary>
+    void Update()
+    {
+        if (notificationBadgeRT == null || notificationBadgeImage == null)
+            return;
+
+        notificationBadgeRT.anchoredPosition = notificationBadgeOffset;
+        notificationBadgeRT.sizeDelta = notificationBadgeSize;
+
+        ApplyOptionalSprite(notificationBadgeImage, notificationBadgeSprite, notificationBadgeColor);
+        notificationBadgeImage.raycastTarget = false;
+    }
+#endif
+
+    // =====================================================
     // PANEL OPEN / CLOSE
     // =====================================================
 
@@ -786,6 +921,8 @@ public class RoKQuestPanelUI : MonoBehaviour
                 LayoutRebuilder.ForceRebuildLayoutImmediate(generatedContent);
                 Canvas.ForceUpdateCanvases();
 
+                UpdateNotificationBadge();
+
                 if (debugMode)
                     Debug.Log("[RoKQuestPanelUI] Render xong (chế độ khẩn cấp). Quest khẩn cấp = " + activeUrgentQuest.id);
 
@@ -836,6 +973,8 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(generatedContent);
         Canvas.ForceUpdateCanvases();
+
+        UpdateNotificationBadge();
 
         if (debugMode)
             Debug.Log("[RoKQuestPanelUI] Render xong. Quest count = " + quests.Count);
@@ -1520,11 +1659,80 @@ public class RoKQuestPanelUI : MonoBehaviour
 
         // Nút "Đi"
         Debug.Log("[Quest] Đi tới nhiệm vụ: " + quest.title);
+
+        // Lia camera tới vị trí nhiệm vụ (vd: trại lính) nếu có gán trong danh sách.
+        TryPanCameraToQuestLocation(questId);
+
         onGoPressed?.Invoke(questId);
 
         if (closePanelWhenPressGo)
             ClosePanel();
     }
+
+    // =====================================================
+    // CAMERA GO-TO (NÚT ĐI)
+    // =====================================================
+
+    /// <summary>
+    /// Tìm vị trí đã gán cho questId trong questGoLocations, nếu có thì lia
+    /// camera mượt tới vị trí đó. Không tìm thấy -> bỏ qua, không báo lỗi.
+    /// </summary>
+    void TryPanCameraToQuestLocation(string questId)
+    {
+        Transform target = null;
+
+        for (int i = 0; i < questGoLocations.Count; i++)
+        {
+            if (questGoLocations[i] != null && questGoLocations[i].questId == questId)
+            {
+                target = questGoLocations[i].targetLocation;
+                break;
+            }
+        }
+
+        if (target == null)
+            return;
+
+        Camera cam = goCamera != null ? goCamera : Camera.main;
+
+        if (cam == null)
+        {
+            Debug.LogWarning("[RoKQuestPanelUI] Không tìm thấy Camera để lia tới vị trí nhiệm vụ '" + questId + "'.");
+            return;
+        }
+
+        if (goCameraPanRoutine != null)
+            StopCoroutine(goCameraPanRoutine);
+
+        goCameraPanRoutine = StartCoroutine(PanCameraRoutine(cam, target.position));
+    }
+
+    /// <summary>
+    /// Di chuyển camera mượt (giữ nguyên độ cao/khoảng cách trục Y hiện tại,
+    /// chỉ dịch theo X/Z tới vị trí mục tiêu) trong goCameraPanDuration giây.
+    /// </summary>
+    IEnumerator PanCameraRoutine(Camera cam, Vector3 targetPosition)
+    {
+        Vector3 startPos = cam.transform.position;
+        Vector3 endPos = new Vector3(targetPosition.x, startPos.y, targetPosition.z);
+
+        float elapsed = 0f;
+
+        while (elapsed < goCameraPanDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / goCameraPanDuration);
+            float smoothT = Mathf.SmoothStep(0f, 1f, t);
+
+            cam.transform.position = Vector3.Lerp(startPos, endPos, smoothT);
+
+            yield return null;
+        }
+
+        cam.transform.position = endPos;
+        goCameraPanRoutine = null;
+    }
+
     void GiveQuestRewardsToJson(Quest quest)
     {
         JsonDataManager data = FindObjectOfType<JsonDataManager>();

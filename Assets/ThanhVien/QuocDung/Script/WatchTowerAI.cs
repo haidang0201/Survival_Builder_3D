@@ -15,6 +15,25 @@ public class WatchTowerAI : MonoBehaviour
     public float scanInterval = 0.2f;
     private float nextScanTime;
 
+    // =====================================================
+    // UI CẢNH BÁO KẺ ĐỊCH (RoKEnemyAlertUI)
+    // Khi tháp canh quét thấy ít nhất 1 kẻ địch trong detectRadius, banner
+    // cảnh báo (icon nhấp nháy) sẽ tự hiện lên đầu màn hình. Khi không còn
+    // kẻ địch nào trong tầm quét, banner tự ẩn.
+    // Không cần gán field "alertUI" thủ công — nếu để trống, script sẽ tự
+    // tìm qua RoKEnemyAlertUI.Instance (chỉ cần có 1 RoKEnemyAlertUI trong scene).
+    // =====================================================
+    [Header("UI CẢNH BÁO KẺ ĐỊCH")]
+    [Tooltip("Kéo RoKEnemyAlertUI vào đây nếu muốn chỉ định rõ. Để trống -> tự dùng RoKEnemyAlertUI.Instance.")]
+    public RoKEnemyAlertUI alertUI;
+
+    [Tooltip("Nội dung hiển thị trên banner cảnh báo khi phát hiện kẻ địch.")]
+    public string enemyAlertMessage = "⚠ Kẻ địch xuất hiện! Chuẩn bị tấn công!";
+
+    // Nhớ trạng thái lần quét trước để chỉ gọi Show/Hide khi trạng thái THAY ĐỔI,
+    // tránh gọi lặp lại liên tục mỗi 0.2s không cần thiết.
+    private bool wasEnemyDetectedLastScan = false;
+
     private void Update()
     {
         // QUÉT KHÔNG PHÂN BIỆT NGÀY ĐÊM
@@ -71,11 +90,17 @@ public class WatchTowerAI : MonoBehaviour
         }
 
         // Sắp xếp các kẻ địch theo khoảng cách từ gần đến xa đối với tháp canh
-        validEnemies.Sort((a, b) => {
+        validEnemies.Sort((a, b) =>
+        {
             float distA = (a.position - transform.position).sqrMagnitude;
             float distB = (b.position - transform.position).sqrMagnitude;
             return distA.CompareTo(distB);
         });
+
+        // Cập nhật banner UI cảnh báo dựa trên việc CÓ hay KHÔNG có kẻ địch trong
+        // tầm quét lần này. Đặt ngay sau khi validEnemies đã sẵn sàng để không bỏ
+        // sót nhánh "return" bên dưới khi danh sách rỗng.
+        UpdateEnemyAlertUI(validEnemies.Count > 0);
 
         if (validEnemies.Count == 0) return; // Không có quái thì bỏ qua
         Debug.Log($"[WatchTower] Selected closest target: {validEnemies[0].name} out of {validEnemies.Count} valid enemies");
@@ -118,7 +143,8 @@ public class WatchTowerAI : MonoBehaviour
         }
 
         // Sắp xếp các tháp theo khoảng cách tăng dần tới tháp canh để phân bổ mục tiêu ổn định
-        activeTowers.Sort((a, b) => {
+        activeTowers.Sort((a, b) =>
+        {
             float distA = (a.transform.position - transform.position).sqrMagnitude;
             float distB = (b.transform.position - transform.position).sqrMagnitude;
             return distA.CompareTo(distB);
@@ -199,7 +225,8 @@ public class WatchTowerAI : MonoBehaviour
             }
 
             // Sắp xếp các tháp theo khoảng cách tăng dần tới tháp canh
-            activeFallbackTowers.Sort((a, b) => {
+            activeFallbackTowers.Sort((a, b) =>
+            {
                 float distA = (a.transform.position - transform.position).sqrMagnitude;
                 float distB = (b.transform.position - transform.position).sqrMagnitude;
                 return distA.CompareTo(distB);
@@ -259,6 +286,34 @@ public class WatchTowerAI : MonoBehaviour
             }
             if (alerted == 0) Debug.Log("[WatchTower] Fallback found 0 active AttackTowerAI within alertRadius");
         }
+    }
+
+    /// <summary>
+    /// Bật/tắt banner cảnh báo trên UI theo trạng thái phát hiện kẻ địch của
+    /// lần quét vừa rồi. Chỉ gọi ShowAlert()/HideAlert() khi trạng thái THAY
+    /// ĐỔI so với lần quét trước, để tránh gọi lặp mỗi 0.2 giây không cần thiết.
+    /// </summary>
+    private void UpdateEnemyAlertUI(bool enemyDetected)
+    {
+        if (enemyDetected == wasEnemyDetectedLastScan)
+            return;
+
+        wasEnemyDetectedLastScan = enemyDetected;
+
+        RoKEnemyAlertUI ui = alertUI != null ? alertUI : RoKEnemyAlertUI.Instance;
+
+        if (ui == null)
+        {
+            if (enemyDetected)
+                Debug.LogWarning("[WatchTower] Không tìm thấy RoKEnemyAlertUI trong scene — không hiện được banner cảnh báo. Hãy add script RoKEnemyAlertUI vào 1 GameObject trong scene.");
+
+            return;
+        }
+
+        if (enemyDetected)
+            ui.ShowAlert(enemyAlertMessage);
+        else
+            ui.HideAlert();
     }
 
     // Vẽ vòng bán kính trong Editor để bạn dễ nhìn và chỉnh thông số
