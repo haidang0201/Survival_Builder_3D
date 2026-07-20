@@ -581,7 +581,7 @@ public class RoKArcherTrainingUI : MonoBehaviour
         RefreshAll();
 
         progressBarRoot.SetActive(true);
-        trainButtonText.text = "Đang huấn luyện...";
+        trainButtonText.text = "";
 
         float totalTime = count * trainSecondsPerArcher;
         float elapsed = 0f;

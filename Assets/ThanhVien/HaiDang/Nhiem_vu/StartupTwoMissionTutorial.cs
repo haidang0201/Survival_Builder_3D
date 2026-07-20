@@ -423,7 +423,6 @@ public class StartupTwoMissionTutorial : MonoBehaviour
         watchTowerPlaced = true;
     }
 
-
     // Coroutine đợi build xong rồi mới đánh dấu đặt tháp hoàn tất
     // private IEnumerator WaitAndShowDialog()
     // {
