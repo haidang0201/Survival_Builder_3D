@@ -90,6 +90,64 @@ public class JsonDataManager : Singleton<JsonDataManager>
         OnGoldChanged?.Invoke(gold);
     }
     // ──────────────────────────────────────────────
+    // CHI TIÊU TÀI NGUYÊN AN TOÀN (không cho phép âm)
+    // ──────────────────────────────────────────────
+
+    public bool TrySpendWood(int amount)
+    {
+        if (amount < 0 || wood < amount) return false;
+        AddWood(-amount);
+        return true;
+    }
+
+    public bool TrySpendStone(int amount)
+    {
+        if (amount < 0 || stone < amount) return false;
+        AddStone(-amount);
+        return true;
+    }
+
+    public bool TrySpendFood(int amount)
+    {
+        if (amount < 0 || food < amount) return false;
+        AddFood(-amount);
+        return true;
+    }
+
+    public bool TrySpendGold(int amount)
+    {
+        if (amount < 0 || gold < amount) return false;
+        AddGold(-amount);
+        return true;
+    }
+
+    /// <summary>
+    /// Kiểm tra đủ tài nguyên cho một chi phí tổng hợp (ví dụ giá xây/nâng cấp một
+    /// tòa nhà cần cả gỗ + đá + lúa + vàng) TRƯỚC khi trừ bất cứ thứ gì.
+    /// </summary>
+    public bool HasEnoughResources(int woodCost = 0, int stoneCost = 0, int foodCost = 0, int goldCost = 0)
+    {
+        return wood >= woodCost && stone >= stoneCost && food >= foodCost && gold >= goldCost;
+    }
+
+    /// <summary>
+    /// Trừ đồng thời nhiều loại tài nguyên theo kiểu tất-cả-hoặc-không-gì-cả.
+    /// Kiểm tra đủ toàn bộ trước, chỉ trừ khi chắc chắn đủ hết — tránh trừ được
+    /// gỗ nhưng thiếu đá khiến trạng thái nửa vời hoặc bị âm.
+    /// </summary>
+    public bool TrySpendCombined(int woodCost = 0, int stoneCost = 0, int foodCost = 0, int goldCost = 0)
+    {
+        if (!HasEnoughResources(woodCost, stoneCost, foodCost, goldCost)) return false;
+
+        if (woodCost > 0) AddWood(-woodCost);
+        if (stoneCost > 0) AddStone(-stoneCost);
+        if (foodCost > 0) AddFood(-foodCost);
+        if (goldCost > 0) AddGold(-goldCost);
+
+        return true;
+    }
+
+    // ──────────────────────────────────────────────
     // NÂNG CẤP SỨC CHỨA KHO (Đã bỏ logic Max, giữ hàm để không lỗi hệ thống khác)
     // ──────────────────────────────────────────────
     public void UpdateCapacities(int warehouseLevel)
