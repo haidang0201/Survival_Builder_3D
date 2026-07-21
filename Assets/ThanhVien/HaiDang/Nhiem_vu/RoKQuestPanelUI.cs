@@ -622,7 +622,92 @@ public class RoKQuestPanelUI : MonoBehaviour
                 new Reward(goldIcon, 150)
             }
         });
+        // ---- NHIỆM VỤ PHỤ THU THẬP TÀI NGUYÊN (không cần giới thiệu dialog) ----
+
+        AddQuest(new Quest
+        {
+            id = "upgrade_wood_house",
+            type = QuestType.Side,
+            icon = storageIcon,
+            title = "Thợ mộc lành nghề",
+            current = 0,
+            target = 1,
+            description = "Nâng cấp Nhà Gỗ lên cấp 2",
+            shortHint = "Củng cố nơi ở, tăng sức chứa dân cư.",
+            rewards =
+            {
+                new Reward(woodIcon, 600),
+                new Reward(goldIcon, 30)
+            }
+        });
+
+        AddQuest(new Quest
+        {
+            id = "upgrade_stone_house",
+            type = QuestType.Side,
+            icon = StonesIcon,
+            title = "Kiến trúc sư đá",
+            current = 0,
+            target = 1,
+            description = "Nâng cấp Nhà Đá lên cấp 3",
+            shortHint = "Nhà vững chãi hơn trước bão tố.",
+            rewards =
+            {
+                new Reward(stoneIcon, 900),
+                new Reward(woodIcon, 300)
+            }
+        });
+
+        AddQuest(new Quest
+        {
+            id = "gather_stone",
+            type = QuestType.Side,
+            icon = StonesIcon,
+            title = "Thợ đào đá cần mẫn",
+            current = 0,
+            target = 300,
+            description = "Thu thập 300 Đá ngoài bản đồ",
+            shortHint = "Tích lũy vật liệu xây dựng.",
+            rewards =
+            {
+                new Reward(stoneIcon, 1000)
+            }
+        });
+
+        AddQuest(new Quest
+        {
+            id = "gather_food",
+            type = QuestType.Side,
+            icon = barbarianIcon,
+            title = "Người chăn nuôi",
+            current = 0,
+            target = 300,
+            description = "Thu thập 300 Lúa ngoài bản đồ",
+            shortHint = "Đảm bảo hậu cần cho dân làng.",
+            rewards =
+            {
+                new Reward(foodIcon, 1000)
+            }
+        });
+
+        AddQuest(new Quest
+        {
+            id = "collect_gold",
+            type = QuestType.Side,
+            icon = scrollIcon,
+            title = "Phú ông tương lai",
+            current = 0,
+            target = 200,
+            description = "Thu thập 200 vàng từ đánh kẻ địch ngoài bản đồ",
+            shortHint = "Làm giàu cho lãnh địa.",
+            rewards =
+            {
+                new Reward(goldIcon, 400),
+                new Reward(speedupIcon, 1)
+            }
+        });
     }
+
 
     void AddQuest(Quest quest)
     {
