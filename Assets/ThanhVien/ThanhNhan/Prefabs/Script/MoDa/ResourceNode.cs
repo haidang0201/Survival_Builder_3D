@@ -17,8 +17,8 @@ public class ResourceNode : MonoBehaviour
 
     void Start()
     {
-        // Load trạng thái mở khóa từ PlayerPrefs (bền vững qua các lần restart)
-        LoadLockState();
+        // Đã bỏ Load trạng thái mở khóa để không tự động khôi phục khi mở lại game
+        // LoadLockState();
 
         // Cập nhật trạng thái ổ khóa lơ lừng trên đầu
         UpdateLockStatus();
@@ -44,7 +44,8 @@ public class ResourceNode : MonoBehaviour
     {
         isLocked = false;
         UpdateLockStatus();
-        SaveLockState();   // Lưu trạng thái đã mở khóa
+        // Đã bỏ SaveLockState() để không lưu trạng thái mở khóa
+        // SaveLockState();
         Debug.Log("Mỏ đá đã được mở khóa thành công.");
     }
 

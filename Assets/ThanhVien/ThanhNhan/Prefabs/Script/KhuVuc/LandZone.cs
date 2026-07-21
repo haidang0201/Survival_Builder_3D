@@ -79,7 +79,8 @@ public class LandZone : MonoBehaviour
             }
         }
 
-        LoadLockState();
+        // Đã bỏ LoadLockState() để không tự động khôi phục trạng thái mở khóa khi mở lại game
+        // LoadLockState();
         UpdateLockStatus();
 
         // ── Auto-find KhuVucCard qua nhiều cách (Tag / Name / Inactive search) ─
@@ -185,7 +186,8 @@ public class LandZone : MonoBehaviour
         else
         {
             UpdateLockStatus();
-            SaveLockState();
+            // Đã bỏ SaveLockState() để không lưu trạng thái mở khóa
+            // SaveLockState();
         }
         
         Debug.Log($"[LandZone] Vùng đất '{gameObject.name}' đã kích hoạt hiệu ứng mở khóa.");
@@ -277,8 +279,9 @@ public class LandZone : MonoBehaviour
             }
         }
 
-        SaveLockState();
-        Debug.Log($"[LandZone] Vùng đất '{gameObject.name}' sương đã tan hết và lưu trạng thái.");
+        // Đã bỏ SaveLockState() để không lưu trạng thái mở khóa
+        // SaveLockState();
+        Debug.Log($"[LandZone] Vùng đất '{gameObject.name}' sương đã tan hết.");
     }
 
 
