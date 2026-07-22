@@ -43,6 +43,11 @@ public class UpgradeableBuilding : MonoBehaviour
     // Trạng thái kiểm tra xem nhà có đang trong quá trình nâng cấp không
     public bool IsUpgrading { get; private set; } = false;
 
+    // Các sự kiện phục vụ nâng cấp / huấn luyện
+    public event System.Action OnUpgradeStart;
+    public event System.Action OnUpgradeComplete;
+    public event System.Action OnLevelChanged;
+
     // ====================================================================
     // --- HAI BẠN THÊM ĐOẠN NÀY VÀO ĐỂ QUẢ LÝ CODE CÁC CẤP ĐỘ ---
     [Header("Quản lý Code AI của từng Cấp độ (Kéo các Script tương ứng vào đây)")]
@@ -388,36 +393,24 @@ public class UpgradeableBuilding : MonoBehaviour
         if (IsUpgrading || CurrentLevel >= MaxLevel - 1) return;
 
         UpgradeCost nextCost = GetNextUpgradeCost();
+        float duration = nextCost.upgradeDuration;
 
-        // CHẶN TẬN GỐC: trừ tài nguyên tại đây, TRƯỚC khi cho phép đếm giờ nâng cấp.
-        // isInitialBuildNeeded (xây lần đầu) không tính phí ở đây — chi phí xây lần đầu
-        // thuộc về hệ thống đặt nhà (GhostBuilding/ConstructionManager), không phải nâng cấp.
-        if (!isInitialBuildNeeded)
+        // Nếu là nhà lính (BarracksMelee, BarracksArcher, BarracksSpear) hoặc nếu duration chưa được thiết lập hợp lệ, mặc định ép về 5 giây
+        if (buildingType == BuildingType.BarracksMelee || 
+            buildingType == BuildingType.BarracksArcher || 
+            buildingType == BuildingType.BarracksSpear || 
+            duration <= 0f)
         {
-            if (JsonDataManager.Ins == null)
-            {
-                Debug.LogWarning($"[UpgradeableBuilding] Không tìm thấy JsonDataManager.Ins — huỷ nâng cấp {buildingName}.");
-                return;
-            }
-
-            bool spent = JsonDataManager.Ins.TrySpendCombined(
-                woodCost: nextCost.woodCost,
-                stoneCost: nextCost.stoneCost,
-                foodCost: nextCost.foodCost);
-
-            if (!spent)
-            {
-                Debug.LogWarning($"[UpgradeableBuilding] Không đủ tài nguyên để nâng cấp {buildingName} (cần Gỗ:{nextCost.woodCost} Đá:{nextCost.stoneCost} Lúa:{nextCost.foodCost}).");
-                return;
-            }
+            duration = 5f;
         }
 
-        StartCoroutine(UpgradeRoutine(nextCost.upgradeDuration));
+        StartCoroutine(UpgradeRoutine(duration));
     }
 
     private IEnumerator UpgradeRoutine(float duration)
     {
         IsUpgrading = true;
+        OnUpgradeStart?.Invoke();
         float timer = 0f;
 
         // Nếu panel nâng cấp của nhà này đang mở trên UI, hiển thị slider/text thời gian
@@ -444,9 +437,10 @@ public class UpgradeableBuilding : MonoBehaviour
         // ====================================================================
         if (isInitialBuildNeeded)
         {
-            // TH 1: NẾU ĐANG TRONG LUỒNG XÂY MỚI BAN ĐẦU
             isInitialBuildNeeded = false; // TẮT TÍCH VĨNH VIỄN: Xác nhận đã xây dựng xong!
             IsUpgrading = false;
+            OnUpgradeComplete?.Invoke();
+            OnLevelChanged?.Invoke();
 
             // Kích hoạt hiệu ứng hoàn thành (Aura quét dọc thân nhà) từ BuildingProgressBarUI
             var targetUI = BuildingProgressBridge.GetUI(this);
@@ -466,9 +460,9 @@ public class UpgradeableBuilding : MonoBehaviour
         }
         else
         {
-            // TH 2: NẾU LÀ LUỒNG NÂNG CẤP THÔNG THƯỜNG -> Tiến hành đổi cấp bậc hình ảnh
-            ExecuteLevelUp();
             IsUpgrading = false;
+            OnUpgradeComplete?.Invoke();
+            ExecuteLevelUp();
         }
         // ====================================================================
 
@@ -632,6 +626,7 @@ public class UpgradeableBuilding : MonoBehaviour
             SetActiveModel(CurrentLevel, true);
 
             Debug.Log($"[{buildingName}] Đã hoàn tất nâng cấp lên Level {CurrentLevel + 1}");
+            OnLevelChanged?.Invoke();
         }
     }
 
@@ -643,6 +638,7 @@ public class UpgradeableBuilding : MonoBehaviour
         SetActiveModel(CurrentLevel, true);
         UpdateCivilianBuildingData();
         Debug.Log($"[{buildingName}] Đã reset về Level 1");
+        OnLevelChanged?.Invoke();
     }
 
     private void SetActiveModel(int index, bool active)
@@ -772,13 +768,7 @@ public class UpgradeableBuilding : MonoBehaviour
         SetActiveModel(CurrentLevel, true);
 
         UpdateCivilianBuildingData();
-
-        // 🔥 ẨN THANH UI TIẾN TRÌNH NẾU ĐANG HIỂN THỊ
-        var targetUI = BuildingProgressBridge.GetUI(this);
-        if (targetUI != null)
-        {
-            targetUI.HideProgress();
-        }
+        OnLevelChanged?.Invoke();
     }
 }
 
