@@ -113,7 +113,18 @@ public class BuildingManager : Singleton<BuildingManager>
         foreach (var b in buildings)
         {
             if (b != null)
-                states.Add(b.ToState());     // Tên chuẩn: ToState()
+            {
+                BuildingState state = b.ToState();
+
+                // 🔥 LẤY CẤP ĐỘ HIỆN TẠI LƯU VÀO STATE
+                var upgradeable = b.GetComponent<UpgradeableBuilding>();
+                if (upgradeable != null)
+                {
+                    state.level = upgradeable.CurrentLevel;
+                }
+
+                states.Add(state);
+            }
         }
         return states;
     }
@@ -143,6 +154,13 @@ public class BuildingManager : Singleton<BuildingManager>
             if (spawned != null)
             {
                 spawned.FromState(state);
+
+                // 🔥 ÉP CÔNG TRÌNH KHÔI PHỤC ĐÚNG LEVEL VÀ TẮT ĐẾM GIỜ XÂY LẠI TỪ ĐẦU
+                UpgradeableBuilding upgradeable = spawned.GetComponent<UpgradeableBuilding>();
+                if (upgradeable != null)
+                {
+                    upgradeable.LoadLevel(state.level);
+                }
             }
             else
             {

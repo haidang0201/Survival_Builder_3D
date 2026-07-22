@@ -34,6 +34,18 @@ public class LandZone : MonoBehaviour
     [Tooltip("Kéo LandUnlockPanel vào đây")]
     public GameObject landUnlockPanel;
 
+    [Header("Firework Celebration System")]
+    [Tooltip("Mảng các Prefab hiệu ứng pháo hoa để bắn ngẫu nhiên")]
+    [SerializeField] private GameObject[] fireworkPrefabs;
+    [Tooltip("Số lượng pháo hoa sẽ phát nổ sau khi sương tan hết")]
+    [SerializeField] private int fireworkCount = 6;
+    [Tooltip("Bán kính khu vực bắn pháo hoa tính từ tâm vùng đất này")]
+    [SerializeField] private float fireworkSpawnRadius = 8f;
+    [Tooltip("Thời gian giãn cách tối thiểu giữa các phát bắn (giây)")]
+    [SerializeField] private float minFireworkDelay = 0.15f;
+    [Tooltip("Thời gian giãn cách tối đa giữa các phát bắn (giây)")]
+    [SerializeField] private float maxFireworkDelay = 0.5f;
+
     // ─── Private ─────────────────────────────────────────────────────────────
     private LandUnlockManager _panelManager;
     private bool _ignorePanelOpen = false;
@@ -279,6 +291,12 @@ public class LandZone : MonoBehaviour
 
         SaveLockState();
         Debug.Log($"[LandZone] Vùng đất '{gameObject.name}' sương đã tan hết và lưu trạng thái.");
+
+        // 🌟 CHÈN THÊM ĐOẠN NÀY VÀO ĐÂY:
+        if (fireworkPrefabs != null && fireworkPrefabs.Length > 0)
+        {
+            StartCoroutine(Co_SpawnCelebrationFireworks());
+        }
     }
 
 
@@ -402,5 +420,32 @@ public class LandZone : MonoBehaviour
         yield return new WaitForSecondsRealtime(0.35f);
         _ignorePanelOpen = false;
         _ignoreCoroutine = null;
+    }
+
+    /// <summary>
+    /// Coroutine tính vị trí ngẫu nhiên quanh BoxCollider và kích nổ pháo hoa
+    /// </summary>
+    private IEnumerator Co_SpawnCelebrationFireworks()
+    {
+        for (int i = 0; i < fireworkCount; i++)
+        {
+            GameObject randomPrefab = fireworkPrefabs[Random.Range(0, fireworkPrefabs.Length)];
+
+            if (randomPrefab != null)
+            {
+                // Tính tọa độ ngẫu nhiên trên mặt phẳng XZ quanh vị trí của BoxCollider (transform.position)
+                Vector2 randomCircle = Random.insideUnitCircle * fireworkSpawnRadius;
+                
+                // Cao hơn mặt đất 0.5m để không bị chìm hiệu ứng
+                Vector3 spawnPos = transform.position + new Vector3(randomCircle.x, 0.5f, randomCircle.y);
+
+                // Tạo pháo hoa và tự hủy sau 4 giây để tránh rác RAM
+                GameObject fireworkInstance = Instantiate(randomPrefab, spawnPos, Quaternion.identity);
+                Destroy(fireworkInstance, 4f);
+            }
+
+            // Chờ một khoảng ngẫu nhiên trước khi bắn phát tiếp theo cho tự nhiên
+            yield return new WaitForSeconds(Random.Range(minFireworkDelay, maxFireworkDelay));
+        }
     }
 }

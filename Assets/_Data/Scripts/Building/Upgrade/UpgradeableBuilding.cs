@@ -734,6 +734,13 @@ public class UpgradeableBuilding : MonoBehaviour
         SetActiveModel(CurrentLevel, true);
 
         UpdateCivilianBuildingData();
+
+        // 🔥 ẨN THANH UI TIẾN TRÌNH NẾU ĐANG HIỂN THỊ
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI != null)
+        {
+            targetUI.HideProgress();
+        }
     }
 }
 

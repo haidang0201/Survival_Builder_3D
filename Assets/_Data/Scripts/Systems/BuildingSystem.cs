@@ -177,8 +177,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
         {
             if (currentGhost == null || _movingBuilding == null) return;
 
-            // Kiểm tra vị trí từ hệ thống Ghost (Thừa kế logic CheckPlacement/CanPlace từ Ghost gốc của bạn)
-            // Giả định GhostBuilding của bạn có hàm kiểm tra hoặc biến trạng thái đặt được hay không (ví dụ: currentGhost.CanPlace)
             bool isValidPosition = true; 
 
             if (isValidPosition)
@@ -201,8 +199,8 @@ public class BuildingSystem : Singleton<BuildingSystem>
                     currentGhost = null;
                 }
 
-                // Tự động kích hoạt lưu lại cấu trúc map mới xuống file JSON tránh mất vị trí khi thoát game
-                SaveBuildings();
+                // Tự động kích hoạt lưu lại vị trí mới vào Slot 1 mặc định
+                SaveBuildingsToSlot(1);
 
                 // Thoát hoàn toàn chế độ di chuyển
                 EndMovingMode();
@@ -252,9 +250,28 @@ public class BuildingSystem : Singleton<BuildingSystem>
         Debug.Log("[BuildingSystem] Người chơi đã hủy lệnh dời nhà. Đã hoàn trả về vị trí cũ.");
     }
 
-    // ================= PUBLIC – LOGIC SAVE / LOAD (DŨNG CHUẨN HÓA) =================
+    // ================= PUBLIC – LOGIC SAVE / LOAD THEO SLOT =================
 
+    /// <summary>
+    /// Hàm lưu mặc định (Tự động chọn Slot 1)
+    /// </summary>
     public void SaveBuildings()
+    {
+        SaveBuildingsToSlot(1);
+    }
+
+    /// <summary>
+    /// Hàm tải mặc định (Tự động chọn Slot 1)
+    /// </summary>
+    public void LoadBuildings()
+    {
+        LoadBuildingsFromSlot(1);
+    }
+
+    /// <summary>
+    /// Lưu trạng thái công trình và tài nguyên vào Slot chọn sẵn (1, 2, 3...)
+    /// </summary>
+    public void SaveBuildingsToSlot(int slotIndex)
     {
         if (BuildingManager.Ins == null) return;
         var states = BuildingManager.Ins.GetAllStates();
@@ -273,23 +290,26 @@ public class BuildingSystem : Singleton<BuildingSystem>
             resources = new System.Collections.Generic.List<JsonDataManager.ResourceData>()
         };
 
-        bool result = JsonDataManager.Ins.SaveGame(saveData);
-        Debug.Log(result ? $"[BuildingSystem] ✅ Đã lưu {states.Count} công trình thành công." : "[BuildingSystem] ❌ Lưu dữ liệu thất bại!");
+        bool result = JsonDataManager.Ins.SaveGame(slotIndex, saveData);
+        Debug.Log(result ? $"[BuildingSystem] ✅ Đã lưu {states.Count} công trình vào Slot {slotIndex}." : $"[BuildingSystem] ❌ Lưu dữ liệu vào Slot {slotIndex} thất bại!");
     }
 
-    public void LoadBuildings()
+    /// <summary>
+    /// Khôi phục trạng thái công trình và tài nguyên từ Slot chọn sẵn (1, 2, 3...)
+    /// </summary>
+    public void LoadBuildingsFromSlot(int slotIndex)
     {
         if (JsonDataManager.Ins == null || BuildingManager.Ins == null) return;
-        var saveData = JsonDataManager.Ins.LoadGame();
+        var saveData = JsonDataManager.Ins.LoadGame(slotIndex);
 
         if (saveData == null || saveData.buildings == null || saveData.buildings.Count == 0)
         {
-            Debug.Log("[BuildingSystem] Không tìm thấy dữ liệu cũ hoặc không có công trình nào được lưu.");
+            Debug.LogWarning($"[BuildingSystem] Slot {slotIndex} không có dữ liệu hoặc file trống!");
             return;
         }
 
         BuildingManager.Ins.LoadStates(saveData.buildings);
-        Debug.Log($"[BuildingSystem] ✅ Đã phục hồi {saveData.buildings.Count} công trình từ File Save.");
+        Debug.Log($"[BuildingSystem] ✅ Đã phục hồi {saveData.buildings.Count} công trình từ Slot {slotIndex}.");
     }
 
     // ================= MAPPER PREFAB (HỖ TRỢ TRỌN BỘ 11 LOẠI NHÀ ĐÚNG ENUM) =================

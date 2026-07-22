@@ -62,31 +62,38 @@ public class JsonDataManager : Singleton<JsonDataManager>
     // THÊM TÀI NGUYÊN  (Cộng dồn vô hạn)
     // ──────────────────────────────────────────────
 
+    // ── THÊM HÀM KIỂM TRA ĐỦ TÀI NGUYÊN (Thêm vào JsonDataManager.cs) ──
+    public bool HasEnoughResources(int reqWood, int reqStone, int reqFood, int reqGold = 0)
+    {
+        return wood >= reqWood && stone >= reqStone && food >= reqFood && gold >= reqGold;
+    }
+
+    // ── SỬA LẠI CÁC HÀM CỘNG TRỪ TÀI NGUYÊN ĐỂ CHỐNG ÂM ──
     public void AddWood(int amount)
     {
-        wood += amount;
-        if (amount > 0) TotalWoodCollected += amount; // Cộng dồn tích lũy khi nhặt được
+        wood = Mathf.Max(0, wood + amount); // Giữ tài nguyên luôn >= 0
+        if (amount > 0) TotalWoodCollected += amount;
         OnWoodChanged?.Invoke(wood);
     }
 
     public void AddStone(int amount)
     {
-        stone += amount;
-        if (amount > 0) TotalStoneCollected += amount; // Cộng dồn tích lũy khi nhặt được
+        stone = Mathf.Max(0, stone + amount); // Giữ tài nguyên luôn >= 0
+        if (amount > 0) TotalStoneCollected += amount;
         OnStoneChanged?.Invoke(stone);
     }
 
     public void AddFood(int amount)
     {
-        food += amount;
-        if (amount > 0) TotalFoodCollected += amount; // Cộng dồn tích lũy khi nhặt được
+        food = Mathf.Max(0, food + amount); // Giữ tài nguyên luôn >= 0
+        if (amount > 0) TotalFoodCollected += amount;
         OnFoodChanged?.Invoke(food);
     }
 
     public void AddGold(int amount)
     {
-        gold += amount;
-        if (amount > 0) TotalGoldCollected += amount; // Cộng dồn tích lũy khi nhặt được
+        gold = Mathf.Max(0, gold + amount); // Giữ tài nguyên luôn >= 0
+        if (amount > 0) TotalGoldCollected += amount;
         OnGoldChanged?.Invoke(gold);
     }
     // ──────────────────────────────────────────────
@@ -103,7 +110,14 @@ public class JsonDataManager : Singleton<JsonDataManager>
     // SAVE / LOAD
     // ──────────────────────────────────────────────
 
-    public bool SaveGame(GameSaveData save)
+    // 1. Hàm tạo tên file theo Slot (Ví dụ: save_slot_1.json, save_slot_2.json)
+    public string GetSlotFileName(int slotIndex)
+    {
+        return $"save_slot_{slotIndex}.json";
+    }
+
+    // 2. Nâng cấp SaveGame cho phép chọn Slot
+    public bool SaveGame(int slotIndex, GameSaveData save)
     {
         try
         {
@@ -115,24 +129,28 @@ public class JsonDataManager : Singleton<JsonDataManager>
                 new ResourceData { resourceType = "Food",  amount = food  },
             };
 
+            string targetFile = GetSlotFileName(slotIndex);
             string json = JsonUtility.ToJson(save, true);
-            FileIO.SaveToFile(json, saveFileName);
-            Debug.Log($"[JsonDataManager] ✅ Saved → {saveFileName}");
+            FileIO.SaveToFile(json, targetFile);
+            Debug.Log($"[JsonDataManager] ✅ Saved Slot {slotIndex} → {targetFile}");
             return true;
         }
         catch (Exception ex)
         {
-            Debug.LogError("[JsonDataManager] ❌ Save failed: " + ex.Message);
+            Debug.LogError($"[JsonDataManager] ❌ Save Slot {slotIndex} thất bại: " + ex.Message);
             return false;
         }
     }
 
-    public GameSaveData LoadGame()
+    // 3. Nâng cấp LoadGame cho phép chọn Slot
+    public GameSaveData LoadGame(int slotIndex)
     {
-        string json = FileIO.LoadFromFile(saveFileName);
+        string targetFile = GetSlotFileName(slotIndex);
+        string json = FileIO.LoadFromFile(targetFile);
+        
         if (string.IsNullOrEmpty(json))
         {
-            Debug.Log("[JsonDataManager] Chưa có save file.");
+            Debug.Log($"[JsonDataManager] Slot {slotIndex} chưa có dữ liệu save.");
             return null;
         }
 
@@ -155,14 +173,21 @@ public class JsonDataManager : Singleton<JsonDataManager>
             }
 
             BroadcastAllResources();
-            Debug.Log($"[JsonDataManager] ✅ Loaded ← {saveFileName}");
+            Debug.Log($"[JsonDataManager] ✅ Loaded Slot {slotIndex} ← {targetFile}");
             return save;
         }
         catch (Exception ex)
         {
-            Debug.LogError("[JsonDataManager] ❌ Load failed: " + ex.Message);
+            Debug.LogError($"[JsonDataManager] ❌ Load Slot {slotIndex} thất bại: " + ex.Message);
             return null;
         }
+    }
+
+    // 4. Kiểm tra Slot có dữ liệu hay chưa (Dành cho UI hiển thị danh sách Slot)
+    public bool HasSaveData(int slotIndex)
+    {
+        string filePath = System.IO.Path.Combine(Application.persistentDataPath, GetSlotFileName(slotIndex));
+        return System.IO.File.Exists(filePath);
     }
 
     public bool DeleteSave() => FileIO.Delete(saveFileName);
