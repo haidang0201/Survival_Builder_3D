@@ -132,10 +132,10 @@ public class JsonDataManager : Singleton<JsonDataManager>
     /// Kiểm tra đủ tài nguyên cho một chi phí tổng hợp (ví dụ giá xây/nâng cấp một
     /// tòa nhà cần cả gỗ + đá + lúa + vàng) TRƯỚC khi trừ bất cứ thứ gì.
     /// </summary>
-    public bool HasEnoughResources(int woodCost = 0, int stoneCost = 0, int foodCost = 0, int goldCost = 0)
-    {
-        return wood >= woodCost && stone >= stoneCost && food >= foodCost && gold >= goldCost;
-    }
+    // public bool HasEnoughResources(int woodCost = 0, int stoneCost = 0, int foodCost = 0, int goldCost = 0)
+    // {
+    //     return wood >= woodCost && stone >= stoneCost && food >= foodCost && gold >= goldCost;
+    // }
 
     /// <summary>
     /// Trừ đồng thời nhiều loại tài nguyên theo kiểu tất-cả-hoặc-không-gì-cả.
@@ -205,7 +205,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
     {
         string targetFile = GetSlotFileName(slotIndex);
         string json = FileIO.LoadFromFile(targetFile);
-        
+
         if (string.IsNullOrEmpty(json))
         {
             Debug.Log($"[JsonDataManager] Slot {slotIndex} chưa có dữ liệu save.");
@@ -390,9 +390,9 @@ public class JsonDataManager : Singleton<JsonDataManager>
     public static void RegisterStat_ResourceCollected(string resourceType, int amount)
     {
         if (amount <= 0) return;
-        
+
         EndGameStats stats = LoadEndGameStats();
-        
+
         switch (resourceType.ToLower())
         {
             case "wood": stats.totalWood += amount; break;
@@ -400,7 +400,7 @@ public class JsonDataManager : Singleton<JsonDataManager>
             case "food": stats.totalFood += amount; break;
             case "gold": stats.totalGold += amount; break;
         }
-        
+
         SaveEndGameStats(stats);
     }
 
