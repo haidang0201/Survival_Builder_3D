@@ -48,7 +48,8 @@ public class LoadBehavior : Singleton<LoadBehavior>
 
         if (Data != null)
         {
-            Data.LoadGame();
+            // 🔥 ĐÃ SỬA: Truyền mặc định Slot 1 khi game khởi chạy
+            Data.LoadGame(1);
         }
 
         Debug.Log("LoadBehavior initialized.");

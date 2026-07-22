@@ -141,87 +141,46 @@ public class ConstructionManager : Singleton<ConstructionManager>
 
     // ================= PUBLIC – ĐẶT MỚI =================
 
-    public void PlaceBuilding(BuildingType type, Vector3 position, Quaternion rotation)
+   public void PlaceBuilding(BuildingType type, Vector3 position, Quaternion rotation)
+{
+    // 1. Kiểm tra vị trí
+    if (!BuildingManager.Ins.CanBuild(position, type))
     {
-        // 1. Kiểm tra vị trí xem có trống không
-        if (!BuildingManager.Ins.CanBuild(position, type))
-        {
-            Debug.LogWarning($"[ConstructionManager] Không thể xây dựng tại vị trí này vì có sự chồng lấn.");
-            return;
-        }
-
-        // 2. Lấy cấu hình chi phí của nhà này
-        BuildingCost cost = GetBuildingCost(type);
-
-        // LOG KIỂM TRA TÀI NGUYÊN TRƯỚC KHI TRỪ
-        if (JsonDataManager.Ins != null)
-        {
-            Debug.Log($"[CHECK] Tài nguyên TRƯỚC khi xây: Gỗ={JsonDataManager.Ins.wood}, Đá={JsonDataManager.Ins.stone}, Thức ăn={JsonDataManager.Ins.food} | Chi phí xây: Gỗ={cost.woodCost}, Đá={cost.stoneCost}, Thức ăn={cost.foodCost}");
-        }
-
-        // 3. Kiểm tra và trừ tài nguyên
-        bool canBuild = false;
-
-        if (DialogNPC.Instance != null)
-        {
-            canBuild = DialogNPC.Instance.Consume(cost.woodCost, cost.foodCost, cost.stoneCost);
-
-            if (canBuild && JsonDataManager.Ins != null)
-            {
-                JsonDataManager.Ins.BroadcastAllResources();
-            }
-        }
-        else
-        {
-            if (JsonDataManager.Ins != null)
-            {
-                if (JsonDataManager.Ins.wood >= cost.woodCost &&
-                    JsonDataManager.Ins.food >= cost.foodCost &&
-                    JsonDataManager.Ins.stone >= cost.stoneCost)
-                {
-                    JsonDataManager.Ins.AddWood(-cost.woodCost);
-                    JsonDataManager.Ins.AddFood(-cost.foodCost);
-                    JsonDataManager.Ins.AddStone(-cost.stoneCost);
-                    canBuild = true;
-                }
-            }
-        }
-
-        if (!canBuild)
-        {
-            Debug.LogWarning("[ConstructionManager] Không đủ tài nguyên để xây " + type);
-            return;
-        }
-
-        // LOG XÁC NHẬN ĐÃ TRỪ TÀI NGUYÊN THÀNH CÔNG VÀ LÊN HUD
-        if (JsonDataManager.Ins != null)
-        {
-            Debug.Log($"[XÁC NHẬN] Đã trừ tài nguyên! Tài nguyên HIỆN TẠI: Gỗ={JsonDataManager.Ins.wood}, Đá={JsonDataManager.Ins.stone}, Thức ăn={JsonDataManager.Ins.food}");
-        }
-
-        // 4. Đủ tiền -> Tiến hành sinh nhà thật
-        var spawned = SpawnBuilding(type, position, rotation);
-
-        if (spawned == null)
-        {
-            Debug.LogError($"[ConstructionManager] Chưa gán prefab cho: {type}");
-        }
-        else
-        {
-            if (!buildingCounts.ContainsKey(type))
-            {
-                buildingCounts[type] = 0;
-            }
-            buildingCounts[type]++;
-
-            // Cập nhật lại UI hiển thị của riêng loại nhà này ngay sau khi xây xong (vì giá đã tăng lên 10%)
-            UpdateCostUI(type);
-
-            JsonDataManager.RegisterStat_BuildingConstructed();
-            Debug.Log($"[ConstructionManager] ✅ Đặt {type} thành công | Đã phát Event lên HUD.");
-        }
+        Debug.LogWarning($"[ConstructionManager] Vị trí [{type}] bị cản trở!");
+        return;
     }
 
+    // 2. Lấy giá ĐÃ TÍNH TĂNG TRƯỞNG (% Tăng thêm)
+    BuildingCost cost = GetBuildingCost(type);
+
+    // 3. Kiểm tra tài nguyên tập trung qua JsonDataManager (Bỏ qua DialogNPC nếu không đồng bộ)
+    if (JsonDataManager.Ins != null)
+    {
+        if (!JsonDataManager.Ins.HasEnoughResources(cost.woodCost, cost.stoneCost, cost.foodCost))
+        {
+            Debug.LogWarning($"[ConstructionManager] Thiếu tài nguyên xây {type}! Cần: Gỗ {cost.woodCost}, Đá {cost.stoneCost}, Lương {cost.foodCost}");
+            return;
+        }
+
+        // Trừ tài nguyên
+        JsonDataManager.Ins.AddWood(-cost.woodCost);
+        JsonDataManager.Ins.AddStone(-cost.stoneCost);
+        JsonDataManager.Ins.AddFood(-cost.foodCost);
+        JsonDataManager.Ins.BroadcastAllResources();
+    }
+
+    // 4. Sinh công trình
+    var spawned = SpawnBuilding(type, position, rotation);
+    if (spawned != null)
+    {
+        if (!buildingCounts.ContainsKey(type)) buildingCounts[type] = 0;
+        buildingCounts[type]++;
+
+        UpdateCostUI(type); // Đẩy giá mới (+10%) lên UI ngay lập tức
+        JsonDataManager.RegisterStat_BuildingConstructed();
+        Debug.Log($"[ConstructionManager] ✅ Đã xây {type} thành công!");
+    }
+}
     // ================= PUBLIC – SPAWN =================
 
     public BuildingCtrl SpawnBuilding(BuildingType type, Vector3 position, Quaternion rotation)

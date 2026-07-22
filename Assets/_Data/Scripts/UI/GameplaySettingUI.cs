@@ -78,19 +78,11 @@ public class GameplaySettingUI : MonoBehaviour
 
     public void SaveGameData()
     {
-        if (JsonDataManager.Ins != null)
+        // Gọi lưu công trình và tài nguyên vào Slot 1 qua BuildingSystem
+        if (BuildingSystem.Ins != null)
         {
-            // Tạo gói dữ liệu Save dựa trên cấu trúc Class có sẵn của Dũng/Đăng
-            JsonDataManager.GameSaveData newSave = new JsonDataManager.GameSaveData();
-            newSave.sceneName = SceneManager.GetActiveScene().name;
-            newSave.savedAtUnix = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            
-            // Lưu dữ liệu thông qua JsonDataManager
-            bool success = JsonDataManager.Ins.SaveGame(newSave);
-            if (success)
-            {
-                Debug.Log("[GameplaySettingUI] ✅ Đã lưu dữ liệu màn chơi JSON thành công!");
-            }
+            BuildingSystem.Ins.SaveBuildingsToSlot(1);
+            Debug.Log("[GameplaySettingUI] ✅ Đã lưu dữ liệu màn chơi JSON vào Slot 1 thành công!");
         }
     }
 
@@ -102,22 +94,19 @@ public class GameplaySettingUI : MonoBehaviour
             ConstructionManager.Ins.ResetBuildingCounts();
         }
 
-        if (JsonDataManager.Ins != null)
+        // 2. Gọi hàm load Slot 1 từ BuildingSystem
+        if (BuildingSystem.Ins != null)
         {
-            // 2. Gọi hàm load của Dũng/Đăng để đọc dữ liệu file builder.json
-            JsonDataManager.GameSaveData loadedData = JsonDataManager.Ins.LoadGame();
+            BuildingSystem.Ins.LoadBuildingsFromSlot(1);
 
-            if (loadedData != null)
+            // 3. Sau khi tải map thành công, ép các UI Text hiển thị giá tiền công trình cập nhật lại
+            if (ConstructionManager.Ins != null)
             {
-                // 3. Sau khi tải map thành công, ép các UI Text hiển thị giá tiền công trình cập nhật lại
-                if (ConstructionManager.Ins != null)
-                {
-                    ConstructionManager.Ins.UpdateAllCostUI();
-                }
-                
-                Debug.Log("[GameplaySettingUI] ✅ Đã tải lại tiến trình chơi JSON thành công!");
-                gameObject.SetActive(false); // Đóng bảng
+                ConstructionManager.Ins.UpdateAllCostUI();
             }
+            
+            Debug.Log("[GameplaySettingUI] ✅ Đã tải lại tiến trình chơi JSON từ Slot 1 thành công!");
+            gameObject.SetActive(false); // Đóng bảng setting
         }
     }
 }
