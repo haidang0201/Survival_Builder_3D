@@ -388,6 +388,30 @@ public class UpgradeableBuilding : MonoBehaviour
         if (IsUpgrading || CurrentLevel >= MaxLevel - 1) return;
 
         UpgradeCost nextCost = GetNextUpgradeCost();
+
+        // CHẶN TẬN GỐC: trừ tài nguyên tại đây, TRƯỚC khi cho phép đếm giờ nâng cấp.
+        // isInitialBuildNeeded (xây lần đầu) không tính phí ở đây — chi phí xây lần đầu
+        // thuộc về hệ thống đặt nhà (GhostBuilding/ConstructionManager), không phải nâng cấp.
+        if (!isInitialBuildNeeded)
+        {
+            if (JsonDataManager.Ins == null)
+            {
+                Debug.LogWarning($"[UpgradeableBuilding] Không tìm thấy JsonDataManager.Ins — huỷ nâng cấp {buildingName}.");
+                return;
+            }
+
+            bool spent = JsonDataManager.Ins.TrySpendCombined(
+                woodCost: nextCost.woodCost,
+                stoneCost: nextCost.stoneCost,
+                foodCost: nextCost.foodCost);
+
+            if (!spent)
+            {
+                Debug.LogWarning($"[UpgradeableBuilding] Không đủ tài nguyên để nâng cấp {buildingName} (cần Gỗ:{nextCost.woodCost} Đá:{nextCost.stoneCost} Lúa:{nextCost.foodCost}).");
+                return;
+            }
+        }
+
         StartCoroutine(UpgradeRoutine(nextCost.upgradeDuration));
     }
 
@@ -494,8 +518,22 @@ public class UpgradeableBuilding : MonoBehaviour
     {
         if (!IsRuined || IsUpgrading) return; // Đang bận nâng cấp hoặc nhà chưa hỏng thì bỏ qua
 
-        // Gọi trừ tài nguyên tại đây (Ví dụ kết nối với hệ thống kho tài nguyên của nhóm)
-        // ResourceManager.Ins.SubtractResources(repairWoodCost, repairStoneCost);
+        // CHẶN TẬN GỐC: trừ tài nguyên sửa chữa tại đây, TRƯỚC khi cho phép đếm giờ sửa chữa.
+        if (JsonDataManager.Ins == null)
+        {
+            Debug.LogWarning($"[UpgradeableBuilding] Không tìm thấy JsonDataManager.Ins — huỷ sửa chữa {buildingName}.");
+            return;
+        }
+
+        bool spent = JsonDataManager.Ins.TrySpendCombined(
+            woodCost: repairWoodCost,
+            stoneCost: repairStoneCost);
+
+        if (!spent)
+        {
+            Debug.LogWarning($"[UpgradeableBuilding] Không đủ tài nguyên để sửa chữa {buildingName} (cần Gỗ:{repairWoodCost} Đá:{repairStoneCost}).");
+            return;
+        }
 
         StartCoroutine(RepairRoutine());
     }
