@@ -3595,6 +3595,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3501610552096659192}
+  - component: {fileID: 1828553657363441648}
   m_Layer: 0
   m_Name: Setting_UI
   m_TagString: Untagged
@@ -3618,6 +3619,27 @@ Transform:
   - {fileID: 1858251296419007650}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1828553657363441648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5839208881116169219}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db5abe47b2482814ea388a5bfc707a0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameplaySettingUI
+  masterVolumeSlider: {fileID: 3651546060296626742}
+  musicVolumeSlider: {fileID: 2890306274084423477}
+  screenDropdown: {fileID: 6960057836559167108}
+  mouseSpeedSlider: {fileID: 5399612289143130696}
+  resumeButton: {fileID: 7476157117443611334}
+  mainMenuButton: {fileID: 2721613611970394733}
+  quitButton: {fileID: 1544866869637743979}
+  saveButton: {fileID: 8176801126909709645}
+  loadButton: {fileID: 5019740623768777595}
 --- !u!1 &6325168880457435457
 GameObject:
   m_ObjectHideFlags: 0
