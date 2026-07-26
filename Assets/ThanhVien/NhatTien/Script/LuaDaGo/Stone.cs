@@ -13,9 +13,9 @@ public class Stone : MonoBehaviour
     public ObjectPool stonePool;
     public int dropAmount = 2;
 
-    private int  currentHealth;
-    private bool isOccupied = false;
-    private Vector3 originalScale;
+    protected int  currentHealth;
+    protected bool isOccupied = false;
+    protected Vector3 originalScale;
 
     void Awake()
     {
@@ -48,7 +48,13 @@ public class Stone : MonoBehaviour
 
     public void Release() => isOccupied = false;
 
-    public StonePickup[] TakeDamage(int damage)
+    /// <summary>
+    /// Điểm mà worker sẽ đi tới để khai thác đá này. Mặc định = tâm object (hành vi cũ, không đổi).
+    /// Class con (vd StoneInfinite) có thể override để trả về điểm sát bề mặt collider thay vì tâm mesh.
+    /// </summary>
+    public virtual Vector3 GetMinePoint(Vector3 fromPosition) => transform.position;
+
+    public virtual StonePickup[] TakeDamage(int damage)
     {
         currentHealth -= damage;
         if (currentHealth <= 0) return DestroyStone();
@@ -56,7 +62,7 @@ public class Stone : MonoBehaviour
         return null;
     }
 
-    IEnumerator ChippingEffect()
+    protected IEnumerator ChippingEffect()
     {
         float healthPercent = (float)currentHealth / maxHealth;
         Vector3 targetScale = originalScale * Mathf.Lerp(0.6f, 1f, healthPercent);
@@ -65,7 +71,7 @@ public class Stone : MonoBehaviour
         transform.localScale = targetScale;
     }
 
-    StonePickup[] DestroyStone()
+    protected virtual StonePickup[] DestroyStone()
     {
         StonePickup[] drops = DropStone();
         isOccupied = false;
@@ -73,7 +79,7 @@ public class Stone : MonoBehaviour
         return drops;
     }
 
-    StonePickup[] DropStone()
+    protected StonePickup[] DropStone()
     {
         if (stonePool == null) return null;
 

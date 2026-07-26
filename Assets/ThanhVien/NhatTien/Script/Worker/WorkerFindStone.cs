@@ -107,7 +107,7 @@ public class WorkerFindStone : MonoBehaviour
 
         stamina?.SetDraining(true);
 
-        float dist = Vector3.Distance(transform.position, targetStone.transform.position);
+        float dist = Vector3.Distance(transform.position, targetStone.GetMinePoint(transform.position));
         if (dist > mineDistance)
         {
             HandleMoveToStone();
@@ -243,7 +243,7 @@ public class WorkerFindStone : MonoBehaviour
         {
             isHeadingToStone = true;
             agent.isStopped = false;
-            agent.SetDestination(targetStone.transform.position);
+            agent.SetDestination(targetStone.GetMinePoint(transform.position));
         }
         hasTriggeredMineAnim = false;
     }
