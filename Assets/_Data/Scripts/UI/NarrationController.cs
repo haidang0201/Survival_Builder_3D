@@ -8,21 +8,28 @@ public class NarrationController : MonoBehaviour
 {
     public enum TransitionType
     {
-        Instant,           // Đổi ngay lập tức
-        CrossFade,         // Mờ dần đè nhau
-        FadeThroughBlack,  // Mờ qua màn hình đen
-        ScreenShakeOnly,   // Không đổi ảnh, chỉ RUNG màn hình
-        RedFlashOnly,      // Không đổi ảnh, chỉ NHÁY ĐỎ cảnh báo
-        ShakeAndRedFlash   // Vừa ĐỔI ẢNH, vừa RUNG, vừa NHÁY ĐỎ
+        Instant,
+        CrossFade,
+        FadeThroughBlack,
+        ScreenShakeOnly,
+        RedFlashOnly,
+        ShakeAndRedFlash
     }
 
     [Header("UI Components (2D Canvas)")]
+    public Canvas targetCanvas;
     public Image backgroundImage;
-    public Image fadeImageOverlay;       // Tấm dùng để Fade ảnh hoặc Nháy Đỏ
+    public Image fadeImageOverlay;
     public TextMeshProUGUI narrationText;
 
-    [Header("3D Camera Component (Cho hiệu ứng Rung)")]
-    public Camera mainCamera;            // Kéo Main Camera của bạn vào đây
+    [Header("Auto & Skip Settings")]
+    public Button autoButton;            
+    public Button skipButton;            
+    public float autoDelay = 2.0f;       
+    public bool autoCreateTopRightUI = true; // Tự tạo UI ở GÓC TRÊN BÊN PHẢI
+
+    [Header("3D Camera Component")]
+    public Camera mainCamera;            
 
     [Header("Audio Components")]
     public AudioSource audioSource;
@@ -30,12 +37,13 @@ public class NarrationController : MonoBehaviour
     [Header("Settings")]
     public float typingSpeed = 0.05f;
     public float defaultFadeDuration = 0.8f;
+    public int nextSceneIndex = 2;       
 
     [System.Serializable]
     public class NarrationStep
     {
         public Sprite backgroundSprite;
-        public TransitionType transition; // Ô chọn hiệu ứng đặc biệt
+        public TransitionType transition;
         [TextArea(3, 5)]
         public string textContent;
         public AudioClip voiceOrSFX;
@@ -47,15 +55,17 @@ public class NarrationController : MonoBehaviour
     private int currentIndex = 0;
     private Coroutine typingCoroutine;
     private Coroutine transitionCoroutine;
+    private Coroutine autoRoutine;
+    private Coroutine glowRoutine; 
     private bool isTyping = false;
+    private bool isAuto = false;
 
-    // Lưu vị trí gốc của Camera để sau khi rung không bị lệch camera
     private Vector3 originalCamPos;
+    private TextMeshProUGUI autoBtnText;
 
     void Start()
     {
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
-
         if (mainCamera == null) mainCamera = Camera.main;
         if (mainCamera != null) originalCamPos = mainCamera.transform.localPosition;
 
@@ -64,6 +74,24 @@ public class NarrationController : MonoBehaviour
             Color c = fadeImageOverlay.color;
             c.a = 0f;
             fadeImageOverlay.color = c;
+        }
+
+        // TỰ ĐỘNG TẠO UI BÌNH THƯỜNG Ở GÓC TRÊN BÊN PHẢI
+        if (autoCreateTopRightUI && (autoButton == null || skipButton == null))
+        {
+            CreateTopRightButtons();
+        }
+
+        if (autoButton != null)
+        {
+            autoButton.onClick.AddListener(ToggleAuto);
+            autoBtnText = autoButton.GetComponentInChildren<TextMeshProUGUI>();
+            UpdateAutoButtonUI();
+        }
+
+        if (skipButton != null)
+        {
+            skipButton.onClick.AddListener(SkipNarration);
         }
 
         if (storySteps.Length > 0)
@@ -76,6 +104,7 @@ public class NarrationController : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
         {
+            if (autoRoutine != null) StopCoroutine(autoRoutine);
             OnPlayerClick();
         }
     }
@@ -87,29 +116,125 @@ public class NarrationController : MonoBehaviour
             StopCoroutine(typingCoroutine);
             narrationText.text = storySteps[currentIndex].textContent;
             isTyping = false;
+            CheckAutoNext();
         }
         else
         {
-            currentIndex++;
-            if (currentIndex < storySteps.Length)
-            {
-                PlayStep(currentIndex);
-            }
-            else
-            {
-                narrationText.text = "";
-                if (audioSource.isPlaying) audioSource.Stop();
-                else SceneManager.LoadScene(2);
-            }
+            AdvanceToNextStep();
         }
+    }
+
+    private void AdvanceToNextStep()
+    {
+        currentIndex++;
+        if (currentIndex < storySteps.Length)
+        {
+            PlayStep(currentIndex);
+        }
+        else
+        {
+            FinishNarration();
+        }
+    }
+
+    // ================= CHẾ ĐỘ AUTO =================
+    public void ToggleAuto()
+    {
+        isAuto = !isAuto;
+        UpdateAutoButtonUI();
+
+        if (glowRoutine != null) StopCoroutine(glowRoutine);
+        if (isAuto)
+        {
+            glowRoutine = StartCoroutine(AutoGlowRoutine());
+            if (!isTyping) CheckAutoNext();
+        }
+        else
+        {
+            ResetAutoGlowVisuals();
+            if (autoRoutine != null) StopCoroutine(autoRoutine);
+        }
+    }
+
+    private void UpdateAutoButtonUI()
+    {
+        if (autoBtnText != null)
+        {
+            autoBtnText.text = isAuto ? "AUTO ON" : "AUTO";
+        }
+    }
+
+    // Hiệu ứng đổi màu nhẹ chữ AUTO khi đang kích hoạt
+    IEnumerator AutoGlowRoutine()
+    {
+        float timer = 0f;
+        Color goldColor = new Color(1f, 0.85f, 0.3f, 1f); 
+        Color brightWhite = Color.white;
+
+        while (isAuto)
+        {
+            timer += Time.deltaTime * 4f;
+            float pulse = (Mathf.Sin(timer) + 1f) / 2f;
+
+            Color currentGlow = Color.Lerp(goldColor, brightWhite, pulse);
+            if (autoBtnText != null) autoBtnText.color = currentGlow;
+
+            yield return null;
+        }
+
+        ResetAutoGlowVisuals();
+    }
+
+    private void ResetAutoGlowVisuals()
+    {
+        if (autoBtnText != null) autoBtnText.color = Color.white;
+    }
+
+    private void CheckAutoNext()
+    {
+        if (!isAuto) return;
+        if (autoRoutine != null) StopCoroutine(autoRoutine);
+        autoRoutine = StartCoroutine(AutoNextRoutine());
+    }
+
+    IEnumerator AutoNextRoutine()
+    {
+        yield return new WaitForSeconds(autoDelay);
+        if (isAuto) AdvanceToNextStep();
+    }
+
+    // ================= XỬ LÝ NÚT SKIP =================
+    public void SkipNarration()
+    {
+        StopAllCoroutines();
+
+        if (audioSource != null && audioSource.isPlaying) audioSource.Stop();
+
+        if (mainCamera != null) mainCamera.transform.localPosition = originalCamPos;
+
+        if (fadeImageOverlay != null)
+        {
+            Color c = fadeImageOverlay.color;
+            c.a = 0f;
+            fadeImageOverlay.color = c;
+        }
+
+        FinishNarration();
+    }
+
+    private void FinishNarration()
+    {
+        narrationText.text = "";
+        if (audioSource != null && audioSource.isPlaying) audioSource.Stop();
+        SceneManager.LoadScene(nextSceneIndex);
     }
 
     void PlayStep(int index)
     {
-        // Đọc hiệu ứng được chọn từ Inspector
+        if (autoRoutine != null) StopCoroutine(autoRoutine);
+
         TransitionType currentTransition = storySteps[index].transition;
 
-        // Cập nhật ảnh nền trước (nếu có và không thuộc nhóm chỉ hiệu ứng)
         if (storySteps[index].backgroundSprite != null &&
             currentTransition != TransitionType.ScreenShakeOnly &&
             currentTransition != TransitionType.RedFlashOnly)
@@ -120,7 +245,6 @@ public class NarrationController : MonoBehaviour
             }
         }
 
-        // KÍCH HOẠT CÁC COROUTINE HIỆU ỨNG TRỰC TIẾP
         if (transitionCoroutine != null) StopCoroutine(transitionCoroutine);
 
         switch (currentTransition)
@@ -132,20 +256,18 @@ public class NarrationController : MonoBehaviour
                 transitionCoroutine = StartCoroutine(FadeThroughBlackRoutine(storySteps[index].backgroundSprite));
                 break;
             case TransitionType.ScreenShakeOnly:
-                transitionCoroutine = StartCoroutine(ScreenShakeRoutine(0.5f, 0.2f)); // Rung 0.5 giây, độ mạnh 0.2
+                transitionCoroutine = StartCoroutine(ScreenShakeRoutine(0.5f, 0.2f));
                 break;
             case TransitionType.RedFlashOnly:
-                transitionCoroutine = StartCoroutine(RedFlashRoutine(0.4f)); // Nháy đỏ trong 0.4 giây
+                transitionCoroutine = StartCoroutine(RedFlashRoutine(0.4f));
                 break;
             case TransitionType.ShakeAndRedFlash:
-                // Thay đổi ảnh nền ngay lập tức rồi vừa rung vừa nháy đỏ
                 backgroundImage.sprite = storySteps[index].backgroundSprite;
                 StartCoroutine(ScreenShakeRoutine(0.6f, 0.3f));
                 transitionCoroutine = StartCoroutine(RedFlashRoutine(0.5f));
                 break;
         }
 
-        // Âm thanh
         if (audioSource != null)
         {
             audioSource.Stop();
@@ -156,56 +278,122 @@ public class NarrationController : MonoBehaviour
             }
         }
 
-        // Chạy chữ
         if (typingCoroutine != null) StopCoroutine(typingCoroutine);
         typingCoroutine = StartCoroutine(TypeNarration(storySteps[index].textContent));
     }
 
-    // ================= KHU VỰC CÁC HÀM HIỆU ỨNG =================
+    // ================= TỰ TẠO CỤM NÚT UI CHUẨN Ở GÓC TRÊN BÊN PHẢI =================
+    private void CreateTopRightButtons()
+    {
+        if (targetCanvas == null) targetCanvas = FindObjectOfType<Canvas>();
+        if (targetCanvas == null) return;
 
-    // Hiệu ứng Rung Camera (Dùng được cho cả game 2D và 3D)
+        // 1. Panel chứa cụm nút bám góc trên bên phải
+        GameObject panelObj = new GameObject("TopRight_ControlPanel", typeof(RectTransform));
+        panelObj.transform.SetParent(targetCanvas.transform, false);
+
+        RectTransform panelRect = panelObj.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(1, 1);
+        panelRect.anchorMax = new Vector2(1, 1);
+        panelRect.pivot = new Vector2(1, 1);
+        panelRect.anchoredPosition = new Vector2(-20, -20);
+        panelRect.sizeDelta = new Vector2(250, 44);
+
+        HorizontalLayoutGroup hGroup = panelObj.AddComponent<HorizontalLayoutGroup>();
+        hGroup.spacing = 10;
+        hGroup.childControlWidth = true;
+        hGroup.childControlHeight = true;
+        hGroup.childForceExpandWidth = false;
+
+        // 2. Tạo Nút AUTO
+        if (autoButton == null)
+        {
+            autoButton = CreateButton(panelObj.transform, "AutoButton", "AUTO", new Color(0.12f, 0.12f, 0.12f, 0.85f));
+            autoButton.gameObject.AddComponent<LayoutElement>().preferredWidth = 115;
+        }
+
+        // 3. Tạo Nút SKIP
+        if (skipButton == null)
+        {
+            skipButton = CreateButton(panelObj.transform, "SkipButton", "SKIP >>", new Color(0.12f, 0.12f, 0.12f, 0.85f));
+            skipButton.gameObject.AddComponent<LayoutElement>().preferredWidth = 115;
+        }
+    }
+
+    private Button CreateButton(Transform parent, string name, string labelText, Color bgColor)
+    {
+        GameObject btnObj = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+        btnObj.transform.SetParent(parent, false);
+
+        Image img = btnObj.GetComponent<Image>();
+        img.color = bgColor;
+
+        Button btn = btnObj.GetComponent<Button>();
+
+        GameObject textObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        textObj.transform.SetParent(btnObj.transform, false);
+
+        RectTransform textRect = textObj.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.sizeDelta = Vector2.zero;
+
+        TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
+        tmp.text = labelText;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.fontSize = 16;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = Color.white;
+        tmp.enableWordWrapping = false; // Tắt tự động xuống dòng
+
+        return btn;
+    }
+
+    // ================= KHU VỰC HÀM HIỆU ỨNG NỀN & CHỮ =================
+
+    IEnumerator TypeNarration(string line)
+    {
+        narrationText.text = "";
+        isTyping = true;
+        foreach (char letter in line.ToCharArray())
+        {
+            narrationText.text += letter;
+            yield return new WaitForSeconds(typingSpeed);
+        }
+        isTyping = false;
+        CheckAutoNext();
+    }
+
     IEnumerator ScreenShakeRoutine(float duration, float magnitude)
     {
         if (mainCamera == null) yield break;
-
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            // Tính toán vị trí ngẫu nhiên xung quanh vị trí gốc của Camera
             float x = Random.Range(-1f, 1f) * magnitude;
             float y = Random.Range(-1f, 1f) * magnitude;
-
             mainCamera.transform.localPosition = new Vector3(originalCamPos.x + x, originalCamPos.y + y, originalCamPos.z);
             elapsed += Time.deltaTime;
             yield return null;
         }
-
-        // Trả Camera về vị trí ban đầu sau khi rung xong
         mainCamera.transform.localPosition = originalCamPos;
     }
 
-    // Hiệu ứng Nháy Đỏ Cảnh Báo (Sử dụng tấm Overlay biến thành màu đỏ)
     IEnumerator RedFlashRoutine(float duration)
     {
         if (fadeImageOverlay == null) yield break;
-
-        fadeImageOverlay.sprite = null; // Xóa ảnh trên tấm overlay để nó thành mảng màu thuần
+        fadeImageOverlay.sprite = null;
         fadeImageOverlay.color = Color.red;
-
         float halfDuration = duration / 2f;
-
-        // Pha 1: Đỏ rực lên cực nhanh
         float timer = 0f;
         while (timer < halfDuration)
         {
             timer += Time.deltaTime;
             Color c = fadeImageOverlay.color;
-            c.a = Mathf.Lerp(0f, 0.6f, timer / halfDuration); // Đạt độ đậm tối đa là 60% màu đỏ để không bị che mất chữ
+            c.a = Mathf.Lerp(0f, 0.6f, timer / halfDuration);
             fadeImageOverlay.color = c;
             yield return null;
         }
-
-        // Pha 2: Mờ dần màu đỏ đi
         timer = 0f;
         while (timer < halfDuration)
         {
@@ -215,7 +403,6 @@ public class NarrationController : MonoBehaviour
             fadeImageOverlay.color = c;
             yield return null;
         }
-
         Color finalOff = fadeImageOverlay.color;
         finalOff.a = 0f;
         fadeImageOverlay.color = finalOff;
@@ -269,17 +456,5 @@ public class NarrationController : MonoBehaviour
         Color finalOff = fadeImageOverlay.color;
         finalOff.a = 0f;
         fadeImageOverlay.color = finalOff;
-    }
-
-    IEnumerator TypeNarration(string line)
-    {
-        narrationText.text = "";
-        isTyping = true;
-        foreach (char letter in line.ToCharArray())
-        {
-            narrationText.text += letter;
-            yield return new WaitForSeconds(typingSpeed);
-        }
-        isTyping = false;
     }
 }

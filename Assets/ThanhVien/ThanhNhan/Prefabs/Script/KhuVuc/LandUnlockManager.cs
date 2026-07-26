@@ -23,9 +23,9 @@ public class LandUnlockManager : MonoBehaviour
     public Button cancelButton;      // Nút "Bỏ Qua"
     public Button backgroundButton;  // Overlay trong suốt — click ngoài để đóng
 
-    [Header("Conquered Panel")]
-    [Tooltip("Kéo LandConqueredPanel vào đây — hiện sau khi khai hoang thành công")]
-    public GameObject landConqueredPanel;
+    // [Header("Conquered Panel")]
+    // [Tooltip("Kéo LandConqueredPanel vào đây — hiện sau khi khai hoang thành công")]
+    // public GameObject landConqueredPanel;
 
     [Header("Unlock Requirements")]
     [Tooltip("Số gỗ cần để khai hoang — tự đặt hoặc đọc từ JSON")]
@@ -229,7 +229,9 @@ public class LandUnlockManager : MonoBehaviour
 
         // Đóng panel này, rồi hiện LandConqueredPanel
         if (_animCoroutine != null) StopCoroutine(_animCoroutine);
-        _animCoroutine = StartCoroutine(AnimateCloseAndShowConquered());
+        // SỬA Ở ĐÂY: Dùng AnimateClose() thay vì AnimateCloseAndShowConquered()
+        _animCoroutine = StartCoroutine(AnimateClose());
+        // _animCoroutine = StartCoroutine(AnimateCloseAndShowConquered());
     }
 
     // ─── Animation Coroutines ─────────────────────────────────────────────────
@@ -280,35 +282,35 @@ public class LandUnlockManager : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    private IEnumerator AnimateCloseAndShowConquered()
-    {
-        _canvasGroup.interactable = false;
-        _canvasGroup.blocksRaycasts = false;
+    // private IEnumerator AnimateCloseAndShowConquered()
+    // {
+    //     _canvasGroup.interactable = false;
+    //     _canvasGroup.blocksRaycasts = false;
 
-        float startAlpha = _canvasGroup.alpha;
-        Vector3 startScale = _rectTransform != null ? _rectTransform.localScale : Vector3.one;
-        float elapsed = 0f;
+    //     float startAlpha = _canvasGroup.alpha;
+    //     Vector3 startScale = _rectTransform != null ? _rectTransform.localScale : Vector3.one;
+    //     float elapsed = 0f;
 
-        while (elapsed < animDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / animDuration);
-            _canvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, t);
-            if (_rectTransform != null)
-                _rectTransform.localScale = Vector3.Lerp(startScale, Vector3.one * 0.85f, t);
-            yield return null;
-        }
+    //     while (elapsed < animDuration)
+    //     {
+    //         elapsed += Time.unscaledDeltaTime;
+    //         float t = Mathf.SmoothStep(0f, 1f, elapsed / animDuration);
+    //         _canvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, t);
+    //         if (_rectTransform != null)
+    //             _rectTransform.localScale = Vector3.Lerp(startScale, Vector3.one * 0.85f, t);
+    //         yield return null;
+    //     }
 
-        gameObject.SetActive(false);
+    //     gameObject.SetActive(false);
 
-        if (landConqueredPanel != null)
-        {
-            string zoneName = _targetZone != null ? _targetZone.gameObject.name : "Vùng Đất Mới";
-            var conqueredUI = landConqueredPanel.GetComponent<LandConqueredUI>();
-            if (conqueredUI != null)
-                conqueredUI.Show(zoneName, _targetZone, requiredWood);
-            else
-                landConqueredPanel.SetActive(true);
-        }
-    }
+    //     if (landConqueredPanel != null)
+    //     {
+    //         string zoneName = _targetZone != null ? _targetZone.gameObject.name : "Vùng Đất Mới";
+    //         var conqueredUI = landConqueredPanel.GetComponent<LandConqueredUI>();
+    //         if (conqueredUI != null)
+    //             conqueredUI.Show(zoneName, _targetZone, requiredWood);
+    //         else
+    //             landConqueredPanel.SetActive(true);
+    //     }
+    // }
 }
