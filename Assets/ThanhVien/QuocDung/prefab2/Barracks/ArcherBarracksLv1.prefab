@@ -131,6 +131,9 @@ MonoBehaviour:
   soldierPrefab: {fileID: 1999277456456185836, guid: 6f6383d8f0b521f449a9ee5eb68d04cf, type: 3}
   spawnRadius: 5
   currentLevel: 1
+  testDuration: 5
+  hologramMaterial: {fileID: 0}
+  hologramColor: {r: 0, g: 0.7, b: 1, a: 0.35}
 --- !u!114 &2094686968249118774
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -159,6 +162,10 @@ MonoBehaviour:
   kitchenLevels: []
   houseLevels: []
   buildingIcons: []
+  ruinedVisualModel: {fileID: 0}
+  repairWoodCost: 30
+  repairStoneCost: 30
+  repairDuration: 5
 --- !u!114 &7735173501276547949
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -173,3 +180,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HPTower
   maxHealth: 200
   destroyVFXPrefab: {fileID: 0}
+  hpBarHeightOffset: 4
+  hpBarSize: {x: 2, y: 0.25}
+  hpBarColor: {r: 1, g: 0, b: 0, a: 1}
+  hideHpBarWhenFull: 1

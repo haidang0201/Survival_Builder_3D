@@ -17,6 +17,7 @@ public class HPTower : MonoBehaviour, IDamageable
     public float MaxHealth { get; set; }
 
     private bool isDestroyed = false;
+    public bool IsDestroyed => isDestroyed;
 
     // Các thành phần UI được khởi tạo hoàn toàn bằng code lúc chạy game
     private Canvas hpCanvas;

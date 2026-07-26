@@ -55,11 +55,33 @@ public class AttackTowerAI : MonoBehaviour
     public float AttackRange => attackRange;
 
     private UpgradeableBuilding upgradeableBuilding;
+    private HPTower hpTower;
     private Transform currentTarget;
     private float nextFireTime;
 
+    public bool IsDestroyed()
+    {
+        if (hpTower == null)
+        {
+            hpTower = GetComponent<HPTower>();
+            if (hpTower == null) hpTower = GetComponentInParent<HPTower>();
+            if (hpTower == null) hpTower = GetComponentInChildren<HPTower>();
+        }
+
+        if (hpTower != null)
+        {
+            if (hpTower.IsDestroyed || hpTower.CurrentHealth <= 0) return true;
+        }
+
+        return false;
+    }
+
     private void Start()
     {
+        hpTower = GetComponent<HPTower>();
+        if (hpTower == null) hpTower = GetComponentInParent<HPTower>();
+        if (hpTower == null) hpTower = GetComponentInChildren<HPTower>();
+
         upgradeableBuilding = GetComponent<UpgradeableBuilding>();
         UpdateAnimatorReference();
         if (firePoint == null)
@@ -84,12 +106,25 @@ public class AttackTowerAI : MonoBehaviour
     // Hàm nhận lệnh tấn công do Tháp Canh truyền mục tiêu sang
     public void CommandAttack(Transform target)
     {
+        if (IsDestroyed())
+        {
+            currentTarget = null;
+            return;
+        }
+
         currentTarget = target;
         Debug.Log($"[AttackTowerAI] CommandAttack received. Target={(target == null ? "null" : target.name)}");
     }
 
     private void Update()
     {
+        // Nếu tháp đã bị phá hủy -> Không bắn và hủy mục tiêu
+        if (IsDestroyed())
+        {
+            if (currentTarget != null) currentTarget = null;
+            return;
+        }
+
         // Nếu không có mục tiêu được chỉ định từ tháp canh -> Bỏ qua không bắn
         if (currentTarget == null) return;
 
@@ -128,7 +163,8 @@ public class AttackTowerAI : MonoBehaviour
 
     private void ExecuteAttack()
     {
-        // Kiểm tra lại xem mục tiêu còn sống/tồn tại không trước khi bắn
+        // Kiểm tra lại xem tháp còn nguyên vẹn và mục tiêu còn sống/tồn tại không trước khi bắn
+        if (IsDestroyed()) { currentTarget = null; return; }
         if (currentTarget == null) { Debug.Log("[AttackTowerAI] ExecuteAttack called but currentTarget is null"); return; }
 
         PlayAttackAnimation();

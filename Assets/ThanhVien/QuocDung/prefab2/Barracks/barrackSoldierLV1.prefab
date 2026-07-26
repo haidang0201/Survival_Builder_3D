@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 5838635027722993084}
   m_Layer: 0
   m_Name: barrackSoldierLV1
-  m_TagString: Untagged
+  m_TagString: Tower
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -130,6 +130,9 @@ MonoBehaviour:
   soldierPrefab: {fileID: 5529766660109328545, guid: 6faae46d02eec1b458eaa4f73464be71, type: 3}
   spawnRadius: 5
   currentLevel: 1
+  testDuration: 5
+  hologramMaterial: {fileID: 0}
+  hologramColor: {r: 0, g: 0.7, b: 1, a: 0.35}
 --- !u!114 &5838635027722993084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -158,3 +161,7 @@ MonoBehaviour:
   kitchenLevels: []
   houseLevels: []
   buildingIcons: []
+  ruinedVisualModel: {fileID: 0}
+  repairWoodCost: 30
+  repairStoneCost: 30
+  repairDuration: 5

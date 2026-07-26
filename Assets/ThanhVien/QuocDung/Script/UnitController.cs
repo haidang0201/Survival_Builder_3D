@@ -24,6 +24,7 @@ public class UnitController : MonoBehaviour
 
     // 2. Khai báo các thành phần cần thiết
     private NavMeshAgent agent;
+    private HPSoldier hpSoldier;
 
     [Header("Animation Config")]
     [SerializeField] private Animator animator;
@@ -66,6 +67,7 @@ public class UnitController : MonoBehaviour
     private int currentTargetInstanceId = 0;
 
     [Header("Warning Response State")]
+    [SerializeField] private bool autoAggro = false; // Đặt false để lính đứng yên, không tự chạy tới đánh khi quái xuất hiện
     [SerializeField] private bool isRespondingToWarning = false;
     [SerializeField] private bool isReturning = false;
     [SerializeField] private Vector3 returnPosition;
@@ -140,6 +142,8 @@ public class UnitController : MonoBehaviour
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+        hpSoldier = GetComponent<HPSoldier>();
+
         if (agent == null)
         {
             Debug.LogError("UnitController requires a NavMeshAgent component.");
@@ -170,7 +174,7 @@ public class UnitController : MonoBehaviour
         }
 
         // Tự động warp agent lên NavMesh nếu bị lệch khi spawn
-        if (!agent.isOnNavMesh)
+        if (agent.isActiveAndEnabled && !agent.isOnNavMesh)
         {
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
             {
@@ -189,7 +193,7 @@ public class UnitController : MonoBehaviour
 
     private void SetDestination(Vector3 dest)
     {
-        if (agent == null) return;
+        if (agent == null || !agent.isActiveAndEnabled) return;
 
         if (!agent.isOnNavMesh)
         {
@@ -203,11 +207,14 @@ public class UnitController : MonoBehaviour
             }
         }
 
-        agent.isStopped = false;
-
-        if (Vector3.Distance(agent.destination, dest) > 0.25f)
+        if (agent.isOnNavMesh)
         {
-            agent.SetDestination(dest);
+            agent.isStopped = false;
+
+            if (Vector3.Distance(agent.destination, dest) > 0.25f)
+            {
+                agent.SetDestination(dest);
+            }
         }
     }
 
@@ -248,24 +255,32 @@ public class UnitController : MonoBehaviour
 
     void Update()
     {
-        // Nếu không có mục tiêu, mục tiêu không hợp lệ hoặc đã chết, quét mục tiêu mới theo vùng
-        if (currentTarget == null || !currentTarget.CompareTag(enemyTag) || !IsEnemyAlive(currentTarget))
+        if (hpSoldier != null && hpSoldier.IsDead) return;
+
+        // Chỉ quét tự động tìm mục tiêu nếu autoAggro = true HOẶC đang trong chế độ phản công theo nút bấm (isRespondingToWarning)
+        if (autoAggro || isRespondingToWarning)
         {
-            if (TryAcquireEnemyInArea())
+            if (currentTarget == null || !currentTarget.CompareTag(enemyTag) || !IsEnemyAlive(currentTarget))
             {
-                // Tìm thấy mục tiêu mới và bắt đầu đuổi/tấn công
-            }
-            else
-            {
-                // Không thấy kẻ địch nào -> Về trạng thái Idle và dừng agent
-                if (currentState == UnitState.Attacking)
+                if (TryAcquireEnemyInArea())
                 {
-                    ReleaseCurrentTargetClaim();
-                    currentTarget = null;
-                    currentState = UnitState.Idle;
-                    if (agent != null && agent.isOnNavMesh)
+                    // Tìm thấy mục tiêu mới và bắt đầu đuổi/tấn công
+                }
+                else
+                {
+                    // Không thấy kẻ địch nào -> Về trạng thái Idle và dừng agent
+                    if (currentState == UnitState.Attacking)
                     {
-                        agent.isStopped = true;
+                        ReleaseCurrentTargetClaim();
+                        currentTarget = null;
+                        if (!isRespondingToWarning && !isReturning)
+                        {
+                            currentState = UnitState.Idle;
+                            if (agent != null && agent.isOnNavMesh)
+                            {
+                                agent.isStopped = true;
+                            }
+                        }
                     }
                 }
             }
@@ -354,31 +369,55 @@ public class UnitController : MonoBehaviour
         isRespondingToWarning = true;
         isReturning = false;
         currentState = UnitState.Moving;
-        SetDestination(targetPosition);
+
+        if (agent != null)
+        {
+            if (!agent.isOnNavMesh)
+            {
+                if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+                {
+                    agent.Warp(hit.position);
+                }
+            }
+
+            if (agent.isOnNavMesh)
+            {
+                agent.isStopped = false;
+                agent.SetDestination(targetPosition);
+            }
+        }
+
+        Debug.Log($"[UnitController] {gameObject.name} responding to attack button -> Moving to {targetPosition}");
     }
 
     private bool AnyEnemyAlive()
     {
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
-        foreach (var enemy in enemies)
+        // 1. Tag check
+        try
         {
-            if (enemy != null && enemy.activeInHierarchy)
+            GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
+            foreach (var enemy in enemies)
             {
-                var hp = enemy.GetComponentInParent<EnemyHealth>();
-                if (hp != null)
+                if (enemy != null && enemy.activeInHierarchy)
                 {
-                    if (hp.CurrentHealth > 0f) return true;
-                    continue;
+                    var hp = enemy.GetComponentInParent<EnemyHealth>();
+                    if (hp == null || hp.CurrentHealth > 0f) return true;
                 }
-                var dam = enemy.GetComponentInParent<IDamageable>();
-                if (dam != null)
-                {
-                    if (dam.CurrentHealth > 0f) return true;
-                    continue;
-                }
-                return true; // assumed alive if no health component
             }
         }
+        catch {}
+
+        // 2. EnemyAI check fallback
+        EnemyAI[] enemyAIs = Object.FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+        foreach (var enemy in enemyAIs)
+        {
+            if (enemy != null && enemy.gameObject.activeInHierarchy)
+            {
+                var hp = enemy.GetComponent<EnemyHealth>();
+                if (hp == null || hp.CurrentHealth > 0f) return true;
+            }
+        }
+
         return false;
     }
 
@@ -430,7 +469,7 @@ public class UnitController : MonoBehaviour
     {
         if (agent != null && agent.isOnNavMesh && !agent.pathPending)
         {
-            if (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance)
+            if (agent.hasPath && agent.remainingDistance <= agent.stoppingDistance)
             {
                 currentState = UnitState.Idle;
             }
@@ -442,7 +481,7 @@ public class UnitController : MonoBehaviour
         enemyRoot = null;
         if (col == null) return false;
 
-        if (col.CompareTag(enemyTag) || 
+        if (col.tag == enemyTag || 
             col.GetComponentInParent<EnemyHealth>() != null || 
             col.name.ToLower().Contains("enemy"))
         {
@@ -680,7 +719,7 @@ public class UnitController : MonoBehaviour
         float sqrDistance = (transform.position - currentTarget.transform.position).sqrMagnitude;
         if (sqrDistance > stopDistance * stopDistance) return false;
 
-        if (agent != null && !agent.isStopped) return false;
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && !agent.isStopped) return false;
 
         return true;
     }
@@ -688,21 +727,19 @@ public class UnitController : MonoBehaviour
     private void UpdateAnimationState()
     {
         if (animator == null) return;
+        if (hpSoldier != null && hpSoldier.IsDead) return;
 
         bool isMoving = false;
 
-        if (agent != null)
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
         {
-            if (agent.isOnNavMesh)
-            {
-                bool hasMeaningfulPath = !agent.isStopped && agent.hasPath && !agent.pathPending && agent.remainingDistance > agent.stoppingDistance;
-                bool hasMeaningfulVelocity = !agent.isStopped && agent.velocity.sqrMagnitude > 0.01f;
-                isMoving = hasMeaningfulPath || hasMeaningfulVelocity;
-            }
-            else
-            {
-                isMoving = !agent.isStopped && agent.desiredVelocity.sqrMagnitude > 0.01f;
-            }
+            bool hasMeaningfulPath = !agent.isStopped && agent.hasPath && !agent.pathPending && agent.remainingDistance > agent.stoppingDistance;
+            bool hasMeaningfulVelocity = !agent.isStopped && agent.velocity.sqrMagnitude > 0.01f;
+            isMoving = hasMeaningfulPath || hasMeaningfulVelocity;
+        }
+        else
+        {
+            isMoving = false;
         }
 
         animator.SetBool(moveBoolParam, isMoving);

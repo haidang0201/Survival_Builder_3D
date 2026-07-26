@@ -48,8 +48,53 @@ public class EnemyAI : MonoBehaviour
     public float debugLogInterval = 1f;
     public bool attackMainDirectly = false; // Checkbox để test đánh trực tiếp Main
 
+    [Header("Exit Play Mode Config")]
+    [Tooltip("Khi bật, nếu trên bản đồ không còn bất kỳ tháp, nhà chính hay công trình nào thì game sẽ tự động Exit chế độ Play.")]
+    public bool exitPlayModeWhenNoBuildings = false;
+
     [Header("Move Animation")]
     public float moveThreshold = 0.1f;
+
+    public static bool HasAnyActiveBuildings()
+    {
+        // 1. Kiểm tra các tháp có HPTower
+        HPTower[] towers = Object.FindObjectsByType<HPTower>(FindObjectsSortMode.None);
+        foreach (var t in towers)
+        {
+            if (t != null && t.gameObject.activeInHierarchy && !t.IsDestroyed && t.CurrentHealth > 0f)
+                return true;
+        }
+
+        // 2. Kiểm tra các công trình có UpgradeableBuilding
+        UpgradeableBuilding[] ubs = Object.FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
+        foreach (var ub in ubs)
+        {
+            if (ub != null && ub.gameObject.activeInHierarchy && !ub.IsRuined)
+                return true;
+        }
+
+        // 3. Kiểm tra các GameObject theo Tag
+        string[] buildingTags = new string[] { "Main", "Tower", "DefenseTower" };
+        foreach (string tag in buildingTags)
+        {
+            try
+            {
+                GameObject[] objs = GameObject.FindGameObjectsWithTag(tag);
+                foreach (var go in objs)
+                {
+                    if (go != null && go.activeInHierarchy)
+                    {
+                        IDamageable d = go.GetComponentInParent<IDamageable>();
+                        if (d == null || d.CurrentHealth > 0f)
+                            return true;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return false;
+    }
 
     [Header("Marching Settings")]
     public float marchSpacingX = 1.5f;
@@ -66,6 +111,14 @@ public class EnemyAI : MonoBehaviour
     private Vector3 targetClosestPoint;
     private Transform lastChaseTarget;
     private float nextTargetClosestPointUpdateTime;
+
+    // Biến tối ưu di chuyển mượt & chống giật (smooth movement & hysteresis)
+    private bool isAttackingTarget = false;
+    private Vector3 lastSetDestination;
+    private float nextSetDestinationTime;
+    private Transform lastDestinationTarget;
+    private Vector3 cachedTargetDestination;
+    private float nextTargetDestCacheTime;
 
     // Static variables for group coordination and target sharing
     private static List<EnemyAI> globalActiveEnemies = new List<EnemyAI>();
@@ -150,7 +203,9 @@ public class EnemyAI : MonoBehaviour
         {
             agent.speed = chaseSpeed;
             agent.stoppingDistance = 0.1f;
-            agent.angularSpeed = 360f;
+            agent.angularSpeed = 720f;
+            agent.acceleration = 30f;
+            agent.autoBraking = false;
         }
         
         // Register this enemy to start marching
@@ -168,6 +223,18 @@ public class EnemyAI : MonoBehaviour
 
     private void Update()
     {
+        // 1. Kiểm tra tùy chọn tự động thoát chế độ Play khi không còn công trình
+        if (exitPlayModeWhenNoBuildings && !HasAnyActiveBuildings())
+        {
+            Debug.Log("[EnemyAI] 🔥 Không còn bất kỳ tháp/công trình nào trên bản đồ! Tự động thoát chế độ Play.");
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+            return;
+        }
+
         // Keep list clean of destroyed objects
         ActiveEnemiesList.RemoveAll(e => e == null);
 
@@ -191,119 +258,56 @@ public class EnemyAI : MonoBehaviour
 
         if (target != null)
         {
-            // Kiểm soát tần số cập nhật điểm tiếp cận để tránh chạy vòng tròn quanh công trình tĩnh
-            bool needUpdatePoint = false;
-            if (target != lastChaseTarget)
-            {
-                lastChaseTarget = target;
-                needUpdatePoint = true;
-            }
-            else if (IsSoldier(target.gameObject))
-            {
-                needUpdatePoint = true; // Soldier di động cập nhật liên tục
-            }
-            else if (Time.time >= nextTargetClosestPointUpdateTime)
-            {
-                needUpdatePoint = true; // Công trình tĩnh cập nhật mỗi 1.0s
-                nextTargetClosestPointUpdateTime = Time.time + 1.0f;
-            }
-
-            if (needUpdatePoint)
-            {
-                UpdateTargetClosestPoint(target);
-            }
-
-            int myIndex = ActiveEnemiesList.IndexOf(this);
-            if (myIndex < 0) myIndex = 0;
-
-            Vector3 dest = GetFormationPosition(target, myIndex);
-            
             // Calculate distance to boundary of target collider
             float distToTarget = GetDistanceToCollider(target.gameObject);
 
-            if (agent != null)
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 agent.speed = chaseSpeed;
                 
-                if (IsMarching())
+                float actualAttackRange = CurrentAttackRange;
+                if (attackType == EnemyAttackType.Melee && (SafeCompareTag(target.gameObject, "Main") || IsMainHouse(target.gameObject) || SafeCompareTag(target.gameObject, "Tower") || SafeCompareTag(target.gameObject, "DefenseTower") || IsTower(target.gameObject)))
                 {
-                    EnemyAI leader = GetMarchLeader();
-                    if (leader != null && leader != this)
-                    {
-                        // Follow the march leader in formation
-                        Vector3 marchDest = GetMarchFormationPosition(leader);
-                        agent.isStopped = false;
-                        SetDestination(marchDest);
-                    }
-                    else
-                    {
-                        // Leader behavior or far-away follower: move to target formation position independently
-                        float actualAttackRange = CurrentAttackRange;
-                        if (attackType == EnemyAttackType.Melee && 
-                            (target.CompareTag("Main") || IsMainHouse(target.gameObject) || target.CompareTag("Tower") || IsTower(target.gameObject)))
-                        {
-                            actualAttackRange = 1.0f;
-                        }
+                    actualAttackRange = Mathf.Max(actualAttackRange, 2.5f);
+                }
 
-                        if (distToTarget <= actualAttackRange)
-                        {
-                            agent.isStopped = true;
-                            
-                            Vector3 lookDir = (target.position - transform.position);
-                            lookDir.y = 0f;
-                            if (lookDir.sqrMagnitude > 0.001f)
-                            {
-                                Quaternion targetRot = Quaternion.LookRotation(lookDir);
-                                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
-                            }
-                            
-                            if (Time.time >= nextAttackTime)
-                            {
-                                ExecuteAttack(target);
-                                nextAttackTime = Time.time + attackRate;
-                            }
-                        }
-                        else
-                        {
-                            agent.isStopped = false;
-                            SetDestination(dest);
-                        }
+                // Hysteresis để ngăn việc bật/tắt isStopped làm giật/lết hoạt cảnh ở ranh giới tầm đánh
+                float stopThreshold = actualAttackRange;
+                float resumeThreshold = actualAttackRange + 0.6f;
+
+                bool shouldAttack = isAttackingTarget ? (distToTarget <= resumeThreshold) : (distToTarget <= stopThreshold);
+                isAttackingTarget = shouldAttack;
+
+                if (shouldAttack)
+                {
+                    if (!agent.isStopped) agent.isStopped = true;
+                    
+                    Vector3 lookDir = (target.position - transform.position);
+                    lookDir.y = 0f;
+                    if (lookDir.sqrMagnitude > 0.001f)
+                    {
+                        Quaternion targetRot = Quaternion.LookRotation(lookDir);
+                        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
+                    }
+                    
+                    if (Time.time >= nextAttackTime)
+                    {
+                        ExecuteAttack(target);
+                        nextAttackTime = Time.time + attackRate;
                     }
                 }
                 else
                 {
-                    // Combat state: split up and attack individual targets
-                    float actualAttackRange = CurrentAttackRange;
-
-                    if (distToTarget <= actualAttackRange)
-                    {
-                        agent.isStopped = true;
-                        
-                        Vector3 lookDir = (target.position - transform.position);
-                        lookDir.y = 0f;
-                        if (lookDir.sqrMagnitude > 0.001f)
-                        {
-                            Quaternion targetRot = Quaternion.LookRotation(lookDir);
-                            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
-                        }
-                        
-                        if (Time.time >= nextAttackTime)
-                        {
-                            ExecuteAttack(target);
-                            nextAttackTime = Time.time + attackRate;
-                        }
-                    }
-                    else
-                    {
-                        agent.isStopped = false;
-                        SetDestination(dest);
-                    }
+                    if (agent.isStopped) agent.isStopped = false;
+                    Vector3 moveDest = GetTargetDestination(target);
+                    SetDestination(moveDest);
                 }
             }
         }
         else
         {
-            if (agent != null) agent.isStopped = true;
+            isAttackingTarget = false;
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh) agent.isStopped = true;
         }
 
         UpdateAnimationState();
@@ -344,33 +348,76 @@ public class EnemyAI : MonoBehaviour
         }
 
         // Assign new target (except if it's the main house/villageCenter, multiple enemies CAN target Main)
-        if (newTarget != null && newTarget != villageCenter && !newTarget.CompareTag("Main"))
+        if (newTarget != null && newTarget != villageCenter && !SafeCompareTag(newTarget.gameObject, "Main") && !IsMainHouse(newTarget.gameObject))
         {
             targetAssignments[newTarget] = this;
         }
     }
 
+    private Transform FindMainTarget()
+    {
+        // Tìm tất cả GameObject có tag "Main" trong toàn bộ Scene (không bị giới hạn bởi bán kính quét)
+        GameObject[] mainObjs = null;
+        try { mainObjs = GameObject.FindGameObjectsWithTag("Main"); } catch { mainObjs = null; }
+        Transform bestMain = null;
+        float minDist = float.MaxValue;
+
+        if (mainObjs != null && mainObjs.Length > 0)
+        {
+            foreach (var go in mainObjs)
+            {
+                if (go == null || !go.activeInHierarchy) continue;
+
+                // Kiểm tra xem mục tiêu Main này có HP và còn sống không
+                IDamageable damageable = go.GetComponentInParent<IDamageable>();
+                if (damageable != null && damageable.CurrentHealth <= 0f) continue;
+
+                Transform root = GetEntityRoot(go, "Main");
+                Transform t = (root != null) ? root : go.transform;
+
+                float dist = GetDistanceToCollider(go);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    bestMain = t;
+                }
+            }
+        }
+
+        // Fallback dùng villageCenter nếu chưa tìm thấy và villageCenter còn sống
+        if (bestMain == null && villageCenter != null && villageCenter.gameObject.activeInHierarchy)
+        {
+            IDamageable damageable = villageCenter.GetComponentInParent<IDamageable>();
+            if (damageable == null || damageable.CurrentHealth > 0f)
+            {
+                bestMain = villageCenter;
+            }
+        }
+
+        return bestMain;
+    }
+
     private void FindIndividualTarget()
     {
-        // 1. Giữ mục tiêu hiện tại (đánh đến cùng) cho đến khi mục tiêu chết hoặc biến mất
-        // CHỈ giữ mục tiêu nếu đó là Soldier hoặc Tower hoặc nếu ta muốn test đánh trực tiếp Main.
-        // Nếu đang target Main/villageCenter (đang hành quân) và không bật test đánh trực tiếp Main,
-        // vẫn cho phép quét tìm Soldier hoặc Tower xung quanh để tách ra tấn công.
+        // 1. Giữ mục tiêu hiện tại cho đến khi mục tiêu chết hoặc biến mất
         if (chaseTarget != null && chaseTarget.gameObject.activeInHierarchy)
         {
-            bool isCurrentTargetMain = chaseTarget.CompareTag("Main") || chaseTarget == villageCenter || IsMainHouse(chaseTarget.gameObject);
-            
-            if (!isCurrentTargetMain || attackMainDirectly)
-            {
-                IDamageable damageable = chaseTarget.GetComponentInParent<IDamageable>();
-                bool isAlive = damageable == null || damageable.CurrentHealth > 0f;
+            IDamageable damageable = chaseTarget.GetComponentInParent<IDamageable>();
+            bool isAlive = damageable == null || damageable.CurrentHealth > 0f;
 
-                if (isAlive)
+            if (isAlive)
+            {
+                bool isCurrentTargetMain = SafeCompareTag(chaseTarget.gameObject, "Main") || chaseTarget == villageCenter || IsMainHouse(chaseTarget.gameObject);
+                
+                if (!isCurrentTargetMain || attackMainDirectly)
                 {
-                    // Vẫn giữ gán mục tiêu
                     AssignTarget(chaseTarget);
                     return;
                 }
+            }
+            else
+            {
+                chaseTarget = null;
             }
         }
 
@@ -387,55 +434,15 @@ public class EnemyAI : MonoBehaviour
         // Nếu người dùng bật tùy chọn test đánh thẳng Main
         if (attackMainDirectly)
         {
-            Transform bestMain = null;
-            float minMainDist = float.MaxValue;
-
-            foreach (var col in colliders)
-            {
-                if (col == null || !col.gameObject.activeInHierarchy) continue;
-                GameObject go = col.gameObject;
-
-                if (IsMainHouse(go))
-                {
-                    IDamageable damageable = go.GetComponentInParent<IDamageable>();
-                    if (damageable != null && damageable.CurrentHealth <= 0f) continue;
-
-                    Transform t = GetEntityRoot(go, "Main");
-                    if (t == null) continue;
-
-                    float dist = GetDistanceToCollider(go);
-                    if (dist < minMainDist)
-                    {
-                        minMainDist = dist;
-                        bestMain = t;
-                    }
-                }
-            }
-
-            if (bestMain != null)
-            {
-                selected = bestMain;
-            }
-            else
-            {
-                if (villageCenter != null)
-                {
-                    selected = villageCenter;
-                }
-            }
-
+            selected = FindMainTarget();
             AssignTarget(selected);
             chaseTarget = selected;
             return;
         }
 
-        // --- Tìm kiếm theo thứ tự ưu tiên tuyệt đối ---
-
-        // Bước 1: Quét và phân loại tất cả mục tiêu hợp lệ còn sống trong tầm
+        // --- Tìm kiếm theo thứ tự ưu tiên tuyệt đối: Soldier -> Tower -> Main ---
         List<Transform> aliveSoldiers = new List<Transform>();
         List<Transform> aliveTowers = new List<Transform>();
-        Transform bestMainInScan = null;
-        float minMainDistInScan = float.MaxValue;
 
         foreach (var col in colliders)
         {
@@ -449,7 +456,8 @@ public class EnemyAI : MonoBehaviour
             if (IsSoldier(go))
             {
                 Transform t = GetEntityRoot(go, "Soldier");
-                if (t != null && !aliveSoldiers.Contains(t))
+                if (t == null) t = go.transform;
+                if (!aliveSoldiers.Contains(t))
                 {
                     aliveSoldiers.Add(t);
                 }
@@ -457,39 +465,26 @@ public class EnemyAI : MonoBehaviour
             else if (IsTower(go))
             {
                 Transform t = GetEntityRoot(go, "Tower");
-                if (t != null && !aliveTowers.Contains(t))
+                if (t == null) t = go.transform;
+                if (!aliveTowers.Contains(t))
                 {
                     aliveTowers.Add(t);
                 }
             }
-            else if (IsMainHouse(go))
-            {
-                Transform t = GetEntityRoot(go, "Main");
-                if (t != null)
-                {
-                    float dist = GetDistanceToCollider(go);
-                    if (dist < minMainDistInScan)
-                    {
-                        minMainDistInScan = dist;
-                        bestMainInScan = t;
-                    }
-                }
-            }
         }
 
-        // Bước 2: Chọn mục tiêu dựa trên các danh sách đã lọc
-        
-        // A. Nếu còn bất kỳ Soldier nào sống, CHỈ chọn Soldier
+        // Bước 2: Chọn mục tiêu dựa trên thứ tự ưu tiên
+
+        // A. Ưu tiên 1: Chọn Soldier
         if (aliveSoldiers.Count > 0)
         {
-            // Tìm Soldier trống gần nhất
             Transform bestUnoccupiedSoldier = null;
             float minUnoccupiedSoldierDist = float.MaxValue;
 
             foreach (var soldier in aliveSoldiers)
             {
                 if (targetAssignments.TryGetValue(soldier, out EnemyAI assignedEnemy) && assignedEnemy != this)
-                    continue; // Đã bị chiếm
+                    continue;
 
                 float dist = GetDistanceToCollider(soldier.gameObject);
                 if (dist < minUnoccupiedSoldierDist)
@@ -505,7 +500,6 @@ public class EnemyAI : MonoBehaviour
             }
             else
             {
-                // Dư lính: Chọn Soldier bất kỳ gần nhất (đã bị gán)
                 float minAnySoldierDist = float.MaxValue;
                 foreach (var soldier in aliveSoldiers)
                 {
@@ -518,17 +512,16 @@ public class EnemyAI : MonoBehaviour
                 }
             }
         }
-        // B. Nếu hết Soldier nhưng còn bất kỳ Tower nào sống, CHỈ chọn Tower
+        // B. Ưu tiên 2: Chọn Tower
         else if (aliveTowers.Count > 0)
         {
-            // Tìm Tower trống gần nhất
             Transform bestUnoccupiedTower = null;
             float minUnoccupiedTowerDist = float.MaxValue;
 
             foreach (var tower in aliveTowers)
             {
                 if (targetAssignments.TryGetValue(tower, out EnemyAI assignedEnemy) && assignedEnemy != this)
-                    continue; // Đã bị chiếm
+                    continue;
 
                 float dist = GetDistanceToCollider(tower.gameObject);
                 if (dist < minUnoccupiedTowerDist)
@@ -544,7 +537,6 @@ public class EnemyAI : MonoBehaviour
             }
             else
             {
-                // Dư lính: Chọn Tower bất kỳ gần nhất (đã bị gán)
                 float minAnyTowerDist = float.MaxValue;
                 foreach (var tower in aliveTowers)
                 {
@@ -557,34 +549,10 @@ public class EnemyAI : MonoBehaviour
                 }
             }
         }
-        // C. Nếu không còn Soldier và Tower nào, tiến hành đánh thẳng vào Main
+        // C. Ưu tiên 3: Nếu không còn Soldier và Tower nào -> BẮT BUỘC ĐÁNH MAIN
         else
         {
-            if (bestMainInScan != null)
-            {
-                selected = bestMainInScan;
-            }
-            else
-            {
-                // Fallback cuối cùng về villageCenter
-                if (villageCenter == null)
-                {
-                    GameObject mainObj = GameObject.FindGameObjectWithTag("Main");
-                    if (mainObj != null)
-                    {
-                        villageCenter = mainObj.transform;
-                    }
-                }
-
-                if (villageCenter != null)
-                {
-                    IDamageable damageable = villageCenter.GetComponentInParent<IDamageable>();
-                    if (damageable == null || damageable.CurrentHealth > 0f)
-                    {
-                        selected = villageCenter;
-                    }
-                }
-            }
+            selected = FindMainTarget();
         }
 
         AssignTarget(selected);
@@ -654,21 +622,33 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    private static bool SafeCompareTag(GameObject go, string tagName)
+    {
+        if (go == null || string.IsNullOrEmpty(tagName)) return false;
+        return go.tag == tagName;
+    }
+
     private bool IsSoldier(GameObject go)
     {
         if (go == null) return false;
+        if (SafeCompareTag(go, "Soldier")) return true;
+        if (go.GetComponentInParent<HPSoldier>() != null) return true;
         return GetEntityRoot(go, "Soldier") != null;
     }
 
     private bool IsTower(GameObject go)
     {
         if (go == null) return false;
+        if (SafeCompareTag(go, "Main") || GetEntityRoot(go, "Main") != null) return false;
+        if (SafeCompareTag(go, "Tower") || SafeCompareTag(go, "DefenseTower")) return true;
+        if (go.GetComponentInParent<HPTower>() != null) return true;
         return GetEntityRoot(go, "Tower") != null;
     }
 
     private bool IsMainHouse(GameObject go)
     {
         if (go == null) return false;
+        if (SafeCompareTag(go, "Main")) return true;
         return GetEntityRoot(go, "Main") != null;
     }
 
@@ -678,7 +658,7 @@ public class EnemyAI : MonoBehaviour
         Transform curr = go.transform;
         while (curr != null)
         {
-            if (curr.CompareTag(tag))
+            if (SafeCompareTag(curr.gameObject, tag))
                 return curr;
             curr = curr.parent;
         }
@@ -869,9 +849,79 @@ public class EnemyAI : MonoBehaviour
         animator.SetBool(paramName, false);
     }
 
+    private Vector3 GetTargetDestination(Transform target)
+    {
+        if (target == null) return transform.position;
+
+        // Nếu là Lính -> Di chuyển trực tiếp đến vị trí lính
+        if (IsSoldier(target.gameObject))
+        {
+            return target.position;
+        }
+
+        // Cache vị trí đích của công trình trong 0.3s để tránh gọi GetComponentsInChildren mỗi frame
+        if (target == lastDestinationTarget && Time.time < nextTargetDestCacheTime)
+        {
+            return cachedTargetDestination;
+        }
+
+        lastDestinationTarget = target;
+        nextTargetDestCacheTime = Time.time + 0.3f;
+
+        Vector3 basePosition = target.position;
+        Collider[] colliders = target.GetComponentsInChildren<Collider>();
+        if (colliders != null && colliders.Length > 0)
+        {
+            float minDistance = float.MaxValue;
+            Vector3 bestPoint = target.position;
+            Vector3 flatSelf = new Vector3(transform.position.x, 0f, transform.position.z);
+
+            foreach (var c in colliders)
+            {
+                if (c == null || !c.enabled || !c.gameObject.activeInHierarchy || c.isTrigger) continue;
+
+                Vector3 closestPoint;
+                MeshCollider meshCol = c as MeshCollider;
+                if (meshCol != null && !meshCol.convex)
+                {
+                    closestPoint = c.bounds.ClosestPoint(transform.position);
+                }
+                else
+                {
+                    closestPoint = c.ClosestPoint(transform.position);
+                }
+
+                Vector3 flatClosest = new Vector3(closestPoint.x, 0f, closestPoint.z);
+                float dist = Vector3.Distance(flatSelf, flatClosest);
+                if (dist < minDistance)
+                {
+                    minDistance = dist;
+                    bestPoint = closestPoint;
+                }
+            }
+
+            if (minDistance != float.MaxValue)
+            {
+                basePosition = bestPoint;
+            }
+        }
+
+        // Tìm điểm NavMesh hợp lệ gần nhất ở mép ngoài công trình
+        if (NavMesh.SamplePosition(basePosition, out NavMeshHit hit, 4f, NavMesh.AllAreas))
+        {
+            cachedTargetDestination = hit.position;
+        }
+        else
+        {
+            cachedTargetDestination = basePosition;
+        }
+
+        return cachedTargetDestination;
+    }
+
     private void SetDestination(Vector3 dest)
     {
-        if (agent == null) return;
+        if (agent == null || !agent.isActiveAndEnabled) return;
         if (!agent.isOnNavMesh)
         {
             if (NavMesh.SamplePosition(dest, out NavMeshHit hit, 5f, NavMesh.AllAreas))
@@ -881,8 +931,16 @@ public class EnemyAI : MonoBehaviour
             else return;
         }
 
-        // Chỉ set destination khi điểm đích mới khác biệt đáng kể (>0.25m) so với điểm đích hiện tại
-        if (Vector3.Distance(agent.destination, dest) > 0.25f)
+        // Chống gọi SetDestination liên tục mỗi frame làm giật/lết NavMeshAgent
+        if (Time.time < nextSetDestinationTime && Vector3.Distance(lastSetDestination, dest) < 0.5f && agent.hasPath)
+        {
+            return;
+        }
+
+        nextSetDestinationTime = Time.time + 0.2f;
+        lastSetDestination = dest;
+
+        if (agent.isOnNavMesh)
         {
             agent.SetDestination(dest);
         }
@@ -900,7 +958,7 @@ public class EnemyAI : MonoBehaviour
         float distToTarget = GetDistanceToCollider(chaseTarget.gameObject);
         if (distToTarget > CurrentAttackRange) return false;
 
-        if (agent != null && !agent.isStopped) return false;
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && !agent.isStopped) return false;
 
         return true;
     }
@@ -943,18 +1001,15 @@ public class EnemyAI : MonoBehaviour
 
         bool isMoving = false;
 
-        if (agent != null)
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
         {
-            if (agent.isOnNavMesh)
-            {
-                bool hasMeaningfulPath = !agent.isStopped && agent.hasPath && !agent.pathPending && agent.remainingDistance > agent.stoppingDistance + moveThreshold;
-                bool hasMeaningfulVelocity = !agent.isStopped && agent.velocity.sqrMagnitude > moveThreshold * moveThreshold;
-                isMoving = hasMeaningfulPath || hasMeaningfulVelocity;
-            }
-            else
-            {
-                isMoving = !agent.isStopped && agent.desiredVelocity.sqrMagnitude > moveThreshold * moveThreshold;
-            }
+            bool hasMeaningfulPath = !agent.isStopped && agent.hasPath && !agent.pathPending && agent.remainingDistance > agent.stoppingDistance + moveThreshold;
+            bool hasMeaningfulVelocity = !agent.isStopped && agent.velocity.sqrMagnitude > moveThreshold * moveThreshold;
+            isMoving = hasMeaningfulPath || hasMeaningfulVelocity;
+        }
+        else
+        {
+            isMoving = false;
         }
 
         animator.SetBool(moveBoolParam, isMoving);
@@ -1008,15 +1063,16 @@ public class EnemyAI : MonoBehaviour
         if (debugLogs && Time.time >= nextDebugLogTime)
         {
             nextDebugLogTime = Time.time + debugLogInterval;
+            bool agentValid = agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
             Debug.LogFormat(
                 "[EnemyAI] move={0} chaseTarget={1} hasPath={2} pathPending={3} remainingDistance={4:F2} velocity={5:F2} desiredVelocity={6:F2}",
                 isMoving,
                 chaseTarget != null ? chaseTarget.name : "none",
-                agent != null && agent.hasPath,
-                agent != null && agent.pathPending,
-                agent != null ? agent.remainingDistance : -1f,
-                agent != null ? agent.velocity.magnitude : -1f,
-                agent != null ? agent.desiredVelocity.magnitude : -1f
+                agentValid && agent.hasPath,
+                agentValid && agent.pathPending,
+                agentValid ? agent.remainingDistance : -1f,
+                agentValid ? agent.velocity.magnitude : -1f,
+                agentValid ? agent.desiredVelocity.magnitude : -1f
             );
         }
     }
@@ -1060,7 +1116,7 @@ public class EnemyAI : MonoBehaviour
     public bool IsMarching()
     {
         if (chaseTarget == null) return false;
-        bool isMainTarget = chaseTarget == villageCenter || chaseTarget.CompareTag("Main") || IsMainHouse(chaseTarget.gameObject);
+        bool isMainTarget = chaseTarget == villageCenter || SafeCompareTag(chaseTarget.gameObject, "Main") || IsMainHouse(chaseTarget.gameObject);
         if (isMainTarget)
         {
             // If we are close to the main target (e.g. within 8m), we break formation and attack individually

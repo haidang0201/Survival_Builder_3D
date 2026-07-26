@@ -19,6 +19,7 @@ public class HPSoldier : MonoBehaviour, IDamageable
     private NavMeshAgent agent;
     private Collider[] colliders;
     private bool isDead = false;
+    public bool IsDead => isDead;
 
     private void Awake()
     {
@@ -77,7 +78,10 @@ public class HPSoldier : MonoBehaviour, IDamageable
         // 3. Kích hoạt hoạt cảnh chết
         if (animator != null && !string.IsNullOrEmpty(deathTriggerName))
         {
-            animator.SetTrigger(deathTriggerName);
+            if (HasAnimatorParameter(animator, deathTriggerName, AnimatorControllerParameterType.Trigger))
+            {
+                animator.SetTrigger(deathTriggerName);
+            }
         }
 
         // 4. Tạo hiệu ứng chết (nếu có)
@@ -89,6 +93,17 @@ public class HPSoldier : MonoBehaviour, IDamageable
 
         // 5. Hủy đối tượng sau một khoảng thời gian trễ để chạy xong hoạt cảnh
         Destroy(gameObject, destroyDelay);
+    }
+
+    private bool HasAnimatorParameter(Animator anim, string paramName, AnimatorControllerParameterType type)
+    {
+        if (anim == null) return false;
+        foreach (AnimatorControllerParameter param in anim.parameters)
+        {
+            if (param.name == paramName && param.type == type)
+                return true;
+        }
+        return false;
     }
 }
 

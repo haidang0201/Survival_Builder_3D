@@ -26,7 +26,7 @@ public class UpgradeableBuilding : MonoBehaviour
     public BuildingType buildingType;
 
     [Header("Tên công trình")]
-    public string buildingName = "Nhà Chính";
+    public string buildingName = "Công trình";
 
     [Header("Mảng chứa các Model Cấp 1, 2, 3...")]
     [SerializeField] private GameObject[] visualModels;
@@ -498,7 +498,7 @@ public class UpgradeableBuilding : MonoBehaviour
         // 4. KIỂM TRA ĐIỀU KIỆN NHÀ CHÍNH SẬP ĐỂ HIỆN BẢNG TỔNG KẾT (GAME OVER)
         if (buildingName.Contains("Nhà Chính"))
         {
-            Debug.LogError("[Penta Dev] 🔥 NHÀ CHÍNH ĐÃ BỊ PHÁ HỦY! Kích hoạt bảng tổng kết chiến dịch...");
+            Debug.Log("[Penta Dev] 🔥 NHÀ CHÍNH ĐÃ BỊ PHÁ HỦY! Kích hoạt bảng tổng kết chiến dịch...");
             // Thêm luồng gọi bảng UI tổng kết của nhóm Vũ tại đây, ví dụ:
             // if (UIManager.Ins != null) UIManager.Ins.ShowSummaryPanel();
         }
