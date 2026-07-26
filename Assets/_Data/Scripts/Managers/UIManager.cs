@@ -96,22 +96,38 @@ public class UIManager : Singleton<UIManager>
 
     // ================= BOTTOM TOOLBAR LOGIC =================
 
-    public void ToggleBuildMenu()
+   public void ToggleBuildMenu()
     {
         if (buildMenu != null)
-            buildMenu.SetActive(!buildMenu.activeSelf);
+        {
+            bool isCurrentActive = buildMenu.activeSelf;
+            
+            // Tắt hết các bảng khác trước
+            CloseAllPopups(); 
+
+            // Đảo ngược trạng thái của Menu Xây Dựng
+            buildMenu.SetActive(!isCurrentActive);
+        }
     }
 
     public void OnClickToolsButton()
     {
-        ExitActionModes();
+        CloseAllPopups();
         if (controlHintsGroup != null) controlHintsGroup.SetActive(true);
     }
 
     public void OnClickSettingButton()
     {
-        ExitActionModes();
-        if (settingUI != null) settingUI.SetActive(!settingUI.activeSelf);
+        if (settingUI != null)
+        {
+            bool isCurrentActive = settingUI.activeSelf;
+
+            // Tắt hết các bảng khác trước
+            CloseAllPopups();
+
+            // Đảo ngược trạng thái Cài Đặt
+            settingUI.SetActive(!isCurrentActive);
+        }
     }
 
     public void ExitActionModes()
@@ -163,15 +179,30 @@ public class UIManager : Singleton<UIManager>
 
     // ================= UPGRADE & MOVE PANEL LOGIC =================
 
+   [Header("UI Offset")]
+    [SerializeField] private Vector3 upgradePanelOffset = new Vector3(0, -150f, 0); // Chỉnh lề xuất hiện (VD: -150px bên dưới công trình)
+
     public void ShowUpgradePanel(UpgradeableBuilding building)
     {
         if (building == null) return;
+
+        CloseAllPopups();
         selectedBuilding = building;
-        if (upgradePanel != null) upgradePanel.SetActive(true);
 
-        // Reset lại số lần bấm về 0 khi chọn công trình mới
+        if (upgradePanel != null)
+        {
+            // 📍 1. Chuyển tọa độ 3D của công trình sang tọa độ 2D trên màn hình
+            Vector3 buildingWorldPos = building.transform.position;
+            Vector3 screenPos = Camera.main.WorldToScreenPoint(buildingWorldPos);
+
+            // 📍 2. Đặt vị trí của Upgrade Panel ngay tại vị trí công trình (+ offset bên dưới)
+            RectTransform panelRect = upgradePanel.GetComponent<RectTransform>();
+            panelRect.position = screenPos + upgradePanelOffset;
+
+            upgradePanel.SetActive(true);
+        }
+
         upgradeClickCount = 0;
-
         RefreshUpgradePanel(building);
     }
 
@@ -644,6 +675,22 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
+/// <summary>
+    /// Tắt tất cả các cửa sổ Popup đang mở để tránh chồng lấp UI
+    /// </summary>
+    public void CloseAllPopups()
+    {
+        if (buildMenu != null) buildMenu.SetActive(false);
+        if (upgradePanel != null) upgradePanel.SetActive(false);
+        if (settingUI != null) settingUI.SetActive(false);
+        if (controlHintsGroup != null) controlHintsGroup.SetActive(false);
+
+        // Nếu bảng thông tin công nhân/người chơi cũng là dạng Popup muốn ẩn khi mở menu khác:
+        // if (workerStatusPanel != null) workerStatusPanel.SetActive(false);
+
+        selectedBuilding = null;
+        upgradeClickCount = 0;
+    }
     public void CloseAllActiveWindows()
     {
         if (upgradePanel != null) upgradePanel.SetActive(false);

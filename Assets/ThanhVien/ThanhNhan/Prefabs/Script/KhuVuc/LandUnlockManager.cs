@@ -219,20 +219,39 @@ public class LandUnlockManager : MonoBehaviour
         }
     }
 
-    private void OnClickUnlock()
+private void OnClickUnlock()
+{
+    if (confirmButton != null && !confirmButton.interactable) return;
+
+    // 1. Trừ tài nguyên (Gỗ)
+    if (JsonDataManager.Ins != null)
     {
-        if (confirmButton != null && !confirmButton.interactable) return;
-
-        // Tắt overlay
-        if (backgroundButton != null)
-            backgroundButton.gameObject.SetActive(false);
-
-        // Đóng panel này, rồi hiện LandConqueredPanel
-        if (_animCoroutine != null) StopCoroutine(_animCoroutine);
-        // SỬA Ở ĐÂY: Dùng AnimateClose() thay vì AnimateCloseAndShowConquered()
-        _animCoroutine = StartCoroutine(AnimateClose());
-        // _animCoroutine = StartCoroutine(AnimateCloseAndShowConquered());
+        bool spentSuccess = JsonDataManager.Ins.TrySpendCombined(woodCost: requiredWood, stoneCost: 0);
+        
+        if (!spentSuccess)
+        {
+            Debug.LogWarning("[LandUnlockManager] Không đủ tài nguyên để mở đất!");
+            return;
+        }
     }
+
+    // 2. KÍCH HOẠT MỞ ĐẤT (Đã đổi tên hàm đúng với LandZone.cs)
+    if (_targetZone != null)
+    {
+        _targetZone.UnlockLand(); // <-- SỬA Ở ĐÂY (thay cho UnlockZone)
+    }
+    else
+    {
+        Debug.LogError("[LandUnlockManager] Chưa bind TargetZone nên không thể mở đất!");
+    }
+
+    // 3. Tắt overlay & Đóng Panel UI
+    if (backgroundButton != null)
+        backgroundButton.gameObject.SetActive(false);
+
+    if (_animCoroutine != null) StopCoroutine(_animCoroutine);
+    _animCoroutine = StartCoroutine(AnimateClose());
+}
 
     // ─── Animation Coroutines ─────────────────────────────────────────────────
 
