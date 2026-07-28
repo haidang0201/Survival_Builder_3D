@@ -14,7 +14,9 @@ using System.Collections.Generic;
  */
 
 public class BuildingUpgradeUI : MonoBehaviour
-{
+{   
+    // Thêm dòng này vào trong class BuildingUpgradeUI
+    public bool IsOpen => localUpgradePanel != null && localUpgradePanel.activeSelf;
     [Header("UI Canvas & Panel")]
     [SerializeField] private GameObject localUpgradePanel;
     [SerializeField] private RectTransform panelRectTransform;
@@ -276,19 +278,19 @@ public class BuildingUpgradeUI : MonoBehaviour
         CloseUI();
     }
 
-    private void OnMouseDown()
-    {
-        // Gọi thẳng UI lên khi click vào công trình
-        BuildingUpgradeUI localUI = GetComponentInChildren<BuildingUpgradeUI>(true);
+    // private void OnMouseDown()
+    // {
+    //     // Gọi thẳng UI lên khi click vào công trình
+    //     BuildingUpgradeUI localUI = GetComponentInChildren<BuildingUpgradeUI>(true);
 
-        if (localUI != null)
-        {
-            Debug.Log($"[OK] Đã tìm thấy UI trên {gameObject.name} -> Đang gọi OpenUI()...");
-            localUI.OpenUI();
-        }
-        else
-        {
-            Debug.LogError($"[LỖI] Không tìm thấy script BuildingUpgradeUI trong các Object con của {gameObject.name}!");
-        }
-    }
+    //     if (localUI != null)
+    //     {
+    //         Debug.Log($"[OK] Đã tìm thấy UI trên {gameObject.name} -> Đang gọi OpenUI()...");
+    //         localUI.OpenUI();
+    //     }
+    //     else
+    //     {
+    //         Debug.LogError($"[LỖI] Không tìm thấy script BuildingUpgradeUI trong các Object con của {gameObject.name}!");
+    //     }
+    // }
 }

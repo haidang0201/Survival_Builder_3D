@@ -124,7 +124,21 @@ public class UpgradeableBuilding : MonoBehaviour
 
     private void OnMouseDown()
     {
+        BuildingUpgradeUI localUI = GetComponentInChildren<BuildingUpgradeUI>(true);
+
+        // 1. Nếu UI ĐÃ MỞ RỒI -> Bỏ qua, không gọi OpenUI() lại nữa
+        if (localUI != null && localUI.IsOpen)
+        {
+            return; 
+        }
+
+        // 2. Nếu UI chưa mở -> Mới cho phép chọn nhà và mở UI lên
         SelectThisBuilding();
+        
+        if (localUI != null)
+        {
+            localUI.OpenUI();
+        }
     }
 
     private void SaveOriginalVisuals()
@@ -776,11 +790,25 @@ public class UpgradeableBuilding : MonoBehaviour
 public class ClickHelper : MonoBehaviour
 {
     public UpgradeableBuilding parentBuilding;
+
     private void OnMouseDown()
     {
-        if (parentBuilding != null)
+        if (parentBuilding == null) return;
+
+        BuildingUpgradeUI ui = parentBuilding.GetComponentInChildren<BuildingUpgradeUI>(true);
+
+        // 1. Nếu UI ĐÃ MỞ RỒI -> Bỏ qua ngay lập tức, không kích hoạt lặp
+        if (ui != null && ui.IsOpen)
         {
-            parentBuilding.SelectThisBuilding();
+            return;
+        }
+
+        // 2. Nếu UI đang đóng -> Mới cho phép mở
+        parentBuilding.SelectThisBuilding();
+
+        if (ui != null)
+        {
+            ui.OpenUI();
         }
     }
 }
