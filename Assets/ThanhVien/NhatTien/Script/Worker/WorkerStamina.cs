@@ -10,10 +10,11 @@ public class WorkerStamina : MonoBehaviour
     public float recoverPerSecond = 20f;
     public float restThreshold = 20f;
     public float resumeThreshold = 80f;
-    public float morningForceWakeThreshold = 30f;
 
     [Header("Locations Settings")]
     public Kitchen kitchen;
+    // House không còn được dùng để nghỉ ngơi/ngủ nữa — chỉ giữ lại để WorkerEnemyFlee
+    // và WorkerSpawner dùng làm điểm spawn / trú ẩn khi bị enemy đuổi.
     public House house;
     [Range(0f, 1f)] public float hungryRecoverMultiplier = 0.3f;
 
@@ -39,7 +40,6 @@ public class WorkerStamina : MonoBehaviour
     private bool isResting = false;
     private bool isDraining = false;
     private bool isInsideKitchen = false;
-    private bool isInsideHouse = false;
     private bool isHungryInside = false;
     private Vector3 personalOffset = Vector3.zero;
     private bool _hasPersonalOffset = false;
@@ -64,39 +64,17 @@ public class WorkerStamina : MonoBehaviour
     void OnEnable()
     {
         if (isInsideKitchen) kitchen?.Exit(this);
-        if (isInsideHouse) house?.Exit(this);
 
         ShowModel();
         isInsideKitchen = false;
-        isInsideHouse = false;
         isHungryInside = false;
         hasTargetRestPosition = false;
         isDraining = false;
-
-        DayNightManager dm = DayNightManager.Ins;
-        if (dm == null) dm = FindObjectOfType<DayNightManager>();
-        if (dm != null)
-        {
-            dm.OnNightStart -= HandleNightfall;
-            dm.OnDayStart -= HandleDaybreak;
-            dm.OnNightStart += HandleNightfall;
-            dm.OnDayStart += HandleDaybreak;
-
-            if (dm.CurrentMode == DayNightManager.Mode.Night && !isResting && !isCarryingResources)
-                StartResting();
-        }
     }
 
     void OnDisable()
     {
         if (isInsideKitchen) kitchen?.Exit(this);
-        if (isInsideHouse) house?.Exit(this);
-        DayNightManager dm = DayNightManager.Ins ?? FindObjectOfType<DayNightManager>();
-        if (dm != null)
-        {
-            dm.OnNightStart -= HandleNightfall;
-            dm.OnDayStart -= HandleDaybreak;
-        }
     }
 
     void Update()
@@ -133,30 +111,7 @@ public class WorkerStamina : MonoBehaviour
 
     private void HandleResting()
     {
-        bool isNight = DayNightManager.Ins != null && DayNightManager.Ins.CurrentMode == DayNightManager.Mode.Night;
-
-        if (isNight)
-        {
-            if (isInsideKitchen)
-            {
-                kitchen?.Exit(this);
-                isInsideKitchen = false;
-                isHungryInside = false;
-                hasTargetRestPosition = false;
-                ShowModel();
-            }
-            HandleHouseLogic();
-        }
-        else 
-        {
-            if (isInsideHouse)
-            {
-                currentStamina = Mathf.Min(currentStamina + recoverPerSecond * Time.deltaTime, maxStamina);
-                if (CanStopResting()) StopResting(); 
-                return;
-            }
-            HandleKitchenLogic();
-        }
+        HandleKitchenLogic();
     }
 
     private void HandleKitchenLogic()
@@ -205,48 +160,6 @@ public class WorkerStamina : MonoBehaviour
         }
     }
 
-    private void HandleHouseLogic()
-    {
-        if (house == null) FindHouse();
-        if (house == null)
-        {
-            HandleFallback();
-            return;
-        }
-
-        if (isInsideHouse)
-        {
-            currentStamina = Mathf.Min(currentStamina + recoverPerSecond * Time.deltaTime, maxStamina);
-            return; 
-        }
-
-        if (house.IsFull)
-        {
-            MoveToWaitingArea(house.EntrancePosition);
-            currentStamina = Mathf.Min(currentStamina + recoverPerSecond * hungryRecoverMultiplier * Time.deltaTime, maxStamina);
-            return;
-        }
-
-        ClearOffset();
-        if (!hasTargetRestPosition)
-        {
-            targetRestPosition = house.EntrancePosition;
-            hasTargetRestPosition = true;
-        }
-
-        MoveToPosition(targetRestPosition);
-        if (Vector3.Distance(transform.position, targetRestPosition) <= interactionRadius)
-        {
-            if (house.Enter(this))
-            {
-                isInsideHouse = true;
-                hasTargetRestPosition = false;
-                HideModel();
-                if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
-            }
-        }
-    }
-
     private void HandleFallback()
     {
         if (restSpot != null)
@@ -257,55 +170,11 @@ public class WorkerStamina : MonoBehaviour
                 if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
         }
         currentStamina = Mathf.Min(currentStamina + recoverPerSecond * Time.deltaTime, maxStamina);
-        
-        bool isNight = DayNightManager.Ins != null && DayNightManager.Ins.CurrentMode == DayNightManager.Mode.Night;
-        if (!isNight && CanStopResting()) 
+
+        if (CanStopResting())
         {
             StopResting();
         }
-    }
-
-    private void HandleNightfall()
-    {
-        hasTargetRestPosition = false;
-
-        // BUG FIX: Thoát Kitchen trước khi check isResting
-        // (trước đây isResting == true → return sớm → worker kẹt trong Kitchen suốt đêm)
-        if (isInsideKitchen)
-        {
-            kitchen?.Exit(this);
-            isInsideKitchen = false;
-            isHungryInside = false;
-            hasTargetRestPosition = false;
-            ShowModel();
-            if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
-        }
-
-        if (isResting) return; // Đã resting → HandleResting() frame sau sẽ gọi HandleHouseLogic()
-
-        if (isCarryingResources)
-            isReturnPending = true;
-        else
-            StartResting();
-    }
-
-    private void HandleDaybreak()
-    {
-        if (!isCarryingResources) isReturnPending = false;
-        
-        hasTargetRestPosition = false;
-        if (!isResting) return;
-
-        if (currentStamina >= resumeThreshold)
-        {
-            StopResting();
-            return;
-        }
-
-        // BUG FIX: bỏ điều kiện !isInsideHouse
-        // (trước đây worker ngủ trong House với stamina thấp bị kẹt mãi không thể dậy sáng hôm sau)
-        if (currentStamina >= morningForceWakeThreshold)
-            StopResting();
     }
 
     public void OnResourcesDeposited()
@@ -321,8 +190,6 @@ public class WorkerStamina : MonoBehaviour
     private bool CanStopResting()
     {
         if (currentStamina < resumeThreshold) return false;
-        if (DayNightManager.Ins != null && DayNightManager.Ins.CurrentMode == DayNightManager.Mode.Night)
-            return false;
         return true;
     }
 
@@ -348,11 +215,6 @@ public class WorkerStamina : MonoBehaviour
             kitchen?.Exit(this);
             isInsideKitchen = false;
             isHungryInside = false;
-        }
-        if (isInsideHouse)
-        {
-            house?.Exit(this);
-            isInsideHouse = false;
         }
         isResting = false;
         isDraining = false;
@@ -384,7 +246,8 @@ public class WorkerStamina : MonoBehaviour
 
     private void FindHouse()
     {
-        // Nếu đã gắn sẵn trong Inspector thì dùng luôn, không tự tìm
+        // Nếu đã gắn sẵn trong Inspector thì dùng luôn, không tự tìm.
+        // House giờ chỉ phục vụ spawn/trú ẩn (WorkerEnemyFlee), không còn dùng để nghỉ ngơi.
         if (house != null) return;
 
         GameObject[] houses = GameObject.FindGameObjectsWithTag("House");
