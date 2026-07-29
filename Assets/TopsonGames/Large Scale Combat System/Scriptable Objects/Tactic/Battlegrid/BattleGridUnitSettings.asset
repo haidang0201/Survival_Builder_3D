@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dc6cefab7c449b4db3e9be48e084225, type: 3}
+  m_Name: BattleGridUnitSettings
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.AI.Grid.BattleGridUnitSettingsSO
+  viewerSettings:
+  - viewerType: {fileID: 11400000, guid: 379c07d7f37f8d74aa5aae5050b98c2c, type: 2}
+    defaultRadiusMultiplier: 2
+    defaultValueMultiplier: 1
+    specificThreats:
+    - threatTypes:
+      - {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+      dangerRadiusMultiplier: 1.2
+      dangerValueMultiplier: 0.5
+  - viewerType: {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+    defaultRadiusMultiplier: 1
+    defaultValueMultiplier: 1
+    specificThreats:
+    - threatTypes:
+      - {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+      dangerRadiusMultiplier: 0.3
+      dangerValueMultiplier: 0.5
+    - threatTypes:
+      - {fileID: 11400000, guid: 379c07d7f37f8d74aa5aae5050b98c2c, type: 2}
+      - {fileID: 11400000, guid: a1a3328e97cc36541aaeb89dfeb42cb9, type: 2}
+      dangerRadiusMultiplier: 2
+      dangerValueMultiplier: 1
+  - viewerType: {fileID: 11400000, guid: 363ffadb27ca43a4cb82610e9af2c1cc, type: 2}
+    defaultRadiusMultiplier: 1.5
+    defaultValueMultiplier: 1
+    specificThreats:
+    - threatTypes:
+      - {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+      dangerRadiusMultiplier: 0.3
+      dangerValueMultiplier: 1
+    - threatTypes:
+      - {fileID: 11400000, guid: a1a3328e97cc36541aaeb89dfeb42cb9, type: 2}
+      - {fileID: 11400000, guid: 379c07d7f37f8d74aa5aae5050b98c2c, type: 2}
+      dangerRadiusMultiplier: 1
+      dangerValueMultiplier: 1.5
+  - viewerType: {fileID: 11400000, guid: 3eb0efb0072e87a43b551f9d5f7763ea, type: 2}
+    defaultRadiusMultiplier: 2
+    defaultValueMultiplier: 1
+    specificThreats:
+    - threatTypes:
+      - {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+      dangerRadiusMultiplier: 1.2
+      dangerValueMultiplier: 0.5

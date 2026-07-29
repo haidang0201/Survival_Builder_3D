@@ -1,0 +1,677 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &172739439274310560
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 672970040433806886}
+  - component: {fileID: 5657863616996418454}
+  - component: {fileID: 785975759775659556}
+  m_Layer: 0
+  m_Name: Melee
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &672970040433806886
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172739439274310560}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -9.900002, y: -1.416667, z: -12.800003}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &5657863616996418454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172739439274310560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 363ffadb27ca43a4cb82610e9af2c1cc, type: 2}
+--- !u!114 &785975759775659556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 172739439274310560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &181240792226054628
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6627249784660874320}
+  - component: {fileID: 1151846592310967425}
+  - component: {fileID: 4298766505444537489}
+  m_Layer: 0
+  m_Name: Archer (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6627249784660874320
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 181240792226054628}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -25.18, y: -1.416667, z: 1.1000061}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &1151846592310967425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 181240792226054628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+--- !u!114 &4298766505444537489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 181240792226054628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &238430524539551934
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4744061094355408076}
+  - component: {fileID: 3756884997482568460}
+  - component: {fileID: 5399002498599546412}
+  m_Layer: 0
+  m_Name: Melee (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4744061094355408076
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 238430524539551934}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -9.900002, y: -1.416667, z: 8.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &3756884997482568460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 238430524539551934}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 363ffadb27ca43a4cb82610e9af2c1cc, type: 2}
+--- !u!114 &5399002498599546412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 238430524539551934}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &244410560470214782
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6803065234403740906}
+  - component: {fileID: 8729244135097527176}
+  m_Layer: 0
+  m_Name: Spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6803065234403740906
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 244410560470214782}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -39.5, y: -12.3, z: -210.3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 672970040433806886}
+  - {fileID: 4744061094355408076}
+  - {fileID: 429375838430723850}
+  - {fileID: 5582549449172464047}
+  - {fileID: 7661202996147928100}
+  - {fileID: 212476184060866192}
+  - {fileID: 6627249784660874320}
+  - {fileID: 5102936216047699373}
+  - {fileID: 4984040132562823613}
+  - {fileID: 6977400203790849634}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8729244135097527176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 244410560470214782}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b6e3733e6b8d7144a9103deaf184e26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnPoints:
+  - {fileID: 5657863616996418454}
+  - {fileID: 3756884997482568460}
+  - {fileID: 8123059918371576679}
+  - {fileID: 1609548941402916033}
+  - {fileID: 2544409433424654987}
+  - {fileID: 4485060067382239764}
+  - {fileID: 1151846592310967425}
+  - {fileID: 3860584625438266087}
+  - {fileID: 6265999652325734231}
+  - {fileID: 452856346289305206}
+--- !u!1 &812290327937962333
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5582549449172464047}
+  - component: {fileID: 1609548941402916033}
+  - component: {fileID: 4648722190657325953}
+  m_Layer: 0
+  m_Name: Melee (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5582549449172464047
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 812290327937962333}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -9.900002, y: -1.416667, z: 53.90001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &1609548941402916033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 812290327937962333}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 363ffadb27ca43a4cb82610e9af2c1cc, type: 2}
+--- !u!114 &4648722190657325953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 812290327937962333}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &1823059412138541772
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5102936216047699373}
+  - component: {fileID: 3860584625438266087}
+  - component: {fileID: 1639064893395189882}
+  m_Layer: 0
+  m_Name: Cavalry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5102936216047699373
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823059412138541772}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -34.490005, y: -1.416667, z: 52.369995}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &3860584625438266087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823059412138541772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 379c07d7f37f8d74aa5aae5050b98c2c, type: 2}
+--- !u!114 &1639064893395189882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1823059412138541772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &2101885328621924065
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6977400203790849634}
+  - component: {fileID: 452856346289305206}
+  - component: {fileID: 1875526306312619927}
+  m_Layer: 0
+  m_Name: Elephant
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6977400203790849634
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2101885328621924065}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -40, y: -1.416667, z: 13.699997}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &452856346289305206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2101885328621924065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: a1a3328e97cc36541aaeb89dfeb42cb9, type: 2}
+--- !u!114 &1875526306312619927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2101885328621924065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &2414531507309159221
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 212476184060866192}
+  - component: {fileID: 4485060067382239764}
+  - component: {fileID: 7594158185664812812}
+  m_Layer: 0
+  m_Name: Archer (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &212476184060866192
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2414531507309159221}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -25.18, y: -1.416667, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &4485060067382239764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2414531507309159221}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+--- !u!114 &7594158185664812812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2414531507309159221}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &5420968480471836821
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4984040132562823613}
+  - component: {fileID: 6265999652325734231}
+  - component: {fileID: 7437985450629858001}
+  m_Layer: 0
+  m_Name: Cavalry (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4984040132562823613
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5420968480471836821}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -34.490005, y: -1.416667, z: -9.029999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &6265999652325734231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5420968480471836821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 379c07d7f37f8d74aa5aae5050b98c2c, type: 2}
+--- !u!114 &7437985450629858001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5420968480471836821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &6548434841023795864
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 429375838430723850}
+  - component: {fileID: 8123059918371576679}
+  - component: {fileID: 2170403111262083088}
+  m_Layer: 0
+  m_Name: Melee (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &429375838430723850
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6548434841023795864}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -9.900002, y: -1.416667, z: 32.59999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &8123059918371576679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6548434841023795864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 363ffadb27ca43a4cb82610e9af2c1cc, type: 2}
+--- !u!114 &2170403111262083088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6548434841023795864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}
+--- !u!1 &6861228957505091936
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7661202996147928100}
+  - component: {fileID: 2544409433424654987}
+  - component: {fileID: 4142260840644339246}
+  m_Layer: 0
+  m_Name: Archer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7661202996147928100
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6861228957505091936}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -25.18, y: -1.416667, z: 38.800003}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6803065234403740906}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &2544409433424654987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6861228957505091936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb40dae3c94cb134a9c5ee676407946a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.SpawnPoint
+  inverseForwardRotation: 1
+  allowedUnitTypes:
+  - {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+--- !u!114 &4142260840644339246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6861228957505091936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 328e0b7138492424ea4fb0a6c5048395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.DrawArmyRectangle
+  unit: {fileID: 11400000, guid: 710c965e6a6e18f4f9ba458b9b0f6729, type: 2}

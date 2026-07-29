@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81567032adf536644a8fdc552e6a33af, type: 3}
+  m_Name: Tactic_ArcherTargetSelection
+  m_EditorClassIdentifier: 
+  VulnerableTargetTypes:
+  - {fileID: 11400000, guid: 363ffadb27ca43a4cb82610e9af2c1cc, type: 2}
+  - {fileID: 11400000, guid: a1a3328e97cc36541aaeb89dfeb42cb9, type: 2}
+  - {fileID: 11400000, guid: 379c07d7f37f8d74aa5aae5050b98c2c, type: 2}
+  - {fileID: 11400000, guid: 3eb0efb0072e87a43b551f9d5f7763ea, type: 2}
+  - {fileID: 11400000, guid: 363ffadb27ca43a4cb82610e9af2c1cc, type: 2}
+  vulnerabilityBonus: 30
+  stickinessBonus: 60
+  distancePenaltyWeight: 15
+  dangerPenaltyWeight: 0.5
+  enemyBlockingLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  archerShootDistanceVariable: 0.7
+  archerDangerShootDistanceVariable: 0.9
+  maxRiskTolerance: 80
+  skipWaypointDistance: 5
+  ignoreTargetDangerDistance: 0
+  ignoreStartDangerDistance: 10

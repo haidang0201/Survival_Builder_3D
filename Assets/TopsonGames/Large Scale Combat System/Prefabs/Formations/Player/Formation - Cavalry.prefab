@@ -1,0 +1,2126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1772568069686861062
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5393428654669523415}
+  - component: {fileID: 8781406301953878545}
+  m_Layer: 0
+  m_Name: Formation - Cavalry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5393428654669523415
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1772568069686861062}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2861025205062159833}
+  - {fileID: 6059586016584662611}
+  - {fileID: 6584765839585756302}
+  - {fileID: 1749281350741809337}
+  - {fileID: 7753590118573644033}
+  - {fileID: 2759668246172278854}
+  - {fileID: 3327782656472246699}
+  - {fileID: 1481112874519786028}
+  - {fileID: 1172948089388539567}
+  - {fileID: 2277433579298726932}
+  - {fileID: 1033243929065987837}
+  - {fileID: 904936198285556575}
+  - {fileID: 1863106363851823262}
+  - {fileID: 1316415685004382337}
+  - {fileID: 7680659497598846968}
+  - {fileID: 7449873404102589374}
+  - {fileID: 5967744309614579289}
+  - {fileID: 7608044823108176602}
+  - {fileID: 1381434229710180750}
+  - {fileID: 5639032468621215943}
+  - {fileID: 6671759881194459926}
+  - {fileID: 1268575703052519631}
+  - {fileID: 7024407539331878784}
+  - {fileID: 1983938854050873654}
+  - {fileID: 5602640435860488229}
+  - {fileID: 6831361265899613718}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8781406301953878545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1772568069686861062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbd19a99f19346e40803fdf24880d04b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TeamID: 0
+  UnitData: {fileID: 11400000, guid: 048a7c8321b87894db25cc01667ec93d, type: 2}
+  Units:
+  - {fileID: 7590553904582546097}
+  - {fileID: 6049531055514405174}
+  - {fileID: 6286636041878709685}
+  - {fileID: 6404868505745137422}
+  - {fileID: 5273550097822361063}
+  - {fileID: 5473917071497674821}
+  - {fileID: 6819203428511343492}
+  - {fileID: 6142172299061848987}
+  - {fileID: 3309748940139609314}
+  - {fileID: 2313438836086603940}
+  - {fileID: 1560523566138307907}
+  - {fileID: 3381231676402168256}
+  - {fileID: 6076041040401525396}
+  - {fileID: 664393206131913693}
+  - {fileID: 2012935851275675660}
+  - {fileID: 6260947824632935381}
+  - {fileID: 2738766153006511258}
+  - {fileID: 6697386865884887596}
+  - {fileID: 772697139185154879}
+  - {fileID: 1852218450457138444}
+  visualizers:
+  - {fileID: 3888033716101856541}
+  - {fileID: 5576629074319399604}
+  - {fileID: 8280319649398144486}
+  formationCollider: {fileID: 3894322660293027538}
+  engagementTrigger: {fileID: 2218963598382224589}
+  checkInterval: 0.5
+  CurrentState: 0
+  CurrentCombatState: 0
+  Effects: []
+  currentMorale: 0
+  maxMorale: 0
+  showline: 0
+  currentEnemy: {fileID: 0}
+  customEnemy: {fileID: 0}
+  ArcherTarget: {fileID: 0}
+  numberOfUnits: 20
+  WaypointCenter: {fileID: 1749281350741809337}
+  WaypointIndicator: {fileID: 2759668246172278854}
+  currentArrows: 0
+  archerDetectionTimer: 1
+  currentTimeBetweenShots: 5
+  engagementRecalculationTimer: 0
+  lockedEngagementCenter: {x: 0, y: 0, z: 0}
+  formationWidth: 6
+  targetFormationWidth: 6
+  armyData:
+    Unit: {fileID: 0}
+    Troops: 100
+    inGameFormation: {fileID: 0}
+  isFreeShooting: 1
+  finalDestination: {x: 0, y: 0, z: 0}
+  finalRotation: {x: 0, y: 0, z: 0, w: 0}
+  isDefender: 0
+  gridWaypoints: []
+  useGridPath: 0
+  currentGridWaypointIndex: 0
+  currentGridRiskTolerance: 20
+  currentGridFlankDistance: 15
+  currentGridSkipWaypointDistance: 5
+  currentGridIgnoreTargetDangerDist: 35
+  currentGridIgnoreStartDangerDist: 15
+--- !u!1 &2010135501214810851
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1749281350741809337}
+  m_Layer: 0
+  m_Name: Waypoint Center
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1749281350741809337
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2010135501214810851}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5393428654669523415}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7135677174932556428
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2759668246172278854}
+  m_Layer: 0
+  m_Name: Waypoint Indicator Parent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2759668246172278854
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7135677174932556428}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5393428654669523415}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &49878021051298544
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &1316415685004382337 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 49878021051298544}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6142172299061848987 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 49878021051298544}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &134612934278788095
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -7.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (12)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &1381434229710180750 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 134612934278788095}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6076041040401525396 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 134612934278788095}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &194442920681995486
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &1172948089388539567 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 194442920681995486}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6286636041878709685 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 194442920681995486}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &247425564905827006
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (15)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &1268575703052519631 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 247425564905827006}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6260947824632935381 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 247425564905827006}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &466142984433209437
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &1481112874519786028 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 466142984433209437}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6049531055514405174 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 466142984433209437}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &683904189513900871
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (17)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &1983938854050873654 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 683904189513900871}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6697386865884887596 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 683904189513900871}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &805862313323444975
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -7.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &1863106363851823262 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 805862313323444975}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6819203428511343492 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 805862313323444975}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &967987062676997733
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &2277433579298726932 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 967987062676997733}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6404868505745137422 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 967987062676997733}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &1243825994966289702
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.7441602
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0000009536743
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 9.802444
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7854643821351238298, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_Name
+      value: Melee Detection Visualizer
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+--- !u!114 &5576629074319399604 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6640240715436693394, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+  m_PrefabInstance: {fileID: 1243825994966289702}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8be74e8e5150c6241bbc351781ee06c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &6059586016584662611 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+  m_PrefabInstance: {fileID: 1243825994966289702}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2063558191503015052
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &1033243929065987837 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 2063558191503015052}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5273550097822361063 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 2063558191503015052}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &2196367322881399086
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &904936198285556575 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 2196367322881399086}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5473917071497674821 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 2196367322881399086}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &3372990952118463092
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.74416
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.73552
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 5.27622
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7854643821351238298, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+      propertyPath: m_Name
+      value: General Visualizer
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+--- !u!4 &7753590118573644033 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4995912862937330549, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+  m_PrefabInstance: {fileID: 3372990952118463092}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8280319649398144486 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6640240715436693394, guid: 7a0925f6653f8c548893f99a19f8b595, type: 3}
+  m_PrefabInstance: {fileID: 3372990952118463092}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8be74e8e5150c6241bbc351781ee06c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!1001 &4385171698750000090
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -7.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!4 &3327782656472246699 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 4385171698750000090}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7590553904582546097 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 4385171698750000090}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!1001 &4621895019245300776
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (10)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &1560523566138307907 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 4621895019245300776}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &5967744309614579289 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 4621895019245300776}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5492197179724647527
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (19)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &1852218450457138444 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 5492197179724647527}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &6831361265899613718 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 5492197179724647527}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5648411819507757415
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (14)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &2012935851275675660 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 5648411819507757415}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &6671759881194459926 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 5648411819507757415}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6680022403137088182
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (13)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &664393206131913693 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 6680022403137088182}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &5639032468621215943 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 6680022403137088182}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6860522743437763156
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (18)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &772697139185154879 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 6860522743437763156}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &5602640435860488229 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 6860522743437763156}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7129885980977465107
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 2031339811215445441, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_Name
+      value: Formation Collider 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4379802484558423357, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 445f7a6e94e863d49992b8edfd8e070b, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+--- !u!114 &2218963598382224589 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8951227674633393118, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+  m_PrefabInstance: {fileID: 7129885980977465107}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0339b6e29b4234041849f932befcab61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3894322660293027538 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6122951924803576257, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+  m_PrefabInstance: {fileID: 7129885980977465107}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7f0f64b21aea0a48a1b63e51aa0c64c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &6584765839585756302 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4148862140533556125, guid: 4b5a15e53d584bb46b3e612c4b767ac3, type: 3}
+  m_PrefabInstance: {fileID: 7129885980977465107}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7161664408958496931
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.7441602
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0000009536743
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 9.802444
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5946268306443003965, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+      propertyPath: m_Name
+      value: Formation Path Visualizer
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+--- !u!4 &2861025205062159833 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4960486918089096570, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+  m_PrefabInstance: {fileID: 7161664408958496931}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3888033716101856541 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6239251047562956222, guid: c24714c272ada124f837a13df80d6e66, type: 3}
+  m_PrefabInstance: {fileID: 7161664408958496931}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8be74e8e5150c6241bbc351781ee06c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!1001 &8326697954817551857
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (16)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &2738766153006511258 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 8326697954817551857}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &7024407539331878784 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 8326697954817551857}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8473151885086742991
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &2313438836086603940 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 8473151885086742991}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &7449873404102589374 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 8473151885086742991}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8674713271375291785
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (8)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &3309748940139609314 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 8674713271375291785}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &7680659497598846968 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 8674713271375291785}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8890350485671782571
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5393428654669523415}
+    m_Modifications:
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_Name
+      value: Unit - Cavalry Melee (11)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507061899933842226, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_TagString
+      value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993912285252848845, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+--- !u!114 &3381231676402168256 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6164393122392430955, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 8890350485671782571}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6489622d875b834daac6f97c0618cb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.Unit
+--- !u!4 &7608044823108176602 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1366256296880038513, guid: 7f7e8fc69bcb6d54e96c24bb1b7a776f, type: 3}
+  m_PrefabInstance: {fileID: 8890350485671782571}
+  m_PrefabAsset: {fileID: 0}

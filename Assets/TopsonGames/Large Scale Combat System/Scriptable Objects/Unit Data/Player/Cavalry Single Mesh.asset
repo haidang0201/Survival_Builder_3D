@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7157531266fc90a4c938dd04e413e000, type: 3}
+  m_Name: Cavalry Single Mesh
+  m_EditorClassIdentifier: 
+  unitIcon: {fileID: 21300000, guid: dad1e5e80d4fac0448a0932152ac326b, type: 3}
+  description: Neigh Neigh
+  formationPrefab: {fileID: 1772568069686861062, guid: 945f400eb6bb0c54f88b11f617eb9dfa, type: 3}
+  Cost: 0
+  maxHealth: 200
+  Armor: 10
+  baseDamage: 5
+  armorPenetration: 30
+  chargeDamageMultiplier: 1.5
+  chargeDamageDuration: 5
+  shieldMeleeBlockChance: 0
+  shieldArrowBlockChance: 0
+  Arrows: 0
+  canRecieveKnockback: 0
+  unitType: {fileID: 11400000, guid: 379c07d7f37f8d74aa5aae5050b98c2c, type: 2}
+  attackableTargetTypes: 00000000
+  baseMorale: 50
+  isGeneral: 1
+  moralePenaltyPerHealthLoss: 5
+  generalDeathImpact: 15
+  effectsOnOtherFormations:
+  - {fileID: 11400000, guid: e495aa36a86c2d049bac0df847dc36b8, type: 2}
+  effectRadius: 40
+  idleAnimations: 1
+  attackAnimations: 1
+  formationWidth: 6
+  formationSpacing: 3
+  formationMoveSpeed: 4
+  formationTurnSpeed: 5
+  unitRotationSpeed: 2
+  unitCatchUpFactor: 0.5
+  unitSlowDownFactor: 0.2
+  maxSpeedMultiplier: 1.3
+  minSpeedMultiplier: 0.7
+  stoppingDistance: 1
+  colliderOverhang: 5
+  maxColliderSize: {x: 20, y: 15}
+  colliderHeight: 10
+  centerSmoothingSpeed: 5
+  combatBehaviour: {fileID: 11400000, guid: 6cd654bd768ea594696122dd00cace18, type: 2}
+  placementBehaviour: {fileID: 11400000, guid: 5a2773e4a0bb96044a98899e09da4db0, type: 2}
+  Troops: 20

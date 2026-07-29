@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8673b7cfdf4df5b40ab641e08ed68c71, type: 3}
+  m_Name: RomeOneHpCombatRuleset
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.RomeOneCombatRulesetSO
+  rulesetDescription: Total War Rome 1 HP System
+  calculationExplanation: "BERECHNUNG DES 1-HP SYSTEMS (Rome 1 Style):\n\n1. ANGRIFFSWERT:\n-
+    Basis: Normaler Waffenschaden.\n- Charge: Multiplikator, falls die Einheit gerade
+    anst\xFCrmt.\n- H\xF6he: +20% Angriff, wenn der Angreifer h\xF6her steht, -20%
+    wenn er tiefer steht.\n\n2. VERTEIDIGUNGSWERT:\n- Basis: R\xFCstung minus R\xFCstungsdurchdringung
+    des Angreifers.\n- Richtung (WICHTIG): Wird von VORNE angegriffen, wird der Schild-Wert
+    auf die R\xFCstung addiert. Erfolgt der Angriff in den R\xDCCKEN oder die FLANKE,
+    z\xE4hlt der Schild nicht und die verbleibende R\xFCstung wird halbiert!\n\n3.
+    TREFFERWURF:\n- T\xF6tungschance = Angriff / (Angriff + Verteidigung) * Letalit\xE4t.\n-
+    Erfolg: Das Modell stirbt sofort (verliert alle HP).\n- Fehlschlag: Das Modell
+    nimmt 0 Schaden und wird leicht zur\xFCckgesto\xDFen (Knockback/Parieren)."
+  globalLethality: 0.8
+  shieldDefenseWeight: 20
+  facingAngleThreshold: 60
+  flankDefenseMultiplier: 0.5
+  elevationThreshold: 1
+  highGroundMultiplier: 1.2
+  lowGroundMultiplier: 0.8
+  knockbackForce: 0.3
+  knockbackSampleRange: 1
+  knockbackDuration: 0.25
