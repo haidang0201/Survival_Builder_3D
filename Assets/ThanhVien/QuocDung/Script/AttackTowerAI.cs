@@ -103,10 +103,39 @@ public class AttackTowerAI : MonoBehaviour
         }
     }
 
+    public bool CanAttack()
+    {
+        if (IsDestroyed()) return false;
+
+        if (upgradeableBuilding == null)
+        {
+            upgradeableBuilding = GetComponent<UpgradeableBuilding>();
+            if (upgradeableBuilding == null) upgradeableBuilding = GetComponentInParent<UpgradeableBuilding>();
+            if (upgradeableBuilding == null) upgradeableBuilding = GetComponentInChildren<UpgradeableBuilding>();
+        }
+
+        if (upgradeableBuilding != null)
+        {
+            if (upgradeableBuilding.IsInitialBuildNeeded || upgradeableBuilding.IsUpgrading || upgradeableBuilding.IsRuined)
+            {
+                return false;
+            }
+        }
+
+        BuildingCtrl buildingCtrl = GetComponent<BuildingCtrl>();
+        if (buildingCtrl == null) buildingCtrl = GetComponentInParent<BuildingCtrl>();
+        if (buildingCtrl != null && !buildingCtrl.IsBuilt)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     // Hàm nhận lệnh tấn công do Tháp Canh truyền mục tiêu sang
     public void CommandAttack(Transform target)
     {
-        if (IsDestroyed())
+        if (!CanAttack())
         {
             currentTarget = null;
             return;
@@ -118,8 +147,8 @@ public class AttackTowerAI : MonoBehaviour
 
     private void Update()
     {
-        // Nếu tháp đã bị phá hủy -> Không bắn và hủy mục tiêu
-        if (IsDestroyed())
+        // Nếu không thể tấn công (đang xây dựng, nâng cấp, hư hỏng, hoặc bị phá hủy) -> Không bắn và hủy mục tiêu
+        if (!CanAttack())
         {
             if (currentTarget != null) currentTarget = null;
             return;

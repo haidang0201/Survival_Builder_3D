@@ -159,8 +159,38 @@ public class DefenceTowerAI : MonoBehaviour
         shieldObject.gameObject.SetActive(false);
     }
 
+    private bool CanOperate()
+    {
+        if (upgradeableBuilding == null)
+        {
+            upgradeableBuilding = GetComponent<UpgradeableBuilding>();
+            if (upgradeableBuilding == null) upgradeableBuilding = GetComponentInParent<UpgradeableBuilding>();
+            if (upgradeableBuilding == null) upgradeableBuilding = GetComponentInChildren<UpgradeableBuilding>();
+        }
+
+        if (upgradeableBuilding != null && (upgradeableBuilding.IsInitialBuildNeeded || upgradeableBuilding.IsUpgrading || upgradeableBuilding.IsRuined))
+        {
+            return false;
+        }
+
+        BuildingCtrl ctrl = GetComponent<BuildingCtrl>();
+        if (ctrl == null) ctrl = GetComponentInParent<BuildingCtrl>();
+        if (ctrl != null && !ctrl.IsBuilt)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private void Update()
     {
+        if (!CanOperate())
+        {
+            isEnemyNearby = false;
+            UpdateShieldTransition();
+            return;
+        }
         // Cập nhật thông số thời gian thực khi đang ở trong Unity Editor (hỗ trợ điều chỉnh lúc Play Mode)
 #if UNITY_EDITOR
         UpdateParamsInEditor();

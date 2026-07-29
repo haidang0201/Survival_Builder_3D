@@ -36,10 +36,31 @@ public class Canon : MonoBehaviour
         }
     }
 
+    private bool IsLauncherOrRelated(Collider other)
+    {
+        if (other == null) return false;
+        if (other.gameObject == gameObject) return true;
+        if (launcher != null)
+        {
+            if (other.gameObject == launcher) return true;
+            if (other.transform.IsChildOf(launcher.transform)) return true;
+            if (launcher.transform.IsChildOf(other.transform)) return true;
+
+            var myHp = launcher.GetComponentInParent<HPTower>();
+            var otherHp = other.GetComponentInParent<HPTower>();
+            if (myHp != null && otherHp != null && myHp == otherHp) return true;
+
+            var myBuilding = launcher.GetComponentInParent<UpgradeableBuilding>();
+            var otherBuilding = other.GetComponentInParent<UpgradeableBuilding>();
+            if (myBuilding != null && otherBuilding != null && myBuilding == otherBuilding) return true;
+        }
+        return false;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (hasHit) return;
-        if (launcher != null && (other.gameObject == launcher || other.transform.IsChildOf(launcher.transform))) return;
+        if (IsLauncherOrRelated(other)) return;
         hasHit = true;
 
         Vector3 hitPoint = other.ClosestPoint(transform.position);
@@ -50,7 +71,7 @@ public class Canon : MonoBehaviour
     {
         if (hasHit) return;
         Collider other = collision.collider;
-        if (launcher != null && (other.gameObject == launcher || other.transform.IsChildOf(launcher.transform))) return;
+        if (IsLauncherOrRelated(other)) return;
         hasHit = true;
 
         Vector3 hitPoint = collision.GetContact(0).point;
@@ -59,12 +80,18 @@ public class Canon : MonoBehaviour
 
     private void HandleHit(Collider other, Vector3 hitPoint)
     {
+        if (IsLauncherOrRelated(other)) return;
+
         if (level == 1)
         {
-            var dmg = other.GetComponentInParent<IDamageable>();
-            if (dmg != null)
+            bool isEnemy = other.CompareTag("Enemy") || other.name.ToLower().Contains("enemy") || other.GetComponentInParent<EnemyHealth>() != null;
+            if (isEnemy)
             {
-                dmg.TakeDamage(damage, hitPoint);
+                var dmg = other.GetComponentInParent<IDamageable>();
+                if (dmg != null)
+                {
+                    dmg.TakeDamage(damage, hitPoint);
+                }
             }
         }
         else
@@ -107,11 +134,16 @@ public class Canon : MonoBehaviour
             }
         }
 
-        // Find all colliders in radius and apply damage/physics
+        // Find all colliders in radius and apply damage/physics ONLY to enemies
         Collider[] hits = Physics.OverlapSphere(point, explosionRadius);
         foreach (var c in hits)
         {
             if (c == null) continue;
+            if (IsLauncherOrRelated(c)) continue;
+
+            bool isEnemy = c.CompareTag("Enemy") || c.name.ToLower().Contains("enemy") || c.GetComponentInParent<EnemyHealth>() != null;
+            if (!isEnemy) continue;
+
             var dmg = c.GetComponentInParent<IDamageable>();
             if (dmg != null)
             {

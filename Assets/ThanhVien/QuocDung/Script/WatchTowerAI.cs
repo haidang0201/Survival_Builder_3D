@@ -34,8 +34,31 @@ public class WatchTowerAI : MonoBehaviour
     // tránh gọi lặp lại liên tục mỗi 0.2s không cần thiết.
     private bool wasEnemyDetectedLastScan = false;
 
+    private bool CanScan()
+    {
+        UpgradeableBuilding ub = GetComponent<UpgradeableBuilding>();
+        if (ub == null) ub = GetComponentInParent<UpgradeableBuilding>();
+        if (ub != null && (ub.IsInitialBuildNeeded || ub.IsUpgrading || ub.IsRuined)) return false;
+
+        BuildingCtrl ctrl = GetComponent<BuildingCtrl>();
+        if (ctrl == null) ctrl = GetComponentInParent<BuildingCtrl>();
+        if (ctrl != null && !ctrl.IsBuilt) return false;
+
+        HPTower hp = GetComponent<HPTower>();
+        if (hp == null) hp = GetComponentInParent<HPTower>();
+        if (hp != null && (hp.IsDestroyed || hp.CurrentHealth <= 0)) return false;
+
+        return true;
+    }
+
     private void Update()
     {
+        if (!CanScan())
+        {
+            UpdateEnemyAlertUI(false);
+            return;
+        }
+
         // QUÉT KHÔNG PHÂN BIỆT NGÀY ĐÊM
         if (Time.time >= nextScanTime)
         {

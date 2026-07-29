@@ -104,7 +104,7 @@ public class Arrow : MonoBehaviour
                     {
                         if (h.collider == null) continue;
                         if (h.collider.gameObject == gameObject) continue;
-                        if (launcher != null && (h.collider.gameObject == launcher || h.collider.transform.IsChildOf(launcher.transform))) continue;
+                        if (IsLauncherOrRelated(h.collider)) continue;
                         if (h.collider.GetComponent<Arrow>() != null) continue; // Bỏ qua các mũi tên khác
                         HandleHit(h.collider, h.point);
                         return;
@@ -259,11 +259,32 @@ public class Arrow : MonoBehaviour
         zone.Setup(burnDamagePerSec, burnRadius, burnDuration, burnVfxPrefab);
     }
 
+    private bool IsLauncherOrRelated(Collider other)
+    {
+        if (other == null) return false;
+        if (other.gameObject == gameObject) return true;
+        if (launcher != null)
+        {
+            if (other.gameObject == launcher) return true;
+            if (other.transform.IsChildOf(launcher.transform)) return true;
+            if (launcher.transform.IsChildOf(other.transform)) return true;
+
+            var myHp = launcher.GetComponentInParent<HPTower>();
+            var otherHp = other.GetComponentInParent<HPTower>();
+            if (myHp != null && otherHp != null && myHp == otherHp) return true;
+
+            var myBuilding = launcher.GetComponentInParent<UpgradeableBuilding>();
+            var otherBuilding = other.GetComponentInParent<UpgradeableBuilding>();
+            if (myBuilding != null && otherBuilding != null && myBuilding == otherBuilding) return true;
+        }
+        return false;
+    }
+
     private void HandleHit(Collider other, Vector3 hitPoint)
     {
-        if (launcher != null && (other.gameObject == launcher || other.transform.IsChildOf(launcher.transform)))
+        if (IsLauncherOrRelated(other))
         {
-            return; // Ignore launcher and its children
+            return; // Ignore launcher, its parent, and its children
         }
 
         // Bỏ qua nếu va chạm với các mũi tên khác để tránh việc 3 mũi tên tự phá nhau khi bắn ra cùng lúc ở cấp 2/3

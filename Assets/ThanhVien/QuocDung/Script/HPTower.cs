@@ -105,6 +105,21 @@ public class HPTower : MonoBehaviour, IDamageable
     {
         if (isDestroyed) return;
 
+        // Bỏ qua không nhận sát thương nếu công trình đang trong quá trình xây dựng ban đầu hoặc chưa xây xong
+        UpgradeableBuilding building = GetComponent<UpgradeableBuilding>();
+        if (building == null) building = GetComponentInParent<UpgradeableBuilding>();
+        if (building != null && (building.IsInitialBuildNeeded || building.IsUpgrading))
+        {
+            return;
+        }
+
+        BuildingCtrl ctrl = GetComponent<BuildingCtrl>();
+        if (ctrl == null) ctrl = GetComponentInParent<BuildingCtrl>();
+        if (ctrl != null && !ctrl.IsBuilt)
+        {
+            return;
+        }
+
         CurrentHealth -= amount;
         Debug.Log($"[HPTower] {gameObject.name} nhận {amount} sát thương tại {hitPoint}. HP còn lại: {CurrentHealth}/{MaxHealth}");
 
