@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3144870116960467423
+--- !u!1 &6882758905366635077
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,43 +8,41 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 997618618090905906}
-  - component: {fileID: 8476818958062178052}
+  - component: {fileID: 3308732615572092418}
+  - component: {fileID: 8309789290876015536}
   m_Layer: 0
-  m_Name: 'TrainingPair          '
+  m_Name: WoodPool
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &997618618090905906
+--- !u!4 &3308732615572092418
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3144870116960467423}
+  m_GameObject: {fileID: 6882758905366635077}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -47.031, y: 0.39398, z: -82.694}
+  m_LocalPosition: {x: -74.97227, y: 1.39398, z: -67.25888}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8476818958062178052
+--- !u!114 &8309789290876015536
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3144870116960467423}
+  m_GameObject: {fileID: 6882758905366635077}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d755c42368cad5a4c886c71c3e9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 31fa35dc66e2db043acae67396f4ccdb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Trainingpaircontroller
-  soldierA: {fileID: 0}
-  soldierB: {fileID: 0}
-  faceDistance: 1.4
-  soldierBCycleOffset: 0
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectPool
+  prefab: {fileID: 3716260875971764621, guid: 4096b08bc5ff862478e946bbf068fa06, type: 3}
+  poolSize: 4

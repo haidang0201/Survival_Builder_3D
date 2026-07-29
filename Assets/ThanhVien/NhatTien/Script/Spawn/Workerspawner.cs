@@ -1,0 +1,274 @@
+using UnityEngine;
+using UnityEngine.AI;
+
+/*
+ * WorkerSpawner.cs
+ * Folder: Scripts/Spawning/
+ * Dự án: KHẨN HOANG (PENTA DEV)
+ *
+ * CHỨC NĂNG:
+ * Spawn worker từ prefab và TỰ ĐỘNG setup toàn bộ component/reference cần thiết,
+ * để bạn không còn phải kéo-thả tay trên Scene cho từng worker nữa.
+ *
+ * Script này KHÔNG sửa bất kỳ dòng nào trong House / WorkerStamina / WorkerCarryItem /
+ * WorkerFindTree / WorkerEnemyFlee. Nó chỉ đứng bên ngoài, gọi GetComponent/AddComponent
+ * và gán field public sẵn có của các script đó sau khi Instantiate.
+ *
+ * CÁCH DÙNG:
+ * 1. Gắn script này lên 1 GameObject quản lý spawn (vd "GameManager" hoặc "WorkerSpawner").
+ * 2. Kéo 3 prefab (treeWorkerPrefab / riceWorkerPrefab / stoneWorkerPrefab) vào Inspector.
+ * 3. Gọi WorkerSpawner.Instance.SpawnWorker(WorkerType.Tree, originPosition) từ bất kỳ đâu
+ *    (vd từ HouseSpawnPanel khi bấm nút UI).
+ *
+ * YÊU CẦU VỀ PREFAB (để auto-wire hoạt động đúng):
+ * - Prefab đã có: NavMeshAgent, Animator, WorkerStamina, WorkerCarryItem,
+ *   và ĐÚNG MỘT trong (WorkerFindTree / WorkerFindRice / WorkerFindStone).
+ * - Prefab có 1 child Transform tên "HandPoint" (dùng làm handPoint cho WorkerCarryItem).
+ * - Nếu muốn worker có khả năng bỏ chạy khi gặp Enemy, tick addEnemyFlee = true,
+ *   script sẽ tự AddComponent<WorkerEnemyFlee> nếu prefab chưa có sẵn.
+ */
+public class WorkerSpawner : MonoBehaviour
+{
+    public static WorkerSpawner Instance { get; private set; }
+
+    public enum WorkerType { Tree, Rice, Stone }
+
+    [Header("Prefabs theo loại tài nguyên")]
+    public GameObject treeWorkerPrefab;
+    public GameObject riceWorkerPrefab;
+    public GameObject stoneWorkerPrefab;
+
+    [Header("Auto-Setup Options")]
+    [Tooltip("Tên child Transform dùng làm điểm cầm đồ trên tay. Phải khớp tên trong prefab.")]
+    public string handPointChildName = "HandPoint";
+
+    [Tooltip("Nếu bật, worker spawn ra sẽ tự có thêm WorkerEnemyFlee (nếu prefab chưa gắn sẵn).")]
+    public bool addEnemyFlee = true;
+
+    [Tooltip("Bán kính rải vị trí spawn ngẫu nhiên quanh điểm gốc (House).")]
+    public float defaultSpawnScatterRadius = 2.5f;
+
+    [Tooltip("Số lần thử tìm vị trí hợp lệ trên NavMesh trước khi fallback về điểm gốc.")]
+    public int maxSpawnPositionAttempts = 8;
+
+    void Awake()
+    {
+        // Cho phép nhiều instance nếu bạn cố tình đặt nhiều spawner ở nhiều khu vực,
+        // nhưng vẫn giữ 1 Instance mặc định để gọi nhanh từ UI.
+        if (Instance == null) Instance = this;
+    }
+
+    /// <summary>
+    /// Spawn 1 worker đúng loại, quanh vị trí gốc (thường là House.EntrancePosition),
+    /// rải ngẫu nhiên trong bán kính defaultSpawnScatterRadius, và tự setup toàn bộ.
+    /// </summary>
+    public GameObject SpawnWorker(WorkerType type, Vector3 originPosition)
+    {
+        return SpawnWorker(type, originPosition, defaultSpawnScatterRadius);
+    }
+
+    /// <summary>
+    /// Overload cho phép chỉ định bán kính rải vị trí riêng cho lần spawn này.
+    /// </summary>
+    public GameObject SpawnWorker(WorkerType type, Vector3 originPosition, float scatterRadius)
+    {
+        GameObject prefab = GetPrefabFor(type);
+        if (prefab == null)
+        {
+            Debug.LogError($"[WorkerSpawner] Chưa gán prefab cho loại {type} trong Inspector.");
+            return null;
+        }
+
+        Vector3 spawnPos = ResolveSpawnPosition(originPosition, scatterRadius);
+
+        GameObject worker = Instantiate(prefab, spawnPos, Quaternion.identity);
+        SetupWorker(worker, originPosition);
+        return worker;
+    }
+
+    GameObject GetPrefabFor(WorkerType type)
+    {
+        switch (type)
+        {
+            case WorkerType.Tree: return treeWorkerPrefab;
+            case WorkerType.Rice: return riceWorkerPrefab;
+            case WorkerType.Stone: return stoneWorkerPrefab;
+            default: return null;
+        }
+    }
+
+    /// <summary>
+    /// Tìm 1 điểm ngẫu nhiên trong bán kính quanh originPosition mà nằm trên NavMesh.
+    /// Nếu thử nhiều lần không ra, fallback về chính originPosition.
+    /// </summary>
+    Vector3 ResolveSpawnPosition(Vector3 originPosition, float scatterRadius)
+    {
+        for (int i = 0; i < maxSpawnPositionAttempts; i++)
+        {
+            Vector2 rand = Random.insideUnitCircle * scatterRadius;
+            Vector3 candidate = originPosition + new Vector3(rand.x, 0f, rand.y);
+
+            if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, scatterRadius + 1f, NavMesh.AllAreas))
+                return hit.position;
+        }
+
+        // Fallback: thử chính originPosition trên NavMesh, nếu vẫn fail thì dùng nguyên
+        if (NavMesh.SamplePosition(originPosition, out NavMeshHit originHit, scatterRadius + 1f, NavMesh.AllAreas))
+            return originHit.position;
+
+        return originPosition;
+    }
+
+    /// <summary>
+    /// Đây là phần cốt lõi: tự động nối toàn bộ reference giữa các component
+    /// trên worker vừa spawn, thay cho việc bạn phải kéo tay trong Inspector.
+    /// </summary>
+    void SetupWorker(GameObject worker, Vector3 nearSearchOrigin)
+    {
+        NavMeshAgent agent = worker.GetComponent<NavMeshAgent>();
+        if (agent == null) agent = worker.AddComponent<NavMeshAgent>();
+
+        // Đặt agent đúng vị trí trên NavMesh ngay khi spawn để tránh warp lỗi
+        if (agent.isOnNavMesh == false)
+        {
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(worker.transform.position, out hit, 5f, NavMesh.AllAreas))
+                agent.Warp(hit.position);
+        }
+
+        Animator animator = worker.GetComponent<Animator>();
+
+        WorkerStamina stamina = worker.GetComponent<WorkerStamina>();
+        if (stamina == null) stamina = worker.AddComponent<WorkerStamina>();
+
+        WorkerCarryItem carrySystem = worker.GetComponent<WorkerCarryItem>();
+        if (carrySystem == null) carrySystem = worker.AddComponent<WorkerCarryItem>();
+
+        // --- Tự tìm House/Kitchen gần nhất trong scene và gán cho WorkerStamina ---
+        // (không gán field private -> Enter/Exit sẽ tự chạy như bình thường qua public API sẵn có)
+        // Chỉ tự tìm khi prefab CHƯA gán sẵn trong Inspector — tránh ghi đè giá trị đã đúng.
+        if (stamina.house == null) stamina.house = FindNearestHouse(nearSearchOrigin);
+        if (stamina.kitchen == null) stamina.kitchen = FindNearestKitchen(nearSearchOrigin);
+
+        // --- HandPoint cho WorkerCarryItem ---
+        // QUAN TRỌNG: nếu prefab đã có sẵn handPoint gán đúng trong Inspector, giữ nguyên,
+        // KHÔNG ghi đè. Chỉ tự tìm/tạo khi field này đang thực sự trống (null).
+        if (carrySystem.handPoint == null)
+        {
+            Transform handPoint = FindDeepChild(worker.transform, handPointChildName);
+            if (handPoint == null)
+            {
+                Debug.LogWarning($"[WorkerSpawner] Không tìm thấy child '{handPointChildName}' trên prefab {worker.name}. " +
+                                  $"Tạo tạm 1 điểm rỗng tại gốc worker, bạn nên thêm child này vào prefab để đúng vị trí tay.");
+                GameObject fallbackHand = new GameObject(handPointChildName);
+                fallbackHand.transform.SetParent(worker.transform);
+                fallbackHand.transform.localPosition = Vector3.up * 1.2f;
+                handPoint = fallbackHand.transform;
+            }
+            carrySystem.handPoint = handPoint;
+        }
+        carrySystem.agent = agent;
+
+        // --- Gắn ĐÚNG script Find* tương ứng loại tài nguyên và wire chéo reference ---
+        WorkerFindTree findTree = worker.GetComponent<WorkerFindTree>();
+        if (findTree != null)
+        {
+            findTree.agent = agent;
+            findTree.carrySystem = carrySystem;
+            findTree.animator = animator;
+            findTree.stamina = stamina;
+        }
+
+        WorkerFindRice findRice = worker.GetComponent<WorkerFindRice>();
+        if (findRice != null)
+        {
+            SetIfFieldExists(findRice, "agent", agent);
+            SetIfFieldExists(findRice, "carrySystem", carrySystem);
+            SetIfFieldExists(findRice, "animator", animator);
+            SetIfFieldExists(findRice, "stamina", stamina);
+        }
+
+        WorkerFindStone findStone = worker.GetComponent<WorkerFindStone>();
+        if (findStone != null)
+        {
+            SetIfFieldExists(findStone, "agent", agent);
+            SetIfFieldExists(findStone, "carrySystem", carrySystem);
+            SetIfFieldExists(findStone, "animator", animator);
+            SetIfFieldExists(findStone, "stamina", stamina);
+        }
+
+        // --- WorkerEnemyFlee (tùy chọn) ---
+        if (addEnemyFlee)
+        {
+            WorkerEnemyFlee flee = worker.GetComponent<WorkerEnemyFlee>();
+            if (flee == null) flee = worker.AddComponent<WorkerEnemyFlee>();
+            flee.house = stamina.house;
+            flee.animator = animator;
+            flee.workerModel = stamina.workerModel;
+            flee.extraModelsToHide = stamina.extraModelsToHide;
+        }
+    }
+
+    House FindNearestHouse(Vector3 fromPosition)
+    {
+        GameObject[] houses = GameObject.FindGameObjectsWithTag("House");
+        House best = null;
+        float bestDist = Mathf.Infinity;
+        foreach (var obj in houses)
+        {
+            House h = obj.GetComponent<House>();
+            if (h == null) continue;
+            float d = Vector3.Distance(fromPosition, obj.transform.position);
+            if (d < bestDist) { bestDist = d; best = h; }
+        }
+        return best;
+    }
+
+    Kitchen FindNearestKitchen(Vector3 fromPosition)
+    {
+        GameObject[] kitchens = GameObject.FindGameObjectsWithTag("Kitchen");
+        Kitchen best = null;
+        float bestDist = Mathf.Infinity;
+        foreach (var obj in kitchens)
+        {
+            Kitchen k = obj.GetComponent<Kitchen>();
+            if (k == null) continue;
+            float d = Vector3.Distance(fromPosition, obj.transform.position);
+            if (d < bestDist) { bestDist = d; best = k; }
+        }
+        return best;
+    }
+
+    /// <summary>
+    /// Tìm child Transform theo tên ở bất kỳ độ sâu nào (không chỉ con trực tiếp).
+    /// </summary>
+    Transform FindDeepChild(Transform root, string name)
+    {
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name == name) return child;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gán field bằng reflection CHỈ khi field đó thực sự tồn tại trên component.
+    /// Dùng cho WorkerFindRice/WorkerFindStone vì 2 script này không có trong context
+    /// hiện tại — nếu tên field của bạn khác (vd "navAgent" thay vì "agent"), chỉnh lại
+    /// tên field trong lời gọi SetIfFieldExists bên trên cho khớp.
+    /// </summary>
+    void SetIfFieldExists(Component target, string fieldName, object value)
+    {
+        if (target == null) return;
+        var field = target.GetType().GetField(fieldName);
+        if (field != null)
+        {
+            field.SetValue(target, value);
+        }
+        else
+        {
+            Debug.LogWarning($"[WorkerSpawner] {target.GetType().Name} không có field '{fieldName}'. " +
+                              $"Kiểm tra lại tên field thật trong script đó và sửa trong WorkerSpawner.SetupWorker().");
+        }
+    }
+}

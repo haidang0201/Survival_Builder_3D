@@ -24,8 +24,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3303401124307998308}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000000002963052, y: 7.1054274e-15, z: -7.994219e-16, w: 1}
-  m_LocalPosition: {x: -0.019, y: 1.042, z: -0.411}
+  m_LocalRotation: {x: 0.000000011938112, y: -0.0000000022682791, z: -0.000000031287076, w: 1}
+  m_LocalPosition: {x: -0.019000053, y: 1.042, z: -0.5749999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -41,15 +41,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 12.44
+      value: 13.451531
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.98591
+      value: 1.3939774
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.68
+      value: -11.498246
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
       propertyPath: m_LocalRotation.w
@@ -91,7 +91,7 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
-      insertIndex: 1
+      insertIndex: -1
       addedObject: {fileID: 624074257968941706}
     - targetCorrespondingSourceObject: {fileID: -1164004058888205142, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
       insertIndex: -1
@@ -180,12 +180,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d2ee751f2b79af498f83c5db4b63606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkerStamina
-  maxStamina: 300
+  maxStamina: 500
   drainPerSecond: 5
   recoverPerSecond: 20
   restThreshold: 0
   resumeThreshold: 100
-  morningForceWakeThreshold: 30
   kitchen: {fileID: 0}
   house: {fileID: 0}
   hungryRecoverMultiplier: 0.3

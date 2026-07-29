@@ -43,6 +43,7 @@ public class WorkerEnemyFlee : MonoBehaviour
 
     private NavMeshAgent agent;
     private WorkerStamina stamina;
+    private WorkerCarryItem carrySystem;
 
     private MonoBehaviour[] findScriptsToDisable;
     private bool[] wasEnabledBeforeFlee;
@@ -57,6 +58,7 @@ public class WorkerEnemyFlee : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         stamina = GetComponent<WorkerStamina>();
+        carrySystem = GetComponent<WorkerCarryItem>();
         if (animator == null) animator = GetComponent<Animator>();
 
         // Nếu chưa gán model trong Inspector, thử lấy lại từ WorkerStamina để dùng chung
@@ -227,6 +229,20 @@ public class WorkerEnemyFlee : MonoBehaviour
         for (int i = 0; i < findScriptsToDisable.Length; i++)
         {
             findScriptsToDisable[i].enabled = wasEnabledBeforeFlee[i];
+
+            // BUG FIX: nếu worker đang cầm gỗ/đá lúc chạy trốn, agent đã bị WorkerEnemyFlee
+            // lái tới House thay vì kho, nhưng field "isHeadingToDeposit" bên trong script Find*
+            // vẫn còn là true từ trước khi trốn (disable component không reset field) — khiến
+            // HandleCarrying() nghĩ "đang trên đường tới kho rồi" và KHÔNG gọi lại
+            // carrySystem.MoveToStorage(), làm worker đứng yên tại nhà thay vì tự đi nộp đồ.
+            // Ép reset flag này về false qua reflection (không sửa WorkerFindTree/Rice/Stone)
+            // để lần Update() kế tiếp của nó tự SetDestination lại đúng hướng kho.
+            if (carrySystem != null && carrySystem.IsCarrying())
+            {
+                var field = findScriptsToDisable[i].GetType().GetField("isHeadingToDeposit",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                if (field != null) field.SetValue(findScriptsToDisable[i], false);
+            }
         }
 
         if (!string.IsNullOrEmpty(fleeBoolName) && animator != null)
