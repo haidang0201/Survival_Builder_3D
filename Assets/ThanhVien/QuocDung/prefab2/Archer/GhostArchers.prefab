@@ -33,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.97714686, y: 0.0000011434079, z: 1.876509}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 329298062334064454}
@@ -101,6 +101,10 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 6d40eda199e2f4b4f87f5ae946de63b2, type: 3}
   - {fileID: 21300000, guid: c8902977bf142ec47bb07f4909d0fdd8, type: 3}
   - {fileID: 21300000, guid: c8902977bf142ec47bb07f4909d0fdd8, type: 3}
+  ruinedVisualModel: {fileID: 0}
+  repairWoodCost: 30
+  repairStoneCost: 30
+  repairDuration: 5
 --- !u!65 &5199507879581856568
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -152,6 +156,8 @@ MonoBehaviour:
   animator: {fileID: 2831875671423961722}
   attackParamName: IsAttack
   attackRange: 8
+  rotationSpeed: 10
+  partToRotate: {fileID: 0}
 --- !u!82 &5333909472057682924
 AudioSource:
   m_ObjectHideFlags: 0

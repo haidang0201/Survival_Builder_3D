@@ -168,20 +168,18 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     public void OnDeath()
     {
-        if (isDead)
-            return;
-
+        if (isDead) return;
         isDead = true;
-        Debug.Log($"{name} died");
-        
-        if (hpCanvas != null) hpCanvas.gameObject.SetActive(false);
 
-        // 🌟 KÍCH HOẠT EVENT: Báo hiệu cho các Manager khác (như RoKFirstRaidManager) biết quái này đã chết
+        // ✅ Báo cho Tutorial Manager biết quái đã bị hạ
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnEnemyKilled();
+        }
+
         OnEnemyDied?.Invoke(this);
-
         Destroy(gameObject);
     }
-
     private void LateUpdate()
     {
         if (hpCanvas != null && hpCanvas.gameObject.activeSelf && camTransform != null)

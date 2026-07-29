@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 5005357954351556229}
   - component: {fileID: 8739053802251168775}
   - component: {fileID: 5000775425539140646}
+  - component: {fileID: 3597585230933981348}
+  - component: {fileID: -7408339155361028317}
   m_Layer: 0
   m_Name: EnemyMele
   m_TagString: Enemy
@@ -117,12 +119,56 @@ MonoBehaviour:
   debugLogs: 1
   debugLogInterval: 1
   attackMainDirectly: 0
+  exitPlayModeWhenNoBuildings: 0
   moveThreshold: 0.1
   marchSpacingX: 1.5
   marchSpacingZ: 1.5
   marchColumns: 3
   marchMergeDistance: 10
   squadEnemies: []
+--- !u!136 &3597585230933981348
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 370480945864454416}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 1.8
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &-7408339155361028317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 370480945864454416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b21438a376193724b9ecd0d36c92d5ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
+  maxHealth: 1
+  bloodVFXPrefab: {fileID: 0}
+  visualChild: {fileID: 0}
+  bloodTransform: {fileID: 0}
+  hpBarHeightOffset: 2.2
+  hpBarSize: {x: 1.2, y: 0.15}
+  hpBarColor: {r: 1, g: 0, b: 0, a: 1}
+  hideHpBarWhenFull: 1
 --- !u!1 &1473632686225326384
 GameObject:
   m_ObjectHideFlags: 0

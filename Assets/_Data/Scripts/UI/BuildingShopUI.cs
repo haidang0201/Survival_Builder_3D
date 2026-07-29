@@ -23,6 +23,12 @@ public class BuildingShopUI : MonoBehaviour
     [Header("=== ĐỔI MÀU NÚT KHI ĐƯỢC CHỌN (TÙY CHỌN) ===")]
     [SerializeField] private Color activeTabColor = Color.white;
     [SerializeField] private Color inactiveTabColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+    public static BuildingShopUI Ins { get; private set; }
+    private void Awake()
+    {
+        if (Ins == null) Ins = this;
+        else Destroy(gameObject);
+    }
 
     private void Start()
     {

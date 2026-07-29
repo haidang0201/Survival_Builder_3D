@@ -8,18 +8,28 @@ using System.Collections.Generic;
  * BuildingUpgradeUI.cs
  * Dự án: KHẨN HOANG (PENTA DEV)
  * CHỨC NĂNG: Quản lý Upgrade UI hình tròn dưới chân công trình
+ * - Gắn trực tiếp trên Object Công Trình (Cha)
  * - Tự động xòe nút theo vòng tròn (Radial Layout)
  * - Hiệu ứng nảy/xòe UI mượt mà khi bật (Pop Animation)
  * - Tự động ẩn khi người chơi click/chạm ra ngoài
+ * - GIỮ NGUYÊN KÍCH THƯỚC UI: Bù scale cho Panel con khi Camera xa/gần
+ * - CHỐNG XOAY UI: Khóa góc xoay của Panel con, không làm xoay công trình cha
  */
 
 public class BuildingUpgradeUI : MonoBehaviour
 {   
-    // Thêm dòng này vào trong class BuildingUpgradeUI
     public bool IsOpen => localUpgradePanel != null && localUpgradePanel.activeSelf;
+    
     [Header("UI Canvas & Panel")]
     [SerializeField] private GameObject localUpgradePanel;
     [SerializeField] private RectTransform panelRectTransform;
+
+    [Header("CHỐNG XOAY & GIỮ KÍCH THƯỚC (CHỈ ÁP DỤNG PANLE CON)")]
+    [SerializeField] private bool lockUIRotation = true;       // Khóa không cho Panel UI con xoay theo nhà
+    [SerializeField] private bool faceCamera = true;          // True: UI con luôn nhìn về Cam | False: Đứng thẳng trục World
+    [SerializeField] private bool keepConstantSize = true;    // True: UI con không bị bé đi khi Cam xa
+    [SerializeField] private float baseDistance = 15f;          // Khoảng cách chuẩn giữa Cam và UI (Dùng cho Cam 3D)
+    [SerializeField] private float baseOrthographicSize = 5f;   // Size chuẩn của Camera (Dùng cho Cam 2D)
 
     [Header("MẸO 1: XẾP NÚT TỰ ĐỘNG THEO VÒNG TRÒN")]
     [SerializeField] private bool autoArrangeButtons = true;
@@ -49,6 +59,7 @@ public class BuildingUpgradeUI : MonoBehaviour
     private int upgradeClickCount = 0;
     private bool isOpeningFrame = false;
     private Coroutine animCoroutine;
+    private float currentAnimScale = 1f;
 
     private void Awake()
     {
@@ -71,6 +82,12 @@ public class BuildingUpgradeUI : MonoBehaviour
     {
         if (localUpgradePanel == null || !localUpgradePanel.activeSelf) return;
 
+        // 1. Chỉ khóa xoay riêng panelRectTransform con, không đụng vào transform cha
+        UpdateUIRotation();
+
+        // 2. Chỉ bù Scale riêng panelRectTransform con
+        UpdateUIScale();
+
         // Bỏ qua frame đầu tiên vừa bấm mở
         if (isOpeningFrame)
         {
@@ -78,7 +95,7 @@ public class BuildingUpgradeUI : MonoBehaviour
             return;
         }
 
-        // MẸO 3: CLICK RA NGOÀI VÒNG TRÒN ĐỂ TẮT UI
+        // Click ra ngoài vòng tròn để tắt UI
         if (Input.GetMouseButtonDown(0))
         {
             if (!IsPointerOverPanel())
@@ -86,6 +103,46 @@ public class BuildingUpgradeUI : MonoBehaviour
                 CloseUI();
             }
         }
+    }
+
+    /// <summary>
+    /// Triệt tiêu góc xoay của nhà cha tác động lên Panel UI con
+    /// </summary>
+    private void UpdateUIRotation()
+    {
+        if (!lockUIRotation || panelRectTransform == null) return;
+
+        if (faceCamera && Camera.main != null)
+        {
+            panelRectTransform.rotation = Camera.main.transform.rotation;
+        }
+        else
+        {
+            panelRectTransform.rotation = Quaternion.identity;
+        }
+    }
+
+    /// <summary>
+    /// Bù trừ Scale liên tục riêng cho Panel UI con
+    /// </summary>
+    private void UpdateUIScale()
+    {
+        if (!keepConstantSize || Camera.main == null || panelRectTransform == null) return;
+
+        Camera cam = Camera.main;
+        float distanceFactor = 1f;
+
+        if (cam.orthographic)
+        {
+            distanceFactor = cam.orthographicSize / baseOrthographicSize;
+        }
+        else
+        {
+            float distance = Vector3.Distance(cam.transform.position, panelRectTransform.position);
+            distanceFactor = distance / baseDistance;
+        }
+
+        panelRectTransform.localScale = Vector3.one * (distanceFactor * currentAnimScale);
     }
 
     public void OpenUI()
@@ -103,13 +160,11 @@ public class BuildingUpgradeUI : MonoBehaviour
 
             RefreshUI();
 
-            // Tự động xếp vị trí các nút theo vòng tròn nếu bật
             if (autoArrangeButtons)
             {
                 ArrangeButtonsInCircle();
             }
 
-            // Chạy hiệu ứng xòe nút nảy lên
             if (animCoroutine != null) StopCoroutine(animCoroutine);
             animCoroutine = StartCoroutine(AnimateOpenUI());
         }
@@ -124,9 +179,6 @@ public class BuildingUpgradeUI : MonoBehaviour
         upgradeClickCount = 0;
     }
 
-    /// <summary>
-    /// Mẹo: Tự động tính toán vị trí X, Y cho các nút xòe đều xung quanh tâm vòng tròn
-    /// </summary>
     private void ArrangeButtonsInCircle()
     {
         List<RectTransform> activeButtons = new List<RectTransform>();
@@ -142,11 +194,9 @@ public class BuildingUpgradeUI : MonoBehaviour
 
         for (int i = 0; i < activeButtons.Count; i++)
         {
-            // Tính góc xoay bằng radian
             float currentAngleDegree = startAngle + (i * angleStep);
             float angleRad = currentAngleDegree * Mathf.Deg2Rad;
 
-            // Tọa độ X = R * cos(a), Y = R * sin(a)
             float x = ringRadius * Mathf.Cos(angleRad);
             float y = ringRadius * Mathf.Sin(angleRad);
 
@@ -154,12 +204,9 @@ public class BuildingUpgradeUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Mẹo: Hiệu ứng Scale biến panel từ nhỏ bung ra lớn có độ nảy (Elastic Pop)
-    /// </summary>
     private IEnumerator AnimateOpenUI()
     {
-        panelRectTransform.localScale = Vector3.zero;
+        currentAnimScale = 0f;
         float elapsed = 0f;
 
         while (elapsed < animDuration)
@@ -167,20 +214,16 @@ public class BuildingUpgradeUI : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = elapsed / animDuration;
 
-            // Công thức Ease-Out Overshoot (Bung ra quá 100% một chút rồi nảy về chuẩn)
             float scaleValue = Mathf.Sin(t * Mathf.PI * 0.5f) * 1.1f;
             if (t >= 0.8f) scaleValue = Mathf.Lerp(1.1f, 1.0f, (t - 0.8f) / 0.2f);
 
-            panelRectTransform.localScale = Vector3.one * scaleValue;
+            currentAnimScale = scaleValue;
             yield return null;
         }
 
-        panelRectTransform.localScale = Vector3.one;
+        currentAnimScale = 1.0f;
     }
 
-    /// <summary>
-    /// Kiểm tra xem ngón tay/chuột có đang nằm trong khung tròn Panel hay không
-    /// </summary>
     private bool IsPointerOverPanel()
     {
         if (panelRectTransform == null) return false;
@@ -277,20 +320,4 @@ public class BuildingUpgradeUI : MonoBehaviour
         if (BuildingSystem.Ins != null) BuildingSystem.Ins.StartMoving(building);
         CloseUI();
     }
-
-    // private void OnMouseDown()
-    // {
-    //     // Gọi thẳng UI lên khi click vào công trình
-    //     BuildingUpgradeUI localUI = GetComponentInChildren<BuildingUpgradeUI>(true);
-
-    //     if (localUI != null)
-    //     {
-    //         Debug.Log($"[OK] Đã tìm thấy UI trên {gameObject.name} -> Đang gọi OpenUI()...");
-    //         localUI.OpenUI();
-    //     }
-    //     else
-    //     {
-    //         Debug.LogError($"[LỖI] Không tìm thấy script BuildingUpgradeUI trong các Object con của {gameObject.name}!");
-    //     }
-    // }
 }

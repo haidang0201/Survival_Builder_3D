@@ -18,56 +18,79 @@ public class GameplaySettingUI : MonoBehaviour
     public Button saveButton;
     public Button loadButton;
 
+    private void Awake()
+    {
+        // Đăng ký sự kiện Click cho các nút 1 lần duy nhất ở Awake
+        if (resumeButton) resumeButton.onClick.AddListener(ResumeGame);
+        if (mainMenuButton) mainMenuButton.onClick.AddListener(BackToMainMenu);
+        if (quitButton) quitButton.onClick.AddListener(QuitGame);
+        if (saveButton) saveButton.onClick.AddListener(SaveGameData);
+        if (loadButton) loadButton.onClick.AddListener(LoadGameData);
+    }
+
     private void OnEnable()
     {
+        // Chỉ cập nhật thông số Slider/Dropdown khi bảng được bật
         if (SettingManager.Ins != null)
         {
             masterVolumeSlider.value = SettingManager.Ins.masterVolume;
             musicVolumeSlider.value = SettingManager.Ins.musicVolume;
             screenDropdown.value = SettingManager.Ins.screenModeIndex;
             mouseSpeedSlider.value = SettingManager.Ins.mouseSpeed;
+
+            masterVolumeSlider.onValueChanged.AddListener(SettingManager.Ins.SetMasterVolume);
+            musicVolumeSlider.onValueChanged.AddListener(SettingManager.Ins.SetMusicVolume);
+            screenDropdown.onValueChanged.AddListener(SettingManager.Ins.SetScreenMode);
+            mouseSpeedSlider.onValueChanged.AddListener(SettingManager.Ins.SetMouseSpeed);
         }
 
-        masterVolumeSlider.onValueChanged.AddListener(SettingManager.Ins.SetMasterVolume);
-        musicVolumeSlider.onValueChanged.AddListener(SettingManager.Ins.SetMusicVolume);
-        screenDropdown.onValueChanged.AddListener(SettingManager.Ins.SetScreenMode);
-        mouseSpeedSlider.onValueChanged.AddListener(SettingManager.Ins.SetMouseSpeed);
-
-        resumeButton.onClick.AddListener(ResumeGame);
-        mainMenuButton.onClick.AddListener(BackToMainMenu);
-        quitButton.onClick.AddListener(QuitGame);
-        saveButton.onClick.AddListener(SaveGameData);
-        loadButton.onClick.AddListener(LoadGameData);
-
-        Time.timeScale = 0f; // Tự động pause game khi mở bảng setting
+        // ❌ ĐÃ BỎ: Time.timeScale = 0f ở đây để tránh bị Pause ngầm khi game vừa khởi chạy!
     }
 
     private void OnDisable()
     {
-        masterVolumeSlider.onValueChanged.RemoveAllListeners();
-        musicVolumeSlider.onValueChanged.RemoveAllListeners();
-        screenDropdown.onValueChanged.RemoveAllListeners();
-        mouseSpeedSlider.onValueChanged.RemoveAllListeners();
-
-        resumeButton.onClick.RemoveAllListeners();
-        mainMenuButton.onClick.RemoveAllListeners();
-        quitButton.onClick.RemoveAllListeners();
-        saveButton.onClick.RemoveAllListeners();
-        loadButton.onClick.RemoveAllListeners();
+        if (SettingManager.Ins != null)
+        {
+            masterVolumeSlider.onValueChanged.RemoveAllListeners();
+            musicVolumeSlider.onValueChanged.RemoveAllListeners();
+            screenDropdown.onValueChanged.RemoveAllListeners();
+            mouseSpeedSlider.onValueChanged.RemoveAllListeners();
+        }
 
         PlayerPrefs.Save();
-        Time.timeScale = 1f; // Chạy lại game bình thường khi đóng bảng
+    }
+
+    // ====================================================================
+    // CÁC HÀM ĐIỀU KHIỂN MỞ / ĐÓNG BẢNG SETTING CHỦ ĐỘNG
+    // ====================================================================
+
+    /// <summary>
+    /// Gọi hàm này khi người chơi bấm nút "Bánh Răng / Menu Setting"
+    /// </summary>
+    public void OpenPanel()
+    {
+        gameObject.SetActive(true);
+        Time.timeScale = 0f; // Chỉ đóng băng game khi người chơi THỰC SỰ bấm mở bảng
+    }
+
+    /// <summary>
+    /// Gọi hàm này khi đóng bảng Setting
+    /// </summary>
+    public void ClosePanel()
+    {
+        Time.timeScale = 1f; // Khôi phục thời gian chạy bình thường
+        gameObject.SetActive(false);
     }
 
     public void ResumeGame()
     {
-        gameObject.SetActive(false);
+        ClosePanel();
     }
 
     public void BackToMainMenu()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene("MenuScene"); // Đổi tên đúng theo Scene Menu của bạn
+        Time.timeScale = 1f; // Đảm bảo trả timeScale về 1 trước khi chuyển Scene
+        SceneManager.LoadScene("MenuScene");
     }
 
     public void QuitGame()
@@ -78,7 +101,6 @@ public class GameplaySettingUI : MonoBehaviour
 
     public void SaveGameData()
     {
-        // Gọi lưu công trình và tài nguyên vào Slot 1 qua BuildingSystem
         if (BuildingSystem.Ins != null)
         {
             BuildingSystem.Ins.SaveBuildingsToSlot(1);
@@ -88,25 +110,22 @@ public class GameplaySettingUI : MonoBehaviour
 
     public void LoadGameData()
     {
-        // 1. Reset bộ đếm số lượng nhà hiện tại về 0 để chuẩn bị tính toán lại từ map được tải
         if (ConstructionManager.Ins != null)
         {
             ConstructionManager.Ins.ResetBuildingCounts();
         }
 
-        // 2. Gọi hàm load Slot 1 từ BuildingSystem
         if (BuildingSystem.Ins != null)
         {
             BuildingSystem.Ins.LoadBuildingsFromSlot(1);
 
-            // 3. Sau khi tải map thành công, ép các UI Text hiển thị giá tiền công trình cập nhật lại
             if (ConstructionManager.Ins != null)
             {
                 ConstructionManager.Ins.UpdateAllCostUI();
             }
             
             Debug.Log("[GameplaySettingUI] ✅ Đã tải lại tiến trình chơi JSON từ Slot 1 thành công!");
-            gameObject.SetActive(false); // Đóng bảng setting
+            ClosePanel();
         }
     }
 }

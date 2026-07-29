@@ -141,46 +141,48 @@ public class ConstructionManager : Singleton<ConstructionManager>
 
     // ================= PUBLIC – ĐẶT MỚI =================
 
-   public void PlaceBuilding(BuildingType type, Vector3 position, Quaternion rotation)
-{
-    // 1. Kiểm tra vị trí
-    if (!BuildingManager.Ins.CanBuild(position, type))
+    public void PlaceBuilding(BuildingType type, Vector3 position, Quaternion rotation)
     {
-        Debug.LogWarning($"[ConstructionManager] Vị trí [{type}] bị cản trở!");
-        return;
-    }
-
-    // 2. Lấy giá ĐÃ TÍNH TĂNG TRƯỞNG (% Tăng thêm)
-    BuildingCost cost = GetBuildingCost(type);
-
-    // 3. Kiểm tra tài nguyên tập trung qua JsonDataManager (Bỏ qua DialogNPC nếu không đồng bộ)
-    if (JsonDataManager.Ins != null)
-    {
-        if (!JsonDataManager.Ins.HasEnoughResources(cost.woodCost, cost.stoneCost, cost.foodCost))
+        // 1. Kiểm tra vị trí
+        if (!BuildingManager.Ins.CanBuild(position, type))
         {
-            Debug.LogWarning($"[ConstructionManager] Thiếu tài nguyên xây {type}! Cần: Gỗ {cost.woodCost}, Đá {cost.stoneCost}, Lương {cost.foodCost}");
+            Debug.LogWarning($"[ConstructionManager] Vị trí [{type}] bị cản trở!");
             return;
         }
 
-        // Trừ tài nguyên
-        JsonDataManager.Ins.AddWood(-cost.woodCost);
-        JsonDataManager.Ins.AddStone(-cost.stoneCost);
-        JsonDataManager.Ins.AddFood(-cost.foodCost);
-        JsonDataManager.Ins.BroadcastAllResources();
+        // 2. Lấy giá ĐÃ TÍNH TĂNG TRƯỜNG (% Tăng thêm)
+        BuildingCost cost = GetBuildingCost(type);
+
+        // 3. Kiểm tra tài nguyên tập trung qua JsonDataManager
+        if (JsonDataManager.Ins != null)
+        {
+            if (!JsonDataManager.Ins.HasEnoughResources(cost.woodCost, cost.stoneCost, cost.foodCost))
+            {
+                Debug.LogWarning($"[ConstructionManager] Thiếu tài nguyên xây {type}! Cần: Gỗ {cost.woodCost}, Đá {cost.stoneCost}, Lương {cost.foodCost}");
+                return;
+            }
+
+            // Trừ tài nguyên
+            JsonDataManager.Ins.AddWood(-cost.woodCost);
+            JsonDataManager.Ins.AddStone(-cost.stoneCost);
+            JsonDataManager.Ins.AddFood(-cost.foodCost);
+            JsonDataManager.Ins.BroadcastAllResources();
+        }
+
+        // 4. Sinh công trình
+        var spawned = SpawnBuilding(type, position, rotation);
+        if (spawned != null)
+        {
+            if (!buildingCounts.ContainsKey(type)) buildingCounts[type] = 0;
+            buildingCounts[type]++;
+
+            UpdateCostUI(type); // Đẩy giá mới (+10%) lên UI ngay lập tức
+            JsonDataManager.RegisterStat_BuildingConstructed();
+            Debug.Log($"[ConstructionManager] ✅ Đã xây {type} thành công!");
+
+        }
     }
 
-    // 4. Sinh công trình
-    var spawned = SpawnBuilding(type, position, rotation);
-    if (spawned != null)
-    {
-        if (!buildingCounts.ContainsKey(type)) buildingCounts[type] = 0;
-        buildingCounts[type]++;
-
-        UpdateCostUI(type); // Đẩy giá mới (+10%) lên UI ngay lập tức
-        JsonDataManager.RegisterStat_BuildingConstructed();
-        Debug.Log($"[ConstructionManager] ✅ Đã xây {type} thành công!");
-    }
-}
     // ================= PUBLIC – SPAWN =================
 
     public BuildingCtrl SpawnBuilding(BuildingType type, Vector3 position, Quaternion rotation)
@@ -207,8 +209,8 @@ public class ConstructionManager : Singleton<ConstructionManager>
             case BuildingType.StoneMine: return stoneMinePrefab;
             case BuildingType.Kitchen: return kitchenPrefab;
             case BuildingType.FoodStorage: return foodStoragePrefab;
-            case BuildingType.StoneStorage: return stoneStoragePrefab; // MỚI BỔ SUNG
-            case BuildingType.Warehouse: return warehousePrefab;       // MỚI BỔ SUNG
+            case BuildingType.StoneStorage: return stoneStoragePrefab;
+            case BuildingType.Warehouse: return warehousePrefab;
 
             // Nhóm Phòng thủ
             case BuildingType.WatchTower: return watchTowerPrefab;

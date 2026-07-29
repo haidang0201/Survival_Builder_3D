@@ -643,6 +643,11 @@ public class UpgradeableBuilding : MonoBehaviour
             Debug.Log($"[{buildingName}] Đã hoàn tất nâng cấp lên Level {CurrentLevel + 1}");
             OnLevelChanged?.Invoke();
         }
+        // Đổi từ OnTowerUpgraded() sang truyền chính nó vào OnBuildingUpgraded
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnBuildingUpgraded(this);
+        }
     }
 
     [ContextMenu("🔄 Reset level về 1")]
@@ -811,6 +816,13 @@ public class ClickHelper : MonoBehaviour
         {
             ui.OpenUI();
         }
+        // =========================================================
+    if (CampaignTutorialManager.Ins != null)
+    {
+        // Gọi hàm thông báo của bạn (Ví dụ: OnClickTownHall hoặc OnTownHallSelected)
+        CampaignTutorialManager.Ins.OnClickTownHall(); 
+    }
+    // =========================================================
     }
 }
 
