@@ -284,32 +284,25 @@ public static class BuildingProgressBridge
 
 public static class UIManagerExtensions
 {
-    public static void UpdateUpgradeProgress(this UIManager uiManager, float currentTimer, float totalDuration)
+    // Cập nhật tiến độ chỉ cho 1 công trình chỉ định
+    public static void UpdateUpgradeProgress(this UIManager uiManager, UpgradeableBuilding building, float currentTimer, float totalDuration)
     {
-        var allBuildings = Object.FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
-        foreach (var building in allBuildings)
+        if (building == null) return;
+        var targetUI = BuildingProgressBridge.GetUI(building);
+        if (targetUI != null)
         {
-            if (building.IsUpgrading)
-            {
-                var targetUI = BuildingProgressBridge.GetUI(building);
-                if (targetUI != null)
-                {
-                    targetUI.UpdateProgress(currentTimer, totalDuration);
-                }
-            }
+            targetUI.UpdateProgress(currentTimer, totalDuration);
         }
     }
 
-    public static void HideUpgradeProgress(this UIManager uiManager)
+    // Ẩn tiến độ chỉ cho 1 công trình chỉ định
+    public static void HideUpgradeProgress(this UIManager uiManager, UpgradeableBuilding building)
     {
-        var allUIs = Object.FindObjectsByType<BuildingProgressBarUI>(FindObjectsSortMode.None);
-        foreach (var ui in allUIs)
+        if (building == null) return;
+        var targetUI = BuildingProgressBridge.GetUI(building);
+        if (targetUI != null)
         {
-            if (ui.upgradeProgressBar != null && ui.upgradeProgressBar.gameObject.activeSelf)
-            {
-                ui.HandleCompleteSequence();
-            }
-            ui.HideProgress();
+            targetUI.HandleCompleteSequence();
         }
     }
 }

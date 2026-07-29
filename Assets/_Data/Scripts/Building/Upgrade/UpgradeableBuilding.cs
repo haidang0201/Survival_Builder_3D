@@ -422,71 +422,72 @@ public class UpgradeableBuilding : MonoBehaviour
     }
 
     private IEnumerator UpgradeRoutine(float duration)
+{
+    IsUpgrading = true;
+    OnUpgradeStart?.Invoke();
+    float timer = 0f;
+
+    // Vòng lặp đếm ngược thời gian nâng cấp theo thời gian thực
+    while (timer < duration)
     {
-        IsUpgrading = true;
-        OnUpgradeStart?.Invoke();
-        float timer = 0f;
+        timer += Time.deltaTime;
 
-        // Nếu panel nâng cấp của nhà này đang mở trên UI, hiển thị slider/text thời gian
-        if (UIManager.Ins != null)
+        // CHỈ CẬP NHẬT SLIDER CỦA CHÍNH CÔNG TRÌNH NÀY
+        var targetProgressUI = BuildingProgressBridge.GetUI(this);
+        if (targetProgressUI != null)
         {
-            UIManager.Ins.UpdateUpgradeProgress(0f, duration);
+            targetProgressUI.UpdateProgress(timer, duration);
         }
 
-        // Vòng lặp đếm ngược thời gian nâng cấp theo thời gian thực
-        while (timer < duration)
-        {
-            timer += Time.deltaTime;
+        yield return null;
+    }
 
-            // Cập nhật giá trị hiển thị lên UI liên tục mỗi khung hình
-            if (UIManager.Ins != null)
-            {
-                UIManager.Ins.UpdateUpgradeProgress(timer, duration);
-            }
-            yield return null;
+    // ====================================================================
+    // --- PHÂN TÁCH LUỒNG XỬ LÝ KHI HẾT THỜI GIAN ---
+    // ====================================================================
+    if (isInitialBuildNeeded)
+    {
+        isInitialBuildNeeded = false; // TẮT TÍCH VĨNH VIỄN: Xác nhận đã xây xong!
+        IsUpgrading = false;
+        OnUpgradeComplete?.Invoke();
+        OnLevelChanged?.Invoke();
+
+        // Kích hoạt hiệu ứng hoàn thành (Aura quét dọc) CHỈ CHO CÔNG TRÌNH NÀY
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI != null)
+        {
+            targetUI.HandleCompleteSequence();
         }
 
-        // ====================================================================
-        // --- PHÂN TÁCH LUỒNG XỬ LÝ KHI HẾT THỜI GIAN (PENTA DEV - VŨ) ---
-        // ====================================================================
-        if (isInitialBuildNeeded)
+        var buildingCtrl = GetComponent<BuildingCtrl>();
+        if (buildingCtrl != null)
         {
-            isInitialBuildNeeded = false; // TẮT TÍCH VĨNH VIỄN: Xác nhận đã xây dựng xong!
-            IsUpgrading = false;
-            OnUpgradeComplete?.Invoke();
-            OnLevelChanged?.Invoke();
-
-            // Kích hoạt hiệu ứng hoàn thành (Aura quét dọc thân nhà) từ BuildingProgressBarUI
-            var targetUI = BuildingProgressBridge.GetUI(this);
-            if (targetUI != null)
-            {
-                targetUI.HandleCompleteSequence();
-            }
-
-            // >>> THÊM MỚI: Báo cho BuildingCtrl biết công trình đã xây xong thật sự
-            var buildingCtrl = GetComponent<BuildingCtrl>();
-            if (buildingCtrl != null)
-            {
-                buildingCtrl.AddProgress(1f);
-            }
-
-            Debug.Log($"[Penta Dev] 🏠 Công trình {buildingName} đã hoàn thành xây dựng lần đầu tiên thành công!");
+            buildingCtrl.AddProgress(1f);
         }
-        else
-        {
-            IsUpgrading = false;
-            OnUpgradeComplete?.Invoke();
-            ExecuteLevelUp();
-        }
-        // ====================================================================
 
-        // TẮT TEXT VÀ SLIDER THỜI GIAN KHI NÂNG CẤP/XÂY DỰNG XONG
-        if (UIManager.Ins != null)
+        Debug.Log($"[Penta Dev] 🏠 Công trình {buildingName} đã hoàn thành xây dựng!");
+    }
+    else
+    {
+        IsUpgrading = false;
+        OnUpgradeComplete?.Invoke();
+        ExecuteLevelUp();
+
+        // Kích hoạt hiệu ứng hoàn thành nâng cấp CHỈ CHO CÔNG TRÌNH NÀY
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI != null)
         {
-            UIManager.Ins.HideUpgradeProgress();
-            UIManager.Ins.RefreshUpgradePanel(this);
+            targetUI.HandleCompleteSequence();
         }
     }
+    // ====================================================================
+
+    // Cập nhật lại Panel UI Nâng Cấp (nếu đang chọn công trình này)
+    if (UIManager.Ins != null)
+    {
+        UIManager.Ins.RefreshUpgradePanel(this);
+    }
+}
 
 
 

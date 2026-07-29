@@ -92,6 +92,10 @@ MonoBehaviour:
   kitchenLevels: []
   houseLevels: []
   buildingIcons: []
+  ruinedVisualModel: {fileID: 0}
+  repairWoodCost: 30
+  repairStoneCost: 30
+  repairDuration: 5
 --- !u!65 &3720063259828420182
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -168,7 +172,7 @@ PrefabInstance:
     - target: {fileID: 5200285458254245573, guid: 33bacb457992928428909991f4a7df0c, type: 3}
       propertyPath: m_fontAsset
       value: 
-      objectReference: {fileID: 11400000, guid: 24f7aa27080e7724989236c9819aa2fe, type: 2}
+      objectReference: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     - target: {fileID: 5200285458254245573, guid: 33bacb457992928428909991f4a7df0c, type: 3}
       propertyPath: m_fontColor.b
       value: 0.627451
@@ -229,8 +233,11 @@ MonoBehaviour:
   completionAuraVFX: {fileID: 3592912916747750065}
   upgradeAudioSources: []
   placementAudioSources: []
+  completionAudioSources: []
   upgradeLoopSFXPool: []
   placementSFX: {fileID: 0}
+  completionSFX: {fileID: 0}
+  maxConstructionSoundDuration: 4
 --- !u!4 &4504914460801109736 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1256211159982899511, guid: 33bacb457992928428909991f4a7df0c, type: 3}
