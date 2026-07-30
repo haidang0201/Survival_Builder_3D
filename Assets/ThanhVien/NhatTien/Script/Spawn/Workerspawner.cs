@@ -83,7 +83,7 @@ public class WorkerSpawner : MonoBehaviour
         Vector3 spawnPos = ResolveSpawnPosition(originPosition, scatterRadius);
 
         GameObject worker = Instantiate(prefab, spawnPos, Quaternion.identity);
-        SetupWorker(worker, originPosition);
+        SetupWorker(worker, type, originPosition);
         
         if (WorkerManager.Ins != null)
         {
@@ -134,9 +134,9 @@ public class WorkerSpawner : MonoBehaviour
     /// <summary>
     /// Đây là phần cốt lõi: tự động nối toàn bộ reference giữa các component
     /// trên worker vừa spawn, thay cho việc bạn phải kéo tay trong Inspector.
-    /// Hỗ trợ đầy đủ 3 loại worker: Tree (CarryItem), Rice (CarryRice), Stone (CarryStone).
+    /// Hỗ trợ đầy đủ 3 loại worker: Tree (CarryItem), Rice (CarryRice), Stone (CarryStone), Carrier.
     /// </summary>
-    void SetupWorker(GameObject worker, Vector3 nearSearchOrigin)
+    void SetupWorker(GameObject worker, WorkerType type, Vector3 nearSearchOrigin)
     {
         NavMeshAgent agent = worker.GetComponent<NavMeshAgent>();
         if (agent == null) agent = worker.AddComponent<NavMeshAgent>();
@@ -220,6 +220,11 @@ public class WorkerSpawner : MonoBehaviour
         // WORKER CARRIER
         // =====================================================================
         WorkerCarrier carrier = worker.GetComponent<WorkerCarrier>();
+        if (carrier == null && type == WorkerType.Carrier) 
+        {
+            carrier = worker.AddComponent<WorkerCarrier>();
+        }
+        
         if (carrier != null)
         {
             if (carrier.handPoint == null) carrier.handPoint = handPoint;
