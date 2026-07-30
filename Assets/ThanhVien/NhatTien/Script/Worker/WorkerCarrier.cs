@@ -58,6 +58,33 @@ public class WorkerCarrier : MonoBehaviour
 
     // Storage/warehouse cụ thể (kho + điểm giao hàng) được chọn động theo khoảng cách
     private Transform    targetStoragePoint;   // = DeliveryPoint của kho tạm đã chọn
+
+    public bool IsCarrying() => isCarrying;
+    public ResourceType GetCarriedType() => carriedType;
+    public int GetCarriedAmount() => carriedAmount;
+
+    public void PickUpFakeItemForLoad(ResourceType type, int amount)
+    {
+        if (type == ResourceType.None || amount <= 0) return;
+
+        isCarrying = true;
+        carriedType = type;
+        carriedAmount = amount;
+
+        // Sinh visual ảo tuỳ loại
+        string itemName = "FakeItem_Loaded";
+        if (type == ResourceType.Wood) itemName = "FakeWood_Loaded";
+        else if (type == ResourceType.Rice) itemName = "FakeRice_Loaded";
+        else if (type == ResourceType.Stone) itemName = "FakeStone_Loaded";
+
+        GameObject fakeItem = new GameObject(itemName);
+        fakeItem.transform.SetParent(handPoint);
+        fakeItem.transform.localPosition = Vector3.zero;
+        
+        currentVisualObject = fakeItem;
+        currentState = State.MoveToWarehouse;
+        if (animator != null) animator.SetBool(carryingParam, true);
+    }
     private object        targetStorageComponent; // WoodStorage/RiceStorage/StoneStorage tương ứng, dùng object vì 3 kiểu khác nhau
     private ResourceType targetResourceType = ResourceType.None;
 

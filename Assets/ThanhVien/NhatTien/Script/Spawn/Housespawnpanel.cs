@@ -39,6 +39,7 @@ public class HouseSpawnPanel : MonoBehaviour
     public UnityEngine.UI.Button treeButton;
     public UnityEngine.UI.Button riceButton;
     public UnityEngine.UI.Button stoneButton;
+    public UnityEngine.UI.Button carrierButton;
 
     [Header("Options")]
     [Tooltip("Nếu bật, bấm ra ngoài panel (chuột trái ở nơi khác) sẽ tự đóng panel.")]
@@ -51,6 +52,7 @@ public class HouseSpawnPanel : MonoBehaviour
         if (treeButton != null) treeButton.onClick.AddListener(() => SpawnAndClose(WorkerSpawner.WorkerType.Tree));
         if (riceButton != null) riceButton.onClick.AddListener(() => SpawnAndClose(WorkerSpawner.WorkerType.Rice));
         if (stoneButton != null) stoneButton.onClick.AddListener(() => SpawnAndClose(WorkerSpawner.WorkerType.Stone));
+        if (carrierButton != null) carrierButton.onClick.AddListener(() => SpawnAndClose(WorkerSpawner.WorkerType.Carrier));
 
         if (spawnPanel != null) spawnPanel.SetActive(false);
     }

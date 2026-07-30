@@ -31,12 +31,13 @@ public class WorkerSpawner : MonoBehaviour
 {
     public static WorkerSpawner Instance { get; private set; }
 
-    public enum WorkerType { Tree, Rice, Stone }
+    public enum WorkerType { Tree, Rice, Stone, Carrier }
 
     [Header("Prefabs theo loại tài nguyên")]
     public GameObject treeWorkerPrefab;
     public GameObject riceWorkerPrefab;
     public GameObject stoneWorkerPrefab;
+    public GameObject carrierWorkerPrefab;
 
     [Header("Auto-Setup Options")]
     [Tooltip("Tên child Transform dùng làm điểm cầm đồ trên tay. Phải khớp tên trong prefab.")]
@@ -103,6 +104,7 @@ public class WorkerSpawner : MonoBehaviour
             case WorkerType.Tree: return treeWorkerPrefab;
             case WorkerType.Rice: return riceWorkerPrefab;
             case WorkerType.Stone: return stoneWorkerPrefab;
+            case WorkerType.Carrier: return carrierWorkerPrefab;
             default: return null;
         }
     }
@@ -212,6 +214,17 @@ public class WorkerSpawner : MonoBehaviour
             findStone.carrySystem = carryStone;
             findStone.animator    = animator;
             findStone.stamina     = stamina;
+        }
+
+        // =====================================================================
+        // WORKER CARRIER
+        // =====================================================================
+        WorkerCarrier carrier = worker.GetComponent<WorkerCarrier>();
+        if (carrier != null)
+        {
+            if (carrier.handPoint == null) carrier.handPoint = handPoint;
+            carrier.agent = agent;
+            carrier.animator = animator;
         }
 
         // --- WorkerEnemyFlee (tùy chọn) ---
