@@ -12,10 +12,15 @@ public class Tree : MonoBehaviour
     [Header("VFX")]
     public ParticleSystem chipVFX;
 
+    [Header("Respawn Settings")]
+    [Tooltip("Thời gian (giây) cây hồi sinh sau khi bị đốn. 0 = không hồi sinh.")]
+    public float respawnDelay = 60f;
+
     private int currentHealth;
     private bool isOccupied = false;
     private bool isFalling  = false; // Chặn TakeDamage kép trong lúc animation đổ cây
     private TreeVisual treeVisual;
+    private Coroutine respawnRoutine;
 
     void Awake()
     {
@@ -73,14 +78,54 @@ public class Tree : MonoBehaviour
 
         if (treeVisual != null)
         {
-            treeVisual.PlayFall(onFallComplete: () => {
-                Debug.Log($"[Tree] '{name}' tắt sau khi đổ xong.");
-                gameObject.SetActive(false);
+            treeVisual.PlayFall(onFallComplete: () =>
+            {
+                if (respawnDelay <= 0f)
+                {
+                    gameObject.SetActive(false);
+                }
+                else
+                {
+                    if (respawnRoutine != null) StopCoroutine(respawnRoutine);
+                    respawnRoutine = StartCoroutine(RespawnRoutine());
+                }
             });
         }
-        else gameObject.SetActive(false);
+        else
+        {
+            if (respawnDelay <= 0f) gameObject.SetActive(false);
+            else
+            {
+                if (respawnRoutine != null) StopCoroutine(respawnRoutine);
+                respawnRoutine = StartCoroutine(RespawnRoutine());
+            }
+        }
 
         return woods;
+    }
+
+    System.Collections.IEnumerator RespawnRoutine()
+    {
+        // Ẩn cây + xóa khỏi Registry (không SetActive(false) để coroutine vẫn chạy)
+        SetVisible(false);
+        WorkerFindTree.Registry.Remove(this);
+
+        yield return new WaitForSeconds(respawnDelay);
+
+        // Hồi sinh: reset visual, hả thả, đăng ký lại
+        if (treeVisual != null) treeVisual.ResetState();
+        currentHealth = maxHealth;
+        isFalling     = false;
+        isOccupied    = false;
+        SetVisible(true);
+        WorkerFindTree.Registry.Add(this);
+        respawnRoutine = null;
+    }
+
+    void SetVisible(bool visible)
+    {
+        foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = visible;
+        foreach (var c in GetComponentsInChildren<Collider>())  c.enabled = visible;
     }
 
     WoodPickup[] DropWood()

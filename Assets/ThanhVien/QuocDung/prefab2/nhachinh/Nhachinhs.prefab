@@ -426,6 +426,11 @@ GameObject:
   - component: {fileID: 1416547540489060265}
   - component: {fileID: 4103236681783380211}
   - component: {fileID: 1354611932151271836}
+  - component: {fileID: 934107145307947931}
+  - component: {fileID: 7373664025301835882}
+  - component: {fileID: 2383560159557772340}
+  - component: {fileID: 6377864713971536801}
+  - component: {fileID: 7272729215718265818}
   m_Layer: 11
   m_Name: Nhachinhs
   m_TagString: Tower
@@ -453,6 +458,7 @@ Transform:
   - {fileID: 433069693629743183}
   - {fileID: 6559602050736200665}
   - {fileID: 3723316835490067856}
+  - {fileID: 8245404343150232237}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7667816468407034924
@@ -467,7 +473,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cef52e85d6b194b4aaa1a0fdaf4ee47f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BuildingCtrl
-  buildingType: 0
+  buildingType: 1
   door: {fileID: 0}
   buildProgress: 0
   isOccupied: 0
@@ -527,6 +533,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuildingUpgradeUI
   localUpgradePanel: {fileID: 7085631085649874094}
   panelRectTransform: {fileID: 224831052669048365}
+  lockUIRotation: 1
+  faceCamera: 1
+  keepConstantSize: 1
+  baseDistance: 15
+  baseOrthographicSize: 5
   autoArrangeButtons: 1
   ringRadius: 300
   startAngle: 45
@@ -558,7 +569,96 @@ MonoBehaviour:
   hpBarHeightOffset: 4
   hpBarSize: {x: 2, y: 0.25}
   hpBarColor: {r: 1, g: 0, b: 0, a: 1}
-  hideHpBarWhenFull: 1
+  hideHpBarWhenFull: 0
+--- !u!114 &934107145307947931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1741918065910238254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 035815e59a25e2a449b6393ff7722cfd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HouseSpawnPanel
+  house: {fileID: 2383560159557772340}
+  spawnPanel: {fileID: 0}
+  treeButton: {fileID: 0}
+  riceButton: {fileID: 0}
+  stoneButton: {fileID: 0}
+  closeOnClickOutside: 1
+--- !u!65 &7373664025301835882
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1741918065910238254}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8.296323, y: 5.955358, z: 8.296122}
+  m_Center: {x: 3.648161, y: 2.477679, z: 1.6439631}
+--- !u!114 &2383560159557772340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1741918065910238254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c57f2430761d6684cae2052bca1e297f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::House
+  maxCapacity: 4
+  gatherSpeed: 2
+  entrancePoint: {fileID: 8245404343150232237}
+  restSlots: []
+--- !u!114 &6377864713971536801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1741918065910238254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce1a42ebe0ab4641a8c30ac2b6cc529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingNavMeshObstacle
+  overrideSize: 1
+  manualSize: {x: 9, y: 3, z: 4}
+  manualCenter: {x: 3.37, y: 1.01, z: 0.6}
+  carve: 1
+  carveOnlyStationary: 0.5
+  movementThreshold: 0.1
+--- !u!208 &7272729215718265818
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1741918065910238254}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
 --- !u!1 &2477270431285706313
 GameObject:
   m_ObjectHideFlags: 0
@@ -1330,6 +1430,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &7026453673691767817
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8245404343150232237}
+  m_Layer: 11
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8245404343150232237
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7026453673691767817}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.66, y: 0, z: -3.13}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3224473461937369972}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7043219945293925801
 GameObject:
   m_ObjectHideFlags: 0
@@ -2737,6 +2868,18 @@ PrefabInstance:
       value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 1281597053212983587, guid: 1eaf5873381dd98429762c3931a56f4d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1281597053212983587, guid: 1eaf5873381dd98429762c3931a56f4d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1281597053212983587, guid: 1eaf5873381dd98429762c3931a56f4d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1281597053212983587, guid: 1eaf5873381dd98429762c3931a56f4d, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -3637,7 +3780,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5024779341042145300, guid: 491ce2fc266e38440a8ee84de2878263, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -2
       objectReference: {fileID: 0}
     - target: {fileID: 5024779341042145300, guid: 491ce2fc266e38440a8ee84de2878263, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3645,7 +3788,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5024779341042145300, guid: 491ce2fc266e38440a8ee84de2878263, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.02
+      value: -3.2
       objectReference: {fileID: 0}
     - target: {fileID: 5024779341042145300, guid: 491ce2fc266e38440a8ee84de2878263, type: 3}
       propertyPath: m_LocalRotation.w
@@ -5200,6 +5343,18 @@ PrefabInstance:
     - target: {fileID: 8497564339903996647, guid: fb5e286f81274bd4487e1e4e33aed37d, type: 3}
       propertyPath: m_Layer
       value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 8532260329986002673, guid: fb5e286f81274bd4487e1e4e33aed37d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8532260329986002673, guid: fb5e286f81274bd4487e1e4e33aed37d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8532260329986002673, guid: fb5e286f81274bd4487e1e4e33aed37d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.7
       objectReference: {fileID: 0}
     - target: {fileID: 8532260329986002673, guid: fb5e286f81274bd4487e1e4e33aed37d, type: 3}
       propertyPath: m_LocalPosition.x

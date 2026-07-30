@@ -134,8 +134,17 @@ public class WorkerFindRice : MonoBehaviour
     {
         if (!isHeadingToDeposit)
         {
-            isHeadingToDeposit = true;
-            carrySystem.MoveToStorage(); 
+            bool moved = carrySystem.MoveToStorage();
+            if (moved)
+            {
+                isHeadingToDeposit = true;
+            }
+            else
+            {
+                // Chưa có kho → đứng yên chờ, thử lại sau
+                if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+            }
+            return;
         }
 
         bool arrived = !agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.5f;
@@ -143,7 +152,7 @@ public class WorkerFindRice : MonoBehaviour
         {
             agent.isStopped = true;
             depositRetryTimer -= Time.deltaTime;
-            totalWaitTimer += Time.deltaTime; 
+            totalWaitTimer += Time.deltaTime;
 
             if (depositRetryTimer <= 0f)
             {
@@ -155,15 +164,14 @@ public class WorkerFindRice : MonoBehaviour
                 }
                 else
                 {
-                    depositRetryTimer = 2.5f; 
+                    depositRetryTimer = 2.5f;
                     if (totalWaitTimer >= 15f)
                     {
+                        // Kho đầy hoặc mất — tìm kho khác, KHÔNG drop item
                         totalWaitTimer = 0f;
                         depositRetryTimer = 0f;
                         isHeadingToDeposit = false;
-                        if (agent.isOnNavMesh) agent.isStopped = false;
-                        carrySystem.enabled = false;
-                        carrySystem.enabled = true;
+                        if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
                     }
                 }
             }
