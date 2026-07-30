@@ -287,7 +287,9 @@ public class BuildingSystem : Singleton<BuildingSystem>
             sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
             savedAtUnix = System.DateTimeOffset.Now.ToUnixTimeSeconds(),
             buildings = states,
-            resources = new System.Collections.Generic.List<JsonDataManager.ResourceData>()
+            resources = new System.Collections.Generic.List<JsonDataManager.ResourceData>(),
+            workers = WorkerManager.Ins != null ? WorkerManager.Ins.GetAllStates() : new System.Collections.Generic.List<WorkerState>(),
+            resourceEntities = EnvironmentResourceManager.Ins != null ? EnvironmentResourceManager.Ins.GetAllStates() : new System.Collections.Generic.List<ResourceEntityState>()
         };
 
         bool result = JsonDataManager.Ins.SaveGame(slotIndex, saveData);
@@ -309,6 +311,17 @@ public class BuildingSystem : Singleton<BuildingSystem>
         }
 
         BuildingManager.Ins.LoadStates(saveData.buildings);
+        
+        if (WorkerManager.Ins != null)
+        {
+            WorkerManager.Ins.LoadStates(saveData.workers);
+        }
+
+        if (EnvironmentResourceManager.Ins != null)
+        {
+            EnvironmentResourceManager.Ins.LoadStates(saveData.resourceEntities);
+        }
+
         Debug.Log($"[BuildingSystem] ✅ Đã phục hồi {saveData.buildings.Count} công trình từ Slot {slotIndex}.");
     }
 

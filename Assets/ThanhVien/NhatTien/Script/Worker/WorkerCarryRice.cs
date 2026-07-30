@@ -106,6 +106,14 @@ public class WorkerCarryRice : MonoBehaviour
 
     public bool IsCarrying() => currentRice != null;
 
+    public void PickUpFakeItemForLoad()
+    {
+        GameObject fakeItem = new GameObject("FakeRice_Loaded");
+        fakeItem.transform.SetParent(handPoint);
+        fakeItem.transform.localPosition = Vector3.zero;
+        currentRice = fakeItem.AddComponent<RicePickup>();
+    }
+
     public void PickupRice(RicePickup rice)
     {
         if (rice == null || rice.IsTaken()) return;

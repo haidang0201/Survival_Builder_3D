@@ -24,8 +24,24 @@ public class Tree : MonoBehaviour
 
     void Awake()
     {
-        treeVisual = GetComponent<TreeVisual>();
+        currentHealth = maxHealth;
+        treeVisual = GetComponentInChildren<TreeVisual>();
         if (treeVisual == null) Debug.LogWarning($"[Tree] '{name}' không có TreeVisual.");
+    }
+
+    public int GetCurrentHealth() => currentHealth;
+    
+    public void SetCurrentHealth(int health)
+    {
+        currentHealth = health;
+        if (currentHealth <= 0)
+        {
+            // Cây đã bị khai thác hết trước khi save
+            SetVisible(false);
+            WorkerFindTree.Registry.Remove(this);
+            // Có thể khởi động lại coroutine hồi sinh nếu muốn, 
+            // nhưng tạm thời ta có thể set nó ẩn đi nếu hp <= 0.
+        }
     }
 
     void OnEnable()

@@ -106,6 +106,14 @@ public class WorkerCarryStone : MonoBehaviour
 
     public bool IsCarrying() => currentStone != null;
 
+    public void PickUpFakeItemForLoad()
+    {
+        GameObject fakeItem = new GameObject("FakeStone_Loaded");
+        fakeItem.transform.SetParent(handPoint);
+        fakeItem.transform.localPosition = Vector3.zero;
+        currentStone = fakeItem.AddComponent<StonePickup>();
+    }
+
     public void PickupStone(StonePickup stone)
     {
         if (stone == null || stone.IsTaken()) return;

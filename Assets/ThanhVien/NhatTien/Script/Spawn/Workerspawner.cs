@@ -83,6 +83,16 @@ public class WorkerSpawner : MonoBehaviour
 
         GameObject worker = Instantiate(prefab, spawnPos, Quaternion.identity);
         SetupWorker(worker, originPosition);
+        
+        if (WorkerManager.Ins != null)
+        {
+            WorkerManager.Ins.RegisterWorker(worker, type.ToString());
+        }
+
+        // Tự động xóa khỏi Manager khi worker bị Destroy (vd: về nhà hoặc bị quái giết)
+        var destroyer = worker.AddComponent<WorkerDestroyNotifier>();
+        destroyer.workerType = type.ToString();
+
         return worker;
     }
 
@@ -274,5 +284,28 @@ public class WorkerSpawner : MonoBehaviour
         }
         return null;
     }
+}
 
+public class WorkerDestroyNotifier : MonoBehaviour
+{
+    public string workerType;
+    private bool isQuitting = false;
+
+    void OnApplicationQuit()
+    {
+        isQuitting = true;
+    }
+
+    void OnDestroy()
+    {
+        if (isQuitting) return;
+
+        // Dùng FindObjectOfType thay vì .Ins để tránh việc class Singleton 
+        // tự động đẻ ra 1 object rác lúc game đang tắt.
+        var manager = FindObjectOfType<WorkerManager>();
+        if (manager != null)
+        {
+            manager.UnregisterWorker(gameObject);
+        }
+    }
 }

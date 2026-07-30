@@ -31,4 +31,29 @@ public class GameSaveData
 
     // ── TÀI NGUYÊN ──────────────────────────────
     public List<ResourceData> resources = new List<ResourceData>();
+
+    // ── AI WORKER ───────────────────────────────
+    public List<WorkerState> workers = new List<WorkerState>();
+
+    // ── NODE TÀI NGUYÊN TRÊN BẢN ĐỒ ─────────────
+    public List<ResourceEntityState> resourceEntities = new List<ResourceEntityState>();
+}
+
+[Serializable]
+public class WorkerState
+{
+    public string workerType; // "Wood", "Stone", "Rice"
+    public SerializableVector3 position;
+    public SerializableVector3 rotation;
+    public bool isCarryingItem; 
+    public float totalWaitTimer; // Thời gian chờ nếu kẹt kho
+}
+
+[Serializable]
+public class ResourceEntityState
+{
+    public SerializableVector3 position; // Dùng toạ độ làm ID định danh
+    public string resourceType;          // "Tree", "Stone", "Rice"
+    public int currentHealth;
+    public bool isVisible;               // Trạng thái đã bị khai thác hết và đang chờ hồi sinh chưa
 }

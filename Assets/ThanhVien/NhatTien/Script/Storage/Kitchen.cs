@@ -52,23 +52,31 @@ public class Kitchen : MonoBehaviour
 
     public int  WorkerCount      => workersInside.Count;
     public bool IsFull           => workersInside.Count >= maxCapacity;
-    public bool HasFood          => warehouseStorage != null && warehouseStorage.CurrentRice >= foodPerWorkerRest;
+    public bool HasFood          => GetWarehouse() != null && GetWarehouse().CurrentRice >= foodPerWorkerRest;
     public Vector3 EntrancePosition => entrancePoint != null ? entrancePoint.position : transform.position;
 
-    void Start()
+    private WarehouseStorage GetWarehouse()
     {
         if (warehouseStorage == null)
         {
-            GameObject wh = GameObject.FindWithTag("Warehouse");
-            if (wh != null)
-                warehouseStorage = wh.GetComponent<WarehouseStorage>()
-                                ?? wh.GetComponentInChildren<WarehouseStorage>();
+            if (BuildingManager.Ins != null)
+            {
+                foreach (var b in BuildingManager.Ins.Buildings)
+                {
+                    if (b.buildingType == BuildingType.Warehouse)
+                    {
+                        warehouseStorage = b.GetComponent<WarehouseStorage>() ?? b.GetComponentInChildren<WarehouseStorage>();
+                        if (warehouseStorage != null) break;
+                    }
+                }
+            }
         }
+        return warehouseStorage;
+    }
 
-        // FIX: log lỗi rõ ràng nếu vẫn không tìm thấy
-        if (warehouseStorage == null)
-            Debug.LogError($"[Kitchen] '{name}': Không tìm thấy WarehouseStorage! " +
-                           $"Gán Tag 'Warehouse' cho kho chính.");
+    void Start()
+    {
+        // KHÔNG tìm warehouse ngay trong Start nữa vì BuildingCtrl có thể chưa kịp đăng ký vào BuildingManager
     }
 
     /// <summary>
@@ -137,7 +145,7 @@ public class Kitchen : MonoBehaviour
 
         if (HasFood)
         {
-            warehouseStorage.ConsumeRice(foodPerWorkerRest);
+            GetWarehouse().ConsumeRice(foodPerWorkerRest);
             consumedFood = true;
             Debug.Log($"[Kitchen] {worker.name} vào bếp nghỉ ngơi (đã ăn lúa). " +
                       $"Slot: {workersInside.Count}/{maxCapacity}");
@@ -145,7 +153,7 @@ public class Kitchen : MonoBehaviour
         else
         {
             Debug.Log($"[Kitchen] {worker.name} vào nhà trú ẩn nhưng nhịn đói " +
-                      $"(hồi stamina chậm). Kho lúa: 0");
+                      $"(hồi stamina chậm). Kho lúa không đủ.");
         }
 
         return true;

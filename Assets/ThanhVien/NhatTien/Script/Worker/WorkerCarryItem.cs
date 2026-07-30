@@ -112,6 +112,15 @@ public class WorkerCarryItem : MonoBehaviour
 
     public bool IsCarrying() => currentWood != null;
 
+    public void PickUpFakeItemForLoad()
+    {
+        // Khi load game, sinh ngay một cục tài nguyên giả trên tay để mang về nộp
+        GameObject fakeItem = new GameObject("FakeWood_Loaded");
+        fakeItem.transform.SetParent(handPoint);
+        fakeItem.transform.localPosition = Vector3.zero;
+        currentWood = fakeItem.AddComponent<WoodPickup>();
+    }
+
     public void PickupWood(WoodPickup wood)
     {
         if (wood == null || wood.IsTaken()) return;
@@ -163,7 +172,7 @@ public class WorkerCarryItem : MonoBehaviour
 
         ObjectPool pool = currentWood.pool;
         if (pool != null) pool.ReturnObject(currentWood.gameObject);
-        else currentWood.gameObject.SetActive(false);
+        else Destroy(currentWood.gameObject);
 
         currentWood = null;
         woodStorage.AddWood(1);

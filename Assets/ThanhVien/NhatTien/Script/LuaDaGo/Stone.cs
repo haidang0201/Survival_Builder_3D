@@ -27,6 +27,18 @@ public class Stone : MonoBehaviour
         originalScale = transform.localScale;
     }
 
+    public int GetCurrentHealth() => currentHealth;
+    
+    public void SetCurrentHealth(int health)
+    {
+        currentHealth = health;
+        if (currentHealth <= 0)
+        {
+            SetVisible(false);
+            Registry.Remove(this);
+        }
+    }
+
     void OnEnable()
     {
         currentHealth = maxHealth;

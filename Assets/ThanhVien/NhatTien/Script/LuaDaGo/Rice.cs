@@ -24,6 +24,18 @@ public class Rice : MonoBehaviour
         WorkerFindRice.Registry.Add(this);
     }
 
+    public int GetCurrentHealth() => currentHealth;
+    
+    public void SetCurrentHealth(int health)
+    {
+        currentHealth = health;
+        if (currentHealth <= 0)
+        {
+            SetVisible(false);
+            WorkerFindRice.Registry.Remove(this);
+        }
+    }
+
     void OnDisable()
     {
         WorkerFindRice.Registry.Remove(this);
