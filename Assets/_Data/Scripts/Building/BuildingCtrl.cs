@@ -185,10 +185,9 @@ public class BuildingCtrl : MonoBehaviour
 
     private void OnBuildComplete()
     {
-        // Đổi lời gọi cũ sang gọi CampaignTutorialManager
         if (buildingType == BuildingType.WatchTower)
         {
-            CampaignTutorialManager.Ins?.OnWatchTowerPlaced();
+            CampaignTutorialManager.Ins?.OnDefenseBuildingPlaced(buildingType);
         }
         
         if (buildingType == BuildingType.WoodCutter || buildingType == BuildingType.StoneStorage)
