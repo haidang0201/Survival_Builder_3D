@@ -15,6 +15,9 @@ public class NPCDialogueUI : MonoBehaviour
 {
     public static NPCDialogueUI Ins { get; private set; }
 
+    // 🛠️ THÊM PROPERTY NÀY ĐỂ KÍCH HOẠT CHECK TRẠNG THÁI CHO TUTORIAL MANAGER
+    public bool IsDialogueActive => dialoguePanel != null && dialoguePanel.activeInHierarchy;
+
     [Header("UI Elements")]
     [SerializeField] private GameObject dialoguePanel;
     [SerializeField] private Image avatarImage;
@@ -44,6 +47,12 @@ public class NPCDialogueUI : MonoBehaviour
 
     public void ShowDialogueSequence(DialogueData[] dialogues, System.Action onComplete = null)
     {
+        if (dialoguePanel == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
         if (dialogues == null || dialogues.Length == 0)
         {
             onComplete?.Invoke();
@@ -64,14 +73,14 @@ public class NPCDialogueUI : MonoBehaviour
     private void DisplayLine()
     {
         DialogueData line = currentDialogues[currentIndex];
-        speakerNameText.text = line.speakerName;
+        if (speakerNameText != null) speakerNameText.text = line.speakerName;
         
-        if (line.speakerAvatar != null)
+        if (line.speakerAvatar != null && avatarImage != null)
         {
             avatarImage.gameObject.SetActive(true);
             avatarImage.sprite = line.speakerAvatar;
         }
-        else
+        else if (avatarImage != null)
         {
             avatarImage.gameObject.SetActive(false);
         }
@@ -83,11 +92,11 @@ public class NPCDialogueUI : MonoBehaviour
     private IEnumerator TypeTextRoutine(string text)
     {
         isTyping = true;
-        dialogueText.text = "";
+        if (dialogueText != null) dialogueText.text = "";
 
         foreach (char c in text.ToCharArray())
         {
-            dialogueText.text += c;
+            if (dialogueText != null) dialogueText.text += c;
             // Dùng WaitForSecondsRealtime vì game đang ở Time.timeScale = 0
             yield return new WaitForSecondsRealtime(typingSpeed);
         }
@@ -100,7 +109,7 @@ public class NPCDialogueUI : MonoBehaviour
         if (isTyping)
         {
             if (typingCoroutine != null) StopCoroutine(typingCoroutine);
-            dialogueText.text = currentDialogues[currentIndex].message;
+            if (dialogueText != null) dialogueText.text = currentDialogues[currentIndex].message;
             isTyping = false;
             return;
         }
@@ -119,6 +128,6 @@ public class NPCDialogueUI : MonoBehaviour
 
     public void HideDialogue()
     {
-        dialoguePanel.SetActive(false);
+        if (dialoguePanel != null) dialoguePanel.SetActive(false);
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -6,12 +7,12 @@ using TMPro;
 public enum TutorialStage
 {
     None,
-    Stage1_TownHall,         // Thức tỉnh & Chọn Nhà chính
-    Stage2_CivilBuildings,   // Xây công trình dân sự (Khai thác gỗ & đá)
-    Stage3_UpgradeWood,      // Nâng cấp Kho gỗ
-    Stage4_BuildWatchTower,  // Xây Tháp canh phòng thủ
-    Stage5_EnemyWave,        // Cảnh báo & Đòn tấn công khống chế từ kẻ thù
-    Stage6_Complete          // Hoàn thành & Trao quyền (Không cần VictoryPanel)
+    Stage1_TownHall,         
+    Stage2_CivilBuildings,   
+    Stage3_UpgradeWood,      
+    Stage4_BuildWatchTower,  
+    Stage5_EnemyWave,        
+    Stage6_Complete          
 }
 
 public class CampaignTutorialManager : MonoBehaviour
@@ -22,15 +23,21 @@ public class CampaignTutorialManager : MonoBehaviour
     public TutorialStage currentStage = TutorialStage.None;
 
     [Header("=== UI HIGHLIGHT & WARNING ===")]
-    [SerializeField] private GameObject overlayDim;         // Màn che tối chặn tương tác (Không cần Pause Time)
-    [SerializeField] private GameObject handPointer;        // Bàn tay chỉ dẫn
-    [SerializeField] private Vector2 pointerOffset = new Vector2(30f, 30f);
-    [SerializeField] private Canvas tutorialCanvas;         // Canvas dùng để đặt bàn tay tutorial
-    [SerializeField] private Canvas buildShopCanvas;        // Canvas của build shop để định vị nút chính xác
-    [SerializeField] private TMP_Text hintText;             // Text hướng dẫn hiện tại
-    [SerializeField] private TMP_Text warningText;          // Text cảnh báo lính địch sắp tấn công
+    [SerializeField] private GameObject overlayDim;         
+    [SerializeField] private GameObject handPointer;        
+    [SerializeField] private RectTransform highlightRing;   
+    [SerializeField] private Vector2 pointerOffset = new Vector2(30f, -30f);
+    [SerializeField] private Canvas tutorialCanvas;         
+    [SerializeField] private Canvas buildShopCanvas;        
+    [SerializeField] private TMP_Text hintText;             
+    [SerializeField] private TMP_Text warningText;          
 
-    [Header("=== THỜI DIỂM THOẠI MARCUS TỪNG GIAI ĐOẠN ===")]
+    [Header("=== TÙY CHỈNH ANIMATION BÀN TAY ===")]
+    [SerializeField] private float pointerMoveSpeed = 12f;  
+    [SerializeField] private float bobbingSpeed = 8f;       
+    [SerializeField] private float bobbingAmount = 12f;     
+
+    [Header("=== THỜI DIỂM THOẠI MARCUS ===")]
     [SerializeField] private DialogueData[] stage1Dialogues;
     [SerializeField] private DialogueData[] stage2Dialogues;
     [SerializeField] private DialogueData[] stage3Dialogues;
@@ -38,30 +45,36 @@ public class CampaignTutorialManager : MonoBehaviour
     [SerializeField] private DialogueData[] stage5WarningDialogues;
     [SerializeField] private DialogueData[] stage6CompleteDialogues;
 
-    [Header("=== CÁC NÚT BẤM / ĐỐI TƯỢNG CẦN KHỐNG CHẾ ===")]
+    [Header("=== NÚT BẤM CẦN KHỐNG CHẾ ===")]
     [SerializeField] private Button buildMenuButton;
     [SerializeField] private Button civilianTabButton;
-    [SerializeField] private Button villaTabButton;         // Tab cho Kho Gỗ
-    [SerializeField] private Button militaryTabButton;      // Tab cho Tháp Canh
+    [SerializeField] private Button villaTabButton;         
+    [SerializeField] private Button militaryTabButton;      
     [SerializeField] private Button buildWoodCutterButton;
     [SerializeField] private Button buildStoneStorageButton;
     [SerializeField] private Button buildWatchTowerButton;
     [SerializeField] private Button upgradeBuildingButton;
 
-    [Header("=== THAM CHIẾU CÁC GAME OBJECT NGOÀI SCENE ===")]
-    [SerializeField] private Transform townHallTransform;   // Transform Nhà Chính
-    [SerializeField] private EnemySpawn enemySpawner;       // Script EnemySpawn điều khiển spawn quái
+    [Header("=== SCENE REFERENCES ===")]
+    [SerializeField] private Transform townHallTransform;   
+    [SerializeField] private EnemySpawn enemySpawner;       
 
     [Header("=== CẤU HÌNH WAVE TUTORIAL ===")]
-    [SerializeField] private int tutorialEnemyCount = 2;    // Khống chế chính xác số lượng quái spawn (Ví dụ: 2 con)
+    [SerializeField] private int tutorialEnemyCount = 2;    
     private int enemiesRemaining = 0;
 
+    private bool isPlacingBuilding = false;          
+    private bool isWaitingForConstruction = false;   
     private bool hasBuiltWoodCutter = false;
     private bool hasBuiltStoneStorage = false;
     private bool hasBuiltWatchTower = false;
     private bool hasOpenedBuildMenu = false;
     private bool hasOpenedTab = false;
+
     private RectTransform pointerRect;
+    private Vector2 targetScreenPosition;
+    private Coroutine cameraFocusCoroutine;
+    private RectTransform currentTargetUI;
 
     private void Awake()
     {
@@ -69,7 +82,15 @@ public class CampaignTutorialManager : MonoBehaviour
         else Destroy(gameObject);
 
         if (handPointer != null)
+        {
             pointerRect = handPointer.GetComponent<RectTransform>();
+            handPointer.SetActive(false); 
+        }
+
+        if (highlightRing != null)
+        {
+            highlightRing.gameObject.SetActive(false); 
+        }
 
         if (tutorialCanvas == null && handPointer != null)
             tutorialCanvas = handPointer.GetComponentInParent<Canvas>();
@@ -77,40 +98,79 @@ public class CampaignTutorialManager : MonoBehaviour
 
     private void Start()
     {
-        Time.timeScale = 1f; // 👈 Ép thời gian chạy bình thường
+        Time.timeScale = 1f;
 
-        if (buildMenuButton != null)
-            buildMenuButton.onClick.AddListener(OnBuildMenuButtonClicked);
+        HidePointer();
 
-        if (civilianTabButton != null)
-            civilianTabButton.onClick.AddListener(OnTabClicked);
+        if (buildMenuButton != null) buildMenuButton.onClick.AddListener(OnBuildMenuButtonClicked);
+        if (civilianTabButton != null) civilianTabButton.onClick.AddListener(OnTabClicked);
+        if (villaTabButton != null) villaTabButton.onClick.AddListener(OnTabClicked);
+        if (militaryTabButton != null) militaryTabButton.onClick.AddListener(OnTabClicked);
 
-        if (villaTabButton != null)
-            villaTabButton.onClick.AddListener(OnTabClicked);
-
-        if (militaryTabButton != null)
-            militaryTabButton.onClick.AddListener(OnTabClicked);
+        if (buildWoodCutterButton != null) buildWoodCutterButton.onClick.AddListener(OnStartPlacement);
+        if (buildStoneStorageButton != null) buildStoneStorageButton.onClick.AddListener(OnStartPlacement);
+        if (buildWatchTowerButton != null) buildWatchTowerButton.onClick.AddListener(OnStartPlacement);
+        if (upgradeBuildingButton != null) upgradeBuildingButton.onClick.AddListener(OnActionButtonClicked);
 
         StartStage1();
     }
 
+    private void Update()
+    {
+        UpdateHandPointerAnimation();
+        UpdateHighlightRingAnimation();
+        CheckUIFallbackState(); 
+    }
 
+    private void OnActionButtonClicked()
+    {
+        HidePointer();
+    }
+
+    private void CheckUIFallbackState()
+    {
+        if (currentStage == TutorialStage.None || currentStage == TutorialStage.Stage6_Complete) return;
+        if (NPCDialogueUI.Ins != null && NPCDialogueUI.Ins.IsDialogueActive) return; 
+        if (isPlacingBuilding || isWaitingForConstruction) return;
+
+        if (hasOpenedBuildMenu && buildShopCanvas != null && !buildShopCanvas.gameObject.activeInHierarchy)
+        {
+            if (currentStage == TutorialStage.Stage2_CivilBuildings)
+            {
+                ResetStage2Menu();
+            }
+            else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
+            {
+                ResetStage4Menu();
+            }
+        }
+
+        if (currentTargetUI != null && !currentTargetUI.gameObject.activeInHierarchy && handPointer.activeSelf)
+        {
+            if (buildMenuButton != null)
+            {
+                PointHandAtUI(buildMenuButton.transform as RectTransform);
+            }
+        }
+    }
 
     // ====================================================================
-    // GIAI ĐOẠN 1: THỨC TỈNH & GIỚI THIỆU MỤC TIÊU CỐT LÕI
+    // GIAI ĐOẠN 1
     // ====================================================================
     public void StartStage1()
     {
         currentStage = TutorialStage.Stage1_TownHall;
         LockAllInputs();
+        HidePointer();
 
-        NPCDialogueUI.Ins.ShowDialogueSequence(stage1Dialogues, () =>
+        RunDialogueSequence(stage1Dialogues, () =>
         {
             if (townHallTransform != null)
             {
+                FocusCameraOn(townHallTransform.position, 1.2f);
                 PointHandAt(townHallTransform.position);
             }
-            UpdateHint("📍 Bước 1: Nhấn vào Nhà Chính để bắt đầu tutorial và mở khóa mục tiêu đầu tiên.");
+            UpdateHint("📍 Bước 1: Nhấn vào **Nhà Chính** để mở khóa mục tiêu đầu tiên.");
         });
     }
 
@@ -118,23 +178,26 @@ public class CampaignTutorialManager : MonoBehaviour
     {
         if (currentStage != TutorialStage.Stage1_TownHall) return;
 
-        var hp = townHallTransform.GetComponent<HPTower>();
-        if (hp != null) hp.gameObject.SetActive(true);
+        if (townHallTransform != null)
+        {
+            var hp = townHallTransform.GetComponent<HPTower>();
+            if (hp != null) hp.gameObject.SetActive(true);
+        }
 
         HidePointer();
         StartStage2();
     }
 
     // ====================================================================
-    // GIAI ĐOẠN 2: XÂY DỰNG CÔNG TRÌNH DÂN SỰ (KHAI THÁC GỖ & ĐÁ)
+    // GIAI ĐOẠN 2: CÔNG TRÌNH DÂN SỰ (ĐÃ SỬA LỖI THOẠI & LỆCH VỊ TRÍ HAND)
     // ====================================================================
     private void StartStage2()
     {
         currentStage = TutorialStage.Stage2_CivilBuildings;
-        hasOpenedBuildMenu = false;
-        hasOpenedTab = false;
+        HidePointer();
 
-        NPCDialogueUI.Ins.ShowDialogueSequence(stage2Dialogues, () =>
+        // 🛠️ SỬA LỖI 1: Bật chuỗi thoại Stage 2 trước khi hiển thị trỏ tay
+        RunDialogueSequence(stage2Dialogues, () =>
         {
             ResetStage2Menu();
         });
@@ -149,14 +212,18 @@ public class CampaignTutorialManager : MonoBehaviour
         SetButtonInteractable(villaTabButton, false);
         SetButtonInteractable(buildWoodCutterButton, false);
         SetButtonInteractable(buildStoneStorageButton, false);
+
         PointHandAtUI(buildMenuButton.transform as RectTransform);
-        UpdateHint("📍 Bước 2: Nhấn vào nút Mở Cửa Hàng Xây Dựng để mở danh sách công trình.");
+
+        if (!hasBuiltWoodCutter)
+            UpdateHint("📍 Bước 2: Nhấn **Cửa Hàng Xây Dựng** để chọn xây Khai Thác Gỗ.");
+        else
+            UpdateHint("📍 Bước 2: Nhấn **Cửa Hàng Xây Dựng** để tiếp tục chọn xây Kho Đá.");
     }
 
     private void OnBuildMenuButtonClicked()
     {
         if (currentStage != TutorialStage.Stage2_CivilBuildings && currentStage != TutorialStage.Stage4_BuildWatchTower) return;
-        if (hasOpenedBuildMenu) return;
 
         hasOpenedBuildMenu = true;
         hasOpenedTab = false;
@@ -169,13 +236,13 @@ public class CampaignTutorialManager : MonoBehaviour
             {
                 PointHandAtUI(buildTabButton.transform as RectTransform);
             }
-            UpdateHint("📍 Bước 2: Chọn tab Dân Sự để xem các công trình cần xây dựng.");
+            UpdateHint("📍 Bước 2: Chọn tab **Dân Sự** để mở các công trình.");
         }
         else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
         {
             SetButtonInteractable(militaryTabButton, true);
             PointHandAtUI(militaryTabButton.transform as RectTransform);
-            UpdateHint("📍 Bước 4: Chọn tab Quân Sự để xem các công trình phòng thủ.");
+            UpdateHint("📍 Bước 4: Chọn tab **Quân Sự** để xem công trình phòng thủ.");
         }
     }
 
@@ -187,40 +254,74 @@ public class CampaignTutorialManager : MonoBehaviour
 
         if (currentStage == TutorialStage.Stage2_CivilBuildings)
         {
-            SetButtonInteractable(buildWoodCutterButton, true);
-            SetButtonInteractable(buildStoneStorageButton, true);
-            if (buildWoodCutterButton != null)
+            SetButtonInteractable(buildWoodCutterButton, !hasBuiltWoodCutter);
+            SetButtonInteractable(buildStoneStorageButton, !hasBuiltStoneStorage);
+
+            if (!hasBuiltWoodCutter)
             {
-                PointHandAtUI(buildWoodCutterButton.transform as RectTransform);
+                if (buildWoodCutterButton != null) PointHandAtUI(buildWoodCutterButton.transform as RectTransform);
+                UpdateHint("📍 Bước 2: Bấm chọn **Khai Thác Gỗ** để đặt xây.");
             }
-            UpdateHint("📍 Bước 2: Chọn công trình Khai thác Gỗ hoặc Kho Đá để bắt đầu xây dựng.");
+            else if (!hasBuiltStoneStorage)
+            {
+                if (buildStoneStorageButton != null) PointHandAtUI(buildStoneStorageButton.transform as RectTransform);
+                UpdateHint("📍 Bước 2: Bấm chọn **Kho Đá** để đặt xây.");
+            }
         }
         else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
         {
             SetButtonInteractable(buildWatchTowerButton, true);
-            if (buildWatchTowerButton != null)
-            {
-                PointHandAtUI(buildWatchTowerButton.transform as RectTransform);
-            }
-            UpdateHint("📍 Bước 4: Chọn Tháp Canh để tăng cường phòng thủ cho căn cứ.");
+            if (buildWatchTowerButton != null) PointHandAtUI(buildWatchTowerButton.transform as RectTransform);
+            UpdateHint("📍 Bước 4: Chọn **Tháp Canh** để tăng cường bảo vệ căn cứ.");
         }
     }
 
-    public void OnCivilBuildingPlaced(BuildingType buildingType)
+    public void OnCivilBuildingPlaced(BuildingType buildingType, Transform placedBuildingTransform = null)
     {
+        if (currentStage != TutorialStage.Stage2_CivilBuildings) return;
+
+        isPlacingBuilding = false;
+
+        if (buildingType == BuildingType.WoodCutter) hasBuiltWoodCutter = true;
+        if (buildingType == BuildingType.StoneStorage) hasBuiltStoneStorage = true;
+
+        if (placedBuildingTransform != null)
+        {
+            isWaitingForConstruction = true;
+            // 🛠️ SỬA LỖI 3: Ẩn ngón tay đi khi bắt đầu tiến trình xây dựng
+            HidePointer(); 
+            UpdateHint("⏳ Công trình đang được xây dựng... Vui lòng đợi.");
+        }
+        else
+        {
+            CheckStage2Progress();
+        }
+    }
+
+    public void OnBuildingConstructionFinished(BuildingType buildingType)
+    {
+        isWaitingForConstruction = false;
+
         if (currentStage == TutorialStage.Stage2_CivilBuildings)
         {
-            if (buildingType == BuildingType.WoodCutter) hasBuiltWoodCutter = true;
-            if (buildingType == BuildingType.StoneStorage) hasBuiltStoneStorage = true;
+            CheckStage2Progress();
+        }
+        else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
+        {
+            HidePointer();
+            UpdateHint("");
+            StartCoroutine(StartStage5Routine());
+        }
+    }
 
-            // Nếu chưa xây cả 2 công trình, quay lại bước đầu
-            if (!hasBuiltWoodCutter || !hasBuiltStoneStorage)
-            {
-                ResetStage2Menu();
-                return;
-            }
-
-            // Đã xây đủ cả 2 công trình
+    private void CheckStage2Progress()
+    {
+        if (!hasBuiltWoodCutter || !hasBuiltStoneStorage)
+        {
+            ResetStage2Menu();
+        }
+        else
+        {
             HidePointer();
             UpdateHint("");
             StartStage3();
@@ -228,20 +329,39 @@ public class CampaignTutorialManager : MonoBehaviour
     }
 
     // ====================================================================
-    // GIAI ĐOẠN 3: NÂNG CẤP KHO GỖ
+    // GIAI ĐOẠN 3: NÂNG CẤP
     // ====================================================================
     private void StartStage3()
     {
         currentStage = TutorialStage.Stage3_UpgradeWood;
 
-        NPCDialogueUI.Ins.ShowDialogueSequence(stage3Dialogues, () =>
+        UpgradeableBuilding woodCutter = null;
+        if (TutorialSceneScanner.Ins != null)
         {
-            SetButtonInteractable(upgradeBuildingButton, true);
-            if (upgradeBuildingButton != null)
+            woodCutter = TutorialSceneScanner.Ins.FindPlacedBuilding(BuildingType.WoodCutter);
+        }
+
+        RunDialogueSequence(stage3Dialogues, () =>
+        {
+            if (woodCutter != null && TutorialSceneScanner.Ins != null)
             {
-                PointHandAtUI(upgradeBuildingButton.transform as RectTransform);
+                FocusCameraOn(woodCutter.transform.position, 1.0f);
+
+                bool isUIOpen = TutorialSceneScanner.Ins.IsBuildingUIOpen(woodCutter);
+                RectTransform upgradeBtnRect = TutorialSceneScanner.Ins.GetUpgradeButtonTransform(woodCutter);
+
+                if (isUIOpen && upgradeBtnRect != null)
+                {
+                    PointHandAtUI(upgradeBtnRect);
+                }
+                else
+                {
+                    PointHandAt(woodCutter.transform.position);
+                }
             }
-            UpdateHint("📍 Bước 3: Nhấn nút Nâng Cấp để cải thiện Kho Gỗ và tăng hiệu quả sản xuất.");
+            
+            SetButtonInteractable(upgradeBuildingButton, true);
+            UpdateHint("📍 Bước 3: Nhấn vào **Nhà Khai Thác Gỗ** và chọn **Nâng Cấp**.");
         });
     }
 
@@ -249,7 +369,6 @@ public class CampaignTutorialManager : MonoBehaviour
     {
         if (currentStage != TutorialStage.Stage3_UpgradeWood) return;
 
-        // Bắt chính xác sự kiện khi Kho Gỗ / Khai thác gỗ được nâng cấp
         if (building != null && building.buildingType == BuildingType.WoodCutter)
         {
             HidePointer();
@@ -258,17 +377,31 @@ public class CampaignTutorialManager : MonoBehaviour
     }
 
     // ====================================================================
-    // GIAI ĐOẠN 4: HỆ THỐNG PHÒNG THỦ - THÁP CANH
+    // GIAI ĐOẠN 4 & 5 & 6
     // ====================================================================
     private void StartStage4()
     {
         currentStage = TutorialStage.Stage4_BuildWatchTower;
-        hasOpenedBuildMenu = false;
-        hasOpenedTab = false;
 
-        NPCDialogueUI.Ins.ShowDialogueSequence(stage4Dialogues, () =>
+        Transform enemyCamp = null;
+        if (TutorialSceneScanner.Ins != null)
         {
-            ResetStage4Menu();
+            enemyCamp = TutorialSceneScanner.Ins.GetEnemyCampTransform();
+        }
+
+        RunDialogueSequence(stage4Dialogues, () =>
+        {
+            if (enemyCamp != null)
+            {
+                FocusCameraOn(enemyCamp.position, 1.5f);
+                PointHandAt(enemyCamp.position);
+                UpdateHint("⚠️ Phát hiện căn cứ kẻ thù lân cận! Hãy chuẩn bị tháp canh phòng thủ.");
+                Invoke(nameof(ResetStage4Menu), 2.5f);
+            }
+            else
+            {
+                ResetStage4Menu();
+            }
         });
     }
 
@@ -279,67 +412,72 @@ public class CampaignTutorialManager : MonoBehaviour
         SetButtonInteractable(buildMenuButton, true);
         SetButtonInteractable(militaryTabButton, false);
         SetButtonInteractable(buildWatchTowerButton, false);
+
         PointHandAtUI(buildMenuButton.transform as RectTransform);
-        UpdateHint("📍 Bước 4: Mở Cửa Hàng Xây Dựng để tiếp tục xây phòng thủ cho căn cứ.");
+        UpdateHint("📍 Bước 4: Mở **Cửa Hàng Xây Dựng** để chuẩn bị phòng thủ.");
     }
 
-    public void OnDefenseBuildingPlaced(BuildingType buildingType)
+    public void OnDefenseBuildingPlaced(BuildingType buildingType, Transform placedBuildingTransform = null)
     {
         if (currentStage != TutorialStage.Stage4_BuildWatchTower) return;
 
         if (buildingType == BuildingType.WatchTower)
         {
             hasBuiltWatchTower = true;
-            HidePointer();
-            UpdateHint("");
-            StartCoroutine(StartStage5Routine());
+            isPlacingBuilding = false;
+
+            if (placedBuildingTransform != null)
+            {
+                isWaitingForConstruction = true;
+                // 🛠️ SỬA LỖI 3: Ẩn ngón tay đi khi bắt đầu xây dựng tháp
+                HidePointer(); 
+                UpdateHint("⏳ Tháp canh đang được xây dựng...");
+            }
+            else
+            {
+                HidePointer();
+                UpdateHint("");
+                StartCoroutine(StartStage5Routine());
+            }
         }
     }
 
-    // ====================================================================
-    // GIAI ĐOẠN 5: CẢNH BÁO & ĐỢT SÓNG KẺ THÙ (KHỐNG CHẾ SPAWN)
-    // ====================================================================
     private IEnumerator StartStage5Routine()
     {
         currentStage = TutorialStage.Stage5_EnemyWave;
 
-        // 1. NPC cảnh báo
-        bool dialogueDone = false;
-        NPCDialogueUI.Ins.ShowDialogueSequence(stage5WarningDialogues, () =>
+        if (townHallTransform != null)
         {
-            dialogueDone = true;
-        });
-
-        while (!dialogueDone) yield return null;
-
-        // 2. Hiển thị UI Cảnh Báo lính địch sắp tấn công
-        if (warningText != null)
-        {
-            warningText.gameObject.SetActive(true);
-            warningText.text = "⚠️ CẢNH BÁO: KẺ THÙ ĐANG TIẾP CẬN CĂN CỨ!";
-            if (warningText.rectTransform != null)
-            {
-                PointHandAtUI(warningText.rectTransform);
-            }
-            UpdateHint("📍 Bước 5: Cảnh báo đã xuất hiện, hãy giữ phòng thủ và tiêu diệt kẻ địch để hoàn thành thử thách.");
-            yield return new WaitForSeconds(2.5f);
-            warningText.gameObject.SetActive(false);
+            FocusCameraOn(townHallTransform.position, 1.0f);
         }
 
-        // 3. Khống chế số lượng quái spawn chính xác
+        bool dialogueDone = false;
+        RunDialogueSequence(stage5WarningDialogues, () => { dialogueDone = true; });
+        while (!dialogueDone) yield return null;
+
         enemiesRemaining = tutorialEnemyCount;
+        
         if (enemySpawner != null)
         {
             for (int i = 0; i < tutorialEnemyCount; i++)
             {
-                enemySpawner.SpawnEnemy();
+                enemySpawner.SpawnEnemy(); 
+            }
+
+            EnemyAI[] activeEnemies = FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+            foreach (var ai in activeEnemies)
+            {
+                if (ai != null && townHallTransform != null)
+                {
+                    ai.villageCenter = townHallTransform;
+                    ai.attackMainDirectly = true;
+                }
             }
         }
 
-        UnlockAllInputs(); // Cho phép tương tác bình thường trong lúc thủ tháp
+        UnlockAllInputs();
     }
 
-    // Gọi hàm này từ EnemyHealth.cs khi quái chết
     public void OnEnemyKilled()
     {
         if (currentStage != TutorialStage.Stage5_EnemyWave) return;
@@ -351,17 +489,12 @@ public class CampaignTutorialManager : MonoBehaviour
         }
     }
 
-    // ====================================================================
-    // GIAI ĐOẠN 6: HOÀN THÀNH & TRAO QUYỀN (KHÔNG DÙNG VICTORY PANEL)
-    // ====================================================================
     private void StartStage6()
     {
         currentStage = TutorialStage.Stage6_Complete;
 
-        // NPC thông báo phòng thủ thành công và bàn giao quyền trực tiếp
-        NPCDialogueUI.Ins.ShowDialogueSequence(stage6CompleteDialogues, () =>
+        RunDialogueSequence(stage6CompleteDialogues, () =>
         {
-            // Cộng phần thưởng Tân Thủ
             if (JsonDataManager.Ins != null)
             {
                 JsonDataManager.Ins.AddWood(500);
@@ -370,13 +503,155 @@ public class CampaignTutorialManager : MonoBehaviour
             }
 
             HidePointer();
-            UpdateHint("🎉 Bước 6: Tutorial hoàn tất! Bạn đã nhận thưởng và có thể tiếp tục khám phá thế giới.");
+            UpdateHint("🎉 Bạn đã hoàn thành Tutorial! Nhận **500 Gỗ & 500 Đá** tân thủ.");
             UnlockAllInputs();
-            Debug.Log("✅ [TUTORIAL] ĐÃ HOÀN THÀNH TUTORIAL & BÀN GIAO QUYỀN TRỰC TIẾP!");
         });
     }
 
-    // ================= HÀM BỔ TRỢ CHẶN / MỞ TƯƠNG TÁC =================
+    // ====================================================================
+    // CÁC HÀM Bổ Trợ Quản Lý Bàn Tay & UI
+    // ====================================================================
+    public void OnStartPlacement()
+    {
+        isPlacingBuilding = true;
+        HidePointer();
+        UpdateHint("📍 Hãy chọn vị trí thích hợp trên bản đồ để **Đặt Công Trình**.");
+    }
+
+    public void OnCancelPlacement()
+    {
+        isPlacingBuilding = false;
+
+        if (currentStage == TutorialStage.Stage2_CivilBuildings)
+            ResetStage2Menu();
+        else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
+            ResetStage4Menu();
+    }
+
+    private void UpdateHandPointerAnimation()
+    {
+        if (handPointer == null || !handPointer.activeSelf || pointerRect == null) return;
+
+        Vector2 currentPos = pointerRect.position;
+        Vector2 smoothedPos = Vector2.Lerp(currentPos, targetScreenPosition, Time.unscaledDeltaTime * pointerMoveSpeed);
+
+        float bobbingOffset = Mathf.Sin(Time.unscaledTime * bobbingSpeed) * bobbingAmount;
+        Vector2 finalPos = smoothedPos + new Vector2(bobbingOffset * 0.5f, bobbingOffset);
+
+        pointerRect.position = finalPos;
+    }
+
+    private void UpdateHighlightRingAnimation()
+    {
+        if (highlightRing == null || !highlightRing.gameObject.activeSelf) return;
+
+        highlightRing.Rotate(Vector3.forward, -90f * Time.unscaledDeltaTime);
+        float pulseScale = 1f + Mathf.Sin(Time.unscaledTime * 6f) * 0.08f;
+        highlightRing.localScale = Vector3.one * pulseScale;
+    }
+
+    private void PointHandAt(Vector3 worldPos)
+    {
+        if (handPointer == null) return;
+        currentTargetUI = null;
+        handPointer.SetActive(true);
+
+        Vector3 screenPos = Camera.main != null ? Camera.main.WorldToScreenPoint(worldPos) : Vector3.zero;
+        targetScreenPosition = (Vector2)screenPos + pointerOffset;
+
+        if (highlightRing != null) highlightRing.gameObject.SetActive(false);
+    }
+
+    private void PointHandAtUI(RectTransform uiRect)
+    {
+        if (handPointer == null || uiRect == null) return;
+
+        // 🛠️ SỬA LỖI 2: Ép Canvas cập nhật ngay lập tức Layout trước khi tính tọa độ
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(uiRect);
+
+        currentTargetUI = uiRect;
+        handPointer.SetActive(true);
+
+        Canvas parentCanvas = uiRect.GetComponentInParent<Canvas>();
+        Vector2 screenPoint;
+
+        if (parentCanvas != null && (parentCanvas.renderMode == RenderMode.WorldSpace || parentCanvas.renderMode == RenderMode.ScreenSpaceCamera))
+        {
+            Camera cam = parentCanvas.worldCamera != null ? parentCanvas.worldCamera : Camera.main;
+            screenPoint = RectTransformUtility.WorldToScreenPoint(cam, uiRect.position);
+        }
+        else
+        {
+            screenPoint = uiRect.position;
+        }
+
+        targetScreenPosition = screenPoint + pointerOffset;
+
+        if (highlightRing != null)
+        {
+            highlightRing.gameObject.SetActive(true);
+            highlightRing.position = screenPoint;
+        }
+    }
+
+    private void HidePointer()
+    {
+        currentTargetUI = null;
+        if (handPointer != null) handPointer.SetActive(false);
+        if (highlightRing != null) highlightRing.gameObject.SetActive(false);
+    }
+
+    private void RunDialogueSequence(DialogueData[] dialogues, System.Action onComplete = null)
+    {
+        if (NPCDialogueUI.Ins != null)
+            NPCDialogueUI.Ins.ShowDialogueSequence(dialogues, onComplete);
+        else
+            onComplete?.Invoke();
+    }
+
+    private void FocusCameraOn(Vector3 targetWorldPos, float duration)
+    {
+        if (Camera.main == null) return;
+
+        if (cameraFocusCoroutine != null) StopCoroutine(cameraFocusCoroutine);
+        cameraFocusCoroutine = StartCoroutine(AnimateCameraFocus(targetWorldPos, duration));
+    }
+
+    private IEnumerator AnimateCameraFocus(Vector3 targetPos, float duration)
+    {
+        Transform camTrans = Camera.main.transform;
+        Vector3 startPos = camTrans.position;
+        Vector3 endPos = new Vector3(targetPos.x, camTrans.position.y, targetPos.z - 8f);
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+            camTrans.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
+        }
+    }
+
+    private IEnumerator AnimateTextPop(RectTransform textRect)
+    {
+        if (textRect == null) yield break;
+
+        textRect.localScale = Vector3.zero;
+        float elapsed = 0f;
+        float duration = 0.3f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / duration;
+            float scale = Mathf.Sin(t * Mathf.PI * 0.5f) * 1.15f;
+            textRect.localScale = Vector3.one * scale;
+            yield return null;
+        }
+        textRect.localScale = Vector3.one;
+    }
 
     private void LockAllInputs()
     {
@@ -415,65 +690,11 @@ public class CampaignTutorialManager : MonoBehaviour
         {
             hintText.text = hintMessage;
             hintText.gameObject.SetActive(!string.IsNullOrEmpty(hintMessage));
+            if (hintText.gameObject.activeSelf)
+            {
+                StartCoroutine(AnimateTextPop(hintText.rectTransform));
+            }
         }
-    }
-
-    private void PointHandAt(Vector3 worldPos)
-    {
-        if (handPointer == null) return;
-        handPointer.SetActive(true);
-
-        Vector3 screenPos = Camera.main != null
-            ? Camera.main.WorldToScreenPoint(worldPos)
-            : Vector3.zero;
-
-        PositionPointerAtScreenPoint(screenPos);
-    }
-
-    private void PointHandAtUI(RectTransform uiRect)
-    {
-        if (handPointer == null || uiRect == null) return;
-        handPointer.SetActive(true);
-
-        Canvas uiCanvas = ResolveTutorialCanvas();
-        if (uiCanvas != null && uiCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
-        {
-            PositionPointerAtScreenPoint(uiRect.position);
-            return;
-        }
-
-        Camera cam = uiCanvas != null ? uiCanvas.worldCamera : Camera.main;
-        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, uiRect.position);
-        PositionPointerAtScreenPoint(screenPoint);
-    }
-
-    private void PositionPointerAtScreenPoint(Vector2 screenPoint)
-    {
-        if (pointerRect == null) return;
-
-        Canvas uiCanvas = ResolveTutorialCanvas();
-        if (uiCanvas != null && uiCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
-        {
-            pointerRect.position = screenPoint + pointerOffset;
-            return;
-        }
-
-        RectTransform parentRect = pointerRect.parent as RectTransform;
-        if (parentRect == null)
-        {
-            pointerRect.position = screenPoint + pointerOffset;
-            return;
-        }
-
-        Camera cam = uiCanvas != null ? uiCanvas.worldCamera : Camera.main;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPoint, cam, out Vector2 localPoint);
-        pointerRect.localPosition = localPoint + pointerOffset;
-    }
-
-    private Canvas ResolveTutorialCanvas()
-    {
-        if (tutorialCanvas != null) return tutorialCanvas;
-        return buildShopCanvas != null ? buildShopCanvas : null;
     }
 
     private Button GetSharedBuildTabButton()
@@ -486,10 +707,5 @@ public class CampaignTutorialManager : MonoBehaviour
     {
         SetButtonInteractable(civilianTabButton, interactable);
         SetButtonInteractable(villaTabButton, interactable);
-    }
-
-    private void HidePointer()
-    {
-        if (handPointer != null) handPointer.SetActive(false);
     }
 }

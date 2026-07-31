@@ -60,6 +60,9 @@ public class BuildingUpgradeUI : MonoBehaviour
     private bool isOpeningFrame = false;
     private Coroutine animCoroutine;
     private float currentAnimScale = 1f;
+    // Thêm 2 thuộc tính này vào trong file BuildingUpgradeUI.cs (đặt ở khu vực public)
+    public Button UpgradeButton => upgradeButton;
+    public GameObject LocalUpgradePanel => localUpgradePanel;
 
     private void Awake()
     {

@@ -25,6 +25,10 @@ public class LandGridManager : MonoBehaviour
     [Tooltip("Prefab của đoạn hàng rào")]
     [SerializeField] private GameObject fencePrefab;
 
+    [Header("=== CẤU HÌNH VỊ TRÍ SPAWN ===")]
+    [Tooltip("Đẩy ô đất lên cao một chút để không bị chìm vào mặt đất")]
+    [SerializeField] private float plotSpawnY = 1.3f;
+
     [Header("=== 4 NÚT MỞ RỘNG (+) ===")]
     [SerializeField] private Transform btnNorth; // Nút + phía Bắc (+Z)
     [SerializeField] private Transform btnSouth; // Nút + phía Nam (-Z)
@@ -79,7 +83,7 @@ public class LandGridManager : MonoBehaviour
         Vector2Int gridCoord = new Vector2Int(x, z);
         if (activePlots.ContainsKey(gridCoord)) return;
 
-        Vector3 worldPos = GetWorldPosition(x, z);
+        Vector3 worldPos = GetWorldPosition(x, z, plotSpawnY);
         GameObject plot = Instantiate(landPlotPrefab, worldPos, Quaternion.identity, transform);
         
         // Đảm bảo ô đất nằm đúng Layer được xây dựng
@@ -192,8 +196,8 @@ public class LandGridManager : MonoBehaviour
     /// <summary>
     /// Chuyển từ Tọa độ Ma trận (x, z) sang Tọa độ World Space (X, Y, Z)
     /// </summary>
-    public Vector3 GetWorldPosition(int x, int z)
+    public Vector3 GetWorldPosition(int x, int z, float yOffset = 0f)
     {
-        return new Vector3(x * tileSize, 0, z * tileSize);
+        return new Vector3(x * tileSize, yOffset, z * tileSize);
     }
 }
