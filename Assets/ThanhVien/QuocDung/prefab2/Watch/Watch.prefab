@@ -455,7 +455,6 @@ GameObject:
   - component: {fileID: 2504455883698763152}
   - component: {fileID: 7377948713702016207}
   - component: {fileID: 8486806693736343140}
-  - component: {fileID: 4014733925155367470}
   - component: {fileID: 452444209083806679}
   - component: {fileID: 6172776982285020038}
   - component: {fileID: 833610624259593181}
@@ -517,6 +516,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 1
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 8
   buildingName: "Th\xE1p canh"
@@ -556,20 +556,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.7990618, y: 1.8279905, z: 3.1230125}
   m_Center: {x: 0.16797376, y: 0.91381407, z: -0.3681383}
---- !u!114 &4014733925155367470
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 794811378593636587}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 676cb3cd2450cbf43981d68e570d6cf7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WatchTowerTutorialNotifier
-  notifyOnStart: 0
-  delay: 0.15
 --- !u!114 &452444209083806679
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -616,6 +602,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuildingUpgradeUI
   localUpgradePanel: {fileID: 7743862276121183747}
   panelRectTransform: {fileID: 6863791300800856682}
+  lockUIRotation: 1
+  faceCamera: 1
+  keepConstantSize: 1
+  baseDistance: 15
+  baseOrthographicSize: 5
   autoArrangeButtons: 1
   ringRadius: 110
   startAngle: 45

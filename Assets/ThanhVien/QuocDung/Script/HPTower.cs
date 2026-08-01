@@ -213,4 +213,21 @@ public class HPTower : MonoBehaviour, IDamageable
             Destroy(whiteSprite);
         }
     }
+
+    // Thêm hàm này vào cuối file HPTower.cs[cite: 28]
+    /// <summary>
+    /// Đưa thanh máu về 0 và ẩn Canvas HP khi công trình ở trạng thái Tàn Tích ban đầu
+    /// </summary>
+    public void SetRuinedHealth()
+    {
+        CurrentHealth = 0f;
+        if (hpFillImage != null)
+        {
+            hpFillImage.fillAmount = 0f;
+        }
+        if (hpCanvas != null)
+        {
+            hpCanvas.gameObject.SetActive(false);
+        }
+    }
 }

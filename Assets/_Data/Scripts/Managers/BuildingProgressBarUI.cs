@@ -78,7 +78,8 @@ public class BuildingProgressBarUI : MonoBehaviour
             BuildingProgressBridge.RegisterUI(_ownerBuilding, this);
 
             // CHỈ BẬT UI khi nhà đang trong tiến trình Nâng cấp/Xây mới thực sự
-            if (!_ownerBuilding.IsUpgrading)
+            // SỬA DÒNG NÀY (Thêm kiểm tra !_ownerBuilding.IsRuined)
+            if (!_ownerBuilding.IsUpgrading && !_ownerBuilding.IsRuined)
             {
                 HideProgress();
                 DeactivateAllVFX();

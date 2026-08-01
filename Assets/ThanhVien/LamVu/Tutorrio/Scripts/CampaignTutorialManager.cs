@@ -10,7 +10,7 @@ public enum TutorialStage
     Stage1_TownHall,         
     Stage2_CivilBuildings,   
     Stage3_UpgradeWood,      
-    Stage4_BuildWatchTower,  
+    Stage4_BuildDefenseTowers,  
     Stage5_EnemyWave,        
     Stage6_Complete          
 }
@@ -31,6 +31,18 @@ public class CampaignTutorialManager : MonoBehaviour
     [SerializeField] private Canvas buildShopCanvas;        
     [SerializeField] private TMP_Text hintText;             
     [SerializeField] private TMP_Text warningText;          
+
+    [Header("=== HIỆU ỨNG CẢNH BÁO ĐỊCH ===")]
+    [SerializeField] private Image redFlashOverlay;            
+    [SerializeField] private GameObject warningBannerPanel;    
+    [SerializeField] private TMP_Text runningWarningText;      
+
+    [Header("=== STAGE 1: CÁC CÔNG TRÌNH CẦN SỬA CHỮA ===")]
+    [SerializeField] private UpgradeableBuilding townHallBuilding;
+    [SerializeField] private UpgradeableBuilding riceStorageBuilding;
+
+    private bool isTownHallRepaired = false;
+    private bool isRiceStorageRepaired = false;
 
     [Header("=== TÙY CHỈNH ANIMATION BÀN TAY ===")]
     [SerializeField] private float pointerMoveSpeed = 12f;  
@@ -53,6 +65,7 @@ public class CampaignTutorialManager : MonoBehaviour
     [SerializeField] private Button buildWoodCutterButton;
     [SerializeField] private Button buildStoneStorageButton;
     [SerializeField] private Button buildWatchTowerButton;
+    [SerializeField] private Button buildArcherTowerButton; // 🔥 MỚI: Nút chọn xây Tháp Cung
     [SerializeField] private Button upgradeBuildingButton;
 
     [Header("=== SCENE REFERENCES ===")]
@@ -68,6 +81,7 @@ public class CampaignTutorialManager : MonoBehaviour
     private bool hasBuiltWoodCutter = false;
     private bool hasBuiltStoneStorage = false;
     private bool hasBuiltWatchTower = false;
+    private bool hasBuiltArcherTower = false; // 🔥 MỚI: Đã xây tháp cung chưa
     private bool hasOpenedBuildMenu = false;
     private bool hasOpenedTab = false;
 
@@ -75,6 +89,9 @@ public class CampaignTutorialManager : MonoBehaviour
     private Vector2 targetScreenPosition;
     private Coroutine cameraFocusCoroutine;
     private RectTransform currentTargetUI;
+
+    private Vector3 currentTargetWorldPos;
+    private bool isPointingAtWorld = false;
 
     private void Awake()
     {
@@ -110,6 +127,7 @@ public class CampaignTutorialManager : MonoBehaviour
         if (buildWoodCutterButton != null) buildWoodCutterButton.onClick.AddListener(OnStartPlacement);
         if (buildStoneStorageButton != null) buildStoneStorageButton.onClick.AddListener(OnStartPlacement);
         if (buildWatchTowerButton != null) buildWatchTowerButton.onClick.AddListener(OnStartPlacement);
+        if (buildArcherTowerButton != null) buildArcherTowerButton.onClick.AddListener(OnStartPlacement); // 🔥 MỚI
         if (upgradeBuildingButton != null) upgradeBuildingButton.onClick.AddListener(OnActionButtonClicked);
 
         StartStage1();
@@ -139,7 +157,7 @@ public class CampaignTutorialManager : MonoBehaviour
             {
                 ResetStage2Menu();
             }
-            else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
+            else if (currentStage == TutorialStage.Stage4_BuildDefenseTowers)
             {
                 ResetStage4Menu();
             }
@@ -155,7 +173,7 @@ public class CampaignTutorialManager : MonoBehaviour
     }
 
     // ====================================================================
-    // GIAI ĐOẠN 1
+    // GIAI ĐOẠN 1: SỬA CHỮA 2 CÔNG TRÌNH (NHÀ CHÍNH & KHO LÚA)
     // ====================================================================
     public void StartStage1()
     {
@@ -165,38 +183,56 @@ public class CampaignTutorialManager : MonoBehaviour
 
         RunDialogueSequence(stage1Dialogues, () =>
         {
-            if (townHallTransform != null)
-            {
-                FocusCameraOn(townHallTransform.position, 1.2f);
-                PointHandAt(townHallTransform.position);
-            }
-            UpdateHint("📍 Bước 1: Nhấn vào **Nhà Chính** để mở khóa mục tiêu đầu tiên.");
+            GuideNextRepairTarget();
         });
+    }
+
+    private void GuideNextRepairTarget()
+    {
+        if (!isTownHallRepaired && townHallBuilding != null)
+        {
+            FocusCameraOn(townHallBuilding.transform.position, 1.0f);
+            PointHandAt(townHallBuilding.transform.position);
+            UpdateHint("📍 Bước 1: **Nhà Chính** đang tàn tích! Hãy bấm vào và chọn **Sửa Chữa**.");
+        }
+        else if (!isRiceStorageRepaired && riceStorageBuilding != null)
+        {
+            FocusCameraOn(riceStorageBuilding.transform.position, 1.0f);
+            PointHandAt(riceStorageBuilding.transform.position);
+            UpdateHint("📍 Bước 1: **Kho Lúa** đã bị phá hủy! Hãy tiến hành **Sửa Chữa**.");
+        }
+        else
+        {
+            // Đã sửa xong cả 2 nhà -> Chuyển sang Stage 2
+            HidePointer();
+            StartStage2();
+        }
+    }
+
+    public void OnBuildingRepaired(UpgradeableBuilding building)
+    {
+        if (currentStage != TutorialStage.Stage1_TownHall) return;
+
+        if (building == townHallBuilding) isTownHallRepaired = true;
+        else if (building == riceStorageBuilding) isRiceStorageRepaired = true;
+
+        GuideNextRepairTarget();
     }
 
     public void OnClickTownHall()
     {
         if (currentStage != TutorialStage.Stage1_TownHall) return;
-
-        if (townHallTransform != null)
-        {
-            var hp = townHallTransform.GetComponent<HPTower>();
-            if (hp != null) hp.gameObject.SetActive(true);
-        }
-
         HidePointer();
-        StartStage2();
     }
 
     // ====================================================================
-    // GIAI ĐOẠN 2: CÔNG TRÌNH DÂN SỰ (ĐÃ SỬA LỖI THOẠI & LỆCH VỊ TRÍ HAND)
+    // GIAI ĐOẠN 2: XÂY CÔNG TRÌNH DÂN SỰ (KHAI THÁC GỖ & KHO ĐÁ)
     // ====================================================================
     private void StartStage2()
     {
         currentStage = TutorialStage.Stage2_CivilBuildings;
         HidePointer();
 
-        // 🛠️ SỬA LỖI 1: Bật chuỗi thoại Stage 2 trước khi hiển thị trỏ tay
         RunDialogueSequence(stage2Dialogues, () =>
         {
             ResetStage2Menu();
@@ -223,7 +259,7 @@ public class CampaignTutorialManager : MonoBehaviour
 
     private void OnBuildMenuButtonClicked()
     {
-        if (currentStage != TutorialStage.Stage2_CivilBuildings && currentStage != TutorialStage.Stage4_BuildWatchTower) return;
+        if (currentStage != TutorialStage.Stage2_CivilBuildings && currentStage != TutorialStage.Stage4_BuildDefenseTowers) return;
 
         hasOpenedBuildMenu = true;
         hasOpenedTab = false;
@@ -238,11 +274,11 @@ public class CampaignTutorialManager : MonoBehaviour
             }
             UpdateHint("📍 Bước 2: Chọn tab **Dân Sự** để mở các công trình.");
         }
-        else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
+        else if (currentStage == TutorialStage.Stage4_BuildDefenseTowers)
         {
             SetButtonInteractable(militaryTabButton, true);
             PointHandAtUI(militaryTabButton.transform as RectTransform);
-            UpdateHint("📍 Bước 4: Chọn tab **Quân Sự** để xem công trình phòng thủ.");
+            UpdateHint("📍 Bước 4: Chọn tab **Quân Sự** để xem tháp phòng thủ.");
         }
     }
 
@@ -268,11 +304,20 @@ public class CampaignTutorialManager : MonoBehaviour
                 UpdateHint("📍 Bước 2: Bấm chọn **Kho Đá** để đặt xây.");
             }
         }
-        else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
+        else if (currentStage == TutorialStage.Stage4_BuildDefenseTowers)
         {
-            SetButtonInteractable(buildWatchTowerButton, true);
-            if (buildWatchTowerButton != null) PointHandAtUI(buildWatchTowerButton.transform as RectTransform);
-            UpdateHint("📍 Bước 4: Chọn **Tháp Canh** để tăng cường bảo vệ căn cứ.");
+            if (!hasBuiltWatchTower)
+            {
+                SetButtonInteractable(buildWatchTowerButton, true);
+                if (buildWatchTowerButton != null) PointHandAtUI(buildWatchTowerButton.transform as RectTransform);
+                UpdateHint("📍 Bước 4: Chọn **Tháp Canh** để xây dựng phòng thủ.");
+            }
+            else if (!hasBuiltArcherTower)
+            {
+                SetButtonInteractable(buildArcherTowerButton, true);
+                if (buildArcherTowerButton != null) PointHandAtUI(buildArcherTowerButton.transform as RectTransform);
+                UpdateHint("📍 Bước 4: Chọn **Tháp Cung** để tăng cường hỏa lực.");
+            }
         }
     }
 
@@ -288,7 +333,6 @@ public class CampaignTutorialManager : MonoBehaviour
         if (placedBuildingTransform != null)
         {
             isWaitingForConstruction = true;
-            // 🛠️ SỬA LỖI 3: Ẩn ngón tay đi khi bắt đầu tiến trình xây dựng
             HidePointer(); 
             UpdateHint("⏳ Công trình đang được xây dựng... Vui lòng đợi.");
         }
@@ -306,11 +350,9 @@ public class CampaignTutorialManager : MonoBehaviour
         {
             CheckStage2Progress();
         }
-        else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
+        else if (currentStage == TutorialStage.Stage4_BuildDefenseTowers)
         {
-            HidePointer();
-            UpdateHint("");
-            StartCoroutine(StartStage5Routine());
+            CheckStage4Progress();
         }
     }
 
@@ -377,11 +419,11 @@ public class CampaignTutorialManager : MonoBehaviour
     }
 
     // ====================================================================
-    // GIAI ĐOẠN 4 & 5 & 6
+    // GIAI ĐOẠN 4: CẢNH BÁO & XÂY DỰNG 2 THÁP (THÁP CANH & THÁP CUNG)
     // ====================================================================
     private void StartStage4()
     {
-        currentStage = TutorialStage.Stage4_BuildWatchTower;
+        currentStage = TutorialStage.Stage4_BuildDefenseTowers;
 
         Transform enemyCamp = null;
         if (TutorialSceneScanner.Ins != null)
@@ -391,18 +433,51 @@ public class CampaignTutorialManager : MonoBehaviour
 
         RunDialogueSequence(stage4Dialogues, () =>
         {
-            if (enemyCamp != null)
-            {
-                FocusCameraOn(enemyCamp.position, 1.5f);
-                PointHandAt(enemyCamp.position);
-                UpdateHint("⚠️ Phát hiện căn cứ kẻ thù lân cận! Hãy chuẩn bị tháp canh phòng thủ.");
-                Invoke(nameof(ResetStage4Menu), 2.5f);
-            }
-            else
-            {
-                ResetStage4Menu();
-            }
+            StartCoroutine(Stage4CameraAndWarningSequence(enemyCamp));
         });
+    }
+
+    private IEnumerator Stage4CameraAndWarningSequence(Transform enemyCamp)
+    {
+        StartCoroutine(DoRedAlertRoutine());
+
+        if (enemyCamp != null)
+        {
+            FocusCameraOn(enemyCamp.position, 1.2f);
+            PointHandAt(enemyCamp.position);
+            UpdateHint("⚠️ CẢNH BÁO: Phát hiện căn cứ kẻ thù lân cận!");
+            yield return new WaitForSecondsRealtime(2.5f);
+        }
+
+        if (townHallTransform != null)
+        {
+            FocusCameraOn(townHallTransform.position, 1.2f);
+            yield return new WaitForSecondsRealtime(1.2f);
+        }
+
+        ResetStage4Menu();
+    }
+
+    private IEnumerator DoRedAlertRoutine()
+    {
+        if (warningBannerPanel != null) warningBannerPanel.SetActive(true);
+        if (runningWarningText != null) runningWarningText.text = "⚠️ CẢNH BÁO: KẺ THÙ ĐANG TIẾN CÔNG CĂN CỨ! HÃY XÂY THÁP PHÒNG THỦ! ⚠️";
+
+        float timer = 0f;
+        float alertDuration = 3f;
+        while (timer < alertDuration)
+        {
+            timer += Time.unscaledDeltaTime;
+            if (redFlashOverlay != null)
+            {
+                float alpha = (Mathf.Sin(Time.unscaledTime * 12f) + 1f) * 0.25f;
+                redFlashOverlay.color = new Color(1f, 0f, 0f, alpha);
+            }
+            yield return null;
+        }
+
+        if (redFlashOverlay != null) redFlashOverlay.color = new Color(1f, 0f, 0f, 0f);
+        if (warningBannerPanel != null) warningBannerPanel.SetActive(false);
     }
 
     private void ResetStage4Menu()
@@ -412,36 +487,61 @@ public class CampaignTutorialManager : MonoBehaviour
         SetButtonInteractable(buildMenuButton, true);
         SetButtonInteractable(militaryTabButton, false);
         SetButtonInteractable(buildWatchTowerButton, false);
+        SetButtonInteractable(buildArcherTowerButton, false);
 
         PointHandAtUI(buildMenuButton.transform as RectTransform);
-        UpdateHint("📍 Bước 4: Mở **Cửa Hàng Xây Dựng** để chuẩn bị phòng thủ.");
+
+        if (!hasBuiltWatchTower)
+            UpdateHint("📍 Bước 4: Mở **Cửa Hàng Xây Dựng** để chọn xây Tháp Canh.");
+        else if (!hasBuiltArcherTower)
+            UpdateHint("📍 Bước 4: Mở **Cửa Hàng Xây Dựng** để chọn xây Tháp Cung.");
     }
 
     public void OnDefenseBuildingPlaced(BuildingType buildingType, Transform placedBuildingTransform = null)
     {
-        if (currentStage != TutorialStage.Stage4_BuildWatchTower) return;
+        if (currentStage != TutorialStage.Stage4_BuildDefenseTowers) return;
 
         if (buildingType == BuildingType.WatchTower)
         {
             hasBuiltWatchTower = true;
             isPlacingBuilding = false;
+        }
+        else if (buildingType == BuildingType.ArcherTower)
+        {
+            hasBuiltArcherTower = true;
+            isPlacingBuilding = false;
+        }
 
-            if (placedBuildingTransform != null)
-            {
-                isWaitingForConstruction = true;
-                // 🛠️ SỬA LỖI 3: Ẩn ngón tay đi khi bắt đầu xây dựng tháp
-                HidePointer(); 
-                UpdateHint("⏳ Tháp canh đang được xây dựng...");
-            }
-            else
-            {
-                HidePointer();
-                UpdateHint("");
-                StartCoroutine(StartStage5Routine());
-            }
+        if (placedBuildingTransform != null)
+        {
+            isWaitingForConstruction = true;
+            HidePointer(); 
+            string towerName = (buildingType == BuildingType.WatchTower) ? "Tháp Canh" : "Tháp Cung";
+            UpdateHint($"⏳ {towerName} đang được xây dựng...");
+        }
+        else
+        {
+            CheckStage4Progress();
         }
     }
 
+    private void CheckStage4Progress()
+    {
+        if (!hasBuiltWatchTower || !hasBuiltArcherTower)
+        {
+            ResetStage4Menu();
+        }
+        else
+        {
+            HidePointer();
+            UpdateHint("");
+            StartCoroutine(StartStage5Routine());
+        }
+    }
+
+    // ====================================================================
+    // GIAI ĐOẠN 5 & 6: KẺ THÙ TẤN CÔNG & HOÀN THÀNH TUTORIAL
+    // ====================================================================
     private IEnumerator StartStage5Routine()
     {
         currentStage = TutorialStage.Stage5_EnemyWave;
@@ -509,7 +609,7 @@ public class CampaignTutorialManager : MonoBehaviour
     }
 
     // ====================================================================
-    // CÁC HÀM Bổ Trợ Quản Lý Bàn Tay & UI
+    // CÁC HÀM PHỤ TRỢ QUẢN LÝ BÀN TAY & UI
     // ====================================================================
     public void OnStartPlacement()
     {
@@ -524,13 +624,19 @@ public class CampaignTutorialManager : MonoBehaviour
 
         if (currentStage == TutorialStage.Stage2_CivilBuildings)
             ResetStage2Menu();
-        else if (currentStage == TutorialStage.Stage4_BuildWatchTower)
+        else if (currentStage == TutorialStage.Stage4_BuildDefenseTowers)
             ResetStage4Menu();
     }
 
     private void UpdateHandPointerAnimation()
     {
         if (handPointer == null || !handPointer.activeSelf || pointerRect == null) return;
+
+        if (isPointingAtWorld && Camera.main != null)
+        {
+            Vector3 screenPos = Camera.main.WorldToScreenPoint(currentTargetWorldPos);
+            targetScreenPosition = (Vector2)screenPos + pointerOffset;
+        }
 
         Vector2 currentPos = pointerRect.position;
         Vector2 smoothedPos = Vector2.Lerp(currentPos, targetScreenPosition, Time.unscaledDeltaTime * pointerMoveSpeed);
@@ -553,11 +659,17 @@ public class CampaignTutorialManager : MonoBehaviour
     private void PointHandAt(Vector3 worldPos)
     {
         if (handPointer == null) return;
+
+        isPointingAtWorld = true;
+        currentTargetWorldPos = worldPos;
         currentTargetUI = null;
         handPointer.SetActive(true);
 
-        Vector3 screenPos = Camera.main != null ? Camera.main.WorldToScreenPoint(worldPos) : Vector3.zero;
-        targetScreenPosition = (Vector2)screenPos + pointerOffset;
+        if (Camera.main != null)
+        {
+            Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPos);
+            targetScreenPosition = (Vector2)screenPos + pointerOffset;
+        }
 
         if (highlightRing != null) highlightRing.gameObject.SetActive(false);
     }
@@ -566,7 +678,8 @@ public class CampaignTutorialManager : MonoBehaviour
     {
         if (handPointer == null || uiRect == null) return;
 
-        // 🛠️ SỬA LỖI 2: Ép Canvas cập nhật ngay lập tức Layout trước khi tính tọa độ
+        isPointingAtWorld = false;
+
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(uiRect);
 
@@ -597,6 +710,7 @@ public class CampaignTutorialManager : MonoBehaviour
 
     private void HidePointer()
     {
+        isPointingAtWorld = false;
         currentTargetUI = null;
         if (handPointer != null) handPointer.SetActive(false);
         if (highlightRing != null) highlightRing.gameObject.SetActive(false);
@@ -663,6 +777,7 @@ public class CampaignTutorialManager : MonoBehaviour
         SetButtonInteractable(buildWoodCutterButton, false);
         SetButtonInteractable(buildStoneStorageButton, false);
         SetButtonInteractable(buildWatchTowerButton, false);
+        SetButtonInteractable(buildArcherTowerButton, false);
         SetButtonInteractable(upgradeBuildingButton, false);
     }
 
@@ -676,6 +791,7 @@ public class CampaignTutorialManager : MonoBehaviour
         SetButtonInteractable(buildWoodCutterButton, true);
         SetButtonInteractable(buildStoneStorageButton, true);
         SetButtonInteractable(buildWatchTowerButton, true);
+        SetButtonInteractable(buildArcherTowerButton, true);
         SetButtonInteractable(upgradeBuildingButton, true);
     }
 

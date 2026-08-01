@@ -125,6 +125,8 @@ public class BuildingSystem : Singleton<BuildingSystem>
         _movingBuilding = building;
         _isMovingMode = true;
 
+        // THÊM DÒNG NÀY PHÍA TRÊN SetActive(false)
+        _movingBuilding.PauseBuildingProcess();
         _movingBuilding.gameObject.SetActive(false);
 
         BuildingType currentType = building.buildingType; 
@@ -164,6 +166,9 @@ public class BuildingSystem : Singleton<BuildingSystem>
                 _movingBuilding.transform.position = newPosition;
                 _movingBuilding.transform.rotation = newRotation;
                 _movingBuilding.gameObject.SetActive(true);
+
+                // THÊM DÒNG NÀY PHÍA DƯỚI SetActive(true)
+                _movingBuilding.ResumeBuildingProcess();
 
                 if (currentGhost != null)
                 {
@@ -210,6 +215,8 @@ public class BuildingSystem : Singleton<BuildingSystem>
         if (_movingBuilding != null)
         {
             _movingBuilding.gameObject.SetActive(true);
+            // THÊM DÒNG NÀY
+            _movingBuilding.ResumeBuildingProcess();
         }
 
         EndMovingMode();

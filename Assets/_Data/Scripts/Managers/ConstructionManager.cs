@@ -167,7 +167,7 @@ public class ConstructionManager : Singleton<ConstructionManager>
             {
                 CampaignTutorialManager.Ins?.OnCivilBuildingPlaced(type, spawned.transform);
             }
-            else if (type == BuildingType.WatchTower)
+            else if (type == BuildingType.WatchTower || type == BuildingType.ArcherTower)
             {
                 CampaignTutorialManager.Ins?.OnDefenseBuildingPlaced(type, spawned.transform);
             }
