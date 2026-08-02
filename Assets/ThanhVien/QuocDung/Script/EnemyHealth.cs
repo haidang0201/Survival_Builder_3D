@@ -138,6 +138,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         CurrentHealth -= amount;
         Debug.Log($"{name} took {amount} damage at {hitPoint}. Current HP: {CurrentHealth}");
 
+        // Enable combat on EnemyAI when damaged
+        EnemyAI enemyAI = GetComponent<EnemyAI>();
+        if (enemyAI != null)
+        {
+            enemyAI.EnableCombat();
+        }
+
         if (hpFillImage != null)
         {
             hpFillImage.fillAmount = CurrentHealth / MaxHealth;

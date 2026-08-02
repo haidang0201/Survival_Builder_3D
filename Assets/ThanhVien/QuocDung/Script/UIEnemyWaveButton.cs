@@ -101,7 +101,23 @@ public class UIEnemyWaveButton : MonoBehaviour
         if (targetLeadEnemy == null) return;
 
         Vector3 attackPos = targetLeadEnemy.position;
-        Debug.Log($"[UIEnemyWaveButton] Player clicked Attack Button! Target position: {attackPos}");
+        Debug.Log($"[UIEnemyWaveButton] Player clicked Leader Attack Button! Ordering all soldiers to eliminate wave...");
+
+        // Enable combat for target lead enemy and squad
+        EnemyAI leadAI = targetLeadEnemy.GetComponent<EnemyAI>();
+        if (leadAI != null)
+        {
+            leadAI.EnableCombat();
+        }
+
+        EnemyAI[] allEnemies = Object.FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+        foreach (var enemy in allEnemies)
+        {
+            if (enemy != null && enemy.gameObject.activeInHierarchy)
+            {
+                enemy.EnableCombat();
+            }
+        }
 
         // Collect all UnitControllers in the scene
         List<UnitController> soldierList = new List<UnitController>();
@@ -144,18 +160,22 @@ public class UIEnemyWaveButton : MonoBehaviour
             }
         }
 
-        Debug.Log($"[UIEnemyWaveButton] Successfully ordered {count} soldiers to attack!");
+        Debug.Log($"[UIEnemyWaveButton] Successfully ordered {count} soldiers to attack wave enemies sequentially!");
 
         // Destroy UI button after being clicked
         Destroy(gameObject);
     }
 
     /// <summary>
-    /// Helper method to dynamically generate a World Space UI Attack Button over an enemy.
+    /// Helper method to dynamically generate a World Space UI Attack Button over the leader enemy.
     /// </summary>
     public static UIEnemyWaveButton CreateButton(Transform leadEnemy, float heightOffset = 3.0f)
     {
         if (leadEnemy == null) return null;
+
+        // Ensure only ONE button is created per leader enemy
+        UIEnemyWaveButton existing = leadEnemy.GetComponentInChildren<UIEnemyWaveButton>();
+        if (existing != null) return existing;
 
         // Check EventSystem
         if (UnityEngine.EventSystems.EventSystem.current == null)
@@ -166,7 +186,8 @@ public class UIEnemyWaveButton : MonoBehaviour
         }
 
         GameObject canvasObj = new GameObject("EnemyWaveWarningCanvas");
-        canvasObj.transform.position = leadEnemy.position + Vector3.up * heightOffset;
+        canvasObj.transform.SetParent(leadEnemy, false);
+        canvasObj.transform.localPosition = Vector3.up * heightOffset;
 
         Canvas canvas = canvasObj.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.WorldSpace;

@@ -22,11 +22,29 @@ public class EnemySpawn : MonoBehaviour
     [SerializeField] private bool useWaveSpawn = true;
     [SerializeField] private bool spawnOnlyAtNight = true;
     [SerializeField] private float waveInterval = 5f;
+    [Tooltip("Tự động spawn Enemy theo chu kỳ Wave độc lập, giúp Enemy luôn spawn ngay cả khi TẮT/BẬT Tutorial")]
+    [SerializeField] private bool autoSpawnWaveAlways = true;
 
     [Header("Warning Icon & Attack UI Settings")]
     [SerializeField] private bool showAttackButton = true;
     [SerializeField] private GameObject warningIconPrefab;
     [SerializeField] private float warningIconHeightOffset = 3f;
+
+    [Header("Cài Đặt Kích Thước Mũi Tên & Cảnh Báo (Spawn Warning Arrow)")]
+    [Tooltip("Điều chỉnh chiều rộng mũi tên dưới chân Enemy")]
+    [Range(0.1f, 5f)] public float warningArrowSize = 1.0f;
+
+    [Tooltip("Điều chỉnh độ dài kéo dài của mũi tên (1.0 = duỗi đúng tới mục tiêu, >1.0 = dài hơn, <1.0 = ngắn hơn)")]
+    [Range(0.1f, 5f)] public float warningArrowLengthMultiplier = 1.0f;
+
+    [Tooltip("Độ dài cộng thêm cố định (mét) cho mũi tên")]
+    public float warningArrowExtraLength = 0.0f;
+
+    [Tooltip("Điều chỉnh kích thước chữ đếm ngược")]
+    [Range(0.1f, 5f)] public float warningTimerTextScale = 1.0f;
+
+    [Tooltip("Độ cao chữ đếm ngược trên đầu/thân Enemy")]
+    [Range(0.5f, 5f)] public float warningTextHeightOffset = 1.8f;
 
     [Header("Exit Play Mode Settings")]
     [Tooltip("Khi tích chọn, nếu tất cả công trình/tháp bị phá hủy thì game sẽ tự động thoát chế độ Play.")]
@@ -36,19 +54,29 @@ public class EnemySpawn : MonoBehaviour
 
     private void Start()
     {
-        if (spawnOnStart && !useWaveSpawn)
+        if (spawnOnStart)
         {
             SpawnEnemy();
+        }
+
+        // Đảm bảo hệ thống spawn sóng luôn hoạt động khi game chạy (cho dù bật hay tắt Tutorial)
+        if (autoSpawnWaveAlways || useWaveSpawn)
+        {
+            StartWaveSpawning();
         }
     }
 
     private void Update()
     {
-        if (!useWaveSpawn) return;
+        bool shouldRunWaves = useWaveSpawn || autoSpawnWaveAlways;
+        if (!shouldRunWaves)
+        {
+            StopWaveSpawning();
+            return;
+        }
 
-        if (DayNightManager.Ins == null) return;
-
-        bool shouldSpawn = !spawnOnlyAtNight || DayNightManager.Ins.IsNight();
+        bool isNight = (DayNightManager.Ins != null) ? DayNightManager.Ins.IsNight() : true;
+        bool shouldSpawn = !spawnOnlyAtNight || isNight || autoSpawnWaveAlways;
 
         if (shouldSpawn)
         {
@@ -102,7 +130,6 @@ public class EnemySpawn : MonoBehaviour
             return;
         }
 
-        // Get all source positions where we want to spawn
         List<Transform> sources = new List<Transform>();
         if (spawnPoints != null && spawnPoints.Length > 0)
         {
@@ -125,7 +152,6 @@ public class EnemySpawn : MonoBehaviour
 
         List<GameObject> spawnedWaveEnemies = new List<GameObject>();
 
-        // Now, at each source position, spawn either a grid or a single enemy
         foreach (Transform source in sources)
         {
             List<EnemyAI> squadList = new List<EnemyAI>();
@@ -140,20 +166,19 @@ public class EnemySpawn : MonoBehaviour
             }
         }
 
-        // Spawn Warning Attack Button on Lead Enemy of the wave
+        // Gắn Mũi Tên & Cảnh Báo cho con Thủ Lĩnh (Lead Enemy)
         if (showAttackButton && spawnedWaveEnemies.Count > 0)
         {
             Transform leadEnemy = spawnedWaveEnemies[0].transform;
-            if (warningIconPrefab != null)
+            EnemySpawnWarningArrow arrow = EnemySpawnWarningArrow.Create(leadEnemy);
+            if (arrow != null)
             {
-                GameObject warningObj = Instantiate(warningIconPrefab, leadEnemy.position + Vector3.up * warningIconHeightOffset, Quaternion.identity);
-                UIEnemyWaveButton btn = warningObj.GetComponent<UIEnemyWaveButton>();
-                if (btn == null) btn = warningObj.AddComponent<UIEnemyWaveButton>();
-                btn.Initialize(leadEnemy, warningIconHeightOffset);
-            }
-            else
-            {
-                UIEnemyWaveButton.CreateButton(leadEnemy, warningIconHeightOffset);
+                arrow.arrowSize = warningArrowSize;
+                arrow.arrowLengthMultiplier = warningArrowLengthMultiplier;
+                arrow.arrowExtraLength = warningArrowExtraLength;
+                arrow.timerTextScale = warningTimerTextScale;
+                arrow.textHeightOffset = warningTextHeightOffset;
+                arrow.UpdateVisuals();
             }
         }
     }
@@ -167,7 +192,6 @@ public class EnemySpawn : MonoBehaviour
         {
             for (int c = 0; c < cols; c++)
             {
-                // Calculate offset from center of grid
                 float offsetX = (c - (cols - 1) * 0.5f) * spacingX;
                 float offsetZ = (r - (rows - 1) * 0.5f) * spacingZ;
 
@@ -183,7 +207,6 @@ public class EnemySpawn : MonoBehaviour
         GameObject enemy = Instantiate(enemyPrefab, position, rotation);
         if (spawnedWaveEnemies != null) spawnedWaveEnemies.Add(enemy);
 
-        // Assign attack target to EnemyAI if it exists
         EnemyAI enemyAI = enemy.GetComponent<EnemyAI>();
         if (enemyAI != null)
         {
@@ -194,7 +217,6 @@ public class EnemySpawn : MonoBehaviour
                 enemyAI.villageCenter = attackTarget;
             }
 
-            // Assign squad list
             if (squadList != null)
             {
                 squadList.Add(enemyAI);

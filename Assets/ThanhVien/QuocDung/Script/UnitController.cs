@@ -44,6 +44,7 @@ public class UnitController : MonoBehaviour
     public GameObject currentTarget;
     public float scanFrequency = 0.25f;
     [SerializeField] AttackMode attackMode = AttackMode.Melee;
+    public AttackMode AttackMode => attackMode;
     [SerializeField] float attackRange = 2f;
     [SerializeField] float rangedAttackRange = 5f;
     
@@ -554,6 +555,41 @@ public class UnitController : MonoBehaviour
                     }
                 }
             }
+        }
+
+        // Fallback 3 (Dành cho chế độ phản công khi bấm nút Tấn Công): Nếu đang phản công, mở rộng quét TOÀN BỘ BẢN ĐỒ tìm kẻ địch còn sống
+        if (validEnemies.Count == 0 && isRespondingToWarning)
+        {
+            EnemyAI[] allEnemyAIs = Object.FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+            foreach (var enemyAI in allEnemyAIs)
+            {
+                if (enemyAI != null && enemyAI.gameObject.activeInHierarchy && IsEnemyAlive(enemyAI.gameObject))
+                {
+                    if (!validEnemies.Contains(enemyAI.gameObject))
+                    {
+                        validEnemies.Add(enemyAI.gameObject);
+                    }
+                }
+            }
+
+            try
+            {
+                GameObject[] taggedEnemies = GameObject.FindGameObjectsWithTag(enemyTag);
+                if (taggedEnemies != null)
+                {
+                    foreach (var go in taggedEnemies)
+                    {
+                        if (go == null || !go.activeInHierarchy) continue;
+                        var health = go.GetComponentInParent<EnemyHealth>();
+                        GameObject enemyRoot = (health != null) ? health.gameObject : go;
+                        if (IsEnemyAlive(enemyRoot) && !validEnemies.Contains(enemyRoot))
+                        {
+                            validEnemies.Add(enemyRoot);
+                        }
+                    }
+                }
+            }
+            catch {}
         }
 
         if (validEnemies.Count == 0)
