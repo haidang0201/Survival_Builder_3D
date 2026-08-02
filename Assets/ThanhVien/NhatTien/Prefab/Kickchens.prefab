@@ -638,6 +638,8 @@ GameObject:
   - component: {fileID: 3588896713516003638}
   - component: {fileID: 8498634917601131008}
   - component: {fileID: 7930533285859503384}
+  - component: {fileID: 6440337159544788936}
+  - component: {fileID: 820593516191949640}
   m_Layer: 11
   m_Name: Kickchens
   m_TagString: Tower
@@ -821,6 +823,40 @@ MonoBehaviour:
   hpBarSize: {x: 2, y: 0.25}
   hpBarColor: {r: 1, g: 0, b: 0, a: 1}
   hideHpBarWhenFull: 1
+--- !u!208 &6440337159544788936
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2558072008158499750}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &820593516191949640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2558072008158499750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce1a42ebe0ab4641a8c30ac2b6cc529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingNavMeshObstacle
+  overrideSize: 1
+  manualSize: {x: 5.4, y: 1.88, z: 5.52}
+  manualCenter: {x: 1.04, y: 0, z: 0}
+  carve: 1
+  carveOnlyStationary: 0.5
+  movementThreshold: 0.1
 --- !u!1 &3548391910326258539
 GameObject:
   m_ObjectHideFlags: 0
