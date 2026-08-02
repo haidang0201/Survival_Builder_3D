@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b572ead2c7326a84680f7d572ab48cfa, type: 3}
+  m_Name: Tactic_HorseArcherHarass
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.AI.Tactic_HorseArcherHarass
+  HorseArcherTypes:
+  - {fileID: 11400000, guid: 3eb0efb0072e87a43b551f9d5f7763ea, type: 2}
+  VulnerableTargetTypes:
+  - {fileID: 11400000, guid: a1a3328e97cc36541aaeb89dfeb42cb9, type: 2}
+  - {fileID: 11400000, guid: 363ffadb27ca43a4cb82610e9af2c1cc, type: 2}
+  - {fileID: 11400000, guid: 379c07d7f37f8d74aa5aae5050b98c2c, type: 2}
+  shootDistanceVariable: 0.8
+  skirmishDistance: 30
+  maxRiskTolerance: 40
+  skipWaypointDistance: 5
+  ignoreTargetDangerDistance: 2
+  ignoreStartDangerDistance: 15

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f0287b28e66c3848aa760316f413d3f, type: 3}
+  m_Name: MeleeCombatPlacementSO
+  m_EditorClassIdentifier: 
+  neighborRadius: 3
+  separationRadius: 1.8
+  cohesionForce: 0.2
+  separationForce: 30
+  alignmentForce: 0
+  formationCohesionForce: 1
+  enemyAttractionForce: 120
+  enemySeparationRadius: 1.7
+  enemySeparationForce: 200
+  engagementDistance: 30
+  arrivalDistance: 5
+  stopDistanceToEnemy: 2
+  buildingAttackDistance: 2
+  minAttackPointSpacing: 2
+  navMeshSampleRadius: 2
+  maxBuildingAttackPoints: 10
+  enemyFrontlineSampleSize: 7

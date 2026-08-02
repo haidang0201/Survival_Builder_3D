@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7157531266fc90a4c938dd04e413e000, type: 3}
+  m_Name: Elephant
+  m_EditorClassIdentifier: 
+  unitIcon: {fileID: 21300000, guid: 83748eb066cec3c4b8c70548f406b114, type: 3}
+  description: "T\xF6t\xF6t\xF6t"
+  formationPrefab: {fileID: 6179680881983299624, guid: 1e87798cb41befb44be643ddf1b9b7c5, type: 3}
+  Cost: 0
+  maxHealth: 500
+  Armor: 15
+  baseDamage: 4
+  armorPenetration: 10
+  chargeDamageMultiplier: 2
+  chargeDamageDuration: 5
+  shieldMeleeBlockChance: 0
+  shieldArrowBlockChance: 0
+  Arrows: 0
+  canRecieveKnockback: 0
+  unitType: {fileID: 11400000, guid: a1a3328e97cc36541aaeb89dfeb42cb9, type: 2}
+  attackableTargetTypes: 000000000100000002000000
+  baseMorale: 30
+  isGeneral: 0
+  moralePenaltyPerHealthLoss: 5
+  generalDeathImpact: 15
+  effectsOnOtherFormations: []
+  effectRadius: 40
+  idleAnimations: 1
+  attackAnimations: 1
+  formationWidth: 2
+  formationSpacing: 5
+  formationMoveSpeed: 2.5
+  formationTurnSpeed: 4
+  unitRotationSpeed: 1.5
+  unitCatchUpFactor: 0.5
+  unitSlowDownFactor: 0.2
+  maxSpeedMultiplier: 1.3
+  minSpeedMultiplier: 0.7
+  stoppingDistance: 0.3
+  colliderOverhang: 7.13
+  maxColliderSize: {x: 20, y: 15}
+  colliderHeight: 10
+  centerSmoothingSpeed: 5
+  combatBehaviour: {fileID: 11400000, guid: 73ae6e14bbefaf8489cc6372140da158, type: 2}
+  placementBehaviour: {fileID: 11400000, guid: fccf877bf012ae146b33bccd826a21c2, type: 2}
+  Troops: 4

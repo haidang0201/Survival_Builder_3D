@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7157531266fc90a4c938dd04e413e000, type: 3}
+  m_Name: Musketeer
+  m_EditorClassIdentifier: Assembly-CSharp::TopsonGames.UnitDataSO
+  unitIcon: {fileID: 21300000, guid: 0b814ade4efc0a44fa664a8213f3ede5, type: 3}
+  description: A basic unit.
+  formationPrefab: {fileID: 3510383459954532266, guid: 23f81271efd3e454cbe0e94b9e27bdb4, type: 3}
+  Cost: 0
+  maxHealth: 100
+  Armor: 5
+  baseDamage: 10
+  armorPenetration: 0
+  chargeDamageMultiplier: 1.5
+  chargeDamageDuration: 5
+  shieldMeleeBlockChance: 0
+  shieldArrowBlockChance: 0
+  Arrows: 15
+  canRecieveKnockback: 1
+  unitType: {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+  attackableTargetTypes: 00000000
+  baseMorale: 50
+  isGeneral: 0
+  moralePenaltyPerHealthLoss: 5
+  generalDeathImpact: 15
+  effectsOnOtherFormations: []
+  effectRadius: 40
+  idleAnimations: 1
+  attackAnimations: 1
+  formationWidth: 8
+  formationSpacing: 1.7
+  formationMoveSpeed: 3
+  formationTurnSpeed: 5
+  unitRotationSpeed: 8
+  unitCatchUpFactor: 0.5
+  unitSlowDownFactor: 0.1
+  maxSpeedMultiplier: 1.5
+  minSpeedMultiplier: 0.7
+  stoppingDistance: 0.1
+  colliderOverhang: 5
+  maxColliderSize: {x: 17, y: 12}
+  colliderHeight: 10
+  centerSmoothingSpeed: 5
+  combatBehaviour: {fileID: 11400000, guid: 6c76dc5c3503346408a7fd91f2264287, type: 2}
+  placementBehaviour: {fileID: 11400000, guid: fccf877bf012ae146b33bccd826a21c2, type: 2}
+  Troops: 24

@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7157531266fc90a4c938dd04e413e000, type: 3}
+  m_Name: Archers
+  m_EditorClassIdentifier: 
+  unitIcon: {fileID: 21300000, guid: a5c8251c5595f184dbaaf463d69da16e, type: 3}
+  description: Pointy arrows
+  formationPrefab: {fileID: 9130308217352826933, guid: 05dd000a7ba420246a8bc7129a500735, type: 3}
+  Cost: 0
+  maxHealth: 100
+  Armor: 15
+  baseDamage: 5
+  armorPenetration: 2
+  chargeDamageMultiplier: 1.5
+  chargeDamageDuration: 5
+  shieldMeleeBlockChance: 0
+  shieldArrowBlockChance: 0
+  Arrows: 20
+  unitType: {fileID: 11400000, guid: 9a78bf079e1b9754c8248c65f78f4d4e, type: 2}
+  attackableTargetTypes: 00000000
+  baseMorale: 30
+  isGeneral: 0
+  moralePenaltyPerHealthLoss: 5
+  generalDeathImpact: 15
+  effectsOnOtherFormations: []
+  effectRadius: 40
+  idleAnimations: 2
+  attackAnimations: 1
+  formationWidth: 10
+  formationSpacing: 1.7
+  formationMoveSpeed: 3
+  formationTurnSpeed: 5
+  unitRotationSpeed: 2
+  unitCatchUpFactor: 0.5
+  unitSlowDownFactor: 0.2
+  maxSpeedMultiplier: 1.3
+  minSpeedMultiplier: 0.7
+  stoppingDistance: 0.3
+  colliderOverhang: 5
+  maxColliderSize: {x: 20, y: 15}
+  colliderHeight: 10
+  centerSmoothingSpeed: 5
+  combatBehaviour: {fileID: 11400000, guid: 78b69df38c659b747993017383c601ff, type: 2}
+  placementBehaviour: {fileID: 11400000, guid: fccf877bf012ae146b33bccd826a21c2, type: 2}
+  Troops: 30
