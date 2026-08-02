@@ -281,6 +281,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuildingUpgradeUI
   localUpgradePanel: {fileID: 5580910276064323163}
   panelRectTransform: {fileID: 3420633894169973837}
+  lockUIRotation: 1
+  faceCamera: 1
+  keepConstantSize: 1
+  baseDistance: 15
+  baseOrthographicSize: 5
   autoArrangeButtons: 1
   ringRadius: 350
   startAngle: 45
@@ -363,13 +368,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -500,13 +505,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -739,13 +744,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1453,13 +1458,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1848,13 +1853,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1966,6 +1971,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: KhoDa
       objectReference: {fileID: 0}
+    - target: {fileID: 1100123789311764426, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2506075403489305980, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -2006,16 +2015,80 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7557015301310405286, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
+      propertyPath: maxCapacity
+      value: 100
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9005833631035437318}
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7783307121673308763}
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2826703098970682304}
   m_SourcePrefab: {fileID: 100100000, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
 --- !u!1 &1288484455214704858 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1100123789311764426, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
   m_PrefabInstance: {fileID: 2208436213206814480}
   m_PrefabAsset: {fileID: 0}
+--- !u!208 &9005833631035437318
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1288484455214704858}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 2.607, y: 2.753, z: 3.1690001}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 2.753, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &7783307121673308763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1288484455214704858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce1a42ebe0ab4641a8c30ac2b6cc529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingNavMeshObstacle
+  overrideSize: 1
+  manualSize: {x: 7.55, y: 3, z: 6.17}
+  manualCenter: {x: 0, y: 0, z: 0}
+  carve: 1
+  carveOnlyStationary: 0.5
+  movementThreshold: 0.1
+--- !u!114 &2826703098970682304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1288484455214704858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c985f15d5024124d8af44f42f1f174d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StorageSlotHUD
+  storageType: 2
+  hudPanel: {fileID: 0}
+  woodStorage: {fileID: 0}
+  riceStorage: {fileID: 0}
+  stoneStorage: {fileID: 8537162879823074742}
 --- !u!4 &4351232904104241772 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2506075403489305980, guid: 7340cc271bb2f7c4cbc73256f548938b, type: 3}
@@ -2258,10 +2331,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7557015301310405286, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
+      propertyPath: maxCapacity
+      value: 200
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2945445225246268644}
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3948907646942334018}
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 887115009863397232}
   m_SourcePrefab: {fileID: 100100000, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
 --- !u!114 &3153805389908810432 stripped
 MonoBehaviour:
@@ -2279,6 +2365,57 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
   m_PrefabInstance: {fileID: 4835590748054634598}
   m_PrefabAsset: {fileID: 0}
+--- !u!208 &2945445225246268644
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5503140272006244268}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 2.607, y: 2.753, z: 3.1690001}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 2.753, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &3948907646942334018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5503140272006244268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce1a42ebe0ab4641a8c30ac2b6cc529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingNavMeshObstacle
+  overrideSize: 1
+  manualSize: {x: 11, y: 3, z: 6.92}
+  manualCenter: {x: 1.29, y: 0, z: -0.11}
+  carve: 1
+  carveOnlyStationary: 0.5
+  movementThreshold: 0.1
+--- !u!114 &887115009863397232
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5503140272006244268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c985f15d5024124d8af44f42f1f174d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StorageSlotHUD
+  storageType: 2
+  hudPanel: {fileID: 0}
+  woodStorage: {fileID: 0}
+  riceStorage: {fileID: 0}
+  stoneStorage: {fileID: 3153805389908810432}
 --- !u!4 &7051553342218347802 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2506075403489305980, guid: 2e3d57ece8210d34da04b7c32fbac281, type: 3}
@@ -2354,38 +2491,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 9036043346710529352}
     m_Modifications:
-    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.angle
-      value: 90
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.radiusThickness
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102556642896161, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: looping
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.radius.value
-      value: 6.58
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 2.36
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.minScalar
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 4303440017469370445, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: lengthInSec
-      value: 3.5
-      objectReference: {fileID: 0}
     - target: {fileID: 1266593345465148485, guid: 25f8a06e8555a5041904acded44bc97c, type: 3}
       propertyPath: m_Materials.Array.size
       value: 1
@@ -2485,6 +2590,38 @@ PrefabInstance:
     - target: {fileID: 8202410161701405397, guid: 25f8a06e8555a5041904acded44bc97c, type: 3}
       propertyPath: m_Name
       value: FireworksOrange
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.angle
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.radiusThickness
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102556642896161, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: looping
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.radius.value
+      value: 6.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 2.36
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.minScalar
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4303440017469370445, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: lengthInSec
+      value: 3.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2640,10 +2777,31 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7557015301310405286, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
+      propertyPath: maxCapacity
+      value: 350
+      objectReference: {fileID: 0}
+    - target: {fileID: 8240144339660191898, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 5.13
+      objectReference: {fileID: 0}
+    - target: {fileID: 8240144339660191898, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.45
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3648744372960207267}
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6704897875511458647}
+    - targetCorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5270942367657670271}
   m_SourcePrefab: {fileID: 100100000, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
 --- !u!114 &699535281069894357 stripped
 MonoBehaviour:
@@ -2666,6 +2824,57 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1100123789311764426, guid: 2940239babad38945b3d5b5f9faa4279, type: 3}
   m_PrefabInstance: {fileID: 7019659095586795635}
   m_PrefabAsset: {fileID: 0}
+--- !u!208 &3648744372960207267
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7939487704447195065}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 2.607, y: 2.753, z: 3.1690001}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 2.753, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &6704897875511458647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7939487704447195065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce1a42ebe0ab4641a8c30ac2b6cc529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingNavMeshObstacle
+  overrideSize: 1
+  manualSize: {x: 13.3, y: 3, z: 7.99}
+  manualCenter: {x: 1.58, y: 0, z: 0.19}
+  carve: 1
+  carveOnlyStationary: 0.5
+  movementThreshold: 0.1
+--- !u!114 &5270942367657670271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7939487704447195065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c985f15d5024124d8af44f42f1f174d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StorageSlotHUD
+  storageType: 2
+  hudPanel: {fileID: 0}
+  woodStorage: {fileID: 0}
+  riceStorage: {fileID: 0}
+  stoneStorage: {fileID: 699535281069894357}
 --- !u!1001 &7784626886354601087
 PrefabInstance:
   m_ObjectHideFlags: 0
