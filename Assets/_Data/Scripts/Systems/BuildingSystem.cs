@@ -68,7 +68,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
         currentGhost.buildingType = type;
         currentGhost.InstantSnapToMouse();
 
-        isPlacing = true;
+        LandGridManager.Ins?.SetGridVisualActive(true);
 
         // 🔥 CẬP NHẬT TUTORIAL: Báo cho Tutorial Manager người chơi đã bắt đầu chế độ đặt nhà
         if (CampaignTutorialManager.Ins != null)
@@ -90,7 +90,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
             currentGhost = null;
         }
 
-        isPlacing = false;
+        LandGridManager.Ins?.SetGridVisualActive(false);
 
         // 🔥 CẬP NHẬT TUTORIAL: Báo cho Tutorial Manager khi hủy đặt nhà
         if (CampaignTutorialManager.Ins != null)
@@ -107,7 +107,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
     public void OnPlacingCompleted(bool shouldReopenMenu)
     {
         currentGhost = null;
-        isPlacing = false;
+        LandGridManager.Ins?.SetGridVisualActive(false);
 
         if (UIManager.Ins != null)
         {
@@ -125,7 +125,11 @@ public class BuildingSystem : Singleton<BuildingSystem>
         _movingBuilding = building;
         _isMovingMode = true;
 
-        // THÊM DÒNG NÀY PHÍA TRÊN SetActive(false)
+        // 🔥 XÓA ĐÁNH DẤU Ô CŨ TRÊN GRID (Để vị trí cũ tạm thời trống)
+        LandGridManager.Ins?.UnmarkAreaAsOccupied(_movingBuilding.transform.position);
+
+        LandGridManager.Ins?.SetGridVisualActive(true);
+
         _movingBuilding.PauseBuildingProcess();
         _movingBuilding.gameObject.SetActive(false);
 
@@ -156,8 +160,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
         {
             if (currentGhost == null || _movingBuilding == null) return;
 
-            bool isValidPosition = true; 
-
+            bool isValidPosition = currentGhost != null && currentGhost.isValid; 
             if (isValidPosition)
             {
                 Vector3 newPosition = currentGhost.transform.position;
@@ -167,7 +170,9 @@ public class BuildingSystem : Singleton<BuildingSystem>
                 _movingBuilding.transform.rotation = newRotation;
                 _movingBuilding.gameObject.SetActive(true);
 
-                // THÊM DÒNG NÀY PHÍA DƯỚI SetActive(true)
+                // 🔥 ĐÁNH DẤU VỊ TRÍ MỚI ĐÃ BỊ CHIẾM
+                LandGridManager.Ins?.MarkAreaAsOccupied(newPosition);
+
                 _movingBuilding.ResumeBuildingProcess();
 
                 if (currentGhost != null)
@@ -197,6 +202,7 @@ public class BuildingSystem : Singleton<BuildingSystem>
         _isMovingMode = false;
         _movingBuilding = null;
         currentGhost = null;
+        LandGridManager.Ins?.SetGridVisualActive(false);
 
         if (UIManager.Ins != null)
         {
@@ -215,8 +221,10 @@ public class BuildingSystem : Singleton<BuildingSystem>
         if (_movingBuilding != null)
         {
             _movingBuilding.gameObject.SetActive(true);
-            // THÊM DÒNG NÀY
             _movingBuilding.ResumeBuildingProcess();
+
+            // 🔥 NẾU HỦY DI CHUYỂN, ĐÁNH DẤU LẠI VỊ TRÍ CŨ
+            LandGridManager.Ins?.MarkAreaAsOccupied(_movingBuilding.transform.position);
         }
 
         EndMovingMode();

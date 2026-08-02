@@ -52,16 +52,18 @@ MonoBehaviour:
   - {fileID: 8032121723163170165}
   - {fileID: 7927406282862573663}
   buildingType: 1
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &2252407981744615781
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -150,16 +152,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
   levelModels: []
   buildingType: 1
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &7862226438102797558
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -174,7 +178,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 174489663184804227, guid: f681e9457ed84444194ab4b93839fef5, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1281597053212983587, guid: f681e9457ed84444194ab4b93839fef5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -243,16 +247,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
   levelModels: []
   buildingType: 1
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!4 &8995123253827587541 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1281597053212983587, guid: f681e9457ed84444194ab4b93839fef5, type: 3}
@@ -288,19 +294,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1475533729270859256, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.92
+      value: 3.97
       objectReference: {fileID: 0}
     - target: {fileID: 1475533729270859256, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3.77
+      value: 1.62
       objectReference: {fileID: 0}
     - target: {fileID: 5020665550639526663, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.691998
+      value: 0.74199796
       objectReference: {fileID: 0}
     - target: {fileID: 5020665550639526663, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.003997
+      value: 1.8539971
       objectReference: {fileID: 0}
     - target: {fileID: 5024779341042145300, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.x
@@ -344,19 +350,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6286405638913801372, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 4.16
+      value: 1.2099998
       objectReference: {fileID: 0}
     - target: {fileID: 6286405638913801372, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 6.54
+      value: 4.3900003
       objectReference: {fileID: 0}
     - target: {fileID: 8963714746020760970, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.702
+      value: 0.75199986
       objectReference: {fileID: 0}
     - target: {fileID: 8963714746020760970, guid: d4ec626470dff304e87935067e794bf4, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3.767997
+      value: 1.6179973
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -390,13 +396,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
   levelModels: []
   buildingType: 1
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0

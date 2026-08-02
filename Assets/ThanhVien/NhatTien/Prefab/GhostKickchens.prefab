@@ -67,6 +67,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 1
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 4
   buildingName: "Nh\xE0 Ch\xEDnh"
@@ -138,16 +139,18 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   buildingType: 4
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &4293174352484872784
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -250,16 +253,18 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   buildingType: 4
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!4 &4132244442431927153 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 201752955728232737, guid: d8c5a9411a639704aaf418fb0349d13d, type: 3}

@@ -72,6 +72,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 0
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 9
   buildingName: "Th\xE1p Cung"
@@ -300,16 +301,18 @@ MonoBehaviour:
   - {fileID: 8541478601719109598}
   - {fileID: 1940704726347678661}
   buildingType: 9
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &2952158091922424639
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -415,16 +418,18 @@ MonoBehaviour:
   - {fileID: 8541478601719109598}
   - {fileID: 1940704726347678661}
   buildingType: 9
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!4 &8326799192757899103 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6590621797040573536, guid: 7e43670d742d0604ca4b5984242b6802, type: 3}
@@ -540,16 +545,18 @@ MonoBehaviour:
   - {fileID: 8541478601719109598}
   - {fileID: 1940704726347678661}
   buildingType: 9
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &8634564951709561807
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -682,16 +689,18 @@ MonoBehaviour:
   - {fileID: 8541478601719109598}
   - {fileID: 1940704726347678661}
   buildingType: 9
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!95 &2831875671423961722 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5807661066353932725, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}

@@ -1,113 +1,161 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /*
  * HouseSpawnPanel.cs
  * Folder: Scripts/Spawning/
  * Dự án: KHẨN HOANG (PENTA DEV)
  *
- * CHỨC NĂNG:
- * Gắn lên GameObject House (cùng object có script House.cs, cần có Collider để bấm được).
- * Khi bấm chuột vào House -> hiện panel UI có 3 nút Tree/Rice/Stone.
- * Bấm nút nào -> gọi WorkerSpawner.Instance.SpawnWorker(loại tương ứng, EntrancePosition của House này).
- *
- * KHÔNG sửa House.cs. Script này đứng độc lập bên cạnh, chỉ đọc EntrancePosition qua
- * property public đã có sẵn.
- *
- * SETUP TRONG UNITY:
- * 1. Gắn script này vào cùng GameObject với House.cs (object đó cần có Collider,
- *    ví dụ BoxCollider bao quanh nhà, để OnMouseDown() nhận được click).
- * 2. Tạo 1 Canvas trong Scene, bên trong có:
- *    - 1 Panel (đặt tên "WorkerSpawnPanel") chứa 3 Button: "Tree", "Rice", "Stone".
- *    - Panel này để SetActive(false) sẵn lúc đầu.
- * 3. Kéo Panel đó vào field spawnPanel bên dưới.
- * 4. Kéo 3 Button tương ứng vào 3 field treeButton/riceButton/stoneButton (script tự
- *    gắn onClick bằng code, không cần bạn tự nối onClick trong Inspector).
- * 5. Đảm bảo Scene đã có WorkerSpawner (xem WorkerSpawner.cs) với 3 prefab được gán.
+ * CHỨC NĂNG CẬP NHẬT:
+ * - Không tự sinh UI floating lơ lửng trên đầu House nữa.
+ * - Tự tạo Panel chứa 3 nút Chiêu Mộ cố định ở GÓC DƯỚI BÊN PHẢI MÀN HÌNH (Screen Space).
+ * - Đổi tên danh xưng: Thợ chặt gỗ, Nông dân, Thợ mỏ.
+ * - Tiêu tốn 10 Lúa (Food) khi chiêu mộ.
  */
-[RequireComponent(typeof(Collider))]
+
 public class HouseSpawnPanel : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("House gắn cùng object này. Nếu để trống sẽ tự GetComponent lúc Awake.")]
     public House house;
 
-    [Header("UI")]
-    [Tooltip("Panel chứa các nút spawn worker. Sẽ được Show/Hide khi bấm vào House.")]
-    public GameObject spawnPanel;
+    [Header("Cấu hình Chi phí")]
+    [Tooltip("Số Lúa tiêu tốn để mua 1 dân làng.")]
+    public int foodCostPerWorker = 10;
 
-    public UnityEngine.UI.Button treeButton;
-    public UnityEngine.UI.Button riceButton;
-    public UnityEngine.UI.Button stoneButton;
+    private GameObject screenCanvasObj;
+    private GameObject spawnPanelObj;
 
-    [Header("Options")]
-    [Tooltip("Nếu bật, bấm ra ngoài panel (chuột trái ở nơi khác) sẽ tự đóng panel.")]
-    public bool closeOnClickOutside = true;
-
-    void Awake()
+    private void Awake()
     {
         if (house == null) house = GetComponent<House>();
-
-        if (treeButton != null) treeButton.onClick.AddListener(() => SpawnAndClose(WorkerSpawner.WorkerType.Tree));
-        if (riceButton != null) riceButton.onClick.AddListener(() => SpawnAndClose(WorkerSpawner.WorkerType.Rice));
-        if (stoneButton != null) stoneButton.onClick.AddListener(() => SpawnAndClose(WorkerSpawner.WorkerType.Stone));
-
-        if (spawnPanel != null) spawnPanel.SetActive(false);
     }
 
-    void Update()
+    private void Start()
     {
-        if (!closeOnClickOutside) return;
-        if (spawnPanel == null || !spawnPanel.activeSelf) return;
+        CreateScreenSpaceUI();
+    }
 
-        if (Input.GetMouseButtonDown(0) && !IsPointerOverPanel())
+    /// <summary>
+    /// Tạo Panel Chiêu Mộ ở Góc Dưới Bên Phải Màn Hình bằng Code
+    /// </summary>
+    private void CreateScreenSpaceUI()
+    {
+        // 1. Tìm hoặc Tạo Screen Space Canvas
+        screenCanvasObj = GameObject.Find("WorkerSpawn_ScreenCanvas");
+        if (screenCanvasObj == null)
         {
-            // Nếu click ngay lên House thì OnMouseDown() bên dưới sẽ tự xử lý, không cần đóng ở đây.
-            bool clickedOnThisHouse = Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, 500f)
-                                       && hit.collider != null
-                                       && hit.collider.gameObject == gameObject;
-            if (!clickedOnThisHouse)
-                HidePanel();
+            screenCanvasObj = new GameObject("WorkerSpawn_ScreenCanvas");
+            Canvas canvas = screenCanvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            
+            CanvasScaler scaler = screenCanvasObj.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+
+            screenCanvasObj.AddComponent<GraphicRaycaster>();
+        }
+
+        // 2. Tạo Panel chứa các nút bấm cố định Góc Dưới Bên Phải (Bottom-Right)
+        spawnPanelObj = new GameObject("BottomRight_SpawnPanel");
+        spawnPanelObj.transform.SetParent(screenCanvasObj.transform, false);
+
+        RectTransform panelRect = spawnPanelObj.AddComponent<RectTransform>();
+        // Anchor to Bottom-Right
+        panelRect.anchorMin = new Vector2(1f, 0f);
+        panelRect.anchorMax = new Vector2(1f, 0f);
+        panelRect.pivot = new Vector2(1f, 0f);
+        panelRect.anchoredPosition = new Vector2(-30f, 30f); // Thụt vào lề 30px
+        panelRect.sizeDelta = new Vector2(170f, 230f);
+
+        Image panelBg = spawnPanelObj.AddComponent<Image>();
+        panelBg.color = new Color(0.1f, 0.1f, 0.1f, 0.85f);
+
+        VerticalLayoutGroup layout = spawnPanelObj.AddComponent<VerticalLayoutGroup>();
+        layout.padding = new RectOffset(10, 10, 10, 10);
+        layout.spacing = 8f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+
+        // 3. Tạo 3 Nút Chiêu Mộ với Tên Mới & Giá 10 Lúa
+        CreateWorkerButton("BtnWood", "Thợ chặt gỗ\n(10 🌾)", new Color(0.2f, 0.6f, 0.2f), WorkerSpawner.WorkerType.Tree);
+        CreateWorkerButton("BtnRice", "Nông dân\n(10 🌾)", new Color(0.8f, 0.65f, 0.1f), WorkerSpawner.WorkerType.Rice);
+        CreateWorkerButton("BtnStone", "Thợ mỏ\n(10 🌾)", new Color(0.45f, 0.45f, 0.5f), WorkerSpawner.WorkerType.Stone);
+
+        // Ban đầu ẩn Panel
+        spawnPanelObj.SetActive(false);
+    }
+
+    private void CreateWorkerButton(string name, string textLabel, Color btnColor, WorkerSpawner.WorkerType type)
+    {
+        GameObject btnObj = new GameObject(name);
+        btnObj.transform.SetParent(spawnPanelObj.transform, false);
+
+        Image img = btnObj.AddComponent<Image>();
+        img.color = btnColor;
+
+        Button btn = btnObj.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        GameObject textObj = new GameObject("Text");
+        textObj.transform.SetParent(btnObj.transform, false);
+
+        RectTransform textRect = textObj.AddComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+
+        Text text = textObj.AddComponent<Text>();
+        text.text = textLabel;
+        
+        Font defaultFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (defaultFont != null) text.font = defaultFont;
+
+        text.fontSize = 16;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.white;
+
+        btn.onClick.AddListener(() => TrySpawnWorker(type));
+    }
+
+    public void TogglePanel()
+    {
+        if (spawnPanelObj != null)
+        {
+            spawnPanelObj.SetActive(!spawnPanelObj.activeSelf);
         }
     }
 
-    bool IsPointerOverPanel()
-    {
-        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-    }
-
-    void OnMouseDown()
-    {
-        // Tránh trigger khi đang bấm vào UI (nút bấm) nằm đè lên world object
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
-
-        ShowPanel();
-    }
-
-    void ShowPanel()
-    {
-        if (spawnPanel != null) spawnPanel.SetActive(true);
-    }
-
-    void HidePanel()
-    {
-        if (spawnPanel != null) spawnPanel.SetActive(false);
-    }
-
-    void SpawnAndClose(WorkerSpawner.WorkerType type)
+    /// <summary>
+    /// Xử lý trừ 10 Lúa trước khi sinh Worker
+    /// </summary>
+    private void TrySpawnWorker(WorkerSpawner.WorkerType type)
     {
         if (WorkerSpawner.Instance == null)
         {
-            Debug.LogError("[HouseSpawnPanel] Không tìm thấy WorkerSpawner.Instance trong Scene.");
-            return;
-        }
-        if (house == null)
-        {
-            Debug.LogError("[HouseSpawnPanel] Thiếu reference tới House.");
+            Debug.LogError("[HouseSpawnPanel] Không tìm thấy WorkerSpawner.Instance.");
             return;
         }
 
-        WorkerSpawner.Instance.SpawnWorker(type, house.EntrancePosition);
-        HidePanel();
+        // Kiểm tra và trừ 10 Lúa
+        if (DialogNPC.Instance != null)
+        {
+            // Trừ 0 Gỗ, 10 Lúa, 0 Đá
+            bool success = DialogNPC.Instance.Consume(0, foodCostPerWorker, 0);
+            if (!success)
+            {
+                Debug.LogWarning("[HouseSpawnPanel] Không đủ 10 Lúa để chiêu mộ!");
+                return;
+            }
+        }
+
+        Vector3 spawnOrigin = (house != null) ? house.EntrancePosition : transform.position;
+        WorkerSpawner.Instance.SpawnWorker(type, spawnOrigin);
+
+        // Đóng panel sau khi mua thành công
+        if (spawnPanelObj != null)
+        {
+            spawnPanelObj.SetActive(false);
+        }
     }
 }

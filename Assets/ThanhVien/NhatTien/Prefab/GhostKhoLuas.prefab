@@ -69,6 +69,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 1
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 5
   buildingName: Food Storage
@@ -140,16 +141,18 @@ MonoBehaviour:
   - {fileID: 1506753747909990820}
   - {fileID: 7155816854271764207}
   buildingType: 5
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &1075276997833429690
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -259,16 +262,18 @@ MonoBehaviour:
   - {fileID: 1506753747909990820}
   - {fileID: 7155816854271764207}
   buildingType: 5
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!4 &6855894570574499582 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5893278361766976580, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
@@ -384,16 +389,18 @@ MonoBehaviour:
   - {fileID: 1506753747909990820}
   - {fileID: 7155816854271764207}
   buildingType: 5
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!114 &3376546026980741618 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1511283183772167501, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
@@ -548,13 +555,15 @@ MonoBehaviour:
   - {fileID: 1506753747909990820}
   - {fileID: 7155816854271764207}
   buildingType: 5
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0

@@ -3,45 +3,66 @@ using UnityEngine;
 
 public enum ExpandDirection
 {
-    North, // +Z (Trên)
-    South, // -Z (Dưới)
-    East,  // +X (Phải)
-    West   // -X (Trái)
+    North, // +Z
+    South, // -Z
+    East,  // +X
+    West   // -X
 }
 
 public class LandGridManager : MonoBehaviour
 {
     public static LandGridManager Ins { get; private set; }
 
-    [Header("=== CẤU HÌNH Ô ĐẤT ===")]
-    [Tooltip("Prefab của 1 ô đất (có MeshRenderer & Collider)")]
-    [SerializeField] private GameObject landPlotPrefab; 
-    [Tooltip("Kích thước chiều dài / rộng của 1 ô đất (ví dụ 10m x 10m)")]
+    [Header("=== CẤU HÌNH MAP CÓ SẴN ===")]
+    [Tooltip("Parent chứa toàn bộ Ground/Map trong Scene")]
+    [SerializeField] private Transform existingMapTilesParent;
+    [Tooltip("Parent chứa các Công trình có sẵn trên Map (nếu có)")]
+    [SerializeField] private Transform existingBuildingsParent;
+
+    [Header("=== CẤU HÌNH VÙNG XÂY DỰNG BAN ĐẦU ===")]
+    [Tooltip("Số ô vuông chiều ngang được phép xây ở trung tâm")]
+    [SerializeField] private int initialWidth = 4;
+    [Tooltip("Số ô vuông chiều dọc được phép xây ở trung tâm")]
+    [SerializeField] private int initialHeight = 4;
+
+    [Header("=== CẤU HÌNH GRID ===")]
+    [Tooltip("Kích thước dài / rộng của 1 ô Grid")]
     [SerializeField] private float tileSize = 10f;
-    [Tooltip("Layer dành riêng cho ô đất cho phép xây dựng")]
-    [SerializeField] private int buildableLayerIndex = 8; // Layer 'Building' hoặc 'Buildable'
+    [Tooltip("Độ cao Y của ô đất trên bản đồ")]
+    [SerializeField] private float plotSpawnY = 0f;
 
-    [Header("=== CẤU HÌNH HÀNG RÀO ===")]
-    [Tooltip("Prefab của đoạn hàng rào")]
-    [SerializeField] private GameObject fencePrefab;
+    [Header("=== HIỂN THỊ LƯỚI GRID BẰNG MESH ===")]
+    [Tooltip("Material dùng cho đường lưới (Nếu bỏ trống sẽ tự dùng Sprites/Default)")]
+    [SerializeField] private Material gridLineMaterial;
+    [Tooltip("Màu sắc đường lưới vùng ĐƯỢC XÂY DỰNG")]
+    [SerializeField] private Color buildableGridColor = Color.green;
+    [Tooltip("Màu sắc đường lưới vùng KHÔNG ĐƯỢC XÂY DỰNG")]
+    [SerializeField] private Color nonBuildableGridColor = Color.red;
+    [Tooltip("Độ lệch chiều cao Y để lưới hiển thị nổi nhẹ trên mặt đất")]
+    [SerializeField] private float gridYOffset = 0.05f;
 
-    [Header("=== CẤU HÌNH VỊ TRÍ SPAWN ===")]
-    [Tooltip("Đẩy ô đất lên cao một chút để không bị chìm vào mặt đất")]
-    [SerializeField] private float plotSpawnY = 1.3f;
+    [Header("=== CẤU HÌNH TƯỜNG & CỔNG THÀNH ===")]
+    [SerializeField] private GameObject wallPrefab;
+    [SerializeField] private GameObject gatePrefab;
 
     [Header("=== 4 NÚT MỞ RỘNG (+) ===")]
-    [SerializeField] private Transform btnNorth; // Nút + phía Bắc (+Z)
-    [SerializeField] private Transform btnSouth; // Nút + phía Nam (-Z)
-    [SerializeField] private Transform btnEast;  // Nút + phía Đông (+X)
-    [SerializeField] private Transform btnWest;  // Nút + phía Tây (-X)
+    [SerializeField] private Transform btnNorth;
+    [SerializeField] private Transform btnSouth;
+    [SerializeField] private Transform btnEast;
+    [SerializeField] private Transform btnWest;
 
-    // Lưu trữ danh sách ô đất theo tọa độ ma trận (X, Z)
-    private Dictionary<Vector2Int, GameObject> activePlots = new Dictionary<Vector2Int, GameObject>();
+    // Toàn bộ các ô nằm trên mặt Ground (Đã quét từ scene)
+    private HashSet<Vector2Int> allGroundTiles = new HashSet<Vector2Int>();
+    // Các ô ĐÃ MỞ KHÓA được phép xây dựng (Hiển thị lưới XANH)
+    private HashSet<Vector2Int> unlockedTiles = new HashSet<Vector2Int>();
+    
     private List<GameObject> activeFences = new List<GameObject>();
+    private HashSet<Vector2Int> occupiedTiles = new HashSet<Vector2Int>();
 
-    // Giới hạn chỉ số Ma trận hiện tại
-    private int minX = 0, maxX = 1;
-    private int minZ = 0, maxZ = 1;
+    // Mesh vẽ lưới Grid
+    private GameObject generatedGridOverlay;
+    private MeshFilter gridMeshFilter;
+    private MeshRenderer gridMeshRenderer;
 
     private void Awake()
     {
@@ -51,153 +72,452 @@ public class LandGridManager : MonoBehaviour
 
     private void Start()
     {
-        // Khởi tạo vùng đất mặc định ban đầu (Kích thước 2x2 ô)
-        InitializeGrid(2, 2);
+        InitializeGridSystem();
     }
 
     /// <summary>
-    /// Khởi tạo vùng đất mặc định lúc mới vào game
+    /// Khởi tạo hệ thống Grid: Quét toàn bộ Ground, xác định vùng trung tâm mở khóa & vẽ Grid
     /// </summary>
-    public void InitializeGrid(int width, int height)
+    public void InitializeGridSystem()
     {
-        minX = 0; maxX = width - 1;
-        minZ = 0; maxZ = height - 1;
+        allGroundTiles.Clear();
+        unlockedTiles.Clear();
 
-        for (int x = minX; x <= maxX; x++)
+        // 1. Quét lấy Bounds thực tế của toàn bộ Ground trong Scene
+        if (existingMapTilesParent != null && existingMapTilesParent.childCount > 0)
         {
-            for (int z = minZ; z <= maxZ; z++)
+            Bounds totalBounds = new Bounds();
+            bool hasBounds = false;
+
+            foreach (Transform tile in existingMapTilesParent)
             {
-                SpawnPlot(x, z);
+                Collider col = tile.GetComponent<Collider>();
+                Renderer rend = tile.GetComponent<Renderer>();
+                Bounds b = (col != null) ? col.bounds : ((rend != null) ? rend.bounds : new Bounds(tile.position, Vector3.one * tileSize));
+
+                if (!hasBounds)
+                {
+                    totalBounds = b;
+                    hasBounds = true;
+                }
+                else
+                {
+                    totalBounds.Encapsulate(b);
+                }
+            }
+
+            // Quy đổi diện tích Ground ra tọa độ ô Grid
+            int minX = Mathf.FloorToInt(totalBounds.min.x / tileSize);
+            int maxX = Mathf.CeilToInt(totalBounds.max.x / tileSize);
+            int minZ = Mathf.FloorToInt(totalBounds.min.z / tileSize);
+            int maxZ = Mathf.CeilToInt(totalBounds.max.z / tileSize);
+
+            for (int x = minX; x < maxX; x++)
+            {
+                for (int z = minZ; z < maxZ; z++)
+                {
+                    allGroundTiles.Add(new Vector2Int(x, z));
+                }
+            }
+
+            // 2. Tìm tâm của Ground và mở khóa VÙNG XÂY DỰNG BAN ĐẦU ở trung tâm
+            int centerX = (minX + maxX) / 2;
+            int centerZ = (minZ + maxZ) / 2;
+
+            int startX = centerX - (initialWidth / 2);
+            int startZ = centerZ - (initialHeight / 2);
+
+            for (int x = startX; x < startX + initialWidth; x++)
+            {
+                for (int z = startZ; z < startZ + initialHeight; z++)
+                {
+                    Vector2Int coord = new Vector2Int(x, z);
+                    if (allGroundTiles.Contains(coord))
+                    {
+                        unlockedTiles.Add(coord);
+                    }
+                }
+            }
+        }
+        else // Fallback nếu chưa gán existingMapTilesParent
+        {
+            for (int x = 0; x < initialWidth; x++)
+            {
+                for (int z = 0; z < initialHeight; z++)
+                {
+                    Vector2Int coord = new Vector2Int(x, z);
+                    allGroundTiles.Add(coord);
+                    unlockedTiles.Add(coord);
+                }
             }
         }
 
+        // 3. Quét công trình sẵn có
+        ScanExistingBuildings();
+
+        // 4. Dựng tường + Nút mở rộng + Vẽ lưới Xanh/Đỏ
         RebuildFences();
         UpdateExpandButtonsPosition();
+        CreateOrUpdateGridMesh();
     }
 
     /// <summary>
-    /// Tạo 1 ô đất tại tọa độ Ma trận (x, z)
+    /// Mở khóa 1 ô logic (chỉ thêm vào HashSet unlockedTiles, KHÔNG spawn gameobject)
     /// </summary>
-    private void SpawnPlot(int x, int z)
+    public void UnlockTile(int x, int z)
     {
         Vector2Int gridCoord = new Vector2Int(x, z);
-        if (activePlots.ContainsKey(gridCoord)) return;
+        if (unlockedTiles.Contains(gridCoord)) return;
 
-        Vector3 worldPos = GetWorldPosition(x, z, plotSpawnY);
-        GameObject plot = Instantiate(landPlotPrefab, worldPos, Quaternion.identity, transform);
-        
-        // Đảm bảo ô đất nằm đúng Layer được xây dựng
-        plot.layer = buildableLayerIndex;
-        // Đảm bảo các con của ô đất cũng đổi Layer (nếu có)
-        foreach (Transform child in plot.transform)
-        {
-            child.gameObject.layer = buildableLayerIndex;
-        }
-
-        activePlots.Add(gridCoord, plot);
+        unlockedTiles.Add(gridCoord);
+        allGroundTiles.Add(gridCoord); // Đảm bảo ô luôn thuộc bản đồ
     }
 
     /// <summary>
-    /// Hàm gọi khi bấm vào 1 trong 4 nút (+) để mở rộng đất
+    /// 🔥 MỞ RỘNG KHU VỰC XÂY DỰNG KHI BẤM NÚT (+)
     /// </summary>
     public void ExpandGrid(ExpandDirection direction)
     {
-        // Có thể chèn code kiểm tra Tiền / Gỗ / Đá ở đây trước khi cho mở rộng
-        // if (!JsonDataManager.Ins.TrySpendCombined(...)) return;
+        GetGridBounds(out int minX, out int maxX, out int minZ, out int maxZ);
 
         switch (direction)
         {
-            case ExpandDirection.North: // Mở rộng lên trên (+Z)
-                maxZ++;
-                for (int x = minX; x <= maxX; x++) SpawnPlot(x, maxZ);
+            case ExpandDirection.North:
+                for (int x = minX; x <= maxX; x++) UnlockTile(x, maxZ + 1);
                 break;
-
-            case ExpandDirection.South: // Mở rộng xuống dưới (-Z)
-                minZ--;
-                for (int x = minX; x <= maxX; x++) SpawnPlot(x, minZ);
+            case ExpandDirection.South:
+                for (int x = minX; x <= maxX; x++) UnlockTile(x, minZ - 1);
                 break;
-
-            case ExpandDirection.East:  // Mở rộng sang phải (+X)
-                maxX++;
-                for (int z = minZ; z <= maxZ; z++) SpawnPlot(maxX, z);
+            case ExpandDirection.East:
+                for (int z = minZ; z <= maxZ; z++) UnlockTile(maxX + 1, z);
                 break;
-
-            case ExpandDirection.West:  // Mở rộng sang trái (-X)
-                minX--;
-                for (int z = minZ; z <= maxZ; z++) SpawnPlot(minX, z);
+            case ExpandDirection.West:
+                for (int z = minZ; z <= maxZ; z++) UnlockTile(minX - 1, z);
                 break;
         }
 
-        // Tái tạo lại hàng rào bao quanh và dời nút (+) ra mép mới
+        // Cập nhật lại giao diện sau khi mở rộng
         RebuildFences();
         UpdateExpandButtonsPosition();
+        CreateOrUpdateGridMesh();
 
-        Debug.Log($"[LandGridManager] 🟩 Đã mở rộng đất theo hướng {direction}!");
+        // Thông báo cho Tutorial Manager
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnLandExpanded();
+        }
     }
 
     /// <summary>
-    /// Tính toán dựng lại hàng rào ôm trọn chu vi bên ngoài vùng đất
+    /// Kiểm tra xem vị trí đặt công trình có nằm hoàn toàn trong VÙNG ĐÃ MỞ KHÓA (LƯỚI XANH) không
     /// </summary>
+    public bool IsAreaUnlocked(Vector3 centerWorldPos, int sizeX = 1, int sizeZ = 1)
+    {
+        Vector2Int baseCoord = WorldToGridCoord(centerWorldPos);
+        int startX = baseCoord.x - (sizeX / 2);
+        int startZ = baseCoord.y - (sizeZ / 2);
+
+        for (int x = 0; x < sizeX; x++)
+        {
+            for (int z = 0; z < sizeZ; z++)
+            {
+                Vector2Int checkCoord = new Vector2Int(startX + x, startZ + z);
+                if (!unlockedTiles.Contains(checkCoord)) return false;
+            }
+        }
+        return true;
+    }
+    /// <summary>
+    /// Kiểm tra xem vị trí có bị công trình khác chiếm chỗ chưa (Grid thuần)
+    /// </summary>
+    public bool IsAreaOccupied(Vector3 centerWorldPos, int sizeX = 1, int sizeZ = 1)
+    {
+        Vector2Int baseCoord = WorldToGridCoord(centerWorldPos);
+        int startX = baseCoord.x - (sizeX / 2);
+        int startZ = baseCoord.y - (sizeZ / 2);
+
+        for (int x = 0; x < sizeX; x++)
+        {
+            for (int z = 0; z < sizeZ; z++)
+            {
+                Vector2Int checkCoord = new Vector2Int(startX + x, startZ + z);
+                if (occupiedTiles.Contains(checkCoord)) return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Đánh dấu mảng ô đất đã bị công trình chiếm chỗ
+    /// </summary>
+    public void MarkAreaAsOccupied(Vector3 centerWorldPos, int sizeX = 1, int sizeZ = 1)
+    {
+        Vector2Int baseCoord = WorldToGridCoord(centerWorldPos);
+        int startX = baseCoord.x - (sizeX / 2);
+        int startZ = baseCoord.y - (sizeZ / 2);
+
+        for (int x = 0; x < sizeX; x++)
+        {
+            for (int z = 0; z < sizeZ; z++)
+            {
+                occupiedTiles.Add(new Vector2Int(startX + x, startZ + z));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Xóa đánh dấu chiếm chỗ (dùng khi di chuyển hoặc phá hủy công trình)
+    /// </summary>
+    public void UnmarkAreaAsOccupied(Vector3 centerWorldPos, int sizeX = 1, int sizeZ = 1)
+    {
+        Vector2Int baseCoord = WorldToGridCoord(centerWorldPos);
+        int startX = baseCoord.x - (sizeX / 2);
+        int startZ = baseCoord.y - (sizeZ / 2);
+
+        for (int x = 0; x < sizeX; x++)
+        {
+            for (int z = 0; z < sizeZ; z++)
+            {
+                occupiedTiles.Remove(new Vector2Int(startX + x, startZ + z));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Cập nhật Mesh lưới: Ô trong unlockedTiles = XANH, ô còn lại = ĐỎ
+    /// </summary>
+    public void CreateOrUpdateGridMesh()
+    {
+        if (generatedGridOverlay == null)
+        {
+            generatedGridOverlay = new GameObject("GeneratedGridOverlay");
+            generatedGridOverlay.transform.SetParent(transform);
+            generatedGridOverlay.transform.localPosition = Vector3.zero;
+
+            gridMeshFilter = generatedGridOverlay.AddComponent<MeshFilter>();
+            gridMeshRenderer = generatedGridOverlay.AddComponent<MeshRenderer>();
+
+            if (gridLineMaterial != null)
+            {
+                gridMeshRenderer.material = gridLineMaterial;
+            }
+            else
+            {
+                Material defaultMat = new Material(Shader.Find("Sprites/Default"));
+                gridMeshRenderer.material = defaultMat;
+            }
+            generatedGridOverlay.SetActive(true);
+        }
+
+        List<Vector3> vertices = new List<Vector3>();
+        List<Color> colors = new List<Color>();
+        List<int> indices = new List<int>();
+        int vIndex = 0;
+        float yPos = plotSpawnY + gridYOffset;
+
+        foreach (var tile in allGroundTiles)
+        {
+            Color currentCellColor = unlockedTiles.Contains(tile) ? buildableGridColor : nonBuildableGridColor;
+
+            float minXPos = tile.x * tileSize;
+            float maxXPos = (tile.x + 1) * tileSize;
+            float minZPos = tile.y * tileSize;
+            float maxZPos = (tile.y + 1) * tileSize;
+
+            Vector3 p1 = new Vector3(minXPos, yPos, minZPos);
+            Vector3 p2 = new Vector3(maxXPos, yPos, minZPos);
+            Vector3 p3 = new Vector3(maxXPos, yPos, maxZPos);
+            Vector3 p4 = new Vector3(minXPos, yPos, maxZPos);
+
+            // 4 Cạnh ô vuông
+            vertices.Add(p1); colors.Add(currentCellColor);
+            vertices.Add(p2); colors.Add(currentCellColor);
+            indices.Add(vIndex++); indices.Add(vIndex++);
+
+            vertices.Add(p2); colors.Add(currentCellColor);
+            vertices.Add(p3); colors.Add(currentCellColor);
+            indices.Add(vIndex++); indices.Add(vIndex++);
+
+            vertices.Add(p3); colors.Add(currentCellColor);
+            vertices.Add(p4); colors.Add(currentCellColor);
+            indices.Add(vIndex++); indices.Add(vIndex++);
+
+            vertices.Add(p4); colors.Add(currentCellColor);
+            vertices.Add(p1); colors.Add(currentCellColor);
+            indices.Add(vIndex++); indices.Add(vIndex++);
+        }
+
+        Mesh gridMesh = new Mesh();
+        gridMesh.name = "DynamicGridMesh";
+        gridMesh.SetVertices(vertices);
+        gridMesh.SetColors(colors);
+        gridMesh.SetIndices(indices, MeshTopology.Lines, 0);
+
+        gridMeshFilter.mesh = gridMesh;
+    }
+
     private void RebuildFences()
     {
-        // 1. Xóa hàng rào cũ
-        foreach (var fence in activeFences)
-        {
-            if (fence != null) Destroy(fence);
-        }
+        foreach (var fence in activeFences) if (fence != null) Destroy(fence);
         activeFences.Clear();
 
-        if (fencePrefab == null) return;
+        if (wallPrefab == null) return;
 
+        GetGridBounds(out int minX, out int maxX, out int minZ, out int maxZ);
         float halfTile = tileSize / 2f;
+        int centerNorthX = (minX + maxX) / 2;
 
-        // 2. Dựng hàng rào Cạnh Bắc (+Z) & Cạnh Nam (-Z)
         for (int x = minX; x <= maxX; x++)
         {
-            Vector3 northPos = GetWorldPosition(x, maxZ) + new Vector3(0, 0, halfTile);
-            SpawnFence(northPos, 0f); // Mặt hướng Bắc
+            Vector3 northPos = GetWorldPosition(x, maxZ) + new Vector3(halfTile, 0, tileSize);
+            GameObject northPrefab = (x == centerNorthX && gatePrefab != null) ? gatePrefab : wallPrefab;
+            SpawnWallSegment(northPrefab, northPos, 0f);
 
-            Vector3 southPos = GetWorldPosition(x, minZ) + new Vector3(0, 0, -halfTile);
-            SpawnFence(southPos, 180f); // Mặt hướng Nam
+            Vector3 southPos = GetWorldPosition(x, minZ) + new Vector3(halfTile, 0, 0);
+            SpawnWallSegment(wallPrefab, southPos, 180f);
         }
 
-        // 3. Dựng hàng rào Cạnh Đông (+X) & Cạnh Tây (-X)
         for (int z = minZ; z <= maxZ; z++)
         {
-            Vector3 eastPos = GetWorldPosition(maxX, z) + new Vector3(halfTile, 0, 0);
-            SpawnFence(eastPos, 90f); // Mặt hướng Đông
+            Vector3 eastPos = GetWorldPosition(maxX, z) + new Vector3(tileSize, 0, halfTile);
+            SpawnWallSegment(wallPrefab, eastPos, 90f);
 
-            Vector3 westPos = GetWorldPosition(minX, z) + new Vector3(-halfTile, 0, 0);
-            SpawnFence(westPos, -90f); // Mặt hướng Tây
+            Vector3 westPos = GetWorldPosition(minX, z) + new Vector3(0, 0, halfTile);
+            SpawnWallSegment(wallPrefab, westPos, -90f);
         }
     }
 
-    private void SpawnFence(Vector3 pos, float rotationY)
+    private void SpawnWallSegment(GameObject prefab, Vector3 pos, float rotationY)
     {
-        GameObject fence = Instantiate(fencePrefab, pos, Quaternion.Euler(0, rotationY, 0), transform);
-        activeFences.Add(fence);
+        GameObject wall = Instantiate(prefab, pos, Quaternion.Euler(0, rotationY, 0), transform);
+        activeFences.Add(wall);
     }
 
-    /// <summary>
-    /// Di chuyển 4 nút (+) ra vị trí trung tâm mép ngoài cùng
-    /// </summary>
     private void UpdateExpandButtonsPosition()
     {
-        float centerX = (minX + maxX) * tileSize / 2f;
-        float centerZ = (minZ + maxZ) * tileSize / 2f;
-        float offset = tileSize / 2f + 1.5f; // Đẩy nút ra ngoài hàng rào một chút
+        GetGridBounds(out int minX, out int maxX, out int minZ, out int maxZ);
 
-        if (btnNorth != null) btnNorth.position = new Vector3(centerX, 0.5f, maxZ * tileSize + offset);
+        float centerX = (minX + maxX + 1) * tileSize / 2f;
+        float centerZ = (minZ + maxZ + 1) * tileSize / 2f;
+        float offset = 1.5f;
+
+        if (btnNorth != null) btnNorth.position = new Vector3(centerX, 0.5f, (maxZ + 1) * tileSize + offset);
         if (btnSouth != null) btnSouth.position = new Vector3(centerX, 0.5f, minZ * tileSize - offset);
-        if (btnEast != null)  btnEast.position  = new Vector3(maxX * tileSize + offset, 0.5f, centerZ);
+        if (btnEast != null)  btnEast.position  = new Vector3((maxX + 1) * tileSize + offset, 0.5f, centerZ);
         if (btnWest != null)  btnWest.position  = new Vector3(minX * tileSize - offset, 0.5f, centerZ);
     }
 
-    /// <summary>
-    /// Chuyển từ Tọa độ Ma trận (x, z) sang Tọa độ World Space (X, Y, Z)
-    /// </summary>
+    public void ScanExistingBuildings()
+    {
+        if (existingBuildingsParent == null) return;
+        occupiedTiles.Clear();
+
+        // 1. Tính toán tọa độ TÂM của khu vực đã mở khóa
+        GetGridBounds(out int minX, out int maxX, out int minZ, out int maxZ);
+        Vector2Int centerCoord = new Vector2Int((minX + maxX) / 2, (minZ + maxZ) / 2);
+
+        foreach (Transform child in existingBuildingsParent)
+        {
+            if (!child.CompareTag("Tower")) continue;
+
+            int sizeX = 1, sizeZ = 1;
+            Vector3 targetPos = GetSnappedGridPosition(child.position, sizeX, sizeZ);
+            Vector2Int gridCoord = WorldToGridCoord(targetPos);
+
+            bool isValidPos = unlockedTiles.Contains(gridCoord) && !occupiedTiles.Contains(gridCoord);
+
+            if (!isValidPos)
+            {
+                Vector2Int bestCoord = centerCoord;
+                float minDistance = float.MaxValue;
+                bool foundAvailableTile = false;
+
+                // 2. Tìm ô trống GẦN TÂM NHẤT thay vì gần vị trí cũ của công trình
+                foreach (Vector2Int unlockedCoord in unlockedTiles)
+                {
+                    if (occupiedTiles.Contains(unlockedCoord)) continue;
+
+                    // 🔥 THAY ĐỔI Ở ĐÂY: So sánh khoảng cách tới centerCoord
+                    float distFromCenter = Vector2Int.Distance(centerCoord, unlockedCoord);
+                    if (distFromCenter < minDistance)
+                    {
+                        minDistance = distFromCenter;
+                        bestCoord = unlockedCoord;
+                        foundAvailableTile = true;
+                    }
+                }
+
+                if (foundAvailableTile)
+                {
+                    gridCoord = bestCoord;
+                    Vector3 cellCenterPos = GetWorldPosition(gridCoord.x, gridCoord.y, plotSpawnY) + new Vector3(tileSize * 0.5f, 0, tileSize * 0.5f);
+                    targetPos = GetSnappedGridPosition(cellCenterPos, sizeX, sizeZ);
+                }
+            }
+
+            child.position = targetPos;
+            MarkAreaAsOccupied(gridCoord, sizeX, sizeZ);
+        }
+    }
+
+    private void MarkAreaAsOccupied(Vector2Int baseCoord, int sizeX, int sizeZ)
+    {
+        int startX = baseCoord.x - (sizeX / 2);
+        int startZ = baseCoord.y - (sizeZ / 2);
+
+        for (int x = 0; x < sizeX; x++)
+        {
+            for (int z = 0; z < sizeZ; z++)
+            {
+                occupiedTiles.Add(new Vector2Int(startX + x, startZ + z));
+            }
+        }
+    }
+
+    public Vector3 GetSnappedGridPosition(Vector3 rawWorldPos, int sizeX = 1, int sizeZ = 1)
+    {
+        float snapX = (sizeX % 2 == 1) 
+            ? Mathf.Floor(rawWorldPos.x / tileSize) * tileSize + (tileSize * 0.5f)
+            : Mathf.Round(rawWorldPos.x / tileSize) * tileSize;
+
+        float snapZ = (sizeZ % 2 == 1) 
+            ? Mathf.Floor(rawWorldPos.z / tileSize) * tileSize + (tileSize * 0.5f)
+            : Mathf.Round(rawWorldPos.z / tileSize) * tileSize;
+
+        return new Vector3(snapX, plotSpawnY, snapZ);
+    }
+
+    public Vector2Int WorldToGridCoord(Vector3 worldPos)
+    {
+        return new Vector2Int(Mathf.FloorToInt(worldPos.x / tileSize), Mathf.FloorToInt(worldPos.z / tileSize));
+    }
+
     public Vector3 GetWorldPosition(int x, int z, float yOffset = 0f)
     {
         return new Vector3(x * tileSize, yOffset, z * tileSize);
+    }
+
+    public void GetGridBounds(out int minX, out int maxX, out int minZ, out int maxZ)
+    {
+        minX = int.MaxValue; maxX = int.MinValue;
+        minZ = int.MaxValue; maxZ = int.MinValue;
+
+        foreach (var tile in unlockedTiles)
+        {
+            if (tile.x < minX) minX = tile.x;
+            if (tile.x > maxX) maxX = tile.x;
+            if (tile.y < minZ) minZ = tile.y;
+            if (tile.y > maxZ) maxZ = tile.y;
+        }
+
+        if (unlockedTiles.Count == 0)
+        {
+            minX = maxX = minZ = maxZ = 0;
+        }
+    }
+
+    public void SetGridVisualActive(bool active)
+    {
+        if (generatedGridOverlay != null) generatedGridOverlay.SetActive(active);
     }
 }

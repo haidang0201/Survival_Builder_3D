@@ -131,10 +131,14 @@ public class ConstructionManager : Singleton<ConstructionManager>
 
     public void PlaceBuilding(BuildingType type, Vector3 position, Quaternion rotation)
     {
-        if (!BuildingManager.Ins.CanBuild(position, type))
+        // 1. Kiểm tra trên Grid xem vị trí có bị cản trở không
+        if (LandGridManager.Ins != null)
         {
-            Debug.LogWarning($"[ConstructionManager] Vị trí [{type}] bị cản trở!");
-            return;
+            if (!LandGridManager.Ins.IsAreaUnlocked(position) || LandGridManager.Ins.IsAreaOccupied(position))
+            {
+                Debug.LogWarning($"[ConstructionManager] Vị trí [{type}] bị cản trở trên Grid!");
+                return;
+            }
         }
 
         BuildingCost cost = GetBuildingCost(type);
@@ -156,13 +160,15 @@ public class ConstructionManager : Singleton<ConstructionManager>
         var spawned = SpawnBuilding(type, position, rotation);
         if (spawned != null)
         {
+            // 🔥 ĐÁNH DẤU Ô ĐÃ BỊ CHIẾM TRÊN GRID
+            LandGridManager.Ins?.MarkAreaAsOccupied(position);
+
             if (!buildingCounts.ContainsKey(type)) buildingCounts[type] = 0;
             buildingCounts[type]++;
 
             UpdateCostUI(type);
             JsonDataManager.RegisterStat_BuildingConstructed();
 
-            // 🔥 CẬP NHẬT TUTORIAL: Báo cho Tutorial Manager khi công trình VỪA ĐẶT XUỐNG
             if (type == BuildingType.WoodCutter || type == BuildingType.StoneStorage)
             {
                 CampaignTutorialManager.Ins?.OnCivilBuildingPlaced(type, spawned.transform);

@@ -7,15 +7,18 @@ using UnityEditor;
 
 /*
  * TutorialSceneScanner.cs
- * CHỨC NĂNG: Quét Scene tìm vị trí công trình & Bốt địch & UI con bên trong công trình
+ * CHỨC NĂNG: Quét Scene tìm vị trí Công trình, Bốt địch, UI con (Sửa chữa, Nâng cấp) 
+ *            và Nút (+) Mở rộng đất để hỗ trợ Tutorial chỉ tay chính xác.
  */
 public class TutorialSceneScanner : MonoBehaviour
 {
     public static TutorialSceneScanner Ins { get; private set; }
 
-    [Header("=== TAGS CONFIG ===")]
+    [Header("=== TAGS & LAYER CONFIG ===")]
     [HideInInspector] public string buildingTag = "Building";
     [HideInInspector] public string enemySpawnTag = "EnemySpawnPoint";
+    [Tooltip("Layer dành cho UI (Default: UI)")]
+    public LayerMask uiLayer;
 
     [Header("=== KẾT QUẢ QUÉT (SCAN RESULTS) ===")]
     [Tooltip("Danh sách các công trình đã được hệ thống tự động quét tìm thấy")]
@@ -29,6 +32,12 @@ public class TutorialSceneScanner : MonoBehaviour
         if (Ins == null) Ins = this;
         else Destroy(gameObject);
 
+        // Thiết lập Layer UI mặc định nếu chưa gán
+        if (uiLayer == 0)
+        {
+            uiLayer = LayerMask.GetMask("UI");
+        }
+
         ScanScene();
     }
 
@@ -41,7 +50,7 @@ public class TutorialSceneScanner : MonoBehaviour
         scannedBuildings.Clear();
         scannedEnemySpawnPoints.Clear();
 
-        // 1. Quét công trình theo Tag đã chọn
+        // 1. Quét công trình theo Tag
         GameObject[] buildingObjs = GameObject.FindGameObjectsWithTag(buildingTag);
         foreach (var obj in buildingObjs)
         {
@@ -59,7 +68,7 @@ public class TutorialSceneScanner : MonoBehaviour
             scannedBuildings.AddRange(buildings);
         }
 
-        // 2. Quét điểm spawn địch theo Tag đã chọn
+        // 2. Quét điểm spawn địch theo Tag
         GameObject[] enemyObjs = GameObject.FindGameObjectsWithTag(enemySpawnTag);
         scannedEnemySpawnPoints.AddRange(enemyObjs);
 
@@ -67,7 +76,7 @@ public class TutorialSceneScanner : MonoBehaviour
     }
 
     /// <summary>
-    /// 1. Tìm công trình cụ thể đã được người chơi đặt trên Scene từ danh sách quét
+    /// 1. Tìm công trình cụ thể đã đặt trên Scene (Tự động re-scan nếu cần)
     /// </summary>
     public UpgradeableBuilding FindPlacedBuilding(BuildingType type)
     {
@@ -76,9 +85,10 @@ public class TutorialSceneScanner : MonoBehaviour
             if (b != null && b.buildingType == type) return b;
         }
 
-        // Fallback quét trực tiếp nếu chưa có trong danh sách
-        UpgradeableBuilding[] buildings = FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
-        foreach (var b in buildings)
+        // 🔥 Tự động quét lại Scene để cập nhật các công trình mới xây từ Stage 2
+        ScanScene();
+
+        foreach (var b in scannedBuildings)
         {
             if (b != null && b.buildingType == type) return b;
         }
@@ -97,7 +107,7 @@ public class TutorialSceneScanner : MonoBehaviour
     }
 
     /// <summary>
-    /// 3. Kiểm tra xem Bảng UI nâng cấp của công trình đó đang BẬT hay TẮT
+    /// 3. Kiểm tra xem Bảng UI nâng cấp/sửa chữa của công trình đang BẬT hay TẮT
     /// </summary>
     public bool IsBuildingUIOpen(UpgradeableBuilding building)
     {
@@ -106,14 +116,27 @@ public class TutorialSceneScanner : MonoBehaviour
     }
 
     /// <summary>
-    /// 4. Quét sâu vào trong UI con để lấy đúng RectTransform của Nút Nâng Cấp
+    /// 🔥 4. QUÉT NÚT NÂNG CẤP (UPGRADE BUTTON)
     /// </summary>
     public RectTransform GetUpgradeButtonTransform(UpgradeableBuilding building)
     {
         BuildingUpgradeUI ui = GetBuildingUI(building);
-        if (ui != null && ui.UpgradeButton != null)
+        if (ui != null)
         {
-            return ui.UpgradeButton.GetComponent<RectTransform>();
+            if (ui.UpgradeButton != null)
+            {
+                return ui.UpgradeButton.GetComponent<RectTransform>();
+            }
+
+            // Fallback: Quét tìm Button có tên chứa "Upgrade" trong UI con
+            Button[] buttons = ui.GetComponentsInChildren<Button>(true);
+            foreach (var btn in buttons)
+            {
+                if (btn.name.ToLower().Contains("upgrade"))
+                {
+                    return btn.GetComponent<RectTransform>();
+                }
+            }
         }
 
         Debug.LogWarning($"[TUTORIAL SCANNER] Không tìm thấy UpgradeButton trên công trình: {(building != null ? building.buildingName : "null")}");
@@ -121,7 +144,82 @@ public class TutorialSceneScanner : MonoBehaviour
     }
 
     /// <summary>
-    /// 5. Tìm vị trí Trại/Căn cứ lính địch
+    /// 🔥 5. QUÉT NÚT SỬA CHỮA (REPAIR BUTTON)
+    /// Quét các UI con của công trình thuộc Layer UI để tìm Nút Sửa Chữa
+    /// </summary>
+    public RectTransform GetRepairButtonTransform(UpgradeableBuilding building)
+    {
+        if (building == null) return null;
+
+        // Quét tất cả Button trong Canvas con của Công trình
+        Button[] buttons = building.GetComponentsInChildren<Button>(true);
+        foreach (var btn in buttons)
+        {
+            // Kiểm tra theo Layer UI hoặc tên GameObject
+            bool isUILayer = (uiLayer.value & (1 << btn.gameObject.layer)) != 0;
+            string btnName = btn.name.ToLower();
+
+            if (isUILayer || btnName.Contains("repair") || btnName.Contains("suachua") || btnName.Contains("fix"))
+            {
+                if (btnName.Contains("repair") || btnName.Contains("suachua") || btnName.Contains("fix"))
+                {
+                    return btn.GetComponent<RectTransform>();
+                }
+            }
+        }
+
+        // Fallback: Tìm qua BuildingUpgradeUI nếu có khai báo field repairButton
+        BuildingUpgradeUI ui = GetBuildingUI(building);
+        if (ui != null)
+        {
+            Transform repairTrans = ui.transform.Find("RepairButton") ?? ui.transform.Find("BtnRepair") ?? ui.transform.Find("BtnSuaChua");
+            if (repairTrans != null) return repairTrans as RectTransform;
+        }
+
+        Debug.LogWarning($"[TUTORIAL SCANNER] Không tìm thấy Nút Sửa Chữa trên công trình: {building.buildingName}");
+        return null;
+    }
+
+    /// <summary>
+    /// 🔥 6. QUÉT NÚT (+) MỞ RỘNG ĐẤT (EXPAND LAND BUTTON)
+    /// Lấy vị trí Nút (+) từ LandGridManager hoặc quét UI/Object có tên 'Expand' / 'btnNorth'
+    /// </summary>
+    public Transform GetExpandLandButtonTransform(ExpandDirection direction = ExpandDirection.North)
+    {
+        // 1. Lấy trực tiếp từ LandGridManager nếu có
+        if (LandGridManager.Ins != null)
+        {
+            Transform targetBtn = null;
+            switch (direction)
+            {
+                case ExpandDirection.North: targetBtn = LandGridManager.Ins.transform.Find("btnNorth") ?? LandGridManager.Ins.transform.Find("BtnNorth"); break;
+                case ExpandDirection.South: targetBtn = LandGridManager.Ins.transform.Find("btnSouth") ?? LandGridManager.Ins.transform.Find("BtnSouth"); break;
+                case ExpandDirection.East:  targetBtn = LandGridManager.Ins.transform.Find("btnEast")  ?? LandGridManager.Ins.transform.Find("BtnEast"); break;
+                case ExpandDirection.West:  targetBtn = LandGridManager.Ins.transform.Find("btnWest")  ?? LandGridManager.Ins.transform.Find("BtnWest"); break;
+            }
+
+            if (targetBtn != null) return targetBtn;
+        }
+
+        // 2. Fallback: Quét tìm GameObject chứa nút Expand trên Scene thuộc Layer UI
+        GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (var obj in allObjects)
+        {
+            bool isUILayer = (uiLayer.value & (1 << obj.layer)) != 0;
+            string objName = obj.name.ToLower();
+
+            if (isUILayer && (objName.Contains("expand") || objName.Contains("btnnorth") || objName.Contains("btn_expand")))
+            {
+                return obj.transform;
+            }
+        }
+
+        Debug.LogWarning($"[TUTORIAL SCANNER] Không tìm thấy Nút (+) Mở Rộng Đất hướng: {direction}");
+        return null;
+    }
+
+    /// <summary>
+    /// 7. Tìm vị trí Trại/Căn cứ lính địch
     /// </summary>
     public Transform GetEnemyCampTransform()
     {
@@ -152,9 +250,8 @@ public class TutorialSceneScannerEditor : Editor
         serializedObject.Update();
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.LabelField("🏷️ CHỌN TAG QUÉT CÔNG TRÌNH & ĐỊCH", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("🏷️ CHỌN TAG & LAYER QUÉT SCENE", EditorStyles.boldLabel);
         
-        // Hiển thị Menu Dropdown chọn Tag tiêu chuẩn của Unity
         scanner.buildingTag = EditorGUILayout.TagField("Building Tag", scanner.buildingTag);
         scanner.enemySpawnTag = EditorGUILayout.TagField("Enemy Spawn Tag", scanner.enemySpawnTag);
 
