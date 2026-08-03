@@ -11784,6 +11784,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1786454929}
     m_Modifications:
+    - target: {fileID: 2472773563439248427, guid: 82005c4ac52cb4e459c1e0e2c9b594fc, type: 3}
+      propertyPath: spawnRadius
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2472773563439248427, guid: 82005c4ac52cb4e459c1e0e2c9b594fc, type: 3}
+      propertyPath: spawnForwardOffset
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 5850624176519559586, guid: 82005c4ac52cb4e459c1e0e2c9b594fc, type: 3}
       propertyPath: m_LocalPosition.x
       value: 13.35756
@@ -12415,7 +12423,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &289936709
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60324,7 +60332,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1417529756
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -92243,12 +92251,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5604620364914663613, guid: 4fcac8d28f94ffd47af5177b708af36b, type: 3}
       propertyPath: cols
-      value: 1
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5604620364914663613, guid: 4fcac8d28f94ffd47af5177b708af36b, type: 3}
       propertyPath: rows
-      value: 1
+      value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 5604620364914663613, guid: 4fcac8d28f94ffd47af5177b708af36b, type: 3}
+      propertyPath: attackTarget
+      value: 
+      objectReference: {fileID: 414269771}
     - target: {fileID: 5604620364914663613, guid: 4fcac8d28f94ffd47af5177b708af36b, type: 3}
       propertyPath: spawnOnStart
       value: 0
@@ -92259,7 +92271,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5604620364914663613, guid: 4fcac8d28f94ffd47af5177b708af36b, type: 3}
       propertyPath: waveInterval
-      value: 5
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 5604620364914663613, guid: 4fcac8d28f94ffd47af5177b708af36b, type: 3}
+      propertyPath: spawnOnlyAtNight
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5604620364914663613, guid: 4fcac8d28f94ffd47af5177b708af36b, type: 3}
       propertyPath: spawnPoints.Array.size

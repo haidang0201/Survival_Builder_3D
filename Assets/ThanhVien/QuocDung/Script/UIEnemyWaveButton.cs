@@ -75,6 +75,8 @@ public class UIEnemyWaveButton : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (!gameObject.scene.isLoaded) return;
+
         // If lead enemy is killed or destroyed, remove the warning button
         if (targetLeadEnemy == null || !targetLeadEnemy.gameObject.activeInHierarchy)
         {
@@ -88,7 +90,7 @@ public class UIEnemyWaveButton : MonoBehaviour
         // Billboard effect: Face towards the main camera
         if (mainCamera != null)
         {
-            transform.rotation = Quaternion.LookRotation(transform.position - mainCamera.transform.position);
+            transform.rotation = mainCamera.transform.rotation;
         }
         else
         {
@@ -98,6 +100,7 @@ public class UIEnemyWaveButton : MonoBehaviour
 
     public void OnAttackButtonClicked()
     {
+        Time.timeScale = 1f;
         if (targetLeadEnemy == null) return;
 
         Vector3 attackPos = targetLeadEnemy.position;
@@ -105,12 +108,25 @@ public class UIEnemyWaveButton : MonoBehaviour
 
         // Enable combat for target lead enemy and squad
         EnemyAI leadAI = targetLeadEnemy.GetComponent<EnemyAI>();
+        int waveCount = 1;
         if (leadAI != null)
         {
             leadAI.EnableCombat();
+            if (leadAI.squadEnemies != null && leadAI.squadEnemies.Count > 0)
+            {
+                waveCount = leadAI.squadEnemies.Count;
+            }
         }
 
         EnemyAI[] allEnemies = Object.FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+        if (allEnemies != null && allEnemies.Length > waveCount)
+        {
+            waveCount = allEnemies.Length;
+        }
+
+        // Lưu trạng thái trước khi giao tranh / chuyển cảnh
+        BattleData.RecordCurrentSceneState(waveCount);
+
         foreach (var enemy in allEnemies)
         {
             if (enemy != null && enemy.gameObject.activeInHierarchy)

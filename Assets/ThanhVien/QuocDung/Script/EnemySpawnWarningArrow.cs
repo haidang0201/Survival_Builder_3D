@@ -254,7 +254,7 @@ public class EnemySpawnWarningArrow : MonoBehaviour
             }
 
             EnemyAI enemyAI = targetEnemy.GetComponent<EnemyAI>();
-            if (enemyAI != null && (enemyAI.isCombatActive || enemyAI.isWaitingAtTarget))
+            if (enemyAI != null && enemyAI.isCombatActive)
             {
                 Destroy(gameObject);
                 return;

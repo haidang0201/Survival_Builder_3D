@@ -194,28 +194,38 @@ public class UnitController : MonoBehaviour
 
     private void SetDestination(Vector3 dest)
     {
-        if (agent == null || !agent.isActiveAndEnabled) return;
-
-        if (!agent.isOnNavMesh)
+        if (agent != null && agent.isActiveAndEnabled)
         {
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            if (!agent.isOnNavMesh)
             {
-                agent.Warp(hit.position);
+                if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+                {
+                    agent.Warp(hit.position);
+                }
             }
-            else
+
+            if (agent.isOnNavMesh)
             {
+                agent.isStopped = false;
+
+                if (Vector3.Distance(agent.destination, dest) > 0.25f)
+                {
+                    agent.SetDestination(dest);
+                }
                 return;
             }
         }
 
-        if (agent.isOnNavMesh)
-        {
-            agent.isStopped = false;
+        // Fallback di chuyển trực tiếp Transform nếu không có NavMesh trong Scene
+        float speed = (agent != null && agent.speed > 0.1f) ? agent.speed : 3.5f;
+        Vector3 moveDir = (dest - transform.position);
+        moveDir.y = 0f;
 
-            if (Vector3.Distance(agent.destination, dest) > 0.25f)
-            {
-                agent.SetDestination(dest);
-            }
+        if (moveDir.sqrMagnitude > 0.01f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(moveDir);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 360f * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, transform.position + moveDir.normalized, speed * Time.deltaTime);
         }
     }
 
@@ -391,6 +401,12 @@ public class UnitController : MonoBehaviour
         Debug.Log($"[UnitController] {gameObject.name} responding to attack button -> Moving to {targetPosition}");
     }
 
+    public void EnableCombat(Vector3 enemyTargetPos)
+    {
+        autoAggro = true;
+        RespondToWarning(enemyTargetPos);
+    }
+
     private bool AnyEnemyAlive()
     {
         // 1. Tag check
@@ -557,8 +573,8 @@ public class UnitController : MonoBehaviour
             }
         }
 
-        // Fallback 3 (Dành cho chế độ phản công khi bấm nút Tấn Công): Nếu đang phản công, mở rộng quét TOÀN BỘ BẢN ĐỒ tìm kẻ địch còn sống
-        if (validEnemies.Count == 0 && isRespondingToWarning)
+        // Fallback 3 (Dành cho chế độ phản công): Mở rộng quét TOÀN BỘ BẢN ĐỒ tìm kẻ địch còn sống
+        if (validEnemies.Count == 0 && (isRespondingToWarning || autoAggro))
         {
             EnemyAI[] allEnemyAIs = Object.FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
             foreach (var enemyAI in allEnemyAIs)

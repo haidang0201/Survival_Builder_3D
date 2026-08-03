@@ -130,7 +130,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnSoldier
   soldierPrefab: {fileID: 1999277456456185836, guid: 6f6383d8f0b521f449a9ee5eb68d04cf, type: 3}
-  spawnRadius: 5
+  spawnRadius: 2
+  spawnForwardOffset: 2
   currentLevel: 1
   testDuration: 5
   hologramMaterial: {fileID: 0}
@@ -148,6 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 1
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 11
   buildingName: "Tr\u1EA1i l\xEDnh"

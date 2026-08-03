@@ -199,11 +199,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         if (whiteSprite != null)
         {
-            if (whiteSprite.texture != null)
+            if (Application.isPlaying)
             {
-                Destroy(whiteSprite.texture);
+                Destroy(whiteSprite);
             }
-            Destroy(whiteSprite);
+            else
+            {
+                DestroyImmediate(whiteSprite);
+            }
         }
     }
 }
