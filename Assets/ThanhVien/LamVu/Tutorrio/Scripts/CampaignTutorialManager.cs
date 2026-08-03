@@ -800,6 +800,7 @@ public class CampaignTutorialManager : MonoBehaviour
 
         isPointingAtWorld = false;
 
+        // Cập nhật lại UI Layout ngay lập tức để lấy tọa độ chuẩn
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(uiRect);
 
@@ -807,17 +808,16 @@ public class CampaignTutorialManager : MonoBehaviour
         handPointer.SetActive(true);
 
         Canvas parentCanvas = uiRect.GetComponentInParent<Canvas>();
-        Vector2 screenPoint;
+        Camera cam = null;
 
-        if (parentCanvas != null && (parentCanvas.renderMode == RenderMode.WorldSpace || parentCanvas.renderMode == RenderMode.ScreenSpaceCamera))
+        if (parentCanvas != null && parentCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
         {
-            Camera cam = parentCanvas.worldCamera != null ? parentCanvas.worldCamera : Camera.main;
-            screenPoint = RectTransformUtility.WorldToScreenPoint(cam, uiRect.position);
+            cam = parentCanvas.worldCamera != null ? parentCanvas.worldCamera : Camera.main;
         }
-        else
-        {
-            screenPoint = uiRect.position;
-        }
+
+        // 🔥 TÍNH CHÍNH XÁC TÂM CỦA RECTTRANSFORM (Khắc phục lỗi lệch do Pivot/Layout Group)
+        Vector3 worldCenter = uiRect.TransformPoint(uiRect.rect.center);
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, worldCenter);
 
         targetScreenPosition = screenPoint + pointerOffset;
 
@@ -838,10 +838,23 @@ public class CampaignTutorialManager : MonoBehaviour
 
     private void RunDialogueSequence(DialogueData[] dialogues, System.Action onComplete = null)
     {
+        // 🔥 1. Chỉ bật Dim đen khi bắt đầu chạy thoại cốt truyện
+        if (overlayDim != null) overlayDim.SetActive(true);
+
         if (NPCDialogueUI.Ins != null)
-            NPCDialogueUI.Ins.ShowDialogueSequence(dialogues, onComplete);
+        {
+            NPCDialogueUI.Ins.ShowDialogueSequence(dialogues, () =>
+            {
+                // 🔥 2. Tắt Dim đen ngay khi kết thúc thoại cốt truyện
+                if (overlayDim != null) overlayDim.SetActive(false);
+                onComplete?.Invoke();
+            });
+        }
         else
+        {
+            if (overlayDim != null) overlayDim.SetActive(false);
             onComplete?.Invoke();
+        }
     }
 
     private void FocusCameraOn(Vector3 targetWorldPos, float duration)
@@ -889,7 +902,7 @@ public class CampaignTutorialManager : MonoBehaviour
 
     private void LockAllInputs()
     {
-        if (overlayDim != null) overlayDim.SetActive(true);
+        // 🛑 BỎ `overlayDim.SetActive(true)` ở đây để tránh bị tối màn hình khi không thoại
         SetButtonInteractable(buildMenuButton, false);
         SetButtonInteractable(civilianTabButton, false);
         SetButtonInteractable(villaTabButton, false);
@@ -903,7 +916,7 @@ public class CampaignTutorialManager : MonoBehaviour
 
     private void UnlockAllInputs()
     {
-        if (overlayDim != null) overlayDim.SetActive(false);
+        // 🛑 BỎ `overlayDim.SetActive(false)` ở đây
         SetButtonInteractable(buildMenuButton, true);
         SetButtonInteractable(civilianTabButton, true);
         SetButtonInteractable(villaTabButton, true);

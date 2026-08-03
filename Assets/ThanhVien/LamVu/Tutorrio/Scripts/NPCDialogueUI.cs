@@ -15,7 +15,6 @@ public class NPCDialogueUI : MonoBehaviour
 {
     public static NPCDialogueUI Ins { get; private set; }
 
-    // 🛠️ THÊM PROPERTY NÀY ĐỂ KÍCH HOẠT CHECK TRẠNG THÁI CHO TUTORIAL MANAGER
     public bool IsDialogueActive => dialoguePanel != null && dialoguePanel.activeInHierarchy;
 
     [Header("UI Elements")]
@@ -23,7 +22,7 @@ public class NPCDialogueUI : MonoBehaviour
     [SerializeField] private Image avatarImage;
     [SerializeField] private TMP_Text speakerNameText;
     [SerializeField] private TMP_Text dialogueText;
-    [SerializeField] private Button nextButton;
+    [SerializeField] private Button nextButton; // Có thể giữ hoặc ẩn trên Canvas UI
 
     [Header("Settings")]
     [SerializeField] private float typingSpeed = 0.025f;
@@ -32,6 +31,7 @@ public class NPCDialogueUI : MonoBehaviour
     private int currentIndex = 0;
     private Coroutine typingCoroutine;
     private bool isTyping = false;
+    private bool skipFirstFrameInput = false; // 🔥 Chống bị trigger click ngay frame mở thoại
     private System.Action onCompleteCallback;
 
     private void Awake()
@@ -45,15 +45,27 @@ public class NPCDialogueUI : MonoBehaviour
         HideDialogue();
     }
 
-    public void ShowDialogueSequence(DialogueData[] dialogues, System.Action onComplete = null)
+    private void Update()
     {
-        if (dialoguePanel == null)
+        if (!IsDialogueActive) return;
+
+        // 🔥 Chống việc nhấp chuột ở gameplay vô tình kích hoạt click thoại ngay frame đầu
+        if (skipFirstFrameInput)
         {
-            onComplete?.Invoke();
+            skipFirstFrameInput = false;
             return;
         }
 
-        if (dialogues == null || dialogues.Length == 0)
+        // 🔥 YÊU CẦU 4: Bấm bất kỳ vị trí nào trên màn hình (Chuột trái hoặc Cảm ứng) để qua bài
+        if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+        {
+            OnClickNext();
+        }
+    }
+
+    public void ShowDialogueSequence(DialogueData[] dialogues, System.Action onComplete = null)
+    {
+        if (dialoguePanel == null || dialogues == null || dialogues.Length == 0)
         {
             onComplete?.Invoke();
             return;
@@ -62,10 +74,9 @@ public class NPCDialogueUI : MonoBehaviour
         currentDialogues = dialogues;
         currentIndex = 0;
         onCompleteCallback = onComplete;
+        skipFirstFrameInput = true; // Đánh dấu bỏ qua click của frame hiện tại
 
-        // Pause Game kiểu Rise of Kingdoms
         Time.timeScale = 1f;
-
         dialoguePanel.SetActive(true);
         DisplayLine();
     }
@@ -97,15 +108,15 @@ public class NPCDialogueUI : MonoBehaviour
         foreach (char c in text.ToCharArray())
         {
             if (dialogueText != null) dialogueText.text += c;
-            // Dùng WaitForSecondsRealtime vì game đang ở Time.timeScale = 0
             yield return new WaitForSecondsRealtime(typingSpeed);
         }
 
         isTyping = false;
     }
 
-    private void OnClickNext()
+    public void OnClickNext()
     {
+        // Click lần 1: Hoàn thành ngay câu chữ đang gõ
         if (isTyping)
         {
             if (typingCoroutine != null) StopCoroutine(typingCoroutine);
@@ -114,6 +125,7 @@ public class NPCDialogueUI : MonoBehaviour
             return;
         }
 
+        // Click lần 2: Chuyển sang câu thoại kế tiếp
         currentIndex++;
         if (currentIndex < currentDialogues.Length)
         {
