@@ -68,13 +68,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -205,13 +205,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -437,7 +437,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.35, y: 0.39, z: 0.48}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 9154526996478237161}
@@ -648,13 +648,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1056,13 +1056,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1494,9 +1494,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 1
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 2
-  buildingName: Wood
+  buildingName: "Kho g\u1ED7"
   visualModels:
   - {fileID: 7014466855736572080}
   - {fileID: 203775512815804865}
@@ -1580,10 +1581,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuildingUpgradeUI
   localUpgradePanel: {fileID: 4755994269972547739}
   panelRectTransform: {fileID: 4148108356387972103}
+  lockUIRotation: 1
+  faceCamera: 1
+  keepConstantSize: 1
+  baseDistance: 15
+  baseOrthographicSize: 5
+  globalUIScaleMultiplier: 1
   autoArrangeButtons: 1
-  ringRadius: 350
+  ringRadius: 200
   startAngle: 45
-  angleStep: 45
+  enableWorkerSpawn: 0
+  spawnWorkerButton: {fileID: 0}
   animDuration: 0.18
   buildingNameText: {fileID: 5637770120443627173}
   levelText: {fileID: 222445221111416176}
@@ -1764,13 +1772,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1962,38 +1970,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2241265113706485577}
     m_Modifications:
-    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.angle
-      value: 90
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.radiusThickness
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102556642896161, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: looping
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.radius.value
-      value: 6.58
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 2.36
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.minScalar
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 4303440017469370445, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: lengthInSec
-      value: 3.5
-      objectReference: {fileID: 0}
     - target: {fileID: 1266593345465148485, guid: 25f8a06e8555a5041904acded44bc97c, type: 3}
       propertyPath: m_Materials.Array.size
       value: 1
@@ -2093,6 +2069,38 @@ PrefabInstance:
     - target: {fileID: 8202410161701405397, guid: 25f8a06e8555a5041904acded44bc97c, type: 3}
       propertyPath: m_Name
       value: FireworksOrange
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.angle
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.radiusThickness
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102556642896161, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: looping
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.radius.value
+      value: 6.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 2.36
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.minScalar
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4303440017469370445, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: lengthInSec
+      value: 3.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

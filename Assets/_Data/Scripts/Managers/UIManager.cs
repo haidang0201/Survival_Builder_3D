@@ -191,11 +191,11 @@ public class UIManager : Singleton<UIManager>
 
         if (upgradePanel != null)
         {
-            // 📍 1. Chuyển tọa độ 3D của công trình sang tọa độ 2D trên màn hình
+            //  1. Chuyển tọa độ 3D của công trình sang tọa độ 2D trên màn hình
             Vector3 buildingWorldPos = building.transform.position;
             Vector3 screenPos = Camera.main.WorldToScreenPoint(buildingWorldPos);
 
-            // 📍 2. Đặt vị trí của Upgrade Panel ngay tại vị trí công trình (+ offset bên dưới)
+            //  2. Đặt vị trí của Upgrade Panel ngay tại vị trí công trình (+ offset bên dưới)
             RectTransform panelRect = upgradePanel.GetComponent<RectTransform>();
             panelRect.position = screenPos + upgradePanelOffset;
 

@@ -12,10 +12,9 @@ GameObject:
   - component: {fileID: 6472334704537159159}
   - component: {fileID: 8955668739132177669}
   - component: {fileID: 2973081612292888667}
-  - component: {fileID: 6336417671541130913}
-  - component: {fileID: 5465207863262979208}
+  - component: {fileID: 6841464516473920093}
   m_Layer: 0
-  m_Name: barracksLVl3
+  m_Name: GhostbarracksLVl3
   m_TagString: Tower
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -116,7 +115,7 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 40b77a0eba992d24d9fc9c39f49af5fa, type: 3}
---- !u!114 &6336417671541130913
+--- !u!114 &6841464516473920093
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -125,49 +124,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 802437640450695728}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 485d2a5022bd6934c9f803e1d0cb66c6, type: 3}
+  m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
-  isInitialBuildNeeded: 1
-  startAsRuined: 0
-  initialBuildDuration: 5
+  m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  levelModels: []
   buildingType: 0
-  buildingName: "Nh\xE0 Ch\xEDnh"
-  visualModels:
-  - {fileID: 7853028267333884208, guid: aaac31cc1d39e3a42977e09d51b7eaf8, type: 3}
-  - {fileID: 2885378263953420472, guid: 1e10263a81f02ba47a857b0261efa46a, type: 3}
-  - {fileID: 802437640450695728}
-  upgradeCosts: []
-  towerLevelScripts: []
-  woodStorageLevels: []
-  stoneStorageLevels: []
-  riceStorageLevels: []
-  kitchenLevels: []
-  houseLevels: []
-  buildingIcons: []
-  ruinedVisualModel: {fileID: 0}
-  repairWoodCost: 30
-  repairStoneCost: 30
-  repairDuration: 5
---- !u!114 &5465207863262979208
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 802437640450695728}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32cfc10cc292ab44b92717cf0e5bf574, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpawnSoldier
-  soldierPrefab: {fileID: 5529766660109328545, guid: 6faae46d02eec1b458eaa4f73464be71, type: 3}
-  spawnRadius: 5
-  spawnForwardOffset: 2.5
-  currentLevel: 3
-  testDuration: 5
-  hologramMaterial: {fileID: 0}
-  hologramColor: {r: 0, g: 0.7, b: 1, a: 0.35}
+  sizeX: 1
+  sizeZ: 1
+  validMat: {fileID: 0}
+  invalidMat: {fileID: 0}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  buildingLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  checkYSize: 2
+  isValid: 0
 --- !u!1 &5856825244897763764
 GameObject:
   m_ObjectHideFlags: 0

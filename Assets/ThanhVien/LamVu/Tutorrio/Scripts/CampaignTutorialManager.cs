@@ -230,7 +230,7 @@ public class CampaignTutorialManager : MonoBehaviour
                 PointHandAt(currentTarget.transform.position); // Nếu chưa mở UI thì chỉ vào công trình
             }
 
-            UpdateHint($"📍 Bước 1: {targetName} đang bị hư hại! Bấm vào và chọn **Sửa Chữa**.");
+            UpdateHint($" Bước 1: {targetName} đang bị hư hại! Bấm vào và chọn **Sửa Chữa**.");
         }
         else
         {
@@ -282,9 +282,9 @@ public class CampaignTutorialManager : MonoBehaviour
         PointHandAtUI(buildMenuButton.transform as RectTransform);
 
         if (!hasBuiltWoodCutter)
-            UpdateHint("📍 Bước 2: Nhấn **Cửa Hàng Xây Dựng** để chọn xây Khai Thác Gỗ.");
+            UpdateHint(" Bước 2: Nhấn **Cửa Hàng Xây Dựng** để chọn xây Khai Thác Gỗ.");
         else
-            UpdateHint("📍 Bước 2: Nhấn **Cửa Hàng Xây Dựng** để tiếp tục chọn xây Kho Đá.");
+            UpdateHint(" Bước 2: Nhấn **Cửa Hàng Xây Dựng** để tiếp tục chọn xây Kho Đá.");
     }
 
     private void OnBuildMenuButtonClicked()
@@ -302,13 +302,13 @@ public class CampaignTutorialManager : MonoBehaviour
             {
                 PointHandAtUI(buildTabButton.transform as RectTransform);
             }
-            UpdateHint("📍 Bước 2: Chọn tab **Dân Sự** để mở các công trình.");
+            UpdateHint(" Bước 2: Chọn tab **Dân Sự** để mở các công trình.");
         }
         else if (currentStage == TutorialStage.Stage5_BuildDefenseTowers)
         {
             SetButtonInteractable(militaryTabButton, true);
             PointHandAtUI(militaryTabButton.transform as RectTransform);
-            UpdateHint("📍 Bước 5: Chọn tab **Quân Sự** để xem tháp phòng thủ.");
+            UpdateHint(" Bước 5: Chọn tab **Quân Sự** để xem tháp phòng thủ.");
         }
     }
 
@@ -326,12 +326,12 @@ public class CampaignTutorialManager : MonoBehaviour
             if (!hasBuiltWoodCutter)
             {
                 if (buildWoodCutterButton != null) PointHandAtUI(buildWoodCutterButton.transform as RectTransform);
-                UpdateHint("📍 Bước 2: Bấm chọn **Khai Thác Gỗ** để đặt xây.");
+                UpdateHint(" Bước 2: Bấm chọn **Khai Thác Gỗ** để đặt xây.");
             }
             else if (!hasBuiltStoneStorage)
             {
                 if (buildStoneStorageButton != null) PointHandAtUI(buildStoneStorageButton.transform as RectTransform);
-                UpdateHint("📍 Bước 2: Bấm chọn **Kho Đá** để đặt xây.");
+                UpdateHint(" Bước 2: Bấm chọn **Kho Đá** để đặt xây.");
             }
         }
         else if (currentStage == TutorialStage.Stage5_BuildDefenseTowers)
@@ -340,13 +340,13 @@ public class CampaignTutorialManager : MonoBehaviour
             {
                 SetButtonInteractable(buildWatchTowerButton, true);
                 if (buildWatchTowerButton != null) PointHandAtUI(buildWatchTowerButton.transform as RectTransform);
-                UpdateHint("📍 Bước 5: Chọn **Tháp Canh** để xây dựng phòng thủ.");
+                UpdateHint(" Bước 5: Chọn **Tháp Canh** để xây dựng phòng thủ.");
             }
             else if (!hasBuiltArcherTower)
             {
                 SetButtonInteractable(buildArcherTowerButton, true);
                 if (buildArcherTowerButton != null) PointHandAtUI(buildArcherTowerButton.transform as RectTransform);
-                UpdateHint("📍 Bước 5: Chọn **Tháp Cung** để tăng cường hỏa lực.");
+                UpdateHint(" Bước 5: Chọn **Tháp Cung** để tăng cường hỏa lực.");
             }
         }
     }
@@ -433,7 +433,7 @@ public class CampaignTutorialManager : MonoBehaviour
             }
             
             SetButtonInteractable(upgradeBuildingButton, true);
-            UpdateHint("📍 Bước 3: Nhấn vào **Nhà Khai Thác Gỗ** và chọn **Nâng Cấp**.");
+            UpdateHint(" Bước 3: Nhấn vào **Nhà Khai Thác Gỗ** và chọn **Nâng Cấp**.");
         });
     }
 
@@ -477,7 +477,7 @@ public class CampaignTutorialManager : MonoBehaviour
     }
 
     // ====================================================================
-    // 🔥 GIAI ĐOẠN 4: HƯỚNG DẪN MỞ RỘNG KHU VỰC XÂY DỰNG (MỚI)
+    // GIAI ĐOẠN 4: HƯỚNG DẪN MỞ RỘNG KHU VỰC XÂY DỰNG
     // ====================================================================
     private void StartStage4ExpandLand()
     {
@@ -485,28 +485,42 @@ public class CampaignTutorialManager : MonoBehaviour
 
         RunDialogueSequence(stageExpandLandDialogues, () =>
         {
-            // 🔥 TẬN DỤNG SCANNER: Quét vị trí chuẩn xác của Nút (+) phía Bắc (btnNorth)
-            Transform expandBtnTrans = (TutorialSceneScanner.Ins != null) 
-                ? TutorialSceneScanner.Ins.GetExpandLandButtonTransform(ExpandDirection.North) 
-                : null;
-
-            if (expandBtnTrans != null)
-            {
-                FocusCameraOn(expandBtnTrans.position, 1.0f);
-
-                RectTransform rectUI = expandBtnTrans.GetComponent<RectTransform>();
-                if (rectUI != null)
-                {
-                    PointHandAtUI(rectUI); // Nút (+) là UI
-                }
-                else
-                {
-                    PointHandAt(expandBtnTrans.position); // Nút (+) là World 3D Object
-                }
-            }
-
-            UpdateHint("📍 Bước 4: Hãy bấm vào nút **[+]** trên bản đồ để Mở Rộng Lãnh Thổ!");
+            StartCoroutine(Stage4ExpandLandRoutine());
         });
+    }
+
+    private IEnumerator Stage4ExpandLandRoutine()
+    {
+        // 1. Tắt ngón tay đi trong lúc Camera đang di chuyển
+        HidePointer();
+
+        Transform expandBtnTrans = (TutorialSceneScanner.Ins != null) 
+            ? TutorialSceneScanner.Ins.GetExpandLandButtonTransform(ExpandDirection.North) 
+            : null;
+
+        if (expandBtnTrans != null)
+        {
+            float cameraDuration = 1.0f;
+
+            // 2. Cho Camera trượt tới nút (+)
+            FocusCameraOn(expandBtnTrans.position, cameraDuration);
+
+            // 3. Đợi đúng 1.0 giây cho Camera dừng hẳn
+            yield return new WaitForSecondsRealtime(cameraDuration);
+
+            // 4. Camera đứng yên rồi mới tính vị trí chỉ tay
+            RectTransform rectUI = expandBtnTrans.GetComponent<RectTransform>();
+            if (rectUI != null)
+            {
+                PointHandAtUI(rectUI);
+            }
+            else
+            {
+                PointHandAt(expandBtnTrans.position);
+            }
+        }
+
+        UpdateHint(" Bước 4: Hãy bấm vào nút **[+]** trên bản đồ để Mở Rộng Lãnh Thổ!");
     }
 
     /// <summary>
@@ -598,9 +612,9 @@ public class CampaignTutorialManager : MonoBehaviour
         PointHandAtUI(buildMenuButton.transform as RectTransform);
 
         if (!hasBuiltWatchTower)
-            UpdateHint("📍 Bước 5: Mở **Cửa Hàng Xây Dựng** để chọn xây Tháp Canh.");
+            UpdateHint(" Bước 5: Mở **Cửa Hàng Xây Dựng** để chọn xây Tháp Canh.");
         else if (!hasBuiltArcherTower)
-            UpdateHint("📍 Bước 5: Mở **Cửa Hàng Xây Dựng** để chọn xây Tháp Cung.");
+            UpdateHint(" Bước 5: Mở **Cửa Hàng Xây Dựng** để chọn xây Tháp Cung.");
     }
 
     public void OnDefenseBuildingPlaced(BuildingType buildingType, Transform placedBuildingTransform = null)
@@ -721,7 +735,7 @@ public class CampaignTutorialManager : MonoBehaviour
     {
         isPlacingBuilding = true;
         HidePointer();
-        UpdateHint("📍 Hãy chọn vị trí thích hợp trên bản đồ để **Đặt Công Trình**.");
+        UpdateHint(" Bước 2: Hãy chọn vị trí thích hợp trên bản đồ để **Đặt Công Trình**.");
     }
 
     public void OnCancelPlacement()

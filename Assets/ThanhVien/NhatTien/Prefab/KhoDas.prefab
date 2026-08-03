@@ -132,7 +132,6 @@ GameObject:
   - component: {fileID: 1743189344913250453}
   - component: {fileID: 4051625872754681015}
   - component: {fileID: 6672542998227112439}
-  - component: {fileID: 9199331572309389965}
   - component: {fileID: 3790980479606902167}
   - component: {fileID: 4673383847544013917}
   m_Layer: 11
@@ -195,9 +194,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 1
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 6
-  buildingName: StoneMine
+  buildingName: "Kho \u0110\xE1"
   visualModels:
   - {fileID: 1288484455214704858}
   - {fileID: 5503140272006244268}
@@ -228,27 +228,6 @@ MonoBehaviour:
   repairWoodCost: 30
   repairStoneCost: 30
   repairDuration: 5
---- !u!65 &9199331572309389965
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3271654947427033753}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 11.307743, y: 1.8279905, z: 7.9386044}
-  m_Center: {x: 2.318017, y: 0.91381407, z: -0.5708909}
 --- !u!114 &3790980479606902167
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,10 +260,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuildingUpgradeUI
   localUpgradePanel: {fileID: 5580910276064323163}
   panelRectTransform: {fileID: 3420633894169973837}
+  lockUIRotation: 1
+  faceCamera: 1
+  keepConstantSize: 1
+  baseDistance: 15
+  baseOrthographicSize: 5
+  globalUIScaleMultiplier: 1
   autoArrangeButtons: 1
-  ringRadius: 350
+  ringRadius: 200
   startAngle: 45
-  angleStep: 45
+  enableWorkerSpawn: 0
+  spawnWorkerButton: {fileID: 0}
   animDuration: 0.18
   buildingNameText: {fileID: 2583037062664342088}
   levelText: {fileID: 1893754260615090343}
@@ -363,13 +349,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -500,13 +486,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -739,13 +725,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1015,7 +1001,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 6bf5f7a2dfdf3ad4d98789ed243d604b, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1379,7 +1365,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.35, y: 0.39, z: 0.48}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5237636197486972118}
@@ -1453,13 +1439,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1848,13 +1834,13 @@ MonoBehaviour:
   m_text: New Text
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 0}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278190080
   m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2354,38 +2340,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 9036043346710529352}
     m_Modifications:
-    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.angle
-      value: 90
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.radiusThickness
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102556642896161, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: looping
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: ShapeModule.radius.value
-      value: 6.58
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 2.36
-      objectReference: {fileID: 0}
-    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: InitialModule.startSize.minScalar
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 4303440017469370445, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
-      propertyPath: lengthInSec
-      value: 3.5
-      objectReference: {fileID: 0}
     - target: {fileID: 1266593345465148485, guid: 25f8a06e8555a5041904acded44bc97c, type: 3}
       propertyPath: m_Materials.Array.size
       value: 1
@@ -2485,6 +2439,38 @@ PrefabInstance:
     - target: {fileID: 8202410161701405397, guid: 25f8a06e8555a5041904acded44bc97c, type: 3}
       propertyPath: m_Name
       value: FireworksOrange
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.angle
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102555451170858, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.radiusThickness
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102556642896161, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: looping
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: ShapeModule.radius.value
+      value: 6.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 2.36
+      objectReference: {fileID: 0}
+    - target: {fileID: 2092102557249803459, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: InitialModule.startSize.minScalar
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4303440017469370445, guid: cd799f62aab418c4d8efed7992b9f568, type: 3}
+      propertyPath: lengthInSec
+      value: 3.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
