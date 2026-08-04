@@ -105,8 +105,8 @@ public class EnemyAI : MonoBehaviour
     }
 
     [Header("Marching Settings")]
-    public float marchSpacingX = 1.5f;
-    public float marchSpacingZ = 1.5f;
+    public float marchSpacingX = 0.9f;
+    public float marchSpacingZ = 0.9f;
     public int marchColumns = 3;
     public float marchMergeDistance = 10f;
 
@@ -353,53 +353,87 @@ public class EnemyAI : MonoBehaviour
         // --- BƯỚC 1: Xử lý khi chưa vào trạng thái Giao Tranh (isCombatActive == false) ---
         if (!isCombatActive)
         {
-            if (villageCenter != null)
+            EnemyAI leader = GetMarchLeader();
+            bool isMeLeader = (leader == null || leader == this);
+
+            if (isMeLeader)
             {
-                float distToMain = GetDistanceToCollider(villageCenter.gameObject);
-                float stopRange = Mathf.Max(CurrentAttackRange, 2.5f);
-
-                if (distToMain <= stopRange)
+                // CON THỦ LĨNH (Leader): Dẫn đầu đội hình di chuyển đến Nhà Chính
+                if (villageCenter != null)
                 {
-                    // Đến mục tiêu (Main) -> Đứng yên
-                    if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
-                    {
-                        agent.isStopped = true;
-                    }
-                    isWaitingAtTarget = true;
+                    float distToMain = GetDistanceToCollider(villageCenter.gameObject);
+                    float stopRange = Mathf.Max(CurrentAttackRange, 2.5f);
 
-                    // Hiện nút Tấn công CHỈ KHI là con Thủ Lĩnh (Leader) và đã đến mục tiêu
-                    if (IsLeader() && attackButtonUI != null && !attackButtonUI.activeSelf)
+                    if (distToMain <= stopRange)
                     {
-                        attackButtonUI.SetActive(true);
+                        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+                        {
+                            agent.isStopped = true;
+                        }
+                        isWaitingAtTarget = true;
+
+                        if (attackButtonUI != null && !attackButtonUI.activeSelf)
+                        {
+                            attackButtonUI.SetActive(true);
+                        }
                     }
-                    else if (!IsLeader() && attackButtonUI != null && attackButtonUI.activeSelf)
+                    else
                     {
-                        attackButtonUI.SetActive(false);
+                        isWaitingAtTarget = false;
+                        if (attackButtonUI != null && attackButtonUI.activeSelf)
+                        {
+                            attackButtonUI.SetActive(false);
+                        }
+
+                        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+                        {
+                            agent.isStopped = false;
+                            agent.speed = chaseSpeed;
+                            Vector3 moveDest = GetTargetDestination(villageCenter);
+                            SetDestination(moveDest);
+                        }
                     }
                 }
-                else
+            }
+            else
+            {
+                // CÁC CON ĐỒNG ĐỘI (Followers): Giữ nguyên vị trí đội hình hình chữ nhật theo Thủ lĩnh
+                if (attackButtonUI != null && attackButtonUI.activeSelf)
                 {
-                    // Tiếp tục hành quân đến Nhà Chính
-                    isWaitingAtTarget = false;
+                    attackButtonUI.SetActive(false);
+                }
 
-                    // Ẩn nút Tấn công khi đang hành quân
-                    if (attackButtonUI != null && attackButtonUI.activeSelf)
-                    {
-                        attackButtonUI.SetActive(false);
-                    }
+                if (leader != null)
+                {
+                    Vector3 formationPos = GetMarchFormationPosition(leader);
+                    float distToFormation = Vector3.Distance(transform.position, formationPos);
 
                     if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
                     {
-                        agent.isStopped = false;
-                        agent.speed = chaseSpeed;
-                        Vector3 moveDest = GetTargetDestination(villageCenter);
-                        SetDestination(moveDest);
+                        if (leader.isWaitingAtTarget && distToFormation <= 0.8f)
+                        {
+                            agent.isStopped = true;
+                            isWaitingAtTarget = true;
+                            transform.rotation = Quaternion.RotateTowards(transform.rotation, leader.transform.rotation, 360f * Time.deltaTime);
+                        }
+                        else
+                        {
+                            agent.isStopped = false;
+                            agent.speed = chaseSpeed;
+                            isWaitingAtTarget = false;
+                            SetDestination(formationPos);
+
+                            if (leader.isWaitingAtTarget)
+                            {
+                                transform.rotation = Quaternion.RotateTowards(transform.rotation, leader.transform.rotation, 360f * Time.deltaTime);
+                            }
+                        }
                     }
                 }
             }
 
             UpdateAnimationState();
-            return; // Đứng yên / Di chuyển tới nhà chính, KHÔNG tự động tấn công
+            return; // Đứng yên / Di chuyển tới nhà chính theo đội hình, KHÔNG tự động tấn công
         }
 
         // --- BƯỚC 2: Khi đã vào trạng thái Giao Tranh (isCombatActive == true) ---
@@ -1297,17 +1331,6 @@ public class EnemyAI : MonoBehaviour
         if (debugLogs && Time.time >= nextDebugLogTime)
         {
             nextDebugLogTime = Time.time + debugLogInterval;
-            bool agentValid = agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
-            Debug.LogFormat(
-                "[EnemyAI] move={0} chaseTarget={1} hasPath={2} pathPending={3} remainingDistance={4:F2} velocity={5:F2} desiredVelocity={6:F2}",
-                isMoving,
-                chaseTarget != null ? chaseTarget.name : "none",
-                agentValid && agent.hasPath,
-                agentValid && agent.pathPending,
-                agentValid ? agent.remainingDistance : -1f,
-                agentValid ? agent.velocity.magnitude : -1f,
-                agentValid ? agent.desiredVelocity.magnitude : -1f
-            );
         }
     }
 
@@ -1349,40 +1372,33 @@ public class EnemyAI : MonoBehaviour
 
     public bool IsMarching()
     {
-        if (chaseTarget == null) return false;
-        bool isMainTarget = chaseTarget == villageCenter || SafeCompareTag(chaseTarget.gameObject, "Main") || IsMainHouse(chaseTarget.gameObject);
-        if (isMainTarget)
-        {
-            // If we are close to the main target (e.g. within 8m), we break formation and attack individually
-            float distToTarget = GetDistanceToCollider(chaseTarget.gameObject);
-            if (distToTarget <= 8.0f)
-            {
-                return false;
-            }
-            return true;
-        }
-        return false;
+        return !isCombatActive;
     }
 
     private EnemyAI GetMarchLeader()
     {
-        foreach (var enemy in ActiveEnemiesList)
+        if (squadEnemies != null && squadEnemies.Count > 0)
         {
-            if (enemy != null && enemy.gameObject.activeInHierarchy && enemy.IsMarching())
+            foreach (var e in squadEnemies)
             {
-                return enemy;
+                if (e != null && e.gameObject.activeInHierarchy) return e;
             }
         }
-        return null;
+        foreach (var e in globalActiveEnemies)
+        {
+            if (e != null && e.gameObject.activeInHierarchy) return e;
+        }
+        return this;
     }
 
     private int GetMarchingIndex()
     {
+        List<EnemyAI> list = squadEnemies != null ? squadEnemies : globalActiveEnemies;
         int index = 0;
-        foreach (var enemy in ActiveEnemiesList)
+        foreach (var enemy in list)
         {
             if (enemy == this) return index;
-            if (enemy != null && enemy.gameObject.activeInHierarchy && enemy.IsMarching())
+            if (enemy != null && enemy.gameObject.activeInHierarchy)
             {
                 index++;
             }
@@ -1390,17 +1406,34 @@ public class EnemyAI : MonoBehaviour
         return index;
     }
 
+    private static int GetCenterOutwardColumn(int posInRow, int cols)
+    {
+        int center = cols / 2;
+        if (posInRow == 0) return center;
+        int step = (posInRow + 1) / 2;
+        int sign = (posInRow % 2 == 1) ? -1 : 1;
+        int col = center + sign * step;
+        return Mathf.Clamp(col, 0, cols - 1);
+    }
+
     private Vector3 GetMarchFormationPosition(EnemyAI leader)
     {
-        if (leader == null) return transform.position;
+        if (leader == null || leader == this) return transform.position;
 
         Vector3 leaderPos = leader.transform.position;
         Vector3 leaderForward = leader.transform.forward;
         Vector3 leaderRight = leader.transform.right;
 
+        if (leaderForward.sqrMagnitude < 0.001f)
+        {
+            leaderForward = transform.forward;
+            leaderRight = transform.right;
+        }
+
         int marchIndex = GetMarchingIndex();
         int row = marchIndex / marchColumns;
-        int col = marchIndex % marchColumns;
+        int posInRow = marchIndex % marchColumns;
+        int col = GetCenterOutwardColumn(posInRow, marchColumns);
 
         float offsetX = (col - (marchColumns - 1) * 0.5f) * marchSpacingX;
         float offsetZ = -row * marchSpacingZ;

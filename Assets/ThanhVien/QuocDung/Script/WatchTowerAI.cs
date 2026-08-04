@@ -69,10 +69,8 @@ public class WatchTowerAI : MonoBehaviour
 
     private void ScanAndAlert()
     {
-        Debug.Log($"[WatchTower] Scanning for enemies. detectRadius={detectRadius}, enemyLayer={enemyLayer.value}");
         // 1. Quét tìm quái vật xung quanh tháp canh
         Collider[] enemies = Physics.OverlapSphere(transform.position, detectRadius, enemyLayer);
-        Debug.Log($"[WatchTower] OverlapSphere returned {enemies.Length} colliders (layer)");
 
         System.Collections.Generic.List<Transform> validEnemies = new System.Collections.Generic.List<Transform>();
         foreach (var c in enemies)
@@ -91,7 +89,6 @@ public class WatchTowerAI : MonoBehaviour
         if (validEnemies.Count == 0)
         {
             // Fallback: nếu bạn chưa cấu hình LayerMask, thử tìm theo Tag "Enemy"
-            Debug.Log("[WatchTower] No enemies via LayerMask — fallback to Tag 'Enemy'");
             GameObject[] tagged = null;
             try { tagged = GameObject.FindGameObjectsWithTag("Enemy"); } catch { tagged = null; }
             if (tagged != null && tagged.Length > 0)
@@ -120,21 +117,16 @@ public class WatchTowerAI : MonoBehaviour
             return distA.CompareTo(distB);
         });
 
-        // Cập nhật banner UI cảnh báo dựa trên việc CÓ hay KHÔNG có kẻ địch trong
-        // tầm quét lần này. Đặt ngay sau khi validEnemies đã sẵn sàng để không bỏ
-        // sót nhánh "return" bên dưới khi danh sách rỗng.
+        // Cập nhật banner UI cảnh báo
         UpdateEnemyAlertUI(validEnemies.Count > 0);
 
         if (validEnemies.Count == 0) return; // Không có quái thì bỏ qua
-        Debug.Log($"[WatchTower] Selected closest target: {validEnemies[0].name} out of {validEnemies.Count} valid enemies");
 
         // 2. Tìm các tháp tấn công nằm trong tầm báo động của tháp canh này
         Collider[] nearbyTowers = Physics.OverlapSphere(transform.position, alertRadius, towerLayer);
-        Debug.Log($"[WatchTower] OverlapSphere for towers returned {nearbyTowers.Length} colliders (layer)");
 
         if (nearbyTowers.Length == 0)
         {
-            Debug.Log("[WatchTower] No towers found via LayerMask — fallback to scanning all colliders in radius");
             // Fallback: tìm mọi collider trong bán kính rồi lọc những object có AttackTowerAI
             nearbyTowers = Physics.OverlapSphere(transform.position, alertRadius);
         }
@@ -218,7 +210,6 @@ public class WatchTowerAI : MonoBehaviour
 
                 if (assignedEnemy != null)
                 {
-                    Debug.Log($"[WatchTower] Alerting tower '{attackTower.gameObject.name}' to attack closest enemy '{assignedEnemy.name}'");
                     attackTower.CommandAttack(assignedEnemy);
                     alerted++;
                 }
@@ -232,7 +223,6 @@ public class WatchTowerAI : MonoBehaviour
         if (alerted == 0)
         {
             // Last-resort fallback: tìm thẳng các AttackTowerAI trong scene (không cần Collider)
-            Debug.Log("[WatchTower] No towers alerted via colliders — fallback to FindObjectsOfType<AttackTowerAI>()");
             var towers = FindObjectsOfType<AttackTowerAI>();
             System.Collections.Generic.List<AttackTowerAI> activeFallbackTowers = new System.Collections.Generic.List<AttackTowerAI>();
             foreach (var t in towers)
@@ -297,7 +287,6 @@ public class WatchTowerAI : MonoBehaviour
 
                     if (assignedEnemy != null)
                     {
-                        Debug.Log($"[WatchTower] Fallback alerting active tower '{t.name}' to attack closest enemy '{assignedEnemy.name}'");
                         t.CommandAttack(assignedEnemy);
                         alerted++;
                     }
@@ -307,7 +296,6 @@ public class WatchTowerAI : MonoBehaviour
                     t.CommandAttack(null);
                 }
             }
-            if (alerted == 0) Debug.Log("[WatchTower] Fallback found 0 active AttackTowerAI within alertRadius");
         }
     }
 

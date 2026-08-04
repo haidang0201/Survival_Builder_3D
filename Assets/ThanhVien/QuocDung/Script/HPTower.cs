@@ -121,7 +121,7 @@ public class HPTower : MonoBehaviour, IDamageable
         }
 
         CurrentHealth -= amount;
-        Debug.Log($"[HPTower] {gameObject.name} nhận {amount} sát thương tại {hitPoint}. HP còn lại: {CurrentHealth}/{MaxHealth}");
+        // Debug.Log($"[HPTower] {gameObject.name} nhận {amount} sát thương tại {hitPoint}. HP còn lại: {CurrentHealth}/{MaxHealth}");
 
         // CẬP NHẬT THANH MÁU ĐÃ VẼ BẰNG CODE
         if (hpFillImage != null)

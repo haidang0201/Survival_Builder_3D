@@ -98,20 +98,21 @@ public class UIEnemyWaveButton : MonoBehaviour
         }
     }
 
+    [Header("Scene Settings")]
+    public string battleSceneName = "SceneBattle";
+
     public void OnAttackButtonClicked()
     {
         Time.timeScale = 1f;
         if (targetLeadEnemy == null) return;
 
         Vector3 attackPos = targetLeadEnemy.position;
-        Debug.Log($"[UIEnemyWaveButton] Player clicked Leader Attack Button! Ordering all soldiers to eliminate wave...");
+        Debug.Log($"[UIEnemyWaveButton] Player clicked Leader Attack Button! Recording scene state and switching to battle...");
 
-        // Enable combat for target lead enemy and squad
         EnemyAI leadAI = targetLeadEnemy.GetComponent<EnemyAI>();
         int waveCount = 1;
         if (leadAI != null)
         {
-            leadAI.EnableCombat();
             if (leadAI.squadEnemies != null && leadAI.squadEnemies.Count > 0)
             {
                 waveCount = leadAI.squadEnemies.Count;
@@ -127,6 +128,13 @@ public class UIEnemyWaveButton : MonoBehaviour
         // Lưu trạng thái trước khi giao tranh / chuyển cảnh
         BattleData.RecordCurrentSceneState(waveCount);
 
+        if (!string.IsNullOrEmpty(battleSceneName))
+        {
+            Debug.Log($"[UIEnemyWaveButton] Đang chuyển sang Scene giao tranh: {battleSceneName}");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
+            return;
+        }
+
         foreach (var enemy in allEnemies)
         {
             if (enemy != null && enemy.gameObject.activeInHierarchy)
@@ -135,10 +143,7 @@ public class UIEnemyWaveButton : MonoBehaviour
             }
         }
 
-        // Collect all UnitControllers in the scene
         List<UnitController> soldierList = new List<UnitController>();
-
-        // Method 1: Find by Type
         UnitController[] foundUnits = Object.FindObjectsByType<UnitController>(FindObjectsSortMode.None);
         foreach (var unit in foundUnits)
         {
@@ -147,24 +152,6 @@ public class UIEnemyWaveButton : MonoBehaviour
                 soldierList.Add(unit);
             }
         }
-
-        // Method 2: Find by Tag "Soldier"
-        try
-        {
-            GameObject[] taggedSoldiers = GameObject.FindGameObjectsWithTag("Soldier");
-            foreach (var obj in taggedSoldiers)
-            {
-                if (obj != null && obj.activeInHierarchy)
-                {
-                    UnitController unit = obj.GetComponentInParent<UnitController>();
-                    if (unit != null && !soldierList.Contains(unit))
-                    {
-                        soldierList.Add(unit);
-                    }
-                }
-            }
-        }
-        catch {}
 
         int count = 0;
         foreach (UnitController soldier in soldierList)
@@ -176,9 +163,6 @@ public class UIEnemyWaveButton : MonoBehaviour
             }
         }
 
-        Debug.Log($"[UIEnemyWaveButton] Successfully ordered {count} soldiers to attack wave enemies sequentially!");
-
-        // Destroy UI button after being clicked
         Destroy(gameObject);
     }
 

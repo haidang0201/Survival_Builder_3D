@@ -37,7 +37,7 @@ public class HPSoldier : MonoBehaviour, IDamageable
         if (isDead) return;
 
         CurrentHealth -= amount;
-        Debug.Log($"[HPSoldier] {gameObject.name} nhận {amount} sát thương tại {hitPoint}. HP còn lại: {CurrentHealth}/{MaxHealth}");
+        // Debug.Log($"[HPSoldier] {gameObject.name} nhận {amount} sát thương tại {hitPoint}. HP còn lại: {CurrentHealth}/{MaxHealth}");
 
         // Tạo hiệu ứng trúng đòn tại điểm va chạm
         if (hitVFXPrefab != null)

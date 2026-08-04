@@ -156,10 +156,23 @@ public class EnemySpawn : MonoBehaviour
             }
         }
 
-        // Gắn Mũi Tên & Cảnh Báo cho con Thủ Lĩnh (Lead Enemy)
+        // Gắn Mũi Tên & Cảnh Báo cho con Thủ Lĩnh (Lead Enemy) - Luôn nằm ở HÀNG ĐẦU VÀ VỊ TRÍ Ở GIỮA
         if (showAttackButton && spawnedWaveEnemies.Count > 0)
         {
-            Transform leadEnemy = spawnedWaveEnemies[0].transform;
+            Quaternion spawnRot = (sources.Count > 0 && sources[0] != null) ? sources[0].rotation : transform.rotation;
+            Vector3 spawnCenter = (sources.Count > 0 && sources[0] != null) ? sources[0].position : transform.position;
+
+            GameObject leadObj = GetFrontCenterEnemy(spawnedWaveEnemies, spawnRot, spawnCenter);
+            Transform leadEnemy = (leadObj != null) ? leadObj.transform : spawnedWaveEnemies[0].transform;
+
+            // Đảm bảo con Thủ Lĩnh đứng ở vị trí index 0 trong squadEnemies của các quái cùng Wave
+            EnemyAI leadAI = leadEnemy.GetComponent<EnemyAI>();
+            if (leadAI != null && leadAI.squadEnemies != null)
+            {
+                leadAI.squadEnemies.Remove(leadAI);
+                leadAI.squadEnemies.Insert(0, leadAI);
+            }
+
             EnemySpawnWarningArrow arrow = EnemySpawnWarningArrow.Create(leadEnemy);
             if (arrow != null)
             {
@@ -171,6 +184,51 @@ public class EnemySpawn : MonoBehaviour
                 arrow.UpdateVisuals();
             }
         }
+    }
+
+    /// <summary>
+    /// Tìm con quái nằm ở HÀNG ĐẦU TIÊN (front row) và CHÍNH GIỮA (center column) của đội hình Wave
+    /// </summary>
+    private GameObject GetFrontCenterEnemy(List<GameObject> enemies, Quaternion spawnRotation, Vector3 spawnCenter)
+    {
+        if (enemies == null || enemies.Count == 0) return null;
+
+        Vector3 forward = spawnRotation * Vector3.forward;
+        Vector3 right = spawnRotation * Vector3.right;
+
+        GameObject bestEnemy = null;
+        float maxFrontDist = float.MinValue;
+
+        // 1. Tìm khoảng cách tiến xa nhất về phía trước (Hàng đầu tiên)
+        foreach (var enemy in enemies)
+        {
+            if (enemy == null) continue;
+            float frontDist = Vector3.Dot(enemy.transform.position, forward);
+            if (frontDist > maxFrontDist)
+            {
+                maxFrontDist = frontDist;
+            }
+        }
+
+        // 2. Trong các con thuộc hàng đầu tiên (chênh lệch <= 0.5m), chọn con nằm ở trục giữa nhất
+        float minCenterDist = float.MaxValue;
+        foreach (var enemy in enemies)
+        {
+            if (enemy == null) continue;
+            float frontDist = Vector3.Dot(enemy.transform.position, forward);
+
+            if (Mathf.Abs(frontDist - maxFrontDist) <= 0.5f)
+            {
+                float centerDist = Mathf.Abs(Vector3.Dot(enemy.transform.position - spawnCenter, right));
+                if (centerDist < minCenterDist)
+                {
+                    minCenterDist = centerDist;
+                    bestEnemy = enemy;
+                }
+            }
+        }
+
+        return bestEnemy != null ? bestEnemy : enemies[0];
     }
 
     private void SpawnGridAt(Vector3 center, Quaternion rotation, List<EnemyAI> squadList, List<GameObject> spawnedWaveEnemies = null)
