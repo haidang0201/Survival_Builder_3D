@@ -31,12 +31,13 @@ public class WorkerSpawner : MonoBehaviour
 {
     public static WorkerSpawner Instance { get; private set; }
 
-    public enum WorkerType { Tree, Rice, Stone }
+    public enum WorkerType { Tree, Rice, Stone, Carrier }
 
     [Header("Prefabs theo loại tài nguyên")]
     public GameObject treeWorkerPrefab;
     public GameObject riceWorkerPrefab;
     public GameObject stoneWorkerPrefab;
+    public GameObject carrierWorkerPrefab;
 
     [Header("Auto-Setup Options")]
     [Tooltip("Tên child Transform dùng làm điểm cầm đồ trên tay. Phải khớp tên trong prefab.")]
@@ -82,7 +83,17 @@ public class WorkerSpawner : MonoBehaviour
         Vector3 spawnPos = ResolveSpawnPosition(originPosition, scatterRadius);
 
         GameObject worker = Instantiate(prefab, spawnPos, Quaternion.identity);
-        SetupWorker(worker, originPosition);
+        SetupWorker(worker, type, originPosition);
+        
+        if (WorkerManager.Ins != null)
+        {
+            WorkerManager.Ins.RegisterWorker(worker, type.ToString());
+        }
+
+        // Tự động xóa khỏi Manager khi worker bị Destroy (vd: về nhà hoặc bị quái giết)
+        var destroyer = worker.AddComponent<WorkerDestroyNotifier>();
+        destroyer.workerType = type.ToString();
+
         return worker;
     }
 
@@ -93,6 +104,7 @@ public class WorkerSpawner : MonoBehaviour
             case WorkerType.Tree: return treeWorkerPrefab;
             case WorkerType.Rice: return riceWorkerPrefab;
             case WorkerType.Stone: return stoneWorkerPrefab;
+            case WorkerType.Carrier: return carrierWorkerPrefab;
             default: return null;
         }
     }
@@ -122,9 +134,9 @@ public class WorkerSpawner : MonoBehaviour
     /// <summary>
     /// Đây là phần cốt lõi: tự động nối toàn bộ reference giữa các component
     /// trên worker vừa spawn, thay cho việc bạn phải kéo tay trong Inspector.
-    /// Hỗ trợ đầy đủ 3 loại worker: Tree (CarryItem), Rice (CarryRice), Stone (CarryStone).
+    /// Hỗ trợ đầy đủ 3 loại worker: Tree (CarryItem), Rice (CarryRice), Stone (CarryStone), Carrier.
     /// </summary>
-    void SetupWorker(GameObject worker, Vector3 nearSearchOrigin)
+    void SetupWorker(GameObject worker, WorkerType type, Vector3 nearSearchOrigin)
     {
         NavMeshAgent agent = worker.GetComponent<NavMeshAgent>();
         if (agent == null) agent = worker.AddComponent<NavMeshAgent>();
@@ -204,6 +216,22 @@ public class WorkerSpawner : MonoBehaviour
             findStone.stamina     = stamina;
         }
 
+        // =====================================================================
+        // WORKER CARRIER
+        // =====================================================================
+        WorkerCarrier carrier = worker.GetComponent<WorkerCarrier>();
+        if (carrier == null && type == WorkerType.Carrier) 
+        {
+            carrier = worker.AddComponent<WorkerCarrier>();
+        }
+        
+        if (carrier != null)
+        {
+            if (carrier.handPoint == null) carrier.handPoint = handPoint;
+            carrier.agent = agent;
+            carrier.animator = animator;
+        }
+
         // --- WorkerEnemyFlee (tùy chọn) ---
         if (addEnemyFlee)
         {
@@ -274,5 +302,28 @@ public class WorkerSpawner : MonoBehaviour
         }
         return null;
     }
+}
 
+public class WorkerDestroyNotifier : MonoBehaviour
+{
+    public string workerType;
+    private bool isQuitting = false;
+
+    void OnApplicationQuit()
+    {
+        isQuitting = true;
+    }
+
+    void OnDestroy()
+    {
+        if (isQuitting) return;
+
+        // Dùng FindObjectOfType thay vì .Ins để tránh việc class Singleton 
+        // tự động đẻ ra 1 object rác lúc game đang tắt.
+        var manager = FindObjectOfType<WorkerManager>();
+        if (manager != null)
+        {
+            manager.UnregisterWorker(gameObject);
+        }
+    }
 }

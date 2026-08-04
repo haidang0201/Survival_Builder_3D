@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 39c650c1f312cf443a8a510d2c10ebdc, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -81.738
+      value: -0.505003
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 39c650c1f312cf443a8a510d2c10ebdc, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.9863507
+      value: -0.39398003
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 39c650c1f312cf443a8a510d2c10ebdc, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -94.234215
+      value: -9.30013
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 39c650c1f312cf443a8a510d2c10ebdc, type: 3}
       propertyPath: m_LocalRotation.w
@@ -26,7 +26,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 39c650c1f312cf443a8a510d2c10ebdc, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 39c650c1f312cf443a8a510d2c10ebdc, type: 3}
       propertyPath: m_LocalRotation.y
@@ -85,6 +85,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4aa6ddcc5c07f6548bd3703397ed8be1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rice
-  maxHealth: 2
+  maxHealth: 8
   ricePool: {fileID: 0}
-  dropAmount: 2
+  dropAmount: 1
+  respawnDelay: 30

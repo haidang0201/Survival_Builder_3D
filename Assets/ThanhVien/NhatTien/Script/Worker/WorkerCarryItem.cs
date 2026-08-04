@@ -112,6 +112,15 @@ public class WorkerCarryItem : MonoBehaviour
 
     public bool IsCarrying() => currentWood != null;
 
+    public void PickUpFakeItemForLoad()
+    {
+        // Khi load game, sinh ngay một cục tài nguyên giả trên tay để mang về nộp
+        GameObject fakeItem = new GameObject("FakeWood_Loaded");
+        fakeItem.transform.SetParent(handPoint);
+        fakeItem.transform.localPosition = Vector3.zero;
+        currentWood = fakeItem.AddComponent<WoodPickup>();
+    }
+
     public void PickupWood(WoodPickup wood)
     {
         if (wood == null || wood.IsTaken()) return;
@@ -134,7 +143,22 @@ public class WorkerCarryItem : MonoBehaviour
 
     public bool MoveToStorage()
     {
-        if (currentWood == null || woodStoragePoint == null || !agent.isOnNavMesh) return false;
+        if (currentWood == null) return false;
+
+        // Retry tìm kho nếu chưa có hoặc kho đã đầy
+        if (woodStorage == null || woodStoragePoint == null || woodStorage.IsFull)
+        {
+            WoodStorage found = FindNearestWoodStorage(out Transform point);
+            if (found != null) { woodStorage = found; woodStoragePoint = point; }
+        }
+
+        if (woodStoragePoint == null || !agent.isOnNavMesh)
+        {
+            // Chưa có kho — dừng agent, chờ đặt kho xong rồi tự chạy lại
+            if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+            return false;
+        }
+
         agent.isStopped = false;
         agent.SetDestination(woodStoragePoint.position);
         return true;
@@ -143,18 +167,12 @@ public class WorkerCarryItem : MonoBehaviour
     public bool TryDeposit()
     {
         if (currentWood == null) return false;
-
-        if (woodStorage == null)
-        {
-            Debug.LogError($"[WorkerCarryItem] {name} KHÔNG tìm thấy WoodStorage trên Map. Hãy kiểm tra Tag 'Storage'!");
-            return false;
-        }
-
+        if (woodStorage == null) return false; // Chưa có kho — im lặng chờ, không log lỗi
         if (woodStorage.IsFull) return false;
 
         ObjectPool pool = currentWood.pool;
         if (pool != null) pool.ReturnObject(currentWood.gameObject);
-        else currentWood.gameObject.SetActive(false);
+        else Destroy(currentWood.gameObject);
 
         currentWood = null;
         woodStorage.AddWood(1);

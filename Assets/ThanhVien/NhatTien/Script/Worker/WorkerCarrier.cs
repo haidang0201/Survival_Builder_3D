@@ -58,6 +58,33 @@ public class WorkerCarrier : MonoBehaviour
 
     // Storage/warehouse cụ thể (kho + điểm giao hàng) được chọn động theo khoảng cách
     private Transform    targetStoragePoint;   // = DeliveryPoint của kho tạm đã chọn
+
+    public bool IsCarrying() => isCarrying;
+    public ResourceType GetCarriedType() => carriedType;
+    public int GetCarriedAmount() => carriedAmount;
+
+    public void PickUpFakeItemForLoad(ResourceType type, int amount)
+    {
+        if (type == ResourceType.None || amount <= 0) return;
+
+        isCarrying = true;
+        carriedType = type;
+        carriedAmount = amount;
+
+        // Sinh visual ảo tuỳ loại
+        string itemName = "FakeItem_Loaded";
+        if (type == ResourceType.Wood) itemName = "FakeWood_Loaded";
+        else if (type == ResourceType.Rice) itemName = "FakeRice_Loaded";
+        else if (type == ResourceType.Stone) itemName = "FakeStone_Loaded";
+
+        GameObject fakeItem = new GameObject(itemName);
+        fakeItem.transform.SetParent(handPoint);
+        fakeItem.transform.localPosition = Vector3.zero;
+        
+        currentVisualObject = fakeItem;
+        currentState = State.MoveToWarehouse;
+        if (animator != null) animator.SetBool(carryingParam, true);
+    }
     private object        targetStorageComponent; // WoodStorage/RiceStorage/StoneStorage tương ứng, dùng object vì 3 kiểu khác nhau
     private ResourceType targetResourceType = ResourceType.None;
 
@@ -68,6 +95,20 @@ public class WorkerCarrier : MonoBehaviour
     {
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         stamina = GetComponent<WorkerStamina>() ?? GetComponentInChildren<WorkerStamina>() ?? GetComponentInParent<WorkerStamina>();
+
+        // Tự động tìm Pool trong Scene nếu chưa được gán
+        // Phương pháp: quét toàn bộ ObjectPool trong Scene, phân loại qua prefab chứa component tương ứng
+        if (woodPool == null || ricePool == null || stonePool == null)
+        {
+            ObjectPool[] allPools = FindObjectsByType<ObjectPool>(FindObjectsSortMode.None);
+            foreach (var pool in allPools)
+            {
+                if (pool.prefab == null) continue;
+                if (woodPool  == null && pool.prefab.GetComponent<WoodPickup>()  != null) woodPool  = pool;
+                if (ricePool  == null && pool.prefab.GetComponent<RicePickup>()  != null) ricePool  = pool;
+                if (stonePool == null && pool.prefab.GetComponent<StonePickup>() != null) stonePool = pool;
+            }
+        }
 
         anchorPosition = transform.position;
         EnterWander();
@@ -228,24 +269,23 @@ public class WorkerCarrier : MonoBehaviour
     }
 
     /// <summary>
-    /// Quét tất cả GameObject có Tag chỉ định, lấy component T, sắp gần -> xa tính từ vị trí worker,
-    /// và trả về kho GẦN NHẤT thỏa điều kiện isEligible (ví dụ: không rỗng).
+    /// Tìm component T gần nhất trong Scene (không phụ thuộc Tag).
+    /// Trả về kho GẦN NHẤT thỏa điều kiện isEligible.
     /// Điểm trả về là DeliveryPoint (child) của kho, không phải tâm kho.
-    /// Nếu không tìm được gì theo Tag, fallback về Transform thủ công đã gán (nếu có).
+    /// Nếu không tìm được, fallback về Transform thủ công đã gán (nếu có).
     /// </summary>
-    (T storage, Transform point) FindNearestNonEmptyStorage<T>(string tag, Transform manualFallback, System.Func<T, bool> isEligible, System.Func<T, int> amountSelector) where T : Component
+    (T storage, Transform point) FindNearestNonEmptyStorage<T>(string unusedTag, Transform manualFallback, System.Func<T, bool> isEligible, System.Func<T, int> amountSelector) where T : Component
     {
-        GameObject[] candidates = GameObject.FindGameObjectsWithTag(tag);
+        T[] candidates = FindObjectsByType<T>(FindObjectsSortMode.None);
         List<(T storage, Transform point, float dist)> found = new List<(T, Transform, float)>();
 
         if (candidates != null)
         {
-            foreach (GameObject obj in candidates)
+            foreach (T storage in candidates)
             {
-                T storage = obj.GetComponent<T>() ?? obj.GetComponentInChildren<T>();
-                if (storage == null || !isEligible(storage)) continue;
+                if (!isEligible(storage)) continue;
 
-                Transform deliveryPoint = FindDeliveryPoint(obj.transform);
+                Transform deliveryPoint = FindDeliveryPoint(storage.transform);
                 float d = Vector3.Distance(transform.position, deliveryPoint.position);
                 found.Add((storage, deliveryPoint, d));
             }

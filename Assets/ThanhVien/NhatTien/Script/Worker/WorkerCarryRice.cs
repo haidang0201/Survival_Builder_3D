@@ -106,6 +106,14 @@ public class WorkerCarryRice : MonoBehaviour
 
     public bool IsCarrying() => currentRice != null;
 
+    public void PickUpFakeItemForLoad()
+    {
+        GameObject fakeItem = new GameObject("FakeRice_Loaded");
+        fakeItem.transform.SetParent(handPoint);
+        fakeItem.transform.localPosition = Vector3.zero;
+        currentRice = fakeItem.AddComponent<RicePickup>();
+    }
+
     public void PickupRice(RicePickup rice)
     {
         if (rice == null || rice.IsTaken()) return;
@@ -127,7 +135,22 @@ public class WorkerCarryRice : MonoBehaviour
 
     public bool MoveToStorage() 
     {
-        if (currentRice == null || riceStoragePoint == null || !agent.isOnNavMesh) return false;
+        if (currentRice == null) return false;
+
+        // Retry tìm kho nếu chưa có hoặc kho đã đầy
+        if (riceStorage == null || riceStoragePoint == null || riceStorage.IsFull)
+        {
+            RiceStorage found = FindNearestRiceStorage(out Transform point);
+            if (found != null) { riceStorage = found; riceStoragePoint = point; }
+        }
+
+        if (riceStoragePoint == null || !agent.isOnNavMesh)
+        {
+            // Chưa có kho — dừng agent, chờ đặt kho xong rồi tự chạy lại
+            if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+            return false;
+        }
+
         agent.isStopped = false;
         agent.SetDestination(riceStoragePoint.position);
         return true;
@@ -136,13 +159,7 @@ public class WorkerCarryRice : MonoBehaviour
     public bool TryDeposit()
     {
         if (currentRice == null) return false;
-        
-        if (riceStorage == null) 
-        {
-            Debug.LogError($"[WorkerCarryRice] {name} KHÔNG tìm thấy RiceStorage (Kho tạm) trên Map. Hãy kiểm tra lại!");
-            return false; 
-        }
-
+        if (riceStorage == null) return false; // Chưa có kho — im lặng chờ, không log lỗi
         if (riceStorage.IsFull) return false;
 
         ObjectPool pool = currentRice.pool;

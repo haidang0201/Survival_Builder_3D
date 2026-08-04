@@ -106,6 +106,14 @@ public class WorkerCarryStone : MonoBehaviour
 
     public bool IsCarrying() => currentStone != null;
 
+    public void PickUpFakeItemForLoad()
+    {
+        GameObject fakeItem = new GameObject("FakeStone_Loaded");
+        fakeItem.transform.SetParent(handPoint);
+        fakeItem.transform.localPosition = Vector3.zero;
+        currentStone = fakeItem.AddComponent<StonePickup>();
+    }
+
     public void PickupStone(StonePickup stone)
     {
         if (stone == null || stone.IsTaken()) return;
@@ -127,7 +135,22 @@ public class WorkerCarryStone : MonoBehaviour
 
     public bool MoveToStorage()
     {
-        if (currentStone == null || stoneStoragePoint == null || !agent.isOnNavMesh) return false;
+        if (currentStone == null) return false;
+
+        // Retry tìm kho nếu chưa có hoặc kho đã đầy
+        if (stoneStorage == null || stoneStoragePoint == null || stoneStorage.IsFull)
+        {
+            StoneStorage found = FindNearestStoneStorage(out Transform point);
+            if (found != null) { stoneStorage = found; stoneStoragePoint = point; }
+        }
+
+        if (stoneStoragePoint == null || !agent.isOnNavMesh)
+        {
+            // Chưa có kho — dừng agent, chờ đặt kho xong rồi tự chạy lại
+            if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+            return false;
+        }
+
         agent.isStopped = false;
         agent.SetDestination(stoneStoragePoint.position);
         return true;
@@ -136,13 +159,7 @@ public class WorkerCarryStone : MonoBehaviour
     public bool TryDeposit()
     {
         if (currentStone == null) return false;
-        
-        if (stoneStorage == null) 
-        {
-            Debug.LogError($"[WorkerCarryStone] {name} KHÔNG tìm thấy StoneStorage (Kho tạm đá) trên Map. Hãy kiểm tra Tag!");
-            return false; 
-        }
-
+        if (stoneStorage == null) return false; // Chưa có kho — im lặng chờ, không log lỗi
         if (stoneStorage.IsFull) return false;
 
         ObjectPool pool = currentStone.pool;

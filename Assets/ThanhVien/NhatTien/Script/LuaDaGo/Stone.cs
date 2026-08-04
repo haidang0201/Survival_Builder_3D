@@ -13,13 +13,30 @@ public class Stone : MonoBehaviour
     public ObjectPool stonePool;
     public int dropAmount = 2;
 
+    [Header("Respawn Settings")]
+    [Tooltip("Thời gian (giây) đá hồi sinh sau khi vỡ. 0 = không hồi sinh.")]
+    public float respawnDelay = 90f;
+
     protected int  currentHealth;
     protected bool isOccupied = false;
     protected Vector3 originalScale;
+    private Coroutine respawnRoutine;
 
     void Awake()
     {
         originalScale = transform.localScale;
+    }
+
+    public int GetCurrentHealth() => currentHealth;
+    
+    public void SetCurrentHealth(int health)
+    {
+        currentHealth = health;
+        if (currentHealth <= 0)
+        {
+            SetVisible(false);
+            Registry.Remove(this);
+        }
     }
 
     void OnEnable()
@@ -75,8 +92,41 @@ public class Stone : MonoBehaviour
     {
         StonePickup[] drops = DropStone();
         isOccupied = false;
-        gameObject.SetActive(false);
+
+        if (respawnDelay <= 0f)
+        {
+            gameObject.SetActive(false);
+        }
+        else
+        {
+            if (respawnRoutine != null) StopCoroutine(respawnRoutine);
+            respawnRoutine = StartCoroutine(RespawnRoutine());
+        }
+
         return drops;
+    }
+
+    System.Collections.IEnumerator RespawnRoutine()
+    {
+        // Ẩn đá + xóa khỏi Registry (không SetActive(false) để coroutine vẫn chạy)
+        SetVisible(false);
+        Registry.Remove(this);
+
+        yield return new WaitForSeconds(respawnDelay);
+
+        // Hồi sinh: reset scale, HP, đăng ký lại
+        transform.localScale = originalScale;
+        currentHealth = maxHealth;
+        isOccupied    = false;
+        SetVisible(true);
+        Registry.Add(this);
+        respawnRoutine = null;
+    }
+
+    protected void SetVisible(bool visible)
+    {
+        foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = visible;
+        foreach (var c in GetComponentsInChildren<Collider>())  c.enabled = visible;
     }
 
     protected StonePickup[] DropStone()
