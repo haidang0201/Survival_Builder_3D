@@ -398,7 +398,7 @@ public class UnitController : MonoBehaviour
             }
         }
 
-        Debug.Log($"[UnitController] {gameObject.name} responding to attack button -> Moving to {targetPosition}");
+        // Debug.Log($"[UnitController] {gameObject.name} responding to attack button -> Moving to {targetPosition}");
     }
 
     public void EnableCombat(Vector3 enemyTargetPos)
@@ -614,7 +614,7 @@ public class UnitController : MonoBehaviour
         }
 
         // In log giúp theo dõi trong Console
-        Debug.Log($"[UnitController Scan] {gameObject.name} tìm thấy {validEnemies.Count} mục tiêu hợp lệ trong bán kính {detectRadius}.");
+        // Debug.Log($"[UnitController Scan] {gameObject.name} tìm thấy {validEnemies.Count} mục tiêu hợp lệ trong bán kính {detectRadius}.");
 
         // 1. Tìm kẻ địch gần nhất chưa bị ai chiếm (claim)
         GameObject bestTarget = null;

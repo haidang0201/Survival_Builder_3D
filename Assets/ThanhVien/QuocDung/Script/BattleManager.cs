@@ -55,11 +55,18 @@ public class BattleManager : MonoBehaviour
     [Tooltip("Góc xoay mặc định của Camera (nếu không dùng battleCameraPoint)")]
     [SerializeField] private Vector3 cameraRotation = new Vector3(30f, 0f, 0f);
 
+    [Header("Battle Result & Transition Settings")]
+    [SerializeField] private float battleEndDelay = 2.0f;
+    private bool isBattleOver = false;
+
     private List<GameObject> spawnedPlayerObjects = new List<GameObject>();
     private List<GameObject> spawnedEnemyObjects = new List<GameObject>();
 
+    public static BattleManager Ins { get; private set; }
+
     private void Awake()
     {
+        Ins = this;
         Time.timeScale = 1f;
     }
 
@@ -86,8 +93,104 @@ public class BattleManager : MonoBehaviour
         // 5. Cho lính và Enemy lập tức bay vào đánh nhau
         StartCoroutine(TriggerImmediateCombatRoutine());
 
+        // 6. Theo dõi kết quả giao tranh và tự động chuyển về Scene chính
+        StartCoroutine(MonitorBattleRoutine());
+
         Debug.Log($"[BattleManager] 🔥 Trận đấu khởi tạo thành công! " +
                   $"Sinh {spawnedPlayerObjects.Count} vật thể Người Chơi (BÊN TRÁI) và {spawnedEnemyObjects.Count} Enemy (BÊN PHẢI).");
+    }
+
+    /// <summary>
+    /// Coroutine liên tục kiểm tra kết quả trận đấu giữa Phe Lính và Phe Enemy
+    /// </summary>
+    private System.Collections.IEnumerator MonitorBattleRoutine()
+    {
+        yield return new WaitForSeconds(1f);
+
+        while (!isBattleOver)
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            // 1. Đếm số Enemy còn sống trong Battle Scene
+            int livingEnemies = 0;
+            foreach (var enemyObj in spawnedEnemyObjects)
+            {
+                if (enemyObj != null && enemyObj.activeInHierarchy)
+                {
+                    EnemyHealth hp = enemyObj.GetComponent<EnemyHealth>();
+                    if (hp == null) hp = enemyObj.GetComponentInChildren<EnemyHealth>();
+
+                    if (hp != null)
+                    {
+                        if (hp.CurrentHealth > 0f) livingEnemies++;
+                    }
+                    else
+                    {
+                        livingEnemies++;
+                    }
+                }
+            }
+
+            // 2. Đếm số Lính (UnitController) còn sống trong Battle Scene
+            int livingSoldiers = 0;
+            foreach (var playerObj in spawnedPlayerObjects)
+            {
+                if (playerObj != null && playerObj.activeInHierarchy)
+                {
+                    UnitController unit = playerObj.GetComponent<UnitController>();
+                    if (unit == null) unit = playerObj.GetComponentInChildren<UnitController>();
+
+                    if (unit != null)
+                    {
+                        HPSoldier hp = unit.GetComponent<HPSoldier>();
+                        if (hp == null) hp = unit.GetComponentInChildren<HPSoldier>();
+
+                        if (hp != null)
+                        {
+                            if (!hp.IsDead && hp.CurrentHealth > 0f) livingSoldiers++;
+                        }
+                        else
+                        {
+                            livingSoldiers++;
+                        }
+                    }
+                }
+            }
+
+            // 3. Đánh giá kết quả giao tranh:
+            if (livingEnemies == 0)
+            {
+                // Phe Lính THẮNG!
+                isBattleOver = true;
+                Debug.Log($"[BattleManager] 🏆 PHE LÍNH THẮNG TRẬN! Số lính sống sót = {livingSoldiers}. Đang chuyển về {BattleData.MainSceneName} sau {battleEndDelay}s...");
+
+                BattleData.HasResult = true;
+                BattleData.IsPlayerVictory = true;
+                BattleData.SurvivingSoldiersCount = livingSoldiers;
+
+                yield return new WaitForSeconds(battleEndDelay);
+
+                string returnScene = string.IsNullOrEmpty(BattleData.MainSceneName) ? "MainScene" : BattleData.MainSceneName;
+                UnityEngine.SceneManagement.SceneManager.LoadScene(returnScene);
+                yield break;
+            }
+            else if (livingSoldiers == 0)
+            {
+                // Phe Lính THUA!
+                isBattleOver = true;
+                Debug.Log($"[BattleManager] 💀 PHE LÍNH THUA TRẬN! Toàn bộ lính đã ngã xuống. Đang chuyển về {BattleData.MainSceneName} sau {battleEndDelay}s...");
+
+                BattleData.HasResult = true;
+                BattleData.IsPlayerVictory = false;
+                BattleData.SurvivingSoldiersCount = 0;
+
+                yield return new WaitForSeconds(battleEndDelay);
+
+                string returnScene = string.IsNullOrEmpty(BattleData.MainSceneName) ? "MainScene" : BattleData.MainSceneName;
+                UnityEngine.SceneManagement.SceneManager.LoadScene(returnScene);
+                yield break;
+            }
+        }
     }
 
     /// <summary>
@@ -230,6 +333,46 @@ public class BattleManager : MonoBehaviour
         Debug.Log("[BattleManager] Đã tự động tạo dữ liệu Test cho BattleScene.");
     }
 
+    private bool IsCombatBuilding(BuildingType type)
+    {
+        return type == BuildingType.BarracksMelee ||
+               type == BuildingType.BarracksArcher ||
+               type == BuildingType.BarracksSpear ||
+               type == BuildingType.ArcherTower ||
+               type == BuildingType.WatchTower ||
+               type == BuildingType.Cannon;
+    }
+
+    private void SetupSpawnedBuildingState(GameObject spawnedBuilding, int level)
+    {
+        if (spawnedBuilding == null) return;
+
+        // Tắt SpawnSoldier trên công trình ở SceneBattle để tránh tự động spawn lính lần 2!
+        SpawnSoldier spawner = spawnedBuilding.GetComponent<SpawnSoldier>();
+        if (spawner == null) spawner = spawnedBuilding.GetComponentInChildren<SpawnSoldier>();
+        if (spawner != null)
+        {
+            spawner.enabled = false;
+        }
+
+        // Cập nhật Cấp độ và ĐẶT TRẠNG THÁI ĐÃ XÂY XONG cho UpgradeableBuilding
+        UpgradeableBuilding ub = spawnedBuilding.GetComponent<UpgradeableBuilding>();
+        if (ub == null) ub = spawnedBuilding.GetComponentInChildren<UpgradeableBuilding>();
+        if (ub != null)
+        {
+            int targetLevel = Mathf.Max(0, level - 1);
+            ub.LoadBuildingData(targetLevel, isRuinedState: false, isInitialBuildNeededState: false);
+        }
+
+        // Cập nhật tiến độ IsBuilt cho BuildingCtrl
+        BuildingCtrl buildingCtrl = spawnedBuilding.GetComponent<BuildingCtrl>();
+        if (buildingCtrl == null) buildingCtrl = spawnedBuilding.GetComponentInChildren<BuildingCtrl>();
+        if (buildingCtrl != null)
+        {
+            buildingCtrl.AddProgress(1f);
+        }
+    }
+
     /// <summary>
     /// Spawn toàn bộ Công trình và Lính của Người Chơi ở BÊN TRÁI
     /// </summary>
@@ -238,43 +381,84 @@ public class BattleManager : MonoBehaviour
         if (leftSpawnPoint == null) return;
 
         Vector3 originLeft = leftSpawnPoint.position;
-        int buildingIndex = 0;
+
+        // Phân loại công trình: Tháp Canh (Đứng sau cùng) và Tháp Tấn Công / Doanh Trại (Đứng phía trước Tháp Canh)
+        List<BattleData.BuildingInfo> watchTowers = new List<BattleData.BuildingInfo>();
+        List<BattleData.BuildingInfo> attackBuildings = new List<BattleData.BuildingInfo>();
+
+        foreach (var b in BattleData.PlayerBuildings)
+        {
+            if (b.buildingType == BuildingType.WatchTower)
+            {
+                watchTowers.Add(b);
+            }
+            else if (IsCombatBuilding(b.buildingType))
+            {
+                attackBuildings.Add(b);
+            }
+        }
+
+        Vector3 playerAreaCenter = originLeft + Vector3.right * 6f;
+
+        // Tháp Canh (WatchTower) đứng ở HÀNG SAU CÙNG
+        Vector3 watchTowerOrigin = playerAreaCenter + Vector3.left * 3f;
+
+        // Các công trình tấn công (Tháp Cung, Pháo, Doanh Trại) đứng PHÍA TRƯỚC Tháp Canh
+        Vector3 attackBuildingOrigin = watchTowers.Count > 0 ? (playerAreaCenter + Vector3.right * 2f) : playerAreaCenter;
+
+        // Lính đứng PHÍA TRƯỚC toàn bộ công trình
+        Vector3 soldierFrontOrigin = attackBuildingOrigin + Vector3.right * 5f;
+
+        float actualBuildingSpacing = Mathf.Max(6.0f, buildingSpacing);
         int soldierTotalSpawned = 0;
 
-        // Vị trí dòng lính đứng xếp hàng phía trước (quay mặt về phía bên phải)
-        Vector3 soldierFrontOrigin = originLeft + Vector3.right * 5f;
+        // 1. Spawn Tháp Canh (Hàng sau cùng)
+        for (int i = 0; i < watchTowers.Count; i++)
+        {
+            var info = watchTowers[i];
+            GameObject prefab = GetBuildingPrefab(info.buildingType);
+            if (prefab != null)
+            {
+                float offsetZ = (i - (watchTowers.Count - 1) * 0.5f) * actualBuildingSpacing;
+                Vector3 pos = watchTowerOrigin + Vector3.forward * offsetZ;
+                Quaternion rot = Quaternion.Euler(0, 90, 0);
 
+                GameObject spawned = Instantiate(prefab, pos, rot);
+                spawned.name = $"Player_{info.buildingType}_Lv{info.level}";
+                spawnedPlayerObjects.Add(spawned);
+
+                SetupSpawnedBuildingState(spawned, info.level);
+            }
+        }
+
+        // 2. Spawn các Công trình Tấn Công (ĐỨNG PHÍA TRƯỚC THÁP CANH)
+        int buildingsPerRow = 3;
+        for (int i = 0; i < attackBuildings.Count; i++)
+        {
+            var info = attackBuildings[i];
+            GameObject prefab = GetBuildingPrefab(info.buildingType);
+            if (prefab != null)
+            {
+                int bRow = i / buildingsPerRow;
+                int bCol = i % buildingsPerRow;
+                int countInRow = Mathf.Min(buildingsPerRow, attackBuildings.Count - bRow * buildingsPerRow);
+
+                float offsetZ = (bCol - (countInRow - 1) * 0.5f) * actualBuildingSpacing;
+                // bRow tăng tiến về phía trước theo hướng right (hướng enemy) hoặc lùi dần
+                Vector3 pos = attackBuildingOrigin + Vector3.right * (bRow * 4f) + Vector3.forward * offsetZ;
+                Quaternion rot = Quaternion.Euler(0, 90, 0);
+
+                GameObject spawned = Instantiate(prefab, pos, rot);
+                spawned.name = $"Player_{info.buildingType}_Lv{info.level}";
+                spawnedPlayerObjects.Add(spawned);
+
+                SetupSpawnedBuildingState(spawned, info.level);
+            }
+        }
+
+        // 2. Spawn toàn bộ Lính trong căn cứ
         foreach (var buildingInfo in BattleData.PlayerBuildings)
         {
-            // 1. Spawn Công trình
-            GameObject buildingPrefab = GetBuildingPrefab(buildingInfo.buildingType);
-            if (buildingPrefab != null)
-            {
-                Vector3 buildPos = originLeft + Vector3.left * (buildingIndex * buildingSpacing) + Vector3.back * (buildingIndex % 2 * 2f);
-                Quaternion buildRot = Quaternion.Euler(0, 90, 0); // Quay mặt về phía bên phải (Enemy)
-
-                GameObject spawnedBuilding = Instantiate(buildingPrefab, buildPos, buildRot);
-                spawnedBuilding.name = $"Player_{buildingInfo.buildingType}_Lv{buildingInfo.level}";
-                spawnedPlayerObjects.Add(spawnedBuilding);
-
-                // Tắt SpawnSoldier trên công trình ở SceneBattle để tránh việc công trình tự động spawn lính lần 2!
-                SpawnSoldier spawner = spawnedBuilding.GetComponent<SpawnSoldier>();
-                if (spawner == null) spawner = spawnedBuilding.GetComponentInChildren<SpawnSoldier>();
-                if (spawner != null)
-                {
-                    spawner.enabled = false;
-                }
-
-                // Cập nhật Cấp độ cho UpgradeableBuilding nếu có
-                UpgradeableBuilding ub = spawnedBuilding.GetComponent<UpgradeableBuilding>();
-                if (ub == null) ub = spawnedBuilding.GetComponentInChildren<UpgradeableBuilding>();
-                if (ub != null)
-                {
-                    // Cài đặt level nếu cần
-                }
-            }
-
-            // 2. Spawn Lính thuộc về Công trình này (hoặc tổng số lính)
             int countToSpawn = buildingInfo.soldierCount;
             for (int i = 0; i < countToSpawn; i++)
             {
@@ -283,7 +467,8 @@ public class BattleManager : MonoBehaviour
                     int row = soldierTotalSpawned / unitsPerRow;
                     int col = soldierTotalSpawned % unitsPerRow;
 
-                    Vector3 soldierPos = soldierFrontOrigin + Vector3.left * (row * unitSpacing) + Vector3.forward * (col * unitSpacing - 1.5f);
+                    float sOffsetZ = (col - (unitsPerRow - 1) * 0.5f) * unitSpacing;
+                    Vector3 soldierPos = soldierFrontOrigin + Vector3.left * (row * unitSpacing) + Vector3.forward * sOffsetZ;
                     Quaternion soldierRot = Quaternion.Euler(0, 90, 0); // Quay mặt về phía Enemy (Bên Phải)
 
                     GameObject spawnedSoldier = Instantiate(soldierPrefab, soldierPos, soldierRot);
@@ -292,8 +477,6 @@ public class BattleManager : MonoBehaviour
                 }
                 soldierTotalSpawned++;
             }
-
-            buildingIndex++;
         }
 
         // Nếu tổng số lính đã spawn chưa đủ số lính thực tế trong căn cứ
@@ -308,7 +491,8 @@ public class BattleManager : MonoBehaviour
                     int row = idx / unitsPerRow;
                     int col = idx % unitsPerRow;
 
-                    Vector3 soldierPos = soldierFrontOrigin + Vector3.left * (row * unitSpacing) + Vector3.forward * (col * unitSpacing - 1.5f);
+                    float sOffsetZ = (col - (unitsPerRow - 1) * 0.5f) * unitSpacing;
+                    Vector3 soldierPos = soldierFrontOrigin + Vector3.left * (row * unitSpacing) + Vector3.forward * sOffsetZ;
                     Quaternion soldierRot = Quaternion.Euler(0, 90, 0);
 
                     GameObject spawnedSoldier = Instantiate(soldierPrefab, soldierPos, soldierRot);
@@ -354,8 +538,35 @@ public class BattleManager : MonoBehaviour
         }
     }
 
+    private GameObject FindBuildingPrefabByType(BuildingType type)
+    {
+        var allBuildings = Resources.FindObjectsOfTypeAll<UpgradeableBuilding>();
+        foreach (var b in allBuildings)
+        {
+            if (b != null && b.buildingType == type)
+            {
+                // Ưu tiên các Prefab Asset hoặc thực thể mẫu chưa nằm trực tiếp trong Scene giao tranh
+                if (!b.gameObject.scene.IsValid() || b.gameObject.name.ToLower().Contains("prefab"))
+                {
+                    return b.gameObject;
+                }
+            }
+        }
+
+        // Fallback: Thử tìm bất kỳ mẫu công trình cùng loại nào đang có sẵn
+        foreach (var b in allBuildings)
+        {
+            if (b != null && b.buildingType == type)
+            {
+                return b.gameObject;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
-    /// Tìm Prefab công trình dựa theo BuildingType
+    /// Tìm Prefab công trình chuẩn xác dựa theo BuildingType
     /// </summary>
     private GameObject GetBuildingPrefab(BuildingType type)
     {
@@ -368,25 +579,39 @@ public class BattleManager : MonoBehaviour
             }
         }
 
-        // 2. Mặc định theo từng nhóm loại nhà
+        // 2. Kiểm tra các field được gán thủ công trong Inspector
         switch (type)
         {
+            case BuildingType.ArcherTower:
+                if (archerTowerPrefab != null) return archerTowerPrefab;
+                break;
+
+            case BuildingType.WatchTower:
+                if (watchTowerPrefab != null) return watchTowerPrefab;
+                break;
+
+            case BuildingType.Cannon:
+                if (cannonPrefab != null) return cannonPrefab;
+                break;
+
             case BuildingType.BarracksMelee:
             case BuildingType.BarracksArcher:
             case BuildingType.BarracksSpear:
-                return barracksPrefab != null ? barracksPrefab : archerTowerPrefab;
-
-            case BuildingType.ArcherTower:
-                return archerTowerPrefab != null ? archerTowerPrefab : barracksPrefab;
-
-            case BuildingType.WatchTower:
-                return watchTowerPrefab != null ? watchTowerPrefab : archerTowerPrefab;
-
-            case BuildingType.Cannon:
-                return cannonPrefab != null ? cannonPrefab : archerTowerPrefab;
-
-            default:
-                return barracksPrefab != null ? barracksPrefab : archerTowerPrefab;
+                if (barracksPrefab != null) return barracksPrefab;
+                break;
         }
+
+        // 3. Tự động truy tìm Prefab chuẩn xác của loại nhà đó trong Project/Memory
+        GameObject foundDynamic = FindBuildingPrefabByType(type);
+        if (foundDynamic != null)
+        {
+            return foundDynamic;
+        }
+
+        // 4. Dự phòng cuối cùng nếu hoàn toàn không tìm thấy
+        if (archerTowerPrefab != null) return archerTowerPrefab;
+        if (watchTowerPrefab != null) return watchTowerPrefab;
+        if (cannonPrefab != null) return cannonPrefab;
+        return barracksPrefab;
     }
 }

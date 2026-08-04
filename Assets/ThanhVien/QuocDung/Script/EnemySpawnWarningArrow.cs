@@ -290,33 +290,18 @@ public class EnemySpawnWarningArrow : MonoBehaviour
 
     private Transform GetActualEnemyTarget()
     {
-        if (targetEnemy == null) return null;
-
-        EnemyAI enemyAI = targetEnemy.GetComponent<EnemyAI>();
-        if (enemyAI != null)
+        if (targetEnemy != null)
         {
-            Transform currentTarget = enemyAI.GetCurrentTarget();
-            if (currentTarget != null) return currentTarget;
-        }
-
-        float minDist = float.MaxValue;
-        Transform bestTarget = null;
-
-        HPTower[] towers = Object.FindObjectsByType<HPTower>(FindObjectsSortMode.None);
-        foreach (var t in towers)
-        {
-            if (t != null && t.gameObject.activeInHierarchy && !t.IsDestroyed && t.CurrentHealth > 0f)
+            EnemyAI enemyAI = targetEnemy.GetComponent<EnemyAI>();
+            if (enemyAI != null && enemyAI.villageCenter != null)
             {
-                float dist = Vector3.Distance(targetEnemy.position, t.transform.position);
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    bestTarget = t.transform;
-                }
+                return enemyAI.villageCenter;
             }
         }
 
-        if (bestTarget != null) return bestTarget;
+        // Fallback: Tìm đối tượng Nhà chính có tag "Main" hoặc tên Nhà chính cố định
+        GameObject mainObj = GameObject.FindGameObjectWithTag("Main");
+        if (mainObj != null) return mainObj.transform;
 
         UpgradeableBuilding[] buildings = Object.FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
         foreach (var b in buildings)

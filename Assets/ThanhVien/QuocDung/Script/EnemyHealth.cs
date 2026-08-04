@@ -32,6 +32,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     // 🌟 KHAI BÁO BIẾN TRẠNG THÁI CHẾT (Tránh lỗi không tìm thấy biến)
     private bool isDead = false;
+    public bool IsDead => isDead || CurrentHealth <= 0f;
 
     // Các thành phần UI được khởi tạo hoàn toàn bằng code lúc chạy game
     private Canvas hpCanvas;
@@ -136,7 +137,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             return;
 
         CurrentHealth -= amount;
-        Debug.Log($"{name} took {amount} damage at {hitPoint}. Current HP: {CurrentHealth}");
+        // Debug.Log($"{name} took {amount} damage at {hitPoint}. Current HP: {CurrentHealth}");
 
         // Enable combat on EnemyAI when damaged
         EnemyAI enemyAI = GetComponent<EnemyAI>();
