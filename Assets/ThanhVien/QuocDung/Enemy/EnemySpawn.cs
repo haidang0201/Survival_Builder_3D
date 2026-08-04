@@ -20,7 +20,6 @@ public class EnemySpawn : MonoBehaviour
 
     [Header("Time & Wave Spawning Settings")]
     [SerializeField] private bool useWaveSpawn = true;
-    [SerializeField] private bool spawnOnlyAtNight = true;
     [SerializeField] private float waveInterval = 5f;
     [Tooltip("Tự động spawn Enemy theo chu kỳ Wave độc lập, giúp Enemy luôn spawn ngay cả khi TẮT/BẬT Tutorial")]
     [SerializeField] private bool autoSpawnWaveAlways = true;
@@ -69,16 +68,7 @@ public class EnemySpawn : MonoBehaviour
     private void Update()
     {
         bool shouldRunWaves = useWaveSpawn || autoSpawnWaveAlways;
-        if (!shouldRunWaves)
-        {
-            StopWaveSpawning();
-            return;
-        }
-
-        bool isNight = (DayNightManager.Ins != null) ? DayNightManager.Ins.IsNight() : true;
-        bool shouldSpawn = !spawnOnlyAtNight || isNight || autoSpawnWaveAlways;
-
-        if (shouldSpawn)
+        if (shouldRunWaves)
         {
             StartWaveSpawning();
         }

@@ -9,6 +9,14 @@ public class EnemyAI : MonoBehaviour
     public Transform villageCenter;
     public Animator animator;
 
+    [Header("Attack Button Settings")]
+    [Tooltip("Kéo thả nút Tấn công (Button / Canvas) từ Hierarchy vào ô này.")]
+    public GameObject attackButtonUI;
+    [Tooltip("Tên scene battle sẽ chuyển sang khi bấm nút.")]
+    public string battleSceneName = "SceneBattle";
+    [Tooltip("Góc xoay bù cho nút UI (Ví dụ X:0, Y:0, Z:90 để xoay ngang nút lại).")]
+    public Vector3 buttonRotationOffset = new Vector3(0, 0, 90);
+
     [Header("Patrol (Deprecated)")]
     public float patrolRadius = 8f;
     public float pointReachDistance = 1f;
@@ -156,6 +164,20 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    public bool IsLeader()
+    {
+        if (squadEnemies == null || squadEnemies.Count == 0) return true;
+        for (int i = 0; i < squadEnemies.Count; i++)
+        {
+            var e = squadEnemies[i];
+            if (e != null && e.gameObject.activeInHierarchy)
+            {
+                return e == this;
+            }
+        }
+        return true;
+    }
+
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -246,13 +268,63 @@ public class EnemyAI : MonoBehaviour
             squadEnemies.Add(this);
         }
 
+        SetupAttackButton();
+
         UpdateAnimationState();
+    }
+
+    private void LateUpdate()
+    {
+        // Billboard effect: Giúp nút UI luôn quay hướng thẳng song song với Camera (chỉ cho Thủ Lĩnh)
+        if (IsLeader() && attackButtonUI != null && attackButtonUI.activeSelf)
+        {
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                attackButtonUI.transform.rotation = mainCam.transform.rotation * Quaternion.Euler(buttonRotationOffset);
+            }
+        }
+    }
+
+    public void SetupAttackButton()
+    {
+        if (attackButtonUI != null)
+        {
+            // Ban đầu ẩn nút đi, chỉ khi tới mục tiêu mới hiện lên
+            attackButtonUI.SetActive(false);
+
+            UnityEngine.UI.Button btn = attackButtonUI.GetComponent<UnityEngine.UI.Button>();
+            if (btn == null) btn = attackButtonUI.GetComponentInChildren<UnityEngine.UI.Button>();
+
+            if (btn != null)
+            {
+                btn.onClick.RemoveListener(OnAttackButtonClicked);
+                btn.onClick.AddListener(OnAttackButtonClicked);
+            }
+        }
+    }
+
+    public void OnAttackButtonClicked()
+    {
+        Time.timeScale = 1f;
+        int waveCount = (squadEnemies != null && squadEnemies.Count > 0) ? squadEnemies.Count : 1;
+        BattleData.RecordCurrentSceneState(waveCount);
+
+        Debug.Log($"[EnemyAI] Bấm nút Tấn Công (Wave = {waveCount} Enemy) -> Đang chuyển sang Scene: {battleSceneName}");
+        if (!string.IsNullOrEmpty(battleSceneName))
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(battleSceneName);
+        }
+        else
+        {
+            Debug.LogError("[EnemyAI] Chưa cài đặt tên battleSceneName!");
+        }
     }
 
     private void Update()
     {
-        // 1. Kiểm tra tùy chọn tự động thoát chế độ Play khi không còn công trình
-        if (exitPlayModeWhenNoBuildings && !HasAnyActiveBuildings())
+        // 1. Kiểm tra tùy chọn tự động thoát chế độ Play khi không còn công trình (chỉ ở scene chính)
+        if (exitPlayModeWhenNoBuildings && UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "SceneBattle" && !HasAnyActiveBuildings())
         {
             Debug.Log("[EnemyAI] 🔥 Không còn bất kỳ tháp/công trình nào trên bản đồ! Tự động thoát chế độ Play.");
 #if UNITY_EDITOR
@@ -295,17 +367,27 @@ public class EnemyAI : MonoBehaviour
                     }
                     isWaitingAtTarget = true;
 
-                    // Xuất hiện Nút Cảnh Báo Tấn Công CHỈ trên đầu con Thủ Lĩnh dẫn đầu
-                    bool isLeadEnemy = (squadEnemies == null || squadEnemies.Count == 0 || squadEnemies[0] == null || squadEnemies[0] == this);
-                    if (isLeadEnemy && spawnedAttackButton == null)
+                    // Hiện nút Tấn công CHỈ KHI là con Thủ Lĩnh (Leader) và đã đến mục tiêu
+                    if (IsLeader() && attackButtonUI != null && !attackButtonUI.activeSelf)
                     {
-                        spawnedAttackButton = UIEnemyWaveButton.CreateButton(transform, 3.0f);
+                        attackButtonUI.SetActive(true);
+                    }
+                    else if (!IsLeader() && attackButtonUI != null && attackButtonUI.activeSelf)
+                    {
+                        attackButtonUI.SetActive(false);
                     }
                 }
                 else
                 {
                     // Tiếp tục hành quân đến Nhà Chính
                     isWaitingAtTarget = false;
+
+                    // Ẩn nút Tấn công khi đang hành quân
+                    if (attackButtonUI != null && attackButtonUI.activeSelf)
+                    {
+                        attackButtonUI.SetActive(false);
+                    }
+
                     if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
                     {
                         agent.isStopped = false;
@@ -331,47 +413,44 @@ public class EnemyAI : MonoBehaviour
             // Calculate distance to boundary of target collider
             float distToTarget = GetDistanceToCollider(target.gameObject);
 
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            agent.speed = chaseSpeed;
+            
+            float actualAttackRange = CurrentAttackRange;
+            if (attackType == EnemyAttackType.Melee && (SafeCompareTag(target.gameObject, "Main") || IsMainHouse(target.gameObject) || SafeCompareTag(target.gameObject, "Tower") || SafeCompareTag(target.gameObject, "DefenseTower") || IsTower(target.gameObject)))
             {
-                agent.speed = chaseSpeed;
+                actualAttackRange = Mathf.Max(actualAttackRange, 2.5f);
+            }
+
+            // Hysteresis để ngăn việc bật/tắt isStopped làm giật/lết hoạt cảnh ở ranh giới tầm đánh
+            float stopThreshold = actualAttackRange;
+            float resumeThreshold = actualAttackRange + 0.6f;
+
+            bool shouldAttack = isAttackingTarget ? (distToTarget <= resumeThreshold) : (distToTarget <= stopThreshold);
+            isAttackingTarget = shouldAttack;
+
+            if (shouldAttack)
+            {
+                if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && !agent.isStopped) agent.isStopped = true;
                 
-                float actualAttackRange = CurrentAttackRange;
-                if (attackType == EnemyAttackType.Melee && (SafeCompareTag(target.gameObject, "Main") || IsMainHouse(target.gameObject) || SafeCompareTag(target.gameObject, "Tower") || SafeCompareTag(target.gameObject, "DefenseTower") || IsTower(target.gameObject)))
+                Vector3 lookDir = (target.position - transform.position);
+                lookDir.y = 0f;
+                if (lookDir.sqrMagnitude > 0.001f)
                 {
-                    actualAttackRange = Mathf.Max(actualAttackRange, 2.5f);
+                    Quaternion targetRot = Quaternion.LookRotation(lookDir);
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
                 }
-
-                // Hysteresis để ngăn việc bật/tắt isStopped làm giật/lết hoạt cảnh ở ranh giới tầm đánh
-                float stopThreshold = actualAttackRange;
-                float resumeThreshold = actualAttackRange + 0.6f;
-
-                bool shouldAttack = isAttackingTarget ? (distToTarget <= resumeThreshold) : (distToTarget <= stopThreshold);
-                isAttackingTarget = shouldAttack;
-
-                if (shouldAttack)
+                
+                if (Time.time >= nextAttackTime)
                 {
-                    if (!agent.isStopped) agent.isStopped = true;
-                    
-                    Vector3 lookDir = (target.position - transform.position);
-                    lookDir.y = 0f;
-                    if (lookDir.sqrMagnitude > 0.001f)
-                    {
-                        Quaternion targetRot = Quaternion.LookRotation(lookDir);
-                        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
-                    }
-                    
-                    if (Time.time >= nextAttackTime)
-                    {
-                        ExecuteAttack(target);
-                        nextAttackTime = Time.time + attackRate;
-                    }
+                    ExecuteAttack(target);
+                    nextAttackTime = Time.time + attackRate;
                 }
-                else
-                {
-                    if (agent.isStopped) agent.isStopped = false;
-                    Vector3 moveDest = GetTargetDestination(target);
-                    SetDestination(moveDest);
-                }
+            }
+            else
+            {
+                if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && agent.isStopped) agent.isStopped = false;
+                Vector3 moveDest = GetTargetDestination(target);
+                SetDestination(moveDest);
             }
         }
         else
@@ -593,7 +672,7 @@ public class EnemyAI : MonoBehaviour
 
         CleanupTargetAssignments();
 
-        float searchRadius = chaseTriggerRange * 3f;
+        float searchRadius = isCombatActive ? 250f : (chaseTriggerRange * 3f);
         Collider[] colliders = Physics.OverlapSphere(transform.position, searchRadius);
 
         Transform selected = null;
@@ -656,8 +735,29 @@ public class EnemyAI : MonoBehaviour
         {
             selected = SelectClosestTargetFromList(aliveTowers);
         }
-        // Ưu tiên 4: Hết lính và tháp -> Đánh Main
-        else
+        // Fallback: Tìm trực tiếp UnitController trên toàn bản đồ
+        if (selected == null && isCombatActive)
+        {
+            UnitController[] units = Object.FindObjectsByType<UnitController>(FindObjectsSortMode.None);
+            float minDist = float.MaxValue;
+            foreach (var u in units)
+            {
+                if (u != null && u.gameObject.activeInHierarchy)
+                {
+                    IDamageable d = u.GetComponentInParent<IDamageable>();
+                    if (d != null && d.CurrentHealth <= 0f) continue;
+
+                    float distSq = (u.transform.position - transform.position).sqrMagnitude;
+                    if (distSq < minDist)
+                    {
+                        minDist = distSq;
+                        selected = u.transform;
+                    }
+                }
+            }
+        }
+
+        if (selected == null)
         {
             selected = FindMainTarget();
         }
@@ -1043,28 +1143,40 @@ public class EnemyAI : MonoBehaviour
 
     private void SetDestination(Vector3 dest)
     {
-        if (agent == null || !agent.isActiveAndEnabled) return;
-        if (!agent.isOnNavMesh)
+        if (agent != null && agent.isActiveAndEnabled)
         {
-            if (NavMesh.SamplePosition(dest, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            if (!agent.isOnNavMesh)
             {
-                agent.Warp(hit.position);
+                if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+                {
+                    agent.Warp(hit.position);
+                }
             }
-            else return;
+
+            if (agent.isOnNavMesh)
+            {
+                if (Time.time < nextSetDestinationTime && Vector3.Distance(lastSetDestination, dest) < 0.5f && agent.hasPath)
+                {
+                    return;
+                }
+
+                nextSetDestinationTime = Time.time + 0.2f;
+                lastSetDestination = dest;
+                agent.SetDestination(dest);
+                return;
+            }
         }
 
-        // Chống gọi SetDestination liên tục mỗi frame làm giật/lết NavMeshAgent
-        if (Time.time < nextSetDestinationTime && Vector3.Distance(lastSetDestination, dest) < 0.5f && agent.hasPath)
-        {
-            return;
-        }
+        // Fallback di chuyển trực tiếp Transform nếu không có NavMesh trong Scene
+        float speed = chaseSpeed > 0.1f ? chaseSpeed : 3.5f;
+        Vector3 moveDir = (dest - transform.position);
+        moveDir.y = 0f;
 
-        nextSetDestinationTime = Time.time + 0.2f;
-        lastSetDestination = dest;
-
-        if (agent.isOnNavMesh)
+        if (moveDir.sqrMagnitude > 0.01f)
         {
-            agent.SetDestination(dest);
+            Quaternion targetRot = Quaternion.LookRotation(moveDir);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, 720f * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, transform.position + moveDir.normalized, speed * Time.deltaTime);
         }
     }
 

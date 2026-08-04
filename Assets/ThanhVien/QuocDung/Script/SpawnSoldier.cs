@@ -384,6 +384,13 @@ public class SpawnSoldier : MonoBehaviour
     {
         if (spawnedSoldiers == null) return;
 
+        // Nếu Scene đang đóng / unload thì chỉ dọn dẹp list C#, KHÔNG gọi Destroy() để tránh lỗi Scene Cleanup của Unity Engine
+        if (!gameObject.scene.isLoaded)
+        {
+            spawnedSoldiers.Clear();
+            return;
+        }
+
         Debug.Log($"[SpawnSoldier] ClearSpawnedSoldiers được gọi trên {gameObject.name}. Danh sách đang có {spawnedSoldiers.Count} lính.");
 
         for (int i = spawnedSoldiers.Count - 1; i >= 0; i--)
@@ -566,6 +573,13 @@ public class SpawnSoldier : MonoBehaviour
         StopHologramAnimationCoroutine();
         if (spawnedHologramsList != null && spawnedHologramsList.Count > 0)
         {
+            if (!gameObject.scene.isLoaded)
+            {
+                spawnedHologramsList.Clear();
+                spawnedHolograms = false;
+                return;
+            }
+
             Debug.Log($"[SpawnSoldier] ClearHolograms được gọi trên {gameObject.name}. Đang dọn dẹp {spawnedHologramsList.Count} lính hologram.");
             foreach (GameObject hologram in spawnedHologramsList)
             {
@@ -583,7 +597,14 @@ public class SpawnSoldier : MonoBehaviour
     {
         if (dynamicHologramMaterial != null)
         {
-            Destroy(dynamicHologramMaterial);
+            if (Application.isPlaying)
+            {
+                Destroy(dynamicHologramMaterial);
+            }
+            else
+            {
+                DestroyImmediate(dynamicHologramMaterial);
+            }
         }
     }
 
