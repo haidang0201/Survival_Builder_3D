@@ -13966,14 +13966,14 @@ PrefabInstance:
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questItemPrefab
       value: 
-      objectReference: {fileID: 1377742903}
+      objectReference: {fileID: 3444489658730973277, guid: 7da8d8c0e6ba95f42a98995cf2b3710c, type: 3}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: notificationIcon
       value: 
       objectReference: {fileID: 123032472}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.size
-      value: 2
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].icon
@@ -13985,19 +13985,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].title
-      value: "Ho\xE0n th\xE0nh h\u01B0\u1EDBng d\u1EABn "
+      value: "Kh\u1EDFi \u0110\u1EA7u H\xE0nh Tr\xECnh"
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].title
-      value: "Ho\xE0n th\xE0nh h\u01B0\u1EDBng d\u1EABn "
+      value: "D\u1ECDn D\u1EB9p Qu\xE1i V\u1EADt"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].title
+      value: "Nh\xE0 Thu Ho\u1EA1ch T\xE0i Ba"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].title
+      value: "Thi\u1EBFt L\u1EADp & B\u1EA3o M\u1EADt"
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].questID
-      value: 
+      value: main_01
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].questID
-      value: 
+      value: combat_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].questID
+      value: achieve_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].questID
+      value: settings_01
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].isClaimed
@@ -14008,64 +14024,164 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[1].questType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].questType
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].questType
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].description
-      value: "Ho\xE0n th\xE0nh h\u01B0\u1EDBng d\u1EABn \u0111\u1EA7u game"
+      value: "Tr\xF2 chuy\u1EC7n v\u1EDBi Tr\u01B0\u1EDFng L\xE0ng \u0111\u1EC3 ti\u1EBFp
+        nh\u1EADn nhi\u1EC7m v\u1EE5 h\u01B0\u1EDBng d\u1EABn ban \u0111\u1EA7u."
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].maxProgress
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].description
-      value: "Ho\xE0n th\xE0nh h\u01B0\u1EDBng d\u1EABn \u0111\u1EA7u game"
+      value: "H\u1EA1 g\u1EE5c 10 Qu\xE1i Th\u1EA1ch Qu\u1EF7 \u0111ang ho\xE0nh
+        h\xE0nh xung quanh c\u0103n c\u1EE9."
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].maxProgress
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].description
+      value: "Khai th\xE1c v\xE0 t\xEDch l\u0169y \u0111\u1EE7 100 G\u1ED7 v\xE0
+        50 \u0110\xE1 t\u1EEB t\xE0i nguy\xEAn ngo\xE0i b\u1EA3n \u0111\u1ED3."
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].maxProgress
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].description
+      value: "T\xF9y ch\u1EC9nh c\u1EA5u h\xECnh \xE2m thanh, \u0111\u1ED3 h\u1ECDa
+        v\xE0 li\xEAn k\u1EBFt t\xE0i kho\u1EA3n \u0111\u1EC3 nh\u1EADn qu\xE0."
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].maxProgress
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[0].currentProgress
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].currentProgress
-      value: 0
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].currentProgress
+      value: 65
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].currentProgress
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].rewards.Array.size
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].rewards.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].rewards.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].rewards.Array.size
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].rewards.Array.data[0].amount
-      value: 100
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].rewards.Array.data[1].amount
-      value: 100
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[0].rewards.Array.data[2].amount
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].rewards.Array.data[0].amount
-      value: 100
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].rewards.Array.data[1].amount
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[1].rewards.Array.data[2].amount
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].rewards.Array.data[0].amount
       value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].rewards.Array.data[1].amount
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].rewards.Array.data[2].amount
+      value: 1500
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].rewards.Array.data[0].amount
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].rewards.Array.data[1].amount
+      value: 2000
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].rewards.Array.data[0].rewardType
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[0].rewards.Array.data[1].rewardType
-      value: 3
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[0].rewards.Array.data[2].rewardType
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].rewards.Array.data[0].rewardType
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: questList.Array.data[1].rewards.Array.data[1].rewardType
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[1].rewards.Array.data[2].rewardType
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].rewards.Array.data[0].rewardType
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[2].rewards.Array.data[1].rewardType
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1263251816020464900, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: questList.Array.data[3].rewards.Array.data[0].rewardType
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 1585186967044010821, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: m_AnchorMax.y
@@ -14090,6 +14206,14 @@ PrefabInstance:
     - target: {fileID: 1585186967044010821, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1821712610558306753, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -175
+      objectReference: {fileID: 0}
+    - target: {fileID: 3112400395067036499, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 3849788089102900095, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: m_Pivot.x
@@ -14262,6 +14386,10 @@ PrefabInstance:
     - target: {fileID: 8383167503637880255, guid: e84bde37908f81d4198313cf5087d526, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748653079529883096, guid: e84bde37908f81d4198313cf5087d526, type: 3}
+      propertyPath: m_fontSize
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -57734,11 +57862,6 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!1 &1377742903 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3141483650686544962, guid: e84bde37908f81d4198313cf5087d526, type: 3}
-  m_PrefabInstance: {fileID: 314483415}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1378951470
 GameObject:
   m_ObjectHideFlags: 0
