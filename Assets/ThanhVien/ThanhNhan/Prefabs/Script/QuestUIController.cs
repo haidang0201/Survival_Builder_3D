@@ -75,6 +75,90 @@ public class QuestUIController : MonoBehaviour
 
     private QuestType currentTab = QuestType.MainQuest;
 
+    private void Awake()
+    {
+        if (questList == null || questList.Count == 0)
+        {
+            InitDefaultQuests();
+        }
+    }
+
+    private void Reset()
+    {
+        InitDefaultQuests();
+    }
+
+    [ContextMenu("🛠️ Add Default 4 Quests")]
+    public void InitDefaultQuests()
+    {
+        questList = new List<QuestDataDemo>
+        {
+            new QuestDataDemo
+            {
+                questID = "main_01",
+                questType = QuestType.MainQuest,
+                title = "Khởi Đầu Hành Trình",
+                description = "Trò chuyện với Trưởng Làng để tiếp nhận nhiệm vụ hướng dẫn ban đầu.",
+                currentProgress = 1,
+                maxProgress = 1,
+                isClaimed = false,
+                rewards = new List<QuestReward>
+                {
+                    new QuestReward { rewardType = RewardType.Gold, amount = 500 },
+                    new QuestReward { rewardType = RewardType.Exp, amount = 200 },
+                    new QuestReward { rewardType = RewardType.Wood, amount = 50 }
+                }
+            },
+            new QuestDataDemo
+            {
+                questID = "combat_01",
+                questType = QuestType.Combat,
+                title = "Dọn Dẹp Quái Vật",
+                description = "Hạ gục 10 Quái Thạch Quỷ đang hoành hành xung quanh căn cứ.",
+                currentProgress = 4,
+                maxProgress = 10,
+                isClaimed = false,
+                rewards = new List<QuestReward>
+                {
+                    new QuestReward { rewardType = RewardType.Exp, amount = 500 },
+                    new QuestReward { rewardType = RewardType.Gold, amount = 1000 },
+                    new QuestReward { rewardType = RewardType.Stone, amount = 30 }
+                }
+            },
+            new QuestDataDemo
+            {
+                questID = "achieve_01",
+                questType = QuestType.Achievement,
+                title = "Nhà Thu Hoạch Tài Ba",
+                description = "Khai thác và tích lũy đủ 100 Gỗ và 50 Đá từ tài nguyên ngoài bản đồ.",
+                currentProgress = 65,
+                maxProgress = 100,
+                isClaimed = false,
+                rewards = new List<QuestReward>
+                {
+                    new QuestReward { rewardType = RewardType.Wood, amount = 100 },
+                    new QuestReward { rewardType = RewardType.Stone, amount = 50 },
+                    new QuestReward { rewardType = RewardType.Gold, amount = 1500 }
+                }
+            },
+            new QuestDataDemo
+            {
+                questID = "settings_01",
+                questType = QuestType.Settings,
+                title = "Thiết Lập & Bảo Mật",
+                description = "Tùy chỉnh cấu hình âm thanh, đồ họa và liên kết tài khoản để nhận quà.",
+                currentProgress = 1,
+                maxProgress = 1,
+                isClaimed = false,
+                rewards = new List<QuestReward>
+                {
+                    new QuestReward { rewardType = RewardType.Gold, amount = 2000 },
+                    new QuestReward { rewardType = RewardType.Exp, amount = 300 }
+                }
+            }
+        };
+    }
+
     private void Start()
     {
         if (closeButton != null) closeButton.onClick.AddListener(CloseWindow);
