@@ -23,12 +23,20 @@ public class SettingManager : Singleton<SettingManager>
     {
         masterVolume = Mathf.Clamp01(volume);
         PlayerPrefs.SetFloat("MasterVolume", masterVolume);
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetMasterVolume(masterVolume);
+        }
     }
 
     public void SetMusicVolume(float volume)
     {
         musicVolume = Mathf.Clamp01(volume);
         PlayerPrefs.SetFloat("MusicVolume", musicVolume);
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetBGMVolume(musicVolume);
+        }
     }
 
     // HÀM MỚI: Xử lý Dropdown Màn hình & Độ phân giải
