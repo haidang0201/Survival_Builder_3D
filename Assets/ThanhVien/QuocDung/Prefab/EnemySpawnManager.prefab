@@ -43,7 +43,7 @@ GameObject:
   - component: {fileID: 5604620364914663613}
   m_Layer: 0
   m_Name: EnemySpawnManager
-  m_TagString: Untagged
+  m_TagString: Respawn
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -87,12 +87,14 @@ MonoBehaviour:
   spacingX: 1
   spacingZ: 1
   useWaveSpawn: 0
-  spawnOnlyAtNight: 0
-  waveInterval: 5
+  waveInterval: 30
+  autoSpawnWaveAlways: 1
   showAttackButton: 1
   warningIconPrefab: {fileID: 0}
   warningIconHeightOffset: 3
-  warningArrowSize: 2.5
+  warningArrowSize: 0.89
+  warningArrowLengthMultiplier: 1
+  warningArrowExtraLength: 0
   warningTimerTextScale: 2.5
   warningTextHeightOffset: 4
   exitPlayModeWhenNoBuildings: 0

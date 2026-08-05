@@ -9,7 +9,7 @@ public class EnemySpawnWarningArrow : MonoBehaviour
     public Transform targetEnemy;
 
     [Header("Mũi Tên Dưới Chân (Ground Arrow)")]
-    [Tooltip("Điều chỉnh chiều rộng mũi tên kéo dài bệt dưới chân Enemy")]
+    [Tooltip("Điều chỉnh chiều rộng mũi tên (mét) kéo dài bệt dưới chân Enemy")]
     [Range(0.1f, 5f)]
     public float arrowSize = 1.0f;
 
@@ -39,11 +39,13 @@ public class EnemySpawnWarningArrow : MonoBehaviour
 
     [Header("References (Internal)")]
     [SerializeField] private Canvas worldCanvas;
-    [SerializeField] private RectTransform arrowRect;
-    [SerializeField] private Image arrowImage;
+    [SerializeField] private GameObject arrowQuadObj;
+    [SerializeField] private MeshRenderer arrowMeshRenderer;
     [SerializeField] private TextMeshProUGUI timerText;
 
     private Camera mainCamera;
+    private static Material sharedArrowMaterial;
+    private static Texture2D sharedArrowTexture;
 
     public static EnemySpawnWarningArrow Create(Transform leadEnemy)
     {
@@ -82,8 +84,7 @@ public class EnemySpawnWarningArrow : MonoBehaviour
 
     private void OnValidate()
     {
-        EnsureComponents();
-        UpdateVisuals();
+        // Để trống để tránh cảnh báo Unity OnRectTransformDimensionsChange trong Inspector
     }
 
     public void BuildWorldUI()
@@ -92,8 +93,82 @@ public class EnemySpawnWarningArrow : MonoBehaviour
         UpdateVisuals();
     }
 
+    private static Texture2D CreateStretchedArrowTexture()
+    {
+        if (sharedArrowTexture != null) return sharedArrowTexture;
+
+        int width = 128;
+        int height = 512;
+        Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Color transparent = new Color(0, 0, 0, 0);
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                tex.SetPixel(x, y, transparent);
+            }
+        }
+
+        int centerX = width / 2;
+        int headHeight = 128;
+        int bodyHeight = height - headHeight;
+
+        // 1. Thân mũi tên (Shaft)
+        int shaftHalfWidth = 22;
+        for (int y = 0; y < bodyHeight; y++)
+        {
+            for (int x = centerX - shaftHalfWidth; x <= centerX + shaftHalfWidth; x++)
+            {
+                if (x >= 0 && x < width)
+                {
+                    tex.SetPixel(x, y, Color.white);
+                }
+            }
+        }
+
+        // 2. Đầu mũi tên tam giác ở đỉnh (Arrowhead)
+        for (int y = bodyHeight; y < height; y++)
+        {
+            float progress = (float)(height - y) / headHeight;
+            int rowHalfWidth = Mathf.RoundToInt(progress * (width / 2 - 4));
+            for (int x = centerX - rowHalfWidth; x <= centerX + rowHalfWidth; x++)
+            {
+                if (x >= 0 && x < width)
+                {
+                    tex.SetPixel(x, y, Color.white);
+                }
+            }
+        }
+
+        tex.Apply();
+        sharedArrowTexture = tex;
+        return sharedArrowTexture;
+    }
+
+    private static Material GetArrowMaterial()
+    {
+        if (sharedArrowMaterial == null)
+        {
+            Shader shader = Shader.Find("Sprites/Default");
+            if (shader == null) shader = Shader.Find("Unlit/Transparent");
+            if (shader == null) shader = Shader.Find("UI/Default");
+            sharedArrowMaterial = new Material(shader);
+            sharedArrowMaterial.mainTexture = CreateStretchedArrowTexture();
+        }
+        return sharedArrowMaterial;
+    }
+
     private void EnsureComponents()
     {
+        // Remove old UI GroundArrow if present
+        Transform oldUIArrow = transform.Find("GroundArrow");
+        if (oldUIArrow != null && oldUIArrow.GetComponent<RectTransform>() != null && oldUIArrow.GetComponent<MeshRenderer>() == null)
+        {
+            if (Application.isPlaying) Destroy(oldUIArrow.gameObject);
+            else DestroyImmediate(oldUIArrow.gameObject);
+        }
+
         if (worldCanvas == null)
         {
             worldCanvas = GetComponent<Canvas>();
@@ -108,37 +183,50 @@ public class EnemySpawnWarningArrow : MonoBehaviour
             scaler.dynamicPixelsPerUnit = 100;
         }
 
-        // 1. Mũi tên dưới chân bệt mặt đất (Ground Arrow)
-        if (arrowRect == null)
+        // 1. Mũi tên 3D Quad bệt mặt đất (3D Ground Arrow Quad)
+        Transform arrowTr = transform.Find("GroundArrow3D");
+        if (arrowTr == null)
         {
-            Transform arrowTr = transform.Find("GroundArrow");
-            if (arrowTr != null)
-            {
-                arrowRect = arrowTr as RectTransform;
-            }
-            else
-            {
-                GameObject arrowObj = new GameObject("GroundArrow");
-                arrowObj.transform.SetParent(transform, false);
-                arrowRect = arrowObj.AddComponent<RectTransform>();
-            }
-        }
+            GameObject arrowObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            arrowObj.name = "GroundArrow3D";
+            arrowObj.transform.SetParent(transform, false);
 
-        if (arrowRect != null)
-        {
-            arrowRect.pivot = new Vector2(0.5f, 0f);
-            arrowRect.anchorMin = new Vector2(0.5f, 0f);
-            arrowRect.anchorMax = new Vector2(0.5f, 0f);
-        }
-
-        if (arrowImage == null && arrowRect != null)
-        {
-            arrowImage = arrowRect.GetComponent<Image>();
-            if (arrowImage == null)
+            Collider col = arrowObj.GetComponent<Collider>();
+            if (col != null)
             {
-                arrowImage = arrowRect.gameObject.AddComponent<Image>();
+                if (Application.isPlaying) Destroy(col);
+                else DestroyImmediate(col);
             }
-            arrowImage.sprite = CreateStretchedArrowSprite();
+
+            MeshRenderer mr = arrowObj.GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                mr.material = GetArrowMaterial();
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+            }
+
+            MeshFilter mf = arrowObj.GetComponent<MeshFilter>();
+            if (mf != null && mf.sharedMesh != null)
+            {
+                Mesh mesh = Instantiate(mf.sharedMesh);
+                Vector3[] vertices = mesh.vertices;
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    vertices[i].y += 0.5f; // Pivot at bottom center
+                }
+                mesh.vertices = vertices;
+                mesh.RecalculateBounds();
+                mf.sharedMesh = mesh;
+            }
+
+            arrowQuadObj = arrowObj;
+            arrowMeshRenderer = mr;
+        }
+        else
+        {
+            arrowQuadObj = arrowTr.gameObject;
+            arrowMeshRenderer = arrowQuadObj.GetComponent<MeshRenderer>();
         }
 
         // 2. Chữ đếm ngược thời gian (Timer Text)
@@ -161,67 +249,15 @@ public class EnemySpawnWarningArrow : MonoBehaviour
         {
             timerText.enableWordWrapping = false;
             timerText.overflowMode = TextOverflowModes.Overflow;
+            timerText.raycastTarget = false;
         }
-    }
-
-    private Sprite CreateStretchedArrowSprite()
-    {
-        int width = 64;
-        int height = 256;
-        Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-        Color transparent = new Color(0, 0, 0, 0);
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                tex.SetPixel(x, y, transparent);
-            }
-        }
-
-        int centerX = width / 2;
-        int headHeight = 64;
-        int bodyHeight = height - headHeight;
-
-        // 1. Thân mũi tên (Shaft)
-        int shaftHalfWidth = 10;
-        for (int y = 0; y < bodyHeight; y++)
-        {
-            for (int x = centerX - shaftHalfWidth; x <= centerX + shaftHalfWidth; x++)
-            {
-                if (x >= 0 && x < width)
-                {
-                    tex.SetPixel(x, y, Color.white);
-                }
-            }
-        }
-
-        // 2. Đầu mũi tên tam giác ở đỉnh (Arrowhead)
-        for (int y = bodyHeight; y < height; y++)
-        {
-            float progress = (float)(height - y) / headHeight;
-            int rowHalfWidth = Mathf.RoundToInt(progress * (width / 2 - 2));
-            for (int x = centerX - rowHalfWidth; x <= centerX + rowHalfWidth; x++)
-            {
-                if (x >= 0 && x < width)
-                {
-                    tex.SetPixel(x, y, Color.white);
-                }
-            }
-        }
-
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, width, height), new Vector2(0.5f, 0.0f));
     }
 
     public void UpdateVisuals()
     {
-        if (arrowRect != null)
+        if (arrowMeshRenderer != null && arrowMeshRenderer.sharedMaterial != null)
         {
-            if (arrowImage != null)
-            {
-                arrowImage.color = arrowColor;
-            }
+            arrowMeshRenderer.sharedMaterial.color = arrowColor;
         }
 
         if (timerText != null)
@@ -290,29 +326,44 @@ public class EnemySpawnWarningArrow : MonoBehaviour
 
     private Transform GetActualEnemyTarget()
     {
-        if (targetEnemy != null)
+        // 1. Ưu tiên tuyệt đối attackTarget từ EnemySpawn (chính là Nhachinhs trong Inspector)
+        EnemySpawn[] spawners = Object.FindObjectsByType<EnemySpawn>(FindObjectsSortMode.None);
+        foreach (var spawner in spawners)
         {
-            EnemyAI enemyAI = targetEnemy.GetComponent<EnemyAI>();
-            if (enemyAI != null && enemyAI.villageCenter != null)
+            if (spawner != null && spawner.attackTarget != null && spawner.attackTarget.gameObject.activeInHierarchy)
             {
-                return enemyAI.villageCenter;
+                return spawner.attackTarget;
             }
         }
 
-        // Fallback: Tìm đối tượng Nhà chính có tag "Main" hoặc tên Nhà chính cố định
+        // 2. Nếu không có, tìm theo villageCenter của EnemyAI
+        if (targetEnemy != null)
+        {
+            EnemyAI enemyAI = targetEnemy.GetComponent<EnemyAI>();
+            if (enemyAI != null)
+            {
+                if (enemyAI.villageCenter != null) return enemyAI.villageCenter;
+                Transform currentTarget = enemyAI.GetCurrentTarget();
+                if (currentTarget != null) return currentTarget;
+            }
+        }
+
+        // 3. Tìm theo tên GameObject Nhachinhs / Nhachinh
+        GameObject nhaChinhObj = GameObject.Find("Nhachinhs");
+        if (nhaChinhObj == null) nhaChinhObj = GameObject.Find("Nhachinh");
+        if (nhaChinhObj != null) return nhaChinhObj.transform;
+
+        // 4. Tìm theo Tag Main
         GameObject mainObj = GameObject.FindGameObjectWithTag("Main");
         if (mainObj != null) return mainObj.transform;
 
+        // 5. Tìm theo UpgradeableBuilding
         UpgradeableBuilding[] buildings = Object.FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
         foreach (var b in buildings)
         {
             if (b != null && b.gameObject.activeInHierarchy && !b.IsRuined)
             {
-                string bName = b.buildingName.ToLower();
-                if (bName.Contains("chính") || bName.Contains("main") || b.CompareTag("Main") || b.gameObject.name.ToLower().Contains("nhachinh"))
-                {
-                    return b.transform;
-                }
+                return b.transform;
             }
         }
 
@@ -345,9 +396,10 @@ public class EnemySpawnWarningArrow : MonoBehaviour
 
     private void UpdateStretchedArrowGeometry()
     {
-        if (arrowRect == null || targetEnemy == null) return;
+        if (arrowQuadObj == null || targetEnemy == null) return;
 
         Transform destinationTarget = GetActualEnemyTarget();
+        if (destinationTarget == null) return;
 
         Vector3 startPos = targetEnemy.position;
         Vector3 endPos = GetTargetFeetPosition(destinationTarget);
@@ -360,17 +412,26 @@ public class EnemySpawnWarningArrow : MonoBehaviour
         {
             Vector3 forwardDir = dir.normalized;
 
-            arrowRect.pivot = new Vector2(0.5f, 0f);
-            arrowRect.position = startPos + Vector3.up * arrowGroundOffset;
-            arrowRect.rotation = Quaternion.LookRotation(Vector3.up, forwardDir);
+            arrowQuadObj.transform.position = startPos + Vector3.up * arrowGroundOffset;
 
-            // BẠN CÓ THỂ ĐIỀU CHỈNH ĐỘ DÀI MŨI TÊN TẠI ĐÂY:
-            // finalLength = (Khoảng cách thực tế * arrowLengthMultiplier) + arrowExtraLength
+            // Quaternion.LookRotation(forwardDir, Vector3.up) đặt trục +Z local của Quad theo forwardDir.
+            // Nhân Quaternion.Euler(90f, 0f, 0f) quay 90 độ hạ trục +Y local (đỉnh đầu mũi tên nhọn)
+            // bệt xuống mặt đất chỉ THẲNG 100% về phía attackTarget (Nhachinhs).
+            arrowQuadObj.transform.rotation = Quaternion.LookRotation(forwardDir, Vector3.up) * Quaternion.Euler(90f, 0f, 0f);
+
             float finalLength = (baseDist * arrowLengthMultiplier) + arrowExtraLength;
-
             float widthMeters = 1.2f * arrowSize;
-            arrowRect.sizeDelta = new Vector2(widthMeters, finalLength);
-            arrowRect.localScale = Vector3.one;
+
+            Vector3 parentLossy = transform.lossyScale;
+            float scaleX = (parentLossy.x > 0.0001f) ? (widthMeters / parentLossy.x) : widthMeters;
+            float scaleY = (parentLossy.z > 0.0001f) ? (finalLength / parentLossy.z) : finalLength;
+
+            arrowQuadObj.transform.localScale = new Vector3(scaleX, scaleY, 1f);
+
+            if (arrowMeshRenderer != null && arrowMeshRenderer.sharedMaterial != null)
+            {
+                arrowMeshRenderer.sharedMaterial.color = arrowColor;
+            }
         }
     }
 

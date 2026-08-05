@@ -9,7 +9,7 @@ public class EnemySpawn : MonoBehaviour
     [SerializeField] private Transform[] spawnPoints;
 
     [Header("Attack Target (Optional)")]
-    [SerializeField] private Transform attackTarget;
+    [SerializeField] public Transform attackTarget;
 
     [Header("Grid Spawn Settings")]
     [SerializeField] private bool useGridSpawn = false;
@@ -20,8 +20,8 @@ public class EnemySpawn : MonoBehaviour
 
     [Header("Time & Wave Spawning Settings")]
     [SerializeField] private bool useWaveSpawn = true;
-    [SerializeField] private float waveInterval = 5f;
-    [Tooltip("Tự động spawn Enemy theo chu kỳ Wave độc lập, giúp Enemy luôn spawn ngay cả khi TẮT/BẬT Tutorial")]
+    [SerializeField] private float waveInterval = 30f;
+    [Tooltip("Tự động spawn Enemy theo chu kỳ Wave độc lập khi TẮT Tutorial")]
     [SerializeField] private bool autoSpawnWaveAlways = true;
 
     [Header("Warning Icon & Attack UI Settings")]
@@ -51,22 +51,43 @@ public class EnemySpawn : MonoBehaviour
 
     private Coroutine waveSpawnCoroutine;
 
+    private bool IsTutorialActive()
+    {
+        TutorialManager tut = Object.FindFirstObjectByType<TutorialManager>();
+        if (tut != null && tut.gameObject.activeInHierarchy && tut.enabled) return true;
+
+        GameObject tutCanvas = GameObject.Find("TutorialCanvas");
+        if (tutCanvas != null && tutCanvas.activeInHierarchy) return true;
+
+        return false;
+    }
+
     private void Start()
     {
+        // 1. Luôn cho phép Spawn quái khởi đầu nếu spawnOnStart = true (để trại địch có quái khi Tutorial chỉ tới)
         if (spawnOnStart)
         {
             SpawnEnemy();
         }
 
-        // Đảm bảo hệ thống spawn sóng luôn hoạt động khi game chạy (cho dù bật hay tắt Tutorial)
-        if (autoSpawnWaveAlways || useWaveSpawn)
+        // 2. Chỉ bật timer lặp đếm ngược Wave tự động nếu KHÔNG phải ở trong Tutorial
+        if (!IsTutorialActive())
         {
-            StartWaveSpawning();
+            if (autoSpawnWaveAlways || useWaveSpawn)
+            {
+                StartWaveSpawning();
+            }
         }
     }
 
     private void Update()
     {
+        if (IsTutorialActive())
+        {
+            StopWaveSpawning();
+            return;
+        }
+
         bool shouldRunWaves = useWaveSpawn || autoSpawnWaveAlways;
         if (shouldRunWaves)
         {
@@ -104,11 +125,14 @@ public class EnemySpawn : MonoBehaviour
 
     private System.Collections.IEnumerator WaveSpawnRoutine()
     {
-        float interval = waveInterval > 0f ? waveInterval : 5f;
+        float interval = waveInterval > 0f ? waveInterval : 30f;
         while (true)
         {
-            SpawnEnemy();
             yield return new WaitForSeconds(interval);
+            if (!IsTutorialActive())
+            {
+                SpawnEnemy();
+            }
         }
     }
 
@@ -123,19 +147,13 @@ public class EnemySpawn : MonoBehaviour
         List<Transform> sources = new List<Transform>();
         if (spawnPoints != null && spawnPoints.Length > 0)
         {
-            foreach (Transform t in spawnPoints)
+            foreach (Transform p in spawnPoints)
             {
-                if (t != null) sources.Add(t);
+                if (p != null) sources.Add(p);
             }
         }
-        else if (transform.childCount > 0)
-        {
-            foreach (Transform child in transform)
-            {
-                sources.Add(child);
-            }
-        }
-        else
+
+        if (sources.Count == 0)
         {
             sources.Add(transform);
         }
@@ -198,37 +216,33 @@ public class EnemySpawn : MonoBehaviour
 
         GameObject bestEnemy = null;
         float maxFrontDist = float.MinValue;
+        float minCenterDist = float.MaxValue;
 
-        // 1. Tìm khoảng cách tiến xa nhất về phía trước (Hàng đầu tiên)
-        foreach (var enemy in enemies)
+        foreach (GameObject enemy in enemies)
         {
             if (enemy == null) continue;
-            float frontDist = Vector3.Dot(enemy.transform.position, forward);
-            if (frontDist > maxFrontDist)
+
+            Vector3 toEnemy = enemy.transform.position - spawnCenter;
+            float frontDist = Vector3.Dot(toEnemy, forward);
+            float sideDist = Mathf.Abs(Vector3.Dot(toEnemy, right));
+
+            if (frontDist > maxFrontDist + 0.1f)
             {
                 maxFrontDist = frontDist;
+                minCenterDist = sideDist;
+                bestEnemy = enemy;
             }
-        }
-
-        // 2. Trong các con thuộc hàng đầu tiên (chênh lệch <= 0.5m), chọn con nằm ở trục giữa nhất
-        float minCenterDist = float.MaxValue;
-        foreach (var enemy in enemies)
-        {
-            if (enemy == null) continue;
-            float frontDist = Vector3.Dot(enemy.transform.position, forward);
-
-            if (Mathf.Abs(frontDist - maxFrontDist) <= 0.5f)
+            else if (Mathf.Abs(frontDist - maxFrontDist) <= 0.1f)
             {
-                float centerDist = Mathf.Abs(Vector3.Dot(enemy.transform.position - spawnCenter, right));
-                if (centerDist < minCenterDist)
+                if (sideDist < minCenterDist)
                 {
-                    minCenterDist = centerDist;
+                    minCenterDist = sideDist;
                     bestEnemy = enemy;
                 }
             }
         }
 
-        return bestEnemy != null ? bestEnemy : enemies[0];
+        return bestEnemy;
     }
 
     private void SpawnGridAt(Vector3 center, Quaternion rotation, List<EnemyAI> squadList, List<GameObject> spawnedWaveEnemies = null)

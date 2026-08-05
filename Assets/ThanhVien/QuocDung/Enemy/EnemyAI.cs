@@ -340,14 +340,10 @@ public class EnemyAI : MonoBehaviour
 
         if (ActiveEnemiesList.Count == 0) return;
 
-        // Auto-find villageCenter using tag "Main" if null
+        // Auto-find villageCenter if null
         if (villageCenter == null)
         {
-            GameObject mainObj = GameObject.FindGameObjectWithTag("Main");
-            if (mainObj != null)
-            {
-                villageCenter = mainObj.transform;
-            }
+            villageCenter = FindMainTarget();
         }
 
         // --- BƯỚC 1: Xử lý khi chưa vào trạng thái Giao Tranh (isCombatActive == false) ---
@@ -991,6 +987,9 @@ public class EnemyAI : MonoBehaviour
         {
             if (col == null || !col.enabled || !col.gameObject.activeInHierarchy) continue;
             if (col.isTrigger) continue; // Bỏ qua các trigger zone
+            if (col is TerrainCollider) continue; // Bỏ qua Terrain
+            string colName = col.gameObject.name.ToLower();
+            if (colName.Contains("ground") || colName.Contains("terrain") || colName.Contains("map")) continue;
 
             Vector3 closestPoint;
             MeshCollider meshCol = col as MeshCollider;

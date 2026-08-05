@@ -364,13 +364,9 @@ public class BattleManager : MonoBehaviour
             ub.LoadBuildingData(targetLevel, isRuinedState: false, isInitialBuildNeededState: false);
         }
 
-        // Cập nhật tiến độ IsBuilt cho BuildingCtrl
+        // Cập nhật trạng thái cho BuildingCtrl nếu có
         BuildingCtrl buildingCtrl = spawnedBuilding.GetComponent<BuildingCtrl>();
         if (buildingCtrl == null) buildingCtrl = spawnedBuilding.GetComponentInChildren<BuildingCtrl>();
-        if (buildingCtrl != null)
-        {
-            buildingCtrl.AddProgress(1f);
-        }
     }
 
     /// <summary>

@@ -31,7 +31,7 @@ public class GameplaySettingUI : MonoBehaviour
     private void OnEnable()
     {
         // Chỉ cập nhật thông số Slider/Dropdown khi bảng được bật
-        if (SettingManager.Ins != null)
+        if (SettingManager.HasInstance && SettingManager.Ins != null)
         {
             masterVolumeSlider.value = SettingManager.Ins.masterVolume;
             musicVolumeSlider.value = SettingManager.Ins.musicVolume;
@@ -43,13 +43,11 @@ public class GameplaySettingUI : MonoBehaviour
             screenDropdown.onValueChanged.AddListener(SettingManager.Ins.SetScreenMode);
             mouseSpeedSlider.onValueChanged.AddListener(SettingManager.Ins.SetMouseSpeed);
         }
-
-        // ❌ ĐÃ BỎ: Time.timeScale = 0f ở đây để tránh bị Pause ngầm khi game vừa khởi chạy!
     }
 
     private void OnDisable()
     {
-        if (SettingManager.Ins != null)
+        if (SettingManager.HasInstance && SettingManager.Ins != null)
         {
             masterVolumeSlider.onValueChanged.RemoveAllListeners();
             musicVolumeSlider.onValueChanged.RemoveAllListeners();
