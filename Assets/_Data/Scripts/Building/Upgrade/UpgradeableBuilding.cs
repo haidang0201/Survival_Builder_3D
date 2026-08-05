@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using System.Collections;
 
 public class UpgradeableBuilding : MonoBehaviour
@@ -118,6 +119,8 @@ public class UpgradeableBuilding : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+
         BuildingUpgradeUI localUI = GetComponentInChildren<BuildingUpgradeUI>(true);
         if (localUI != null && localUI.IsOpen) return;
 
@@ -635,6 +638,7 @@ public class ClickHelper : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
         if (parentBuilding == null) return;
 
         BuildingUpgradeUI ui = parentBuilding.GetComponentInChildren<BuildingUpgradeUI>(true);

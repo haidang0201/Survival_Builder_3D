@@ -106,23 +106,40 @@ public class LandGridManager : MonoBehaviour
                 }
             }
 
-            // Quy đổi diện tích Ground ra tọa độ ô Grid
-            int minX = Mathf.FloorToInt(totalBounds.min.x / tileSize);
-            int maxX = Mathf.CeilToInt(totalBounds.max.x / tileSize);
-            int minZ = Mathf.FloorToInt(totalBounds.min.z / tileSize);
-            int maxZ = Mathf.CeilToInt(totalBounds.max.z / tileSize);
+            // Quy đổi diện tích Ground ra tọa độ ô Grid từ từng tile riêng lẻ
+            int minX = int.MaxValue;
+            int maxX = int.MinValue;
+            int minZ = int.MaxValue;
+            int maxZ = int.MinValue;
 
-            for (int x = minX; x < maxX; x++)
+            foreach (Transform tile in existingMapTilesParent)
             {
-                for (int z = minZ; z < maxZ; z++)
+                Collider col = tile.GetComponent<Collider>();
+                Renderer rend = tile.GetComponent<Renderer>();
+                Bounds b = (col != null) ? col.bounds : ((rend != null) ? rend.bounds : new Bounds(tile.position, Vector3.one * tileSize));
+
+                int tileMinX = Mathf.FloorToInt(b.min.x / tileSize);
+                int tileMaxX = Mathf.CeilToInt(b.max.x / tileSize);
+                int tileMinZ = Mathf.FloorToInt(b.min.z / tileSize);
+                int tileMaxZ = Mathf.CeilToInt(b.max.z / tileSize);
+
+                for (int x = tileMinX; x < tileMaxX; x++)
                 {
-                    allGroundTiles.Add(new Vector2Int(x, z));
+                    for (int z = tileMinZ; z < tileMaxZ; z++)
+                    {
+                        allGroundTiles.Add(new Vector2Int(x, z));
+                    }
                 }
+
+                if (tileMinX < minX) minX = tileMinX;
+                if (tileMaxX > maxX) maxX = tileMaxX;
+                if (tileMinZ < minZ) minZ = tileMinZ;
+                if (tileMaxZ > maxZ) maxZ = tileMaxZ;
             }
 
             // 2. Tìm tâm của Ground và mở khóa VÙNG XÂY DỰNG BAN ĐẦU ở trung tâm
-            int centerX = (minX + maxX) / 2;
-            int centerZ = (minZ + maxZ) / 2;
+            int centerX = Mathf.RoundToInt((minX + maxX) * 0.5f);
+            int centerZ = Mathf.RoundToInt((minZ + maxZ) * 0.5f);
 
             int startX = centerX - (initialWidth / 2);
             int startZ = centerZ - (initialHeight / 2);
@@ -213,7 +230,8 @@ public class LandGridManager : MonoBehaviour
     /// </summary>
     public bool IsAreaUnlocked(Vector3 centerWorldPos, int sizeX = 1, int sizeZ = 1)
     {
-        Vector2Int baseCoord = WorldToGridCoord(centerWorldPos);
+        Vector3 snappedPos = GetSnappedGridPosition(centerWorldPos, sizeX, sizeZ);
+        Vector2Int baseCoord = WorldToGridCoord(snappedPos);
         int startX = baseCoord.x - (sizeX / 2);
         int startZ = baseCoord.y - (sizeZ / 2);
 
@@ -232,7 +250,8 @@ public class LandGridManager : MonoBehaviour
     /// </summary>
     public bool IsAreaOccupied(Vector3 centerWorldPos, int sizeX = 1, int sizeZ = 1)
     {
-        Vector2Int baseCoord = WorldToGridCoord(centerWorldPos);
+        Vector3 snappedPos = GetSnappedGridPosition(centerWorldPos, sizeX, sizeZ);
+        Vector2Int baseCoord = WorldToGridCoord(snappedPos);
         int startX = baseCoord.x - (sizeX / 2);
         int startZ = baseCoord.y - (sizeZ / 2);
 
@@ -252,7 +271,8 @@ public class LandGridManager : MonoBehaviour
     /// </summary>
     public void MarkAreaAsOccupied(Vector3 centerWorldPos, int sizeX = 1, int sizeZ = 1)
     {
-        Vector2Int baseCoord = WorldToGridCoord(centerWorldPos);
+        Vector3 snappedPos = GetSnappedGridPosition(centerWorldPos, sizeX, sizeZ);
+        Vector2Int baseCoord = WorldToGridCoord(snappedPos);
         int startX = baseCoord.x - (sizeX / 2);
         int startZ = baseCoord.y - (sizeZ / 2);
 
@@ -270,7 +290,8 @@ public class LandGridManager : MonoBehaviour
     /// </summary>
     public void UnmarkAreaAsOccupied(Vector3 centerWorldPos, int sizeX = 1, int sizeZ = 1)
     {
-        Vector2Int baseCoord = WorldToGridCoord(centerWorldPos);
+        Vector3 snappedPos = GetSnappedGridPosition(centerWorldPos, sizeX, sizeZ);
+        Vector2Int baseCoord = WorldToGridCoord(snappedPos);
         int startX = baseCoord.x - (sizeX / 2);
         int startZ = baseCoord.y - (sizeZ / 2);
 

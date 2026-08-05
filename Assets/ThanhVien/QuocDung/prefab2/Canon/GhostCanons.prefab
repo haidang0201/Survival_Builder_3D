@@ -11,12 +11,11 @@ GameObject:
   - component: {fileID: 6495760174564348371}
   - component: {fileID: 7078758962701807777}
   - component: {fileID: 8700035540738649591}
-  - component: {fileID: 5176468545944962004}
   - component: {fileID: 8451144904463453000}
   - component: {fileID: 4959980762455185812}
   - component: {fileID: 6371264909477361699}
   - component: {fileID: 3194310935125910008}
-  m_Layer: 11
+  m_Layer: 0
   m_Name: GhostCanons
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -32,7 +31,7 @@ Transform:
   m_GameObject: {fileID: 4031947096156267894}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.51663, y: 0.12155883, z: 2.468563}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -106,27 +105,6 @@ MonoBehaviour:
   repairWoodCost: 30
   repairStoneCost: 30
   repairDuration: 5
---- !u!65 &5176468545944962004
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4031947096156267894}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2.7990618, y: 1.8279905, z: 3.2562668}
-  m_Center: {x: 0.16797376, y: 0.91381407, z: -0.9656912}
 --- !u!114 &8451144904463453000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -581,6 +559,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Canon Lv1
       objectReference: {fileID: 0}
+    - target: {fileID: 1658031086135343822, guid: c82d9517f847c4a4cb58ebefce0d84e1, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
     - target: {fileID: 1706773192625025059, guid: c82d9517f847c4a4cb58ebefce0d84e1, type: 3}
       propertyPath: projectileLayer.m_Bits
       value: 0
@@ -629,6 +611,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5730462662123160155, guid: c82d9517f847c4a4cb58ebefce0d84e1, type: 3}
+      propertyPath: validMat
+      value: 
+      objectReference: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
     - target: {fileID: 5730462662123160155, guid: c82d9517f847c4a4cb58ebefce0d84e1, type: 3}
       propertyPath: m_Enabled
       value: 1

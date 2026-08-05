@@ -46,8 +46,15 @@ public class GhostBuilding : MonoBehaviour
     private void FollowMouse()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
 
-        if (!Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayer))
+        bool hasHit = Physics.Raycast(ray, out hit, 1000f, groundLayer);
+        if (!hasHit)
+        {
+            hasHit = Physics.Raycast(ray, out hit, 1000f);
+        }
+
+        if (!hasHit)
         {
             isValid = false;
             ApplyMaterial(invalidMat);
@@ -75,19 +82,20 @@ public class GhostBuilding : MonoBehaviour
 
     if (LandGridManager.Ins != null)
     {
+        Vector3 snappedPosition = LandGridManager.Ins.GetSnappedGridPosition(transform.position, sizeX, sizeZ);
+        transform.position = snappedPosition;
+
         // 1. Phải nằm trong vùng đất đã mở khóa (Lưới xanh)
-        inUnlockedLand = LandGridManager.Ins.IsAreaUnlocked(transform.position, sizeX, sizeZ);
+        inUnlockedLand = LandGridManager.Ins.IsAreaUnlocked(snappedPosition, sizeX, sizeZ);
         
         // 2. Không nằm đè lên ô đã có nhà khác
-        isOccupied = LandGridManager.Ins.IsAreaOccupied(transform.position, sizeX, sizeZ);
+        isOccupied = LandGridManager.Ins.IsAreaOccupied(snappedPosition, sizeX, sizeZ);
     }
 
     // Hợp lệ khi: Đã mở khóa VÀ Chưa bị chiếm chỗ
     isValid = inUnlockedLand && !isOccupied;
     ApplyMaterial(isValid ? validMat : invalidMat);
 }
-
-// Bỏ hoàn toàn hàm IsOverlapping() cũ dùng Physics.OverlapBox
 
     // private bool IsOverlapping()
     // {
