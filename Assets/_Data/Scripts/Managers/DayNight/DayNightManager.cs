@@ -65,6 +65,10 @@ public class DayNightManager : Singleton<DayNightManager>
     public event Action<int> OnPreparationStart;   // Bắt đầu thời gian chuẩn bị cho Wave [waveIndex]
     public event Action<int, float> OnWaveSkipped; // Ngưỡng Skip (waveIndex, số giây tiết kiệm được)
 
+    // --- PHÂN PHỐI TÀI NGUYÊN KHO ---
+    private bool shouldDistributeResources = false; // Có cần cộng tài nguyên sau hiệu ứng ánh sáng không?
+    private bool distributionWasSkipped    = false; // true = người chơi bấm Skip | false = hết giờ tự động
+
     // --- THUỘC TÍNH TƯƠNG THÍCH VỚI CÁC SCRIPT CŨ TRONG DỰ ÁN ---
     public enum Mode { Day, Night }
     public Mode CurrentMode => currentWaveState == WaveState.Preparation ? Mode.Day : Mode.Night;
@@ -128,6 +132,9 @@ public class DayNightManager : Singleton<DayNightManager>
                 timer = 0;
                 if (autoStartWaveOnTimerEnd)
                 {
+                    // Hết giờ tự nhiên → cộng tài nguyên ĐẦY GIỜ (nhiều hơn Skip)
+                    shouldDistributeResources = true;
+                    distributionWasSkipped    = false;
                     StartCombatWave();
                 }
             }
@@ -142,14 +149,17 @@ public class DayNightManager : Singleton<DayNightManager>
     {
         if (isLightAnimating) return; // Tránh bấm liên tục khi ánh sáng đang xoay 3s
 
-        // NẾU WAVE ĐANG DIỄN RỦA: Kết thúc Wave hiện tại trước khi quay ánh sáng cho Wave mới
+        // NẾU WAVE ĐANG DIỄN RỦA: Kết thúc Wave hiện tại, chuyển về chuẩn bị (KHÔNG cộng tài nguyên)
         if (currentWaveState == WaveState.Combat)
         {
             Debug.Log($"[WaveManager] ⚡ SKIP WAVE {currentWave}! Bắt đầu chu kỳ chuyển sang Day/Wave tiếp theo.");
-            
+
             isWaveActive = false;
             currentWaveState = WaveState.Preparation;
             OnWaveCompleted?.Invoke(currentWave);
+
+            // Khi skip từ Combat về Preparation, không cộng tài nguyên (workers chưa làm việc)
+            shouldDistributeResources = false;
         }
         else
         {
@@ -164,6 +174,10 @@ public class DayNightManager : Singleton<DayNightManager>
             {
                 AddSkipBonusReward(bonusReward);
             }
+
+            // Người chơi Skip trong Preparation → cộng tài nguyên SKIP (ít hơn)
+            shouldDistributeResources = true;
+            distributionWasSkipped    = true;
         }
 
         // Kích hoạt chu kỳ ánh sáng 3s (Hết 3s mới tăng Ngày & bắt đầu Wave)
@@ -235,6 +249,14 @@ public class DayNightManager : Singleton<DayNightManager>
         lightTransitionCoroutine = null;
 
         // === CHÍNH THỨC TĂNG SỐ NGÀY / WAVE SAU KHI HẾT CHU KỲ ÁNH SÁNG (3S) ===
+
+        // Phân phối tài nguyên kho (gỗ/lúa/đá) trước khi Wave bắt đầu
+        if (shouldDistributeResources)
+        {
+            DistributeResources(distributionWasSkipped);
+            shouldDistributeResources = false;
+        }
+
         currentWave++;
         currentWaveState = WaveState.Combat;
         isWaveActive = true;
@@ -308,7 +330,36 @@ public class DayNightManager : Singleton<DayNightManager>
 
     private void AddSkipBonusReward(int rewardAmount)
     {
-        Debug.Log($"[WaveManager]  Cộng thêm {rewardAmount} vàng thưởng Skip sớm.");
+        Debug.Log($"[WaveManager] 💰 Cộng thêm {rewardAmount} vàng thưởng Skip sớm.");
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // PHÂN PHỐI TÀI NGUYÊN KHO
+    // ────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Cộng tài nguyên vào tất cả kho Gỗ/Lúa/Đá đang hoạt động trong Scene.
+    /// wasSkipped = true  → cộng resourcesOnSkip    (người chơi bấm Skip sớm).
+    /// wasSkipped = false → cộng resourcesOnFullTime (để hết giờ chuẩn bị).
+    /// </summary>
+    private void DistributeResources(bool wasSkipped)
+    {
+        int woodTotal = 0, riceTotal = 0, stoneTotal = 0;
+
+        if (wasSkipped)
+        {
+            foreach (var s in WoodStorage.All)  { s.GrantSkipResources();    woodTotal  += s.resourcesOnSkip; }
+            foreach (var s in RiceStorage.All)  { s.GrantSkipResources();    riceTotal  += s.resourcesOnSkip; }
+            foreach (var s in StoneStorage.All) { s.GrantSkipResources();    stoneTotal += s.resourcesOnSkip; }
+            Debug.Log($"[WaveManager] ⏩ SKIP → +{woodTotal} gỗ | +{riceTotal} lúa | +{stoneTotal} đá");
+        }
+        else
+        {
+            foreach (var s in WoodStorage.All)  { s.GrantFullTimeResources(); woodTotal  += s.resourcesOnFullTime; }
+            foreach (var s in RiceStorage.All)  { s.GrantFullTimeResources(); riceTotal  += s.resourcesOnFullTime; }
+            foreach (var s in StoneStorage.All) { s.GrantFullTimeResources(); stoneTotal += s.resourcesOnFullTime; }
+            Debug.Log($"[WaveManager] ⏰ ĐẦY GIỜ → +{woodTotal} gỗ | +{riceTotal} lúa | +{stoneTotal} đá");
+        }
     }
 }
 

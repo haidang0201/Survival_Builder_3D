@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 /// <summary>
 /// Kho Đá — kho CHÍNH, ghi thẳng vào JsonDataManager (nguồn thật duy nhất).
@@ -8,8 +9,17 @@ using UnityEngine.Events;
 /// </summary>
 public class StoneStorage : MonoBehaviour
 {
+    // ── Static registry: DayNightManager tự tìm tất cả kho Đá trong Scene ──
+    public static readonly List<StoneStorage> All = new List<StoneStorage>();
+
     [Header("Storage Settings")]
     public int maxCapacity = 9999;
+
+    [Header("Tài nguyên Đá theo Wave")]
+    [Tooltip("Đá cộng khi người chơi nhấn Skip (ít hơn vì bỏ qua thời gian).")]
+    public int resourcesOnSkip     = 10;
+    [Tooltip("Đá cộng khi để hết thời gian chuẩn bị không Skip (nhiều hơn).")]
+    public int resourcesOnFullTime = 15;
 
     [Header("Penta Dev - Civil Workers Setup")]
     [Tooltip("Cấu hình số lượng worker tối đa qua từng level")]
@@ -34,6 +44,15 @@ public class StoneStorage : MonoBehaviour
     {
         if (maxCapacity < 9999) maxCapacity = 9999;
     }
+
+    void OnEnable()  { if (!All.Contains(this)) All.Add(this); }
+    void OnDisable() { All.Remove(this); }
+
+    // ── Được gọi bởi DayNightManager ──
+    /// <summary>Cộng đá SKIP — người chơi nhấn Start Wave sớm.</summary>
+    public void GrantSkipResources()     => AddStone(resourcesOnSkip);
+    /// <summary>Cộng đá ĐẦY GIỜ — để hết thời gian chuẩn bị mới vào Wave.</summary>
+    public void GrantFullTimeResources() => AddStone(resourcesOnFullTime);
 
     // ===== PROPERTIES — đọc thẳng từ JsonDataManager =====
     public int  CurrentAmount => JsonDataManager.Ins != null ? JsonDataManager.Ins.stone : 0;
