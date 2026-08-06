@@ -28,6 +28,7 @@ public class LandGridManager : MonoBehaviour
     [Header("=== CẤU HÌNH GRID ===")]
     [Tooltip("Kích thước dài / rộng của 1 ô Grid")]
     [SerializeField] private float tileSize = 10f;
+    public float TileSize => tileSize;
     [Tooltip("Độ cao Y của ô đất trên bản đồ")]
     [SerializeField] private float plotSpawnY = 0f;
 

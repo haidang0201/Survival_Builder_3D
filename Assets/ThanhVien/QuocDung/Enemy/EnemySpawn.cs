@@ -62,45 +62,74 @@ public class EnemySpawn : MonoBehaviour
         return false;
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        // 1. Luôn cho phép Spawn quái khởi đầu nếu spawnOnStart = true (để trại địch có quái khi Tutorial chỉ tới)
-        if (spawnOnStart)
-        {
-            SpawnEnemy();
-        }
-
-        // 2. Chỉ bật timer lặp đếm ngược Wave tự động nếu KHÔNG phải ở trong Tutorial
-        if (!IsTutorialActive())
-        {
-            if (autoSpawnWaveAlways || useWaveSpawn)
-            {
-                StartWaveSpawning();
-            }
-        }
-    }
-
-    private void Update()
-    {
-        if (IsTutorialActive())
-        {
-            StopWaveSpawning();
-            return;
-        }
-
-        bool shouldRunWaves = useWaveSpawn || autoSpawnWaveAlways;
-        if (shouldRunWaves)
-        {
-            StartWaveSpawning();
-        }
-        else
-        {
-            StopWaveSpawning();
-        }
+        SubscribeToWaveEvents();
     }
 
     private void OnDisable()
     {
+        UnsubscribeFromWaveEvents();
+        StopWaveSpawning();
+    }
+
+    private void SubscribeToWaveEvents()
+    {
+        if (DayNightManager.HasInstance && DayNightManager.Ins != null)
+        {
+            DayNightManager.Ins.OnWaveStart -= OnWaveStartHandler;
+            DayNightManager.Ins.OnWaveStart += OnWaveStartHandler;
+        }
+    }
+
+    private void UnsubscribeFromWaveEvents()
+    {
+        if (DayNightManager.HasInstance && DayNightManager.Ins != null)
+        {
+            DayNightManager.Ins.OnWaveStart -= OnWaveStartHandler;
+        }
+    }
+
+    private void OnWaveStartHandler(int waveIndex)
+    {
+        // Tự động Spawn đợt Quái mới phù hợp với hệ thống Wave của DayNightManager (xuất hiện ở Wave 1, Wave 4, Wave 7, ...)
+        if (waveIndex == 1 || (waveIndex > 1 && (waveIndex - 1) % 3 == 0))
+        {
+            if (!IsTutorialActive())
+            {
+                Debug.Log($"[EnemySpawn] 🔥 DayNightManager phát sự kiện Wave {waveIndex}! Tự động Spawn đợt Quái mới.");
+                SpawnEnemy();
+            }
+        }
+    }
+
+    private void Start()
+    {
+        SubscribeToWaveEvents();
+
+        // 1. Spawn quái khởi đầu ở Wave 1 nếu spawnOnStart = true
+        if (spawnOnStart)
+        {
+            int currentWave = (DayNightManager.HasInstance && DayNightManager.Ins != null) ? DayNightManager.Ins.CurrentWave : 1;
+            if (currentWave <= 1)
+            {
+                SpawnEnemy();
+            }
+        }
+
+        // Tắt hoàn toàn timer đếm ngược 30s tự động (xóa thời gian spawn theo thời gian)
+        useWaveSpawn = false;
+        autoSpawnWaveAlways = false;
+        StopWaveSpawning();
+    }
+
+    private void Update()
+    {
+        // Đảm bảo event listener luôn được kết nối nếu DayNightManager khởi tạo trễ
+        if (DayNightManager.HasInstance && DayNightManager.Ins != null)
+        {
+            SubscribeToWaveEvents();
+        }
         StopWaveSpawning();
     }
 
@@ -273,6 +302,9 @@ public class EnemySpawn : MonoBehaviour
         if (enemyAI != null)
         {
             enemyAI.exitPlayModeWhenNoBuildings = exitPlayModeWhenNoBuildings;
+
+            int curWave = (DayNightManager.HasInstance && DayNightManager.Ins != null) ? DayNightManager.Ins.CurrentWave : 1;
+            enemyAI.InitializeWaveArrival(curWave, 3);
 
             if (attackTarget != null)
             {

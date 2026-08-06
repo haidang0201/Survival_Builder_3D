@@ -17,6 +17,130 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Góc xoay bù cho nút UI (Ví dụ X:0, Y:0, Z:90 để xoay ngang nút lại).")]
     public Vector3 buttonRotationOffset = new Vector3(0, 0, 90);
 
+    [Header("Wave Arrival Settings")]
+    [Tooltip("Số Wave mà Enemy cần trải qua để tiếp cận thành (mặc định 3 Wave).")]
+    public int wavesToReachTarget = 3;
+    [Tooltip("Wave khi Enemy được khởi tạo.")]
+    public int spawnWave = 1;
+    [Tooltip("Wave mà Enemy sẽ chính thức tới chỗ thành.")]
+    public int targetWave = 4;
+
+    private Vector3 startSpawnPosition;
+    private bool isWaveInfoInitialized = false;
+
+    public void InitializeWaveArrival(int currentWave, int wavesToReach = 3)
+    {
+        wavesToReachTarget = wavesToReach > 0 ? wavesToReach : 3;
+        spawnWave = currentWave;
+        targetWave = spawnWave + wavesToReachTarget;
+        startSpawnPosition = transform.position;
+        isWaveInfoInitialized = true;
+    }
+
+    /// <summary>
+    /// Tính toán vị trí mép ngoài tường thành thực tế của LandGridManager (bám sát ngoài prefab Fence/Gate)
+    /// </summary>
+    public static Vector3 GetCastleWallDestination(Vector3 fromPosition, Transform fallbackTarget = null, float wallOffset = 1.5f)
+    {
+        if (LandGridManager.Ins != null)
+        {
+            // 1. Ưu tiên tuyệt đối: Tìm Prefab Fence/Gate/Wall thực tế là con của LandGridManager gần nhất với vị trí Enemy
+            Transform closestFence = null;
+            float minFenceDist = float.MaxValue;
+
+            foreach (Transform child in LandGridManager.Ins.transform)
+            {
+                if (child == null || !child.gameObject.activeInHierarchy) continue;
+                string childName = child.name.ToLower();
+                if (childName.Contains("fence") || childName.Contains("gate") || childName.Contains("wall"))
+                {
+                    float dist = Vector3.Distance(fromPosition, child.position);
+                    if (dist < minFenceDist)
+                    {
+                        minFenceDist = dist;
+                        closestFence = child;
+                    }
+                }
+            }
+
+            if (closestFence != null)
+            {
+                Vector3 fencePos = closestFence.position;
+                Vector3 dir = (fromPosition - fencePos);
+                dir.y = 0f;
+                if (dir.sqrMagnitude > 0.001f)
+                {
+                    dir.Normalize();
+                    Vector3 dest = fencePos + dir * wallOffset;
+                    dest.y = fromPosition.y;
+                    return dest;
+                }
+                fencePos.y = fromPosition.y;
+                return fencePos;
+            }
+
+            // 2. Dự phòng: Tính theo Grid bounds của LandGridManager dùng TileSize thực tế từ Inspector (mặc định 6m)
+            LandGridManager.Ins.GetGridBounds(out int minX, out int maxX, out int minZ, out int maxZ);
+            float tileSize = LandGridManager.Ins.TileSize > 0.1f ? LandGridManager.Ins.TileSize : 6f;
+            float yPos = fromPosition.y;
+
+            float minWorldX = minX * tileSize - wallOffset;
+            float maxWorldX = (maxX + 1) * tileSize + wallOffset;
+            float minWorldZ = minZ * tileSize - wallOffset;
+            float maxWorldZ = (maxZ + 1) * tileSize + wallOffset;
+
+            Vector3 center = new Vector3((minX + maxX + 1) * tileSize * 0.5f, yPos, (minZ + maxZ + 1) * tileSize * 0.5f);
+            if (fallbackTarget != null) center = fallbackTarget.position;
+
+            Vector3 dirCenter = (center - fromPosition);
+            dirCenter.y = 0f;
+
+            if (dirCenter.sqrMagnitude > 0.001f)
+            {
+                dirCenter.Normalize();
+                float tX = float.MaxValue;
+                if (dirCenter.x > 0.0001f) tX = (minWorldX - fromPosition.x) / dirCenter.x;
+                else if (dirCenter.x < -0.0001f) tX = (maxWorldX - fromPosition.x) / dirCenter.x;
+
+                float tZ = float.MaxValue;
+                if (dirCenter.z > 0.0001f) tZ = (minWorldZ - fromPosition.z) / dirCenter.z;
+                else if (dirCenter.z < -0.0001f) tZ = (maxWorldZ - fromPosition.z) / dirCenter.z;
+
+                float t = Mathf.Min(tX, tZ);
+                if (t > 0f && t != float.MaxValue)
+                {
+                    Vector3 intersect = fromPosition + dirCenter * t;
+                    intersect.y = yPos;
+                    return intersect;
+                }
+            }
+
+            float clampedX = Mathf.Clamp(fromPosition.x, minWorldX, maxWorldX);
+            float clampedZ = Mathf.Clamp(fromPosition.z, minWorldZ, maxWorldZ);
+            return new Vector3(clampedX, yPos, clampedZ);
+        }
+
+        // Fallback nếu chưa có LandGridManager: dùng mép của fallbackTarget
+        if (fallbackTarget != null)
+        {
+            Vector3 targetPos = fallbackTarget.position;
+            Collider col = fallbackTarget.GetComponentInChildren<Collider>();
+            if (col != null)
+            {
+                targetPos = col.ClosestPoint(fromPosition);
+            }
+            Vector3 dir = (fromPosition - targetPos);
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.001f)
+            {
+                return targetPos + dir.normalized * (wallOffset + 2.0f);
+            }
+            return targetPos;
+        }
+
+        return fromPosition;
+    }
+
     [Header("Patrol (Deprecated)")]
     public float patrolRadius = 8f;
     public float pointReachDistance = 1f;
@@ -209,10 +333,14 @@ public class EnemyAI : MonoBehaviour
         {
             squadEnemies.Add(this);
         }
+
+        SubscribeToWaveEvents();
     }
 
     private void OnDisable()
     {
+        UnsubscribeFromWaveEvents();
+
         globalActiveEnemies.Remove(this);
         if (squadEnemies != null)
         {
@@ -229,8 +357,35 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    private void SubscribeToWaveEvents()
+    {
+        if (DayNightManager.HasInstance && DayNightManager.Ins != null)
+        {
+            DayNightManager.Ins.OnWaveStart -= HandleWaveStart;
+            DayNightManager.Ins.OnWaveStart += HandleWaveStart;
+        }
+    }
+
+    private void UnsubscribeFromWaveEvents()
+    {
+        if (DayNightManager.HasInstance && DayNightManager.Ins != null)
+        {
+            DayNightManager.Ins.OnWaveStart -= HandleWaveStart;
+        }
+    }
+
+    private void HandleWaveStart(int waveIndex)
+    {
+        if (!isWaveInfoInitialized)
+        {
+            InitializeWaveArrival(waveIndex, wavesToReachTarget > 0 ? wavesToReachTarget : 3);
+        }
+    }
+
     private void OnDestroy()
     {
+        UnsubscribeFromWaveEvents();
+
         globalActiveEnemies.Remove(this);
         if (squadEnemies != null)
         {
@@ -258,6 +413,18 @@ public class EnemyAI : MonoBehaviour
             agent.autoBraking = false;
         }
         
+        if (startSpawnPosition == Vector3.zero)
+        {
+            startSpawnPosition = transform.position;
+        }
+
+        // Khởi tạo thông tin Wave khi xuất hiện nếu chưa được gọi từ Spawner
+        if (!isWaveInfoInitialized)
+        {
+            int currentWave = (DayNightManager.HasInstance && DayNightManager.Ins != null) ? DayNightManager.Ins.CurrentWave : 1;
+            InitializeWaveArrival(currentWave, wavesToReachTarget > 0 ? wavesToReachTarget : 3);
+        }
+
         // Register this enemy to start marching
         if (!globalActiveEnemies.Contains(this))
         {
@@ -349,12 +516,110 @@ public class EnemyAI : MonoBehaviour
         // --- BƯỚC 1: Xử lý khi chưa vào trạng thái Giao Tranh (isCombatActive == false) ---
         if (!isCombatActive)
         {
-            EnemyAI leader = GetMarchLeader();
-            bool isMeLeader = (leader == null || leader == this);
+            bool isBattleScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == battleSceneName;
 
-            if (isMeLeader)
+            if (!isBattleScene)
             {
-                // CON THỦ LĨNH (Leader): Dẫn đầu đội hình di chuyển đến Nhà Chính
+                if (!isWaveInfoInitialized)
+                {
+                    int curWave = (DayNightManager.HasInstance && DayNightManager.Ins != null) ? DayNightManager.Ins.CurrentWave : 1;
+                    InitializeWaveArrival(curWave, wavesToReachTarget > 0 ? wavesToReachTarget : 3);
+                }
+
+                int currentWave = (DayNightManager.HasInstance && DayNightManager.Ins != null) ? DayNightManager.Ins.CurrentWave : 1;
+                
+                // Đảm bảo targetWave luôn được gia hạn nếu currentWave >= targetWave mà quái chưa khởi tạo đủ wave
+                if (targetWave <= currentWave && !isWaveInfoInitialized)
+                {
+                    spawnWave = currentWave;
+                    targetWave = spawnWave + (wavesToReachTarget > 0 ? wavesToReachTarget : 3);
+                    isWaveInfoInitialized = true;
+                }
+
+                int remainingWaves = Mathf.Max(0, targetWave - currentWave);
+
+                // Tính toán tiến độ di chuyển lại gần thành qua từng Wave (0.0 = lúc vừa xuất hiện, 1.0 = đã sát tường thành)
+                float progress = 1.0f - Mathf.Clamp01((float)remainingWaves / Mathf.Max(1f, (float)wavesToReachTarget));
+
+                Vector3 destination = startSpawnPosition;
+                if (villageCenter != null)
+                {
+                    destination = GetCastleWallDestination(startSpawnPosition, villageCenter);
+                }
+
+                Vector3 targetStepPosition = Vector3.Lerp(startSpawnPosition, destination, progress);
+
+                // Từng Wave sẽ nhích lại gần thành hơn (di chuyển mượt về điểm targetStepPosition của Wave hiện tại)
+                if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+                {
+                    agent.isStopped = true;
+                    if (Vector3.Distance(transform.position, targetStepPosition) > 0.05f)
+                    {
+                        agent.Warp(Vector3.MoveTowards(transform.position, targetStepPosition, 10f * Time.deltaTime));
+                    }
+                }
+                else
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, targetStepPosition, 10f * Time.deltaTime);
+                }
+
+                // Quay mặt về hướng thành
+                if (villageCenter != null)
+                {
+                    Vector3 lookDir = (villageCenter.position - transform.position);
+                    lookDir.y = 0f;
+                    if (lookDir.sqrMagnitude > 0.01f)
+                    {
+                        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(lookDir), 360f * Time.deltaTime);
+                    }
+                }
+
+                EnemyAI leader = GetMarchLeader();
+                bool isMeLeader = (leader == null || leader == this);
+
+                // Kiểm tra 2 lớp: Hết Wave đếm ngược VÀ ĐÃ THỰC SỰ VỀ ĐẾN TƯỜNG THÀNH (khoảng cách <= 2.5m)
+                float distToCastleWall = Vector3.Distance(transform.position, destination);
+                bool hasArrivedAtWall = (remainingWaves <= 0) && (distToCastleWall <= 2.5f || progress >= 0.95f);
+
+                if (hasArrivedAtWall)
+                {
+                    // Khi thực sự ĐÃ ĐẾN SÁT TƯỜNG THÀNH (0 Wave & vị trí sát tường thành): Đứng yên và HIỆN NÚT TẤN CÔNG
+                    isWaitingAtTarget = true;
+                    if (isMeLeader)
+                    {
+                        if (attackButtonUI != null && !attackButtonUI.activeSelf)
+                        {
+                            attackButtonUI.SetActive(true);
+                        }
+                    }
+                    else
+                    {
+                        if (attackButtonUI != null && attackButtonUI.activeSelf)
+                        {
+                            attackButtonUI.SetActive(false);
+                        }
+                    }
+                }
+                else
+                {
+                    // Khi chưa thực sự đến tường thành (ở xa ngoài map): BẮT BUỘC ẨN NÚT TẤN CÔNG
+                    isWaitingAtTarget = false;
+                    if (attackButtonUI != null && attackButtonUI.activeSelf)
+                    {
+                        attackButtonUI.SetActive(false);
+                    }
+                }
+
+                UpdateAnimationState();
+                return; // Ở scene main game, di chuyển từng bước theo wave, chỉ đến thành mới hiện nút tấn công
+            }
+
+            // Ở Scene Battle: Cho phép di chuyển theo đội hình
+            EnemyAI battleLeader = GetMarchLeader();
+            bool isMeBattleLeader = (battleLeader == null || battleLeader == this);
+
+            if (isMeBattleLeader)
+            {
                 if (villageCenter != null)
                 {
                     float distToMain = GetDistanceToCollider(villageCenter.gameObject);
@@ -367,20 +632,10 @@ public class EnemyAI : MonoBehaviour
                             agent.isStopped = true;
                         }
                         isWaitingAtTarget = true;
-
-                        if (attackButtonUI != null && !attackButtonUI.activeSelf)
-                        {
-                            attackButtonUI.SetActive(true);
-                        }
                     }
                     else
                     {
                         isWaitingAtTarget = false;
-                        if (attackButtonUI != null && attackButtonUI.activeSelf)
-                        {
-                            attackButtonUI.SetActive(false);
-                        }
-
                         if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
                         {
                             agent.isStopped = false;
@@ -393,24 +648,18 @@ public class EnemyAI : MonoBehaviour
             }
             else
             {
-                // CÁC CON ĐỒNG ĐỘI (Followers): Giữ nguyên vị trí đội hình hình chữ nhật theo Thủ lĩnh
-                if (attackButtonUI != null && attackButtonUI.activeSelf)
+                if (battleLeader != null)
                 {
-                    attackButtonUI.SetActive(false);
-                }
-
-                if (leader != null)
-                {
-                    Vector3 formationPos = GetMarchFormationPosition(leader);
+                    Vector3 formationPos = GetMarchFormationPosition(battleLeader);
                     float distToFormation = Vector3.Distance(transform.position, formationPos);
 
                     if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
                     {
-                        if (leader.isWaitingAtTarget && distToFormation <= 0.8f)
+                        if (battleLeader.isWaitingAtTarget && distToFormation <= 0.8f)
                         {
                             agent.isStopped = true;
                             isWaitingAtTarget = true;
-                            transform.rotation = Quaternion.RotateTowards(transform.rotation, leader.transform.rotation, 360f * Time.deltaTime);
+                            transform.rotation = Quaternion.RotateTowards(transform.rotation, battleLeader.transform.rotation, 360f * Time.deltaTime);
                         }
                         else
                         {
@@ -419,9 +668,9 @@ public class EnemyAI : MonoBehaviour
                             isWaitingAtTarget = false;
                             SetDestination(formationPos);
 
-                            if (leader.isWaitingAtTarget)
+                            if (battleLeader.isWaitingAtTarget)
                             {
-                                transform.rotation = Quaternion.RotateTowards(transform.rotation, leader.transform.rotation, 360f * Time.deltaTime);
+                                transform.rotation = Quaternion.RotateTowards(transform.rotation, battleLeader.transform.rotation, 360f * Time.deltaTime);
                             }
                         }
                     }
@@ -429,7 +678,7 @@ public class EnemyAI : MonoBehaviour
             }
 
             UpdateAnimationState();
-            return; // Đứng yên / Di chuyển tới nhà chính theo đội hình, KHÔNG tự động tấn công
+            return;
         }
 
         // --- BƯỚC 2: Khi đã vào trạng thái Giao Tranh (isCombatActive == true) ---
@@ -535,45 +784,47 @@ public class EnemyAI : MonoBehaviour
 
     private Transform FindMainTarget()
     {
-        // Tìm tất cả GameObject có tag "Main" trong toàn bộ Scene (không bị giới hạn bởi bán kính quét)
-        GameObject[] mainObjs = null;
-        try { mainObjs = GameObject.FindGameObjectsWithTag("Main"); } catch { mainObjs = null; }
-        Transform bestMain = null;
-        float minDist = float.MaxValue;
-
-        if (mainObjs != null && mainObjs.Length > 0)
+        if (villageCenter != null && villageCenter.gameObject.activeInHierarchy)
         {
-            foreach (var go in mainObjs)
+            return villageCenter;
+        }
+
+        // 1. Tìm theo attackTarget từ EnemySpawn
+        EnemySpawn[] spawners = Object.FindObjectsByType<EnemySpawn>(FindObjectsSortMode.None);
+        foreach (var spawner in spawners)
+        {
+            if (spawner != null && spawner.attackTarget != null && spawner.attackTarget.gameObject.activeInHierarchy)
             {
-                if (go == null || !go.activeInHierarchy) continue;
+                return spawner.attackTarget;
+            }
+        }
 
-                // Kiểm tra xem mục tiêu Main này có HP và còn sống không
-                IDamageable damageable = go.GetComponentInParent<IDamageable>();
-                if (damageable != null && damageable.CurrentHealth <= 0f) continue;
+        // 2. Tìm theo tên GameObject Nhachinhs hoặc Nhachinh
+        GameObject nhaChinhObj = GameObject.Find("Nhachinhs");
+        if (nhaChinhObj == null) nhaChinhObj = GameObject.Find("Nhachinh");
+        if (nhaChinhObj != null) return nhaChinhObj.transform;
 
-                Transform root = GetEntityRoot(go, "Main");
-                Transform t = (root != null) ? root : go.transform;
-
-                float dist = GetDistanceToCollider(go);
-                if (dist < minDist)
+        // 3. Tìm theo Tag Main
+        try
+        {
+            GameObject[] mainObjs = GameObject.FindGameObjectsWithTag("Main");
+            if (mainObjs != null && mainObjs.Length > 0)
+            {
+                foreach (var go in mainObjs)
                 {
-                    minDist = dist;
-                    bestMain = t;
+                    if (go != null && go.activeInHierarchy) return go.transform;
                 }
             }
         }
+        catch { }
 
-        // Fallback dùng villageCenter nếu chưa tìm thấy và villageCenter còn sống
-        if (bestMain == null && villageCenter != null && villageCenter.gameObject.activeInHierarchy)
+        // 4. Tìm theo LandGridManager
+        if (LandGridManager.Ins != null)
         {
-            IDamageable damageable = villageCenter.GetComponentInParent<IDamageable>();
-            if (damageable == null || damageable.CurrentHealth > 0f)
-            {
-                bestMain = villageCenter;
-            }
+            return LandGridManager.Ins.transform;
         }
 
-        return bestMain;
+        return null;
     }
 
     public Transform GetCurrentTarget()
