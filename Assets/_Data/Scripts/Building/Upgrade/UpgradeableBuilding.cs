@@ -10,7 +10,7 @@ public class UpgradeableBuilding : MonoBehaviour
         public int woodCost;
         public int stoneCost;
         public int foodCost;
-        public float upgradeDuration;
+        public int upgradeDuration;
     }
 
     [Header("Penta Dev - Khởi Tạo Xây Dựng Ban Đầu")]
@@ -22,8 +22,8 @@ public class UpgradeableBuilding : MonoBehaviour
 
     public bool StartAsRuined => startAsRuined;
 
-    [Tooltip("Thời gian để hoàn thành việc xây dựng công trình này lần đầu tiên (tính bằng giây)")]
-    [SerializeField] private float initialBuildDuration = 5f;
+    [Tooltip("Thời gian để hoàn thành việc xây dựng công trình này lần đầu tiên (tính bằng Wave/Ngày)")]
+    [SerializeField] private int initialBuildDuration = 2;
 
     public bool IsInitialBuildNeeded => isInitialBuildNeeded;
 
@@ -84,7 +84,7 @@ public class UpgradeableBuilding : MonoBehaviour
     [Header("Penta Dev - Chi Phí Sửa Chữa")]
     [SerializeField] private int repairWoodCost = 30;
     [SerializeField] private int repairStoneCost = 30;
-    [SerializeField] private float repairDuration = 5f;
+    [SerializeField] private float repairDuration = 2f;
 
     public bool IsRuined { get; private set; } = false;
 
@@ -326,7 +326,7 @@ public class UpgradeableBuilding : MonoBehaviour
     {
         if (upgradeCosts != null && CurrentLevel < upgradeCosts.Length)
             return upgradeCosts[CurrentLevel];
-        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0, upgradeDuration = 0f };
+        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0, upgradeDuration = 1 };
     }
 
     public void StartUpgradeProcess()
@@ -334,34 +334,56 @@ public class UpgradeableBuilding : MonoBehaviour
         if (IsUpgrading || CurrentLevel >= MaxLevel - 1) return;
 
         UpgradeCost nextCost = GetNextUpgradeCost();
-        float duration = nextCost.upgradeDuration;
+        int duration = nextCost.upgradeDuration;
 
         if (buildingType == BuildingType.BarracksMelee || 
             buildingType == BuildingType.BarracksArcher || 
             buildingType == BuildingType.BarracksSpear || 
-            duration <= 0f)
+            duration <= 0)
         {
-            duration = 5f;
+            duration = 1;
         }
 
         currentProcessCoroutine = StartCoroutine(UpgradeRoutine(duration));
     }
 
-    private IEnumerator UpgradeRoutine(float duration, float startTimer = 0f)
+    private IEnumerator UpgradeRoutine(int durationWaves, int startWavesPassed = 0)
     {
         IsUpgrading = true;
         activeProcessType = ProcessType.BuildOrUpgrade;
-        currentProcessDuration = duration;
-        currentProcessTimer = startTimer;
+        currentProcessDuration = durationWaves;
+        currentProcessTimer = startWavesPassed;
 
         OnUpgradeStart?.Invoke();
 
-        while (currentProcessTimer < duration)
+        if (DayNightManager.Ins != null)
         {
-            currentProcessTimer += Time.deltaTime;
-            var targetProgressUI = BuildingProgressBridge.GetUI(this);
-            if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, duration);
-            yield return null;
+            int startWave = DayNightManager.Ins.CurrentWave - startWavesPassed;
+            
+            while (currentProcessTimer < durationWaves)
+            {
+                currentProcessTimer = DayNightManager.Ins.CurrentWave - startWave;
+                if (currentProcessTimer < 0) currentProcessTimer = 0;
+
+                var targetProgressUI = BuildingProgressBridge.GetUI(this);
+                if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+                
+                if (currentProcessTimer >= durationWaves)
+                    break;
+                    
+                yield return null;
+            }
+        }
+        else
+        {
+            // Fallback nếu không có DayNightManager
+            while (currentProcessTimer < durationWaves)
+            {
+                currentProcessTimer += Time.deltaTime / 10f; // 10s tượng trưng 1 wave
+                var targetProgressUI = BuildingProgressBridge.GetUI(this);
+                if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+                yield return null;
+            }
         }
 
         activeProcessType = ProcessType.None;
@@ -456,7 +478,7 @@ public class UpgradeableBuilding : MonoBehaviour
         while (currentProcessTimer < repairDuration)
         {
             currentProcessTimer += Time.deltaTime;
-            if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, repairDuration);
+            if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, repairDuration, false);
             yield return null;
         }
 
@@ -626,7 +648,7 @@ public class UpgradeableBuilding : MonoBehaviour
     public void ResumeBuildingProcess()
     {
         if (activeProcessType == ProcessType.BuildOrUpgrade && currentProcessDuration > 0f)
-            currentProcessCoroutine = StartCoroutine(UpgradeRoutine(currentProcessDuration, currentProcessTimer));
+            currentProcessCoroutine = StartCoroutine(UpgradeRoutine((int)currentProcessDuration, (int)currentProcessTimer));
         else if (activeProcessType == ProcessType.Repair && currentProcessDuration > 0f)
             currentProcessCoroutine = StartCoroutine(RepairRoutine(currentProcessTimer));
     }
