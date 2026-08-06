@@ -513,10 +513,14 @@ MonoBehaviour:
   expIcon: {fileID: -1371487347, guid: b08b8d18cd628fe4a800e4c155b48c1c, type: 3}
   woodIcon: {fileID: -2025151088, guid: b08b8d18cd628fe4a800e4c155b48c1c, type: 3}
   stoneIcon: {fileID: 1350962331, guid: b08b8d18cd628fe4a800e4c155b48c1c, type: 3}
+  foodIcon: {fileID: 0}
   claimableTextStr: "Nh\u1EADn"
   notClaimableTextStr: "CH\u01AFA XONG"
   claimedTextStr: "\u0110\xE3 nh\u1EADn"
   hideButtonWhenNotClaimable: 1
+  enableAnimations: 1
+  useButtonPunchAnim: 1
+  useCardDisappearAnim: 1
 --- !u!1 &4391952428881904016
 GameObject:
   m_ObjectHideFlags: 0
@@ -875,7 +879,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: -40}
-  m_SizeDelta: {x: 310, y: 35}
+  m_SizeDelta: {x: 290, y: 35}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &2088728387839369238
 CanvasRenderer:
@@ -1373,6 +1377,6 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: 150, y: 0}
+  m_AnchoredPosition: {x: 125, y: 0}
   m_SizeDelta: {x: 200, y: 80}
   m_Pivot: {x: 0, y: 0.5}

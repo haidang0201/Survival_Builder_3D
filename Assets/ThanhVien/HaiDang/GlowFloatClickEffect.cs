@@ -1,9 +1,10 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GlowFloatClickEffect : MonoBehaviour
 {
     [Header("FLOAT SETTINGS")]
-    public float floatHeight = 0.1f;
+    public float floatHeight = 3f;
     public float floatSpeed = 2f;
 
     [Header("ROTATE / SHAKE")]
@@ -16,12 +17,18 @@ public class GlowFloatClickEffect : MonoBehaviour
 
     bool isSelected;
 
-    Vector3 startPos;
+    float baseLocalY;
     Vector3 startScale;
 
     void Start()
     {
-        startPos = transform.localPosition;
+        // Ép Layout Group của cha tính toán xong vị trí ban đầu trước khi lưu base Y
+        if (transform.parent != null && transform.parent is RectTransform parentRect)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(parentRect);
+        }
+
+        baseLocalY = transform.localPosition.y;
         startScale = transform.localScale;
     }
 
@@ -31,7 +38,9 @@ public class GlowFloatClickEffect : MonoBehaviour
 
         // ================= FLOAT =================
         float y = Mathf.Sin(Time.time * floatSpeed) * floatHeight;
-        transform.localPosition = startPos + new Vector3(0, y, 0);
+        // Giữ nguyên Pos X do HorizontalLayoutGroup sắp xếp, chỉ thay đổi Y
+        Vector3 curPos = transform.localPosition;
+        transform.localPosition = new Vector3(curPos.x, baseLocalY + y, curPos.z);
 
         // ================= ROTATE =================
         float rot = Mathf.Sin(Time.time * rotateSpeed) * rotateAmount;
@@ -47,7 +56,8 @@ public class GlowFloatClickEffect : MonoBehaviour
         // 🔥 CLICK → đứng im
         isSelected = true;
 
-        transform.localPosition = startPos;
+        Vector3 curPos = transform.localPosition;
+        transform.localPosition = new Vector3(curPos.x, baseLocalY, curPos.z);
         transform.localRotation = Quaternion.identity;
         transform.localScale = startScale;
     }

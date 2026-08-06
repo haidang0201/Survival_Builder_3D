@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using DG.Tweening;
 
 public class QuestItemUI : MonoBehaviour
 {
@@ -38,6 +39,13 @@ public class QuestItemUI : MonoBehaviour
     [Header("Display Mode")]
     [Tooltip("True: Khi chưa đủ điều kiện sẽ ẨN NÚT HÌNH và HIỆN statusText.")]
     [SerializeField] private bool hideButtonWhenNotClaimable = true;
+
+    [Header("✨ ANIMATION SETTINGS (BẬT/TẮT TỤY CHỈNH)")]
+    [SerializeField] private bool enableAnimations = true;
+    [Tooltip("Bật/tắt hiệu ứng Nút nảy nhẹ khi bấm Nhận")]
+    [SerializeField] private bool useButtonPunchAnim = true;
+    [Tooltip("Bật/tắt hiệu ứng Thẻ Quest thu nhỏ biến mất khi Nhận xong")]
+    [SerializeField] private bool useCardDisappearAnim = true;
 
     private Action onClaimClicked;
 
@@ -169,5 +177,54 @@ public class QuestItemUI : MonoBehaviour
         if (num >= 1000000) return (num / 1000000f).ToString("0.#") + "M";
         if (num >= 1000) return (num / 1000f).ToString("0.#") + "K";
         return num.ToString();
+    }
+
+    public void PlayClaimFX(Action onComplete)
+    {
+        if (!enableAnimations)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        if (useButtonPunchAnim && claimButton != null)
+        {
+            DOTween.Kill(claimButton.transform);
+            claimButton.transform.DOPunchScale(Vector3.one * 0.25f, 0.2f, 5, 1).SetUpdate(true);
+        }
+
+        if (useCardDisappearAnim)
+        {
+            DOTween.Kill(transform);
+            CanvasGroup cg = GetComponent<CanvasGroup>();
+            if (cg == null) cg = gameObject.AddComponent<CanvasGroup>();
+
+            LayoutElement le = GetComponent<LayoutElement>();
+            if (le == null) le = gameObject.AddComponent<LayoutElement>();
+
+            RectTransform rect = GetComponent<RectTransform>();
+            float initialHeight = (rect != null && rect.rect.height > 0) ? rect.rect.height : 120f;
+            le.preferredHeight = initialHeight;
+
+            Sequence seq = DOTween.Sequence();
+            seq.SetUpdate(true);
+            seq.Append(transform.DOScale(Vector3.one * 1.03f, 0.08f).SetUpdate(true));
+            seq.Append(transform.DOScale(Vector3.zero, 0.22f).SetEase(Ease.InBack).SetUpdate(true));
+            seq.Join(cg.DOFade(0f, 0.2f).SetUpdate(true));
+            seq.Join(DOTween.To(() => le.preferredHeight, x =>
+            {
+                le.preferredHeight = x;
+                if (transform.parent != null)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(transform.parent as RectTransform);
+                }
+            }, 0f, 0.22f).SetEase(Ease.InOutQuad).SetUpdate(true));
+
+            seq.OnComplete(() => onComplete?.Invoke());
+        }
+        else
+        {
+            onComplete?.Invoke();
+        }
     }
 }
