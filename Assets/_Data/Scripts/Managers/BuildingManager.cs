@@ -121,6 +121,9 @@ public class BuildingManager : Singleton<BuildingManager>
                 if (upgradeable != null)
                 {
                     state.level = upgradeable.CurrentLevel;
+                    state.isRuined = upgradeable.IsRuined;
+                    state.startAsRuined = upgradeable.StartAsRuined;
+                    state.isInitialBuildNeeded = upgradeable.IsInitialBuildNeeded;
                 }
 
                 states.Add(state);
@@ -159,7 +162,7 @@ public class BuildingManager : Singleton<BuildingManager>
                 UpgradeableBuilding upgradeable = spawned.GetComponent<UpgradeableBuilding>();
                 if (upgradeable != null)
                 {
-                    upgradeable.LoadLevel(state.level);
+                    upgradeable.LoadBuildingData(state.level, state.isRuined, state.isInitialBuildNeeded);
                 }
             }
             else
@@ -172,13 +175,14 @@ public class BuildingManager : Singleton<BuildingManager>
     /// <summary>Phá hủy toàn bộ công trình hiện có – chỉ gọi trước LoadStates().</summary>
     private void ClearAll()
     {
-        for (int i = buildings.Count - 1; i >= 0; i--)
+        BuildingCtrl[] allBuildingsInScene = FindObjectsByType<BuildingCtrl>(FindObjectsSortMode.None);
+        foreach (var b in allBuildingsInScene)
         {
-            if (buildings[i] != null)
-                Destroy(buildings[i].gameObject);
+            if (b != null)
+                Destroy(b.gameObject);
         }
         buildings.Clear();
-        Debug.Log("[BuildingManager] 🗑️ Đã dọn sạch toàn bộ công trình trong scene.");
+        Debug.Log("[BuildingManager] 🗑️ Đã dọn sạch toàn bộ công trình (kể cả có sẵn) trong scene.");
     }
 
 

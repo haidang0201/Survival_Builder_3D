@@ -22,7 +22,14 @@ public static class BattleData
     // Kết quả trận đấu
     public static bool HasResult = false;
     public static bool IsPlayerVictory = false;
+    public static bool LastBattleWasVictory = false;
     public static int SurvivingSoldiersCount = 0;
+
+    /// <summary>
+    /// Bật cờ này trước khi Reload Scene để ngăn BattleData tự động Load lại file Save.
+    /// Dùng cho UILinh.ResetGame() để reset về trạng thái gốc của Scene.
+    /// </summary>
+    public static bool SkipAutoLoadOnNextSceneLoad = false;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void InitSceneLoadedCallback()
@@ -35,11 +42,20 @@ public static class BattleData
     {
         if (scene.name != "SceneBattle")
         {
-            // 🔥 Tải lại toàn bộ công trình từ file Save JSON khi quay lại Scene chính
-            BuildingSystem buildingSys = BuildingSystem.Ins != null ? BuildingSystem.Ins : Object.FindFirstObjectByType<BuildingSystem>();
-            if (buildingSys != null)
+            if (SkipAutoLoadOnNextSceneLoad)
             {
-                buildingSys.LoadBuildingsFromSlot(1);
+                // Reset về trạng thái gốc: không load file Save, để Scene chạy tự nhiên từ dữ liệu ban đầu
+                SkipAutoLoadOnNextSceneLoad = false;
+                Debug.Log("[BattleData] ⏩ Bỏ qua auto-load Save (Reset Scene được yêu cầu).");
+            }
+            else
+            {
+                // 🔥 Tải lại toàn bộ công trình từ file Save JSON khi quay lại Scene chính
+                BuildingSystem buildingSys = BuildingSystem.Ins != null ? BuildingSystem.Ins : Object.FindFirstObjectByType<BuildingSystem>();
+                if (buildingSys != null)
+                {
+                    buildingSys.LoadBuildingsFromSlot(1);
+                }
             }
 
             if (HasResult)
@@ -127,6 +143,7 @@ public static class BattleData
         PlayerBuildings.Clear();
         TotalSoldiersInBase = 0;
         HasResult = false;
+        LastBattleWasVictory = false;
     }
 
     /// <summary>
@@ -136,6 +153,7 @@ public static class BattleData
     {
         if (!HasResult) return;
 
+        LastBattleWasVictory = IsPlayerVictory;
         Debug.Log($"[BattleData] 🔥 Đang áp dụng kết quả trận đấu vào Scene chính ({MainSceneName}): Victory = {IsPlayerVictory}, SurvivingSoldiers = {SurvivingSoldiersCount}");
 
         if (IsPlayerVictory)

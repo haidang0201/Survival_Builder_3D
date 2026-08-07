@@ -118,6 +118,22 @@ public class CampaignTutorialManager : MonoBehaviour
 
     private void Start()
     {
+        // 🔥 Nếu vừa đánh thắng từ SceneBattle trở về -> Hoàn thành Stage 6 và chuyển sang Stage 7 nhận thưởng!
+        if (BattleData.LastBattleWasVictory || (BattleData.HasResult && BattleData.IsPlayerVictory))
+        {
+            BattleData.LastBattleWasVictory = false;
+            StartStage7();
+            return;
+        }
+
+        if (PlayerPrefs.GetInt("TutorialCompleted", 0) == 1)
+        {
+            currentStage = TutorialStage.Stage7_Complete;
+            HidePointer();
+            if (tutorialCanvas != null) tutorialCanvas.gameObject.SetActive(false);
+            return;
+        }
+
         Time.timeScale = 1f;
 
         HidePointer();
@@ -364,7 +380,18 @@ public class CampaignTutorialManager : MonoBehaviour
         {
             isWaitingForConstruction = true;
             HidePointer(); 
-            UpdateHint("⏳ Công trình đang được xây dựng... Vui lòng đợi.");
+            UpdateHint("⏳ Công trình xây dựng cần qua Wave để hoàn thành.\n👉 Hãy bấm nút **START WAVE** ở góc màn hình!");
+            
+            Button skipBtn = (DayNightManager.Ins != null) ? DayNightManager.Ins.skipWaveButton : null;
+            if (skipBtn == null)
+            {
+                skipBtn = GameObject.Find("SkipWaveButton")?.GetComponent<Button>() ?? GameObject.Find("StartWaveButton")?.GetComponent<Button>();
+            }
+
+            if (skipBtn != null)
+            {
+                PointHandAtUI(skipBtn.transform as RectTransform);
+            }
         }
         else
         {
@@ -437,12 +464,36 @@ public class CampaignTutorialManager : MonoBehaviour
         });
     }
 
+    public void OnBuildingUpgradeStarted(UpgradeableBuilding building)
+    {
+        if (currentStage != TutorialStage.Stage3_UpgradeWood) return;
+
+        if (building != null && building.buildingType == BuildingType.WoodCutter)
+        {
+            isWaitingForConstruction = true;
+            HidePointer();
+            UpdateHint("⏳ Công trình cần qua Wave để hoàn tất nâng cấp.\n👉 Hãy bấm nút **START WAVE** ở trên!");
+            
+            Button skipBtn = (DayNightManager.Ins != null) ? DayNightManager.Ins.skipWaveButton : null;
+            if (skipBtn == null)
+            {
+                skipBtn = GameObject.Find("SkipWaveButton")?.GetComponent<Button>() ?? GameObject.Find("StartWaveButton")?.GetComponent<Button>();
+            }
+
+            if (skipBtn != null)
+            {
+                PointHandAtUI(skipBtn.transform as RectTransform);
+            }
+        }
+    }
+
     public void OnBuildingUpgraded(UpgradeableBuilding building)
     {
         if (currentStage != TutorialStage.Stage3_UpgradeWood) return;
 
         if (building != null && building.buildingType == BuildingType.WoodCutter)
         {
+            isWaitingForConstruction = false;
             HidePointer();
             StartStage4ExpandLand(); // 🔥 Chuyển sang Stage mở rộng đất
         }
@@ -460,6 +511,22 @@ public class CampaignTutorialManager : MonoBehaviour
             : null;
 
         if (woodCutter == null) return;
+
+        // 🔥 KIỂM TRA TRỰC TIẾP: Nếu công trình đang trong "Trạng thái Nâng cấp" (IsUpgrading) hoặc isWaitingForConstruction
+        if (woodCutter.IsUpgrading || isWaitingForConstruction)
+        {
+            Button skipBtn = (DayNightManager.Ins != null) ? DayNightManager.Ins.skipWaveButton : null;
+            if (skipBtn == null)
+            {
+                skipBtn = GameObject.Find("SkipWaveButton")?.GetComponent<Button>() ?? GameObject.Find("StartWaveButton")?.GetComponent<Button>();
+            }
+
+            if (skipBtn != null)
+            {
+                PointHandAtUI(skipBtn.transform as RectTransform);
+            }
+            return;
+        }
 
         bool isUIOpen = TutorialSceneScanner.Ins.IsBuildingUIOpen(woodCutter);
         RectTransform upgradeBtnRect = TutorialSceneScanner.Ins.GetUpgradeButtonTransform(woodCutter);
@@ -561,11 +628,41 @@ public class CampaignTutorialManager : MonoBehaviour
     {
         StartCoroutine(DoRedAlertRoutine());
 
+        if (enemySpawner == null)
+        {
+            enemySpawner = Object.FindFirstObjectByType<EnemySpawn>();
+        }
+
+        if (enemyCamp == null && enemySpawner != null)
+        {
+            enemyCamp = enemySpawner.transform;
+        }
+
         if (enemyCamp != null)
         {
             FocusCameraOn(enemyCamp.position, 1.2f);
             PointHandAt(enemyCamp.position);
             UpdateHint("⚠️ CẢNH BÁO: Phát hiện căn cứ kẻ thù lân cận!");
+
+            // 🔥 SPAWN ENEMY NGAY KHI CAMERA DI CHUYỂN TỚI DOANH TRẠI ĐỊCH!
+            if (enemySpawner != null)
+            {
+                for (int i = 0; i < tutorialEnemyCount; i++)
+                {
+                    enemySpawner.SpawnEnemy(); 
+                }
+
+                EnemyAI[] activeEnemies = Object.FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+                foreach (var ai in activeEnemies)
+                {
+                    if (ai != null && townHallTransform != null)
+                    {
+                        ai.villageCenter = townHallTransform;
+                        ai.attackMainDirectly = true;
+                    }
+                }
+            }
+
             yield return new WaitForSecondsRealtime(2.5f);
         }
 
@@ -637,7 +734,18 @@ public class CampaignTutorialManager : MonoBehaviour
             isWaitingForConstruction = true;
             HidePointer(); 
             string towerName = (buildingType == BuildingType.WatchTower) ? "Tháp Canh" : "Tháp Cung";
-            UpdateHint($"⏳ {towerName} đang được xây dựng...");
+            UpdateHint($"⏳ {towerName} cần qua Wave mới để hoàn tất.\n👉 Hãy bấm nút **START WAVE** ở phía trên!");
+            
+            Button skipBtn = (DayNightManager.Ins != null) ? DayNightManager.Ins.skipWaveButton : null;
+            if (skipBtn == null)
+            {
+                skipBtn = GameObject.Find("SkipWaveButton")?.GetComponent<Button>() ?? GameObject.Find("StartWaveButton")?.GetComponent<Button>();
+            }
+
+            if (skipBtn != null)
+            {
+                PointHandAtUI(skipBtn.transform as RectTransform);
+            }
         }
         else
         {
@@ -666,7 +774,13 @@ public class CampaignTutorialManager : MonoBehaviour
     {
         currentStage = TutorialStage.Stage6_EnemyWave;
 
-        if (townHallTransform != null)
+        EnemyAI[] activeEnemies = Object.FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+
+        if (activeEnemies != null && activeEnemies.Length > 0)
+        {
+            FocusCameraOn(activeEnemies[0].transform.position, 1.0f);
+        }
+        else if (townHallTransform != null)
         {
             FocusCameraOn(townHallTransform.position, 1.0f);
         }
@@ -677,24 +791,16 @@ public class CampaignTutorialManager : MonoBehaviour
 
         enemiesRemaining = tutorialEnemyCount;
         
-        if (enemySpawner != null)
+        // Nếu chưa có Enemy (phòng trường hợp chưa spawn ở Stage 5), tiến hành spawn
+        if ((activeEnemies == null || activeEnemies.Length == 0) && enemySpawner != null)
         {
             for (int i = 0; i < tutorialEnemyCount; i++)
             {
                 enemySpawner.SpawnEnemy(); 
             }
-
-            EnemyAI[] activeEnemies = FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
-            foreach (var ai in activeEnemies)
-            {
-                if (ai != null && townHallTransform != null)
-                {
-                    ai.villageCenter = townHallTransform;
-                    ai.attackMainDirectly = true;
-                }
-            }
         }
 
+        UpdateHint("⚔️ Kẻ thù đang kéo đến! Hãy bấm nút **TẤN CÔNG** trên đầu kẻ thù để vào trận chiến!");
         UnlockAllInputs();
     }
 
@@ -712,6 +818,9 @@ public class CampaignTutorialManager : MonoBehaviour
     private void StartStage7()
     {
         currentStage = TutorialStage.Stage7_Complete;
+        
+        PlayerPrefs.SetInt("TutorialCompleted", 1);
+        PlayerPrefs.Save();
 
         RunDialogueSequence(stage6CompleteDialogues, () =>
         {

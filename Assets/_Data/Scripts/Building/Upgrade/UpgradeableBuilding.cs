@@ -355,6 +355,10 @@ public class UpgradeableBuilding : MonoBehaviour
         currentProcessTimer = startWavesPassed;
 
         OnUpgradeStart?.Invoke();
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnBuildingUpgradeStarted(this);
+        }
 
         if (DayNightManager.Ins != null)
         {

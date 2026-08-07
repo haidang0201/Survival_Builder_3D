@@ -200,10 +200,22 @@ public class UILinh : MonoBehaviour
     {
         try
         {
-            // 1. Xóa file save cũ để khi Scene load lại không bị ghi đè dữ liệu nâng cấp
+            // 1. Xóa file save cũ (của UILinh và của JsonDataManager slot 1)
             DeleteSave();
 
-            // 2. Load lại đúng Scene hiện tại
+            // Xóa thêm file save_slot_1.json của hệ thống Building
+            string slot1Path = System.IO.Path.Combine(Application.persistentDataPath, "save_slot_1.json");
+            if (System.IO.File.Exists(slot1Path))
+            {
+                System.IO.File.Delete(slot1Path);
+                Debug.Log("[UILinh] Đã xóa file save_slot_1.json của hệ thống Building.");
+            }
+
+            // 2. Bật cờ để BattleData KHÔNG tự động load lại file Save khi scene mới
+            BattleData.SkipAutoLoadOnNextSceneLoad = true;
+            BattleData.LastBattleWasVictory = false;
+
+            // 3. Load lại đúng Scene hiện tại → Scene sẽ chạy từ dữ liệu gốc 100%
             Scene currentScene = SceneManager.GetActiveScene();
             SceneManager.LoadScene(currentScene.buildIndex);
 
@@ -231,6 +243,11 @@ public class UILinh : MonoBehaviour
             {
                 Debug.LogWarning($"[UILinh] File Save không tồn tại để xóa: {savePath}");
             }
+
+            // 🔥 Xóa cờ trạng thái Tutorial để có thể test lại từ đầu
+            PlayerPrefs.DeleteKey("TutorialCompleted");
+            PlayerPrefs.Save();
+            Debug.Log("[UILinh] Đã reset trạng thái hoàn thành Tutorial trong PlayerPrefs.");
         }
         catch (Exception e)
         {
