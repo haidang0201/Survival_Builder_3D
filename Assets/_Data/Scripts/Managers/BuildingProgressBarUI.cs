@@ -71,8 +71,11 @@ public class BuildingProgressBarUI : MonoBehaviour
         }
     }
 
+    private float _realTimeActive = 0f;
+
     private void OnEnable()
     {
+        _realTimeActive = 0f;
         if (_ownerBuilding != null)
         {
             BuildingProgressBridge.RegisterUI(_ownerBuilding, this);
@@ -134,8 +137,9 @@ public class BuildingProgressBarUI : MonoBehaviour
     /// <summary>
     /// Cập nhật thanh tiến trình & đếm ngược thời gian
     /// </summary>
-    public void UpdateProgress(float currentTimer, float totalDuration)
+    public void UpdateProgress(float currentTimer, float totalDuration, bool isWaveMode = false)
     {
+        _realTimeActive += Time.deltaTime;
         // Bật UI Slider & Text lên CHỈ khi hàm này được gọi
         if (upgradeProgressBar != null)
         {
@@ -148,7 +152,14 @@ public class BuildingProgressBarUI : MonoBehaviour
         {
             if (!upgradeTimerText.gameObject.activeSelf) upgradeTimerText.gameObject.SetActive(true);
             float timeLeft = Mathf.Max(0f, totalDuration - currentTimer);
-            upgradeTimerText.text = $"{timeLeft:F1}s";
+            if (isWaveMode)
+            {
+                upgradeTimerText.text = $"{Mathf.CeilToInt(timeLeft)} Wave";
+            }
+            else
+            {
+                upgradeTimerText.text = $"{timeLeft:F1}s";
+            }
         }
 
         // Bật VFX khói thi công mượt mà
@@ -158,8 +169,8 @@ public class BuildingProgressBarUI : MonoBehaviour
             if (!constructionLoopVFX.isPlaying) constructionLoopVFX.Play();
         }
 
-        // Xử lý âm thanh gõ thi công trong giới hạn thời gian
-        bool isSoundWithinDuration = maxConstructionSoundDuration <= 0f || currentTimer < maxConstructionSoundDuration;
+        // Xử lý âm thanh gõ thi công trong giới hạn thời gian thực tế
+        bool isSoundWithinDuration = maxConstructionSoundDuration <= 0f || _realTimeActive < maxConstructionSoundDuration;
 
         if (isSoundWithinDuration)
         {
@@ -286,13 +297,13 @@ public static class BuildingProgressBridge
 public static class UIManagerExtensions
 {
     // Cập nhật tiến độ chỉ cho 1 công trình chỉ định
-    public static void UpdateUpgradeProgress(this UIManager uiManager, UpgradeableBuilding building, float currentTimer, float totalDuration)
+    public static void UpdateUpgradeProgress(this UIManager uiManager, UpgradeableBuilding building, float currentTimer, float totalDuration, bool isWaveMode = false)
     {
         if (building == null) return;
         var targetUI = BuildingProgressBridge.GetUI(building);
         if (targetUI != null)
         {
-            targetUI.UpdateProgress(currentTimer, totalDuration);
+            targetUI.UpdateProgress(currentTimer, totalDuration, isWaveMode);
         }
     }
 
