@@ -396,42 +396,10 @@ public class EnemySpawnWarningArrow : MonoBehaviour
 
     private void UpdateStretchedArrowGeometry()
     {
-        if (arrowQuadObj == null || targetEnemy == null) return;
-
-        Transform destinationTarget = GetActualEnemyTarget();
-        if (destinationTarget == null) return;
-
-        Vector3 startPos = targetEnemy.position;
-        Vector3 endPos = GetTargetFeetPosition(destinationTarget);
-
-        Vector3 dir = endPos - startPos;
-        dir.y = 0f;
-        float baseDist = dir.magnitude;
-
-        if (baseDist > 0.1f)
+        // Đã xóa mũi tên dưới chân theo yêu cầu
+        if (arrowQuadObj != null && arrowQuadObj.activeSelf)
         {
-            Vector3 forwardDir = dir.normalized;
-
-            arrowQuadObj.transform.position = startPos + Vector3.up * arrowGroundOffset;
-
-            // Quaternion.LookRotation(forwardDir, Vector3.up) đặt trục +Z local của Quad theo forwardDir.
-            // Nhân Quaternion.Euler(90f, 0f, 0f) quay 90 độ hạ trục +Y local (đỉnh đầu mũi tên nhọn)
-            // bệt xuống mặt đất chỉ THẲNG 100% về phía attackTarget (Nhachinhs).
-            arrowQuadObj.transform.rotation = Quaternion.LookRotation(forwardDir, Vector3.up) * Quaternion.Euler(90f, 0f, 0f);
-
-            float finalLength = (baseDist * arrowLengthMultiplier) + arrowExtraLength;
-            float widthMeters = 1.2f * arrowSize;
-
-            Vector3 parentLossy = transform.lossyScale;
-            float scaleX = (parentLossy.x > 0.0001f) ? (widthMeters / parentLossy.x) : widthMeters;
-            float scaleY = (parentLossy.z > 0.0001f) ? (finalLength / parentLossy.z) : finalLength;
-
-            arrowQuadObj.transform.localScale = new Vector3(scaleX, scaleY, 1f);
-
-            if (arrowMeshRenderer != null && arrowMeshRenderer.sharedMaterial != null)
-            {
-                arrowMeshRenderer.sharedMaterial.color = arrowColor;
-            }
+            arrowQuadObj.SetActive(false);
         }
     }
 
@@ -439,26 +407,31 @@ public class EnemySpawnWarningArrow : MonoBehaviour
     {
         if (timerText == null) return;
 
-        float estimatedTime = 0f;
+        int remainingWaves = 3;
+        bool hasReachedWall = false;
 
         if (targetEnemy != null)
         {
-            Transform destinationTarget = GetActualEnemyTarget();
-            Vector3 targetPos = GetTargetFeetPosition(destinationTarget);
-
-            float distance = Vector3.Distance(targetEnemy.position, targetPos);
             EnemyAI enemyAI = targetEnemy.GetComponent<EnemyAI>();
-            float stopRange = (enemyAI != null) ? Mathf.Max(enemyAI.CurrentAttackRange, 2.5f) : 2.5f;
-            float remainingDist = Mathf.Max(0f, distance - stopRange);
+            if (enemyAI != null)
+            {
+                int currentWave = (DayNightManager.HasInstance && DayNightManager.Ins != null) ? DayNightManager.Ins.CurrentWave : 1;
+                remainingWaves = Mathf.Max(0, enemyAI.targetWave - currentWave);
 
-            float speed = (enemyAI != null && enemyAI.chaseSpeed > 0.1f) ? enemyAI.chaseSpeed : 3.5f;
-            estimatedTime = remainingDist / speed;
+                Vector3 castleWallPos = EnemyAI.GetCastleWallDestination(enemyAI.transform.position, enemyAI.villageCenter);
+                float distToWall = Vector3.Distance(enemyAI.transform.position, castleWallPos);
+                hasReachedWall = (remainingWaves <= 0) && (distToWall <= 2.5f);
+            }
         }
 
-        if (estimatedTime < 0f) estimatedTime = 0f;
-
-        int minutes = Mathf.FloorToInt(estimatedTime / 60f);
-        int seconds = Mathf.FloorToInt(estimatedTime % 60f);
-        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+        if (hasReachedWall)
+        {
+            timerText.text = "Đã đến thành!";
+        }
+        else
+        {
+            int showWaves = Mathf.Max(1, remainingWaves);
+            timerText.text = $"Còn {showWaves} Wave";
+        }
     }
 }
