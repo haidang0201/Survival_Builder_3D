@@ -29,6 +29,11 @@ public class BuildingSystem : Singleton<BuildingSystem>
     public GameObject ghostBarracksArcherPrefab;
     public GameObject ghostBarracksSpearPrefab;
 
+    [Header("Ghost Prefabs – Tài nguyên")]
+    public GameObject ghostWoodPrefab;
+    public GameObject ghostRicePrefab;
+    public GameObject ghostStonePrefab;
+
     private GhostBuilding currentGhost;
     private bool isPlacing = false;
 
@@ -278,6 +283,9 @@ public class BuildingSystem : Singleton<BuildingSystem>
             case BuildingType.BarracksMelee: return ghostBarracksMeleePrefab;
             case BuildingType.BarracksArcher: return ghostBarracksArcherPrefab;
             case BuildingType.BarracksSpear: return ghostBarracksSpearPrefab;
+            case BuildingType.Wood: return ghostWoodPrefab;
+            case BuildingType.Rice: return ghostRicePrefab;
+            case BuildingType.Stone: return ghostStonePrefab;
             default: return null;
         }
     }

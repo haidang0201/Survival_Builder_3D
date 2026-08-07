@@ -49,6 +49,11 @@ public class ConstructionManager : Singleton<ConstructionManager>
     public GameObject barracksArcherPrefab;
     public GameObject barracksSpearPrefab;
 
+    [Header("Prefab thật - Tài nguyên")]
+    public GameObject woodPrefab;
+    public GameObject ricePrefab;
+    public GameObject stonePrefab;
+
     private Dictionary<BuildingType, int> buildingCounts = new Dictionary<BuildingType, int>();
 
     private void Start()
@@ -211,6 +216,9 @@ public class ConstructionManager : Singleton<ConstructionManager>
             case BuildingType.BarracksMelee: return barracksMeleePrefab;
             case BuildingType.BarracksArcher: return barracksArcherPrefab;
             case BuildingType.BarracksSpear: return barracksSpearPrefab;
+            case BuildingType.Wood: return woodPrefab;
+            case BuildingType.Rice: return ricePrefab;
+            case BuildingType.Stone: return stonePrefab;
             default: return null;
         }
     }

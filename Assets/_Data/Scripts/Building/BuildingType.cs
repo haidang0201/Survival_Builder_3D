@@ -39,4 +39,9 @@ public enum BuildingType
     BarracksMelee,      // Doanh Trại Lính Cận Chiến
     BarracksArcher,     // Doanh Trại Lính Cung
     BarracksSpear,      // Doanh Trại Lính Giáo
+
+    // ── TÀI NGUYÊN ─────────────────────────────
+    Wood,
+    Rice,
+    Stone,
 }
