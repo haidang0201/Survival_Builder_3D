@@ -2,23 +2,26 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /*
- * WorkerManager.cs
- * Folder: Scripts/Managers/
- * Dự án: KHẨN HOANG (PENTA DEV)
+ * WorkerManager.cs — ĐÃ ĐƠN GIẢN HÓA
  *
- * CHỨC NĂNG:
- * Quản lý danh sách các AI Worker hiện đang có trong game.
- * Phục vụ cho tính năng Save/Load trạng thái Worker (vị trí, tài nguyên đang vác).
+ * Chức năng còn lại:
+ *   - Theo dõi danh sách worker đang có trong Scene (RegisterWorker / UnregisterWorker).
+ *   - GetAllStates()  → gom vị trí worker để Save.
+ *   - LoadStates()    → Spawn lại worker đúng vị trí khi Load game.
+ *
+ * KHÔNG còn lưu trạng thái "đang cầm đồ" vì worker không còn vận chuyển tài nguyên nữa.
  */
 public class WorkerManager : Singleton<WorkerManager>
 {
     public class WorkerRef
     {
         public GameObject workerObj;
-        public string type;
+        public string     type;
     }
 
     private List<WorkerRef> activeWorkers = new List<WorkerRef>();
+
+    // ── Register / Unregister ──────────────────────────────────────────────────
 
     public void RegisterWorker(GameObject worker, string type)
     {
@@ -32,93 +35,58 @@ public class WorkerManager : Singleton<WorkerManager>
         activeWorkers.RemoveAll(w => w.workerObj == worker);
     }
 
+    // ── Save / Load ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Gom trạng thái (vị trí + loại) của tất cả worker đang sống để ghi vào file JSON.
+    /// </summary>
     public List<WorkerState> GetAllStates()
     {
-        List<WorkerState> states = new List<WorkerState>();
+        var states = new List<WorkerState>();
         foreach (var w in activeWorkers)
         {
             if (w.workerObj == null) continue;
-
-            WorkerState state = new WorkerState();
-            state.workerType = w.type;
-            state.position = new SerializableVector3(w.workerObj.transform.position);
-            state.rotation = new SerializableVector3(w.workerObj.transform.eulerAngles);
-
-            // Kiểm tra trạng thái đang cầm đồ tùy theo loại worker
-            if (w.type == "Tree")
+            states.Add(new WorkerState
             {
-                var carry = w.workerObj.GetComponent<WorkerCarryItem>();
-                state.isCarryingItem = (carry != null && carry.IsCarrying());
-            }
-            else if (w.type == "Rice")
-            {
-                var carry = w.workerObj.GetComponent<WorkerCarryRice>();
-                state.isCarryingItem = (carry != null && carry.IsCarrying());
-            }
-            else if (w.type == "Stone")
-            {
-                var carry = w.workerObj.GetComponent<WorkerCarryStone>();
-                state.isCarryingItem = (carry != null && carry.IsCarrying());
-            }
-
-            states.Add(state);
+                workerType     = w.type,
+                position       = new SerializableVector3(w.workerObj.transform.position),
+                rotation       = new SerializableVector3(w.workerObj.transform.eulerAngles),
+                isCarryingItem = false   // Worker không còn vận chuyển — luôn false
+            });
         }
         return states;
     }
 
+    /// <summary>
+    /// Spawn lại worker từ file JSON đã lưu.
+    /// </summary>
     public void LoadStates(List<WorkerState> states)
     {
         if (states == null || states.Count == 0) return;
 
-        // Dọn dẹp công nhân cũ trước khi load
+        // Dọn worker cũ
         foreach (var w in activeWorkers)
-        {
             if (w.workerObj != null) Destroy(w.workerObj);
-        }
         activeWorkers.Clear();
 
         if (WorkerSpawner.Instance == null)
         {
-            Debug.LogError("[WorkerManager] Không tìm thấy WorkerSpawner!");
+            Debug.LogError("[WorkerManager] Không tìm thấy WorkerSpawner trong Scene!");
             return;
         }
 
         foreach (var state in states)
         {
             WorkerSpawner.WorkerType type;
-            if (state.workerType == "Tree") type = WorkerSpawner.WorkerType.Tree;
-            else if (state.workerType == "Rice") type = WorkerSpawner.WorkerType.Rice;
+            if      (state.workerType == "Tree")  type = WorkerSpawner.WorkerType.Tree;
+            else if (state.workerType == "Rice")  type = WorkerSpawner.WorkerType.Rice;
             else if (state.workerType == "Stone") type = WorkerSpawner.WorkerType.Stone;
             else continue;
 
-            // Spawn worker tại vị trí đã lưu, không cần scatter radius
             Vector3 pos = state.position.ToVector3();
             GameObject newWorker = WorkerSpawner.Instance.SpawnWorker(type, pos, 0f);
-            
             if (newWorker != null)
-            {
                 newWorker.transform.eulerAngles = state.rotation.ToVector3();
-                
-                // Nếu worker đang cầm đồ, ta ép nó nhặt lại 1 vật phẩm ảo để cầm
-                if (state.isCarryingItem)
-                {
-                    if (type == WorkerSpawner.WorkerType.Tree)
-                    {
-                        var carry = newWorker.GetComponent<WorkerCarryItem>();
-                        if (carry != null) carry.PickUpFakeItemForLoad();
-                    }
-                    else if (type == WorkerSpawner.WorkerType.Rice)
-                    {
-                        var carry = newWorker.GetComponent<WorkerCarryRice>();
-                        if (carry != null) carry.PickUpFakeItemForLoad();
-                    }
-                    else if (type == WorkerSpawner.WorkerType.Stone)
-                    {
-                        var carry = newWorker.GetComponent<WorkerCarryStone>();
-                        if (carry != null) carry.PickUpFakeItemForLoad();
-                    }
-                }
-            }
         }
         Debug.Log($"[WorkerManager] Đã load {states.Count} worker.");
     }
