@@ -121,11 +121,8 @@ public class UpgradeableBuilding : MonoBehaviour
     {
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
-        BuildingUpgradeUI localUI = GetComponentInChildren<BuildingUpgradeUI>(true);
-        if (localUI != null && localUI.IsOpen) return;
-
         SelectThisBuilding();
-        if (localUI != null) localUI.OpenUI();
+        if (UIManager.Ins != null) UIManager.Ins.ShowUpgradePanel(this);
     }
 
     private void SaveOriginalVisuals()
@@ -430,7 +427,8 @@ public class UpgradeableBuilding : MonoBehaviour
             if (targetUI != null) targetUI.HandleCompleteSequence();
         }
 
-        if (UIManager.Ins != null) UIManager.Ins.RefreshUpgradePanel(this);
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
     }
 
     public void HideAllVisualModels()
@@ -508,7 +506,8 @@ public class UpgradeableBuilding : MonoBehaviour
         ToggleBuildingLogic(true);
 
         if (targetProgressUI != null) targetProgressUI.HandleCompleteSequence();
-        if (UIManager.Ins != null) UIManager.Ins.RefreshUpgradePanel(this);
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
     }
 
     public void ToggleBuildingLogic(bool active)
@@ -522,6 +521,8 @@ public class UpgradeableBuilding : MonoBehaviour
         }
     }
 
+    public void Upgrade() => ExecuteLevelUp();
+
     [ContextMenu("⚡ Nâng cấp Tháp này")]
     public void ExecuteLevelUp()
     {
@@ -531,7 +532,8 @@ public class UpgradeableBuilding : MonoBehaviour
             CurrentLevel++;
             UpdateCivilianBuildingData();
 
-            if (UIManager.Ins != null) UIManager.Ins.RefreshUpgradePanel(this);
+            if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+            if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
 
             SetActiveModel(CurrentLevel, true);
             OnLevelChanged?.Invoke();
@@ -667,11 +669,8 @@ public class ClickHelper : MonoBehaviour
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
         if (parentBuilding == null) return;
 
-        BuildingUpgradeUI ui = parentBuilding.GetComponentInChildren<BuildingUpgradeUI>(true);
-        if (ui != null && ui.IsOpen) return;
-
         parentBuilding.SelectThisBuilding();
-        if (ui != null) ui.OpenUI();
+        if (UIManager.Ins != null) UIManager.Ins.ShowUpgradePanel(parentBuilding);
 
         if (CampaignTutorialManager.Ins != null) CampaignTutorialManager.Ins.OnClickTownHall(); 
     }

@@ -51,11 +51,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BuildingCtrl
   buildingType: 1
-  door: {fileID: 0}
-  buildProgress: 0
-  isOccupied: 0
-  currentWorkers: 0
   maxWorkers: 4
+  productionRate: 1
+  fixedYRotation: 0
 --- !u!114 &3393595052963937547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,6 +67,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 1
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 1
   buildingName: "Nh\xE0 Ch\xEDnh"
@@ -172,7 +171,7 @@ PrefabInstance:
     - target: {fileID: 5200285458254245573, guid: 33bacb457992928428909991f4a7df0c, type: 3}
       propertyPath: m_fontAsset
       value: 
-      objectReference: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+      objectReference: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
     - target: {fileID: 5200285458254245573, guid: 33bacb457992928428909991f4a7df0c, type: 3}
       propertyPath: m_fontColor.b
       value: 0.627451

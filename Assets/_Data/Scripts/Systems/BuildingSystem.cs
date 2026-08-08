@@ -34,6 +34,15 @@ public class BuildingSystem : Singleton<BuildingSystem>
     public GameObject ghostRicePrefab;
     public GameObject ghostStonePrefab;
 
+    [Header("Demacia Rising – Khung chọn ô đất")]
+    public GameObject slotHighlightPrefab;
+    private GameObject slotHighlightInstance;
+    private Vector3 selectedSlotPos;
+    private bool hasSelectedSlot = false;
+
+    public bool HasSelectedSlot => hasSelectedSlot;
+    public Vector3 SelectedSlotPos => selectedSlotPos;
+
     private GhostBuilding currentGhost;
     private bool isPlacing = false;
 
@@ -48,6 +57,68 @@ public class BuildingSystem : Singleton<BuildingSystem>
         if (_isMovingMode)
         {
             HandlePlacementInput();
+            return;
+        }
+
+        HandleSlotSelectionInput();
+    }
+
+    private void HandleSlotSelectionInput()
+    {
+        // Phím chuột phải hoặc ESC để bỏ chọn ô đất và đóng menu
+        if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (hasSelectedSlot)
+            {
+                DeselectSlot();
+                if (UIManager.Ins != null) UIManager.Ins.CloseBuildMenu();
+            }
+            return;
+        }
+
+        // Click chuột trái vào ô đất trống trên bản đồ
+        if (Input.GetMouseButtonDown(0))
+        {
+            // Bỏ qua nếu bấm vào UI
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                return;
+            }
+
+            if (currentGhost != null) return;
+
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
+            {
+                SelectSlot(hit.point);
+                if (UIManager.Ins != null) UIManager.Ins.OpenSettlementPanel();
+            }
+        }
+    }
+
+    public void SelectSlot(Vector3 worldPos)
+    {
+        selectedSlotPos = worldPos;
+        hasSelectedSlot = true;
+
+        if (slotHighlightPrefab != null)
+        {
+            if (slotHighlightInstance == null)
+            {
+                slotHighlightInstance = Instantiate(slotHighlightPrefab);
+            }
+            slotHighlightInstance.transform.position = worldPos;
+            slotHighlightInstance.SetActive(true);
+        }
+    }
+
+    public void DeselectSlot()
+    {
+        hasSelectedSlot = false;
+        if (slotHighlightInstance != null)
+        {
+            slotHighlightInstance.SetActive(false);
         }
     }
 
@@ -55,6 +126,21 @@ public class BuildingSystem : Singleton<BuildingSystem>
     {
         if (type == BuildingType.None) return;
 
+        // 🔥 DEMACIA RISING STYLE: NẾU ĐÃ CHỌN Ô ĐẤT, XÂY TRỰC TIẾP TẠI Ô ĐẤT ĐÓ
+        if (hasSelectedSlot)
+        {
+            ConstructionManager.Ins.PlaceBuilding(type, selectedSlotPos, Quaternion.identity);
+            DeselectSlot();
+            if (UIManager.Ins != null) UIManager.Ins.CloseBuildMenu();
+            return;
+        }
+
+        // FALLBACK: NẾU CHƯA CHỌN Ô ĐẤT, KÍCH HOẠT CHẾ ĐỘ RÊ CHUỘT GHOST CŨ
+        StartPlacingGhost(type);
+    }
+
+    public void StartPlacingGhost(BuildingType type)
+    {
         if (_isMovingMode) CancelMoving();
         else CancelPlacing();
 
@@ -72,8 +158,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
 
         currentGhost.buildingType = type;
         currentGhost.InstantSnapToMouse();
-
-        LandGridManager.Ins?.SetGridVisualActive(true);
 
         // 🔥 CẬP NHẬT TUTORIAL: Báo cho Tutorial Manager người chơi đã bắt đầu chế độ đặt nhà
         if (CampaignTutorialManager.Ins != null)
@@ -95,8 +179,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
             currentGhost = null;
         }
 
-        LandGridManager.Ins?.SetGridVisualActive(false);
-
         // 🔥 CẬP NHẬT TUTORIAL: Báo cho Tutorial Manager khi hủy đặt nhà
         if (CampaignTutorialManager.Ins != null)
         {
@@ -112,7 +194,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
     public void OnPlacingCompleted(bool shouldReopenMenu)
     {
         currentGhost = null;
-        LandGridManager.Ins?.SetGridVisualActive(false);
 
         if (UIManager.Ins != null)
         {
@@ -129,11 +210,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
 
         _movingBuilding = building;
         _isMovingMode = true;
-
-        // 🔥 XÓA ĐÁNH DẤU Ô CŨ TRÊN GRID (Để vị trí cũ tạm thời trống)
-        LandGridManager.Ins?.UnmarkAreaAsOccupied(_movingBuilding.transform.position);
-
-        LandGridManager.Ins?.SetGridVisualActive(true);
 
         _movingBuilding.PauseBuildingProcess();
         _movingBuilding.gameObject.SetActive(false);
@@ -175,9 +251,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
                 _movingBuilding.transform.rotation = newRotation;
                 _movingBuilding.gameObject.SetActive(true);
 
-                // 🔥 ĐÁNH DẤU VỊ TRÍ MỚI ĐÃ BỊ CHIẾM
-                LandGridManager.Ins?.MarkAreaAsOccupied(newPosition);
-
                 _movingBuilding.ResumeBuildingProcess();
 
                 if (currentGhost != null)
@@ -207,7 +280,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
         _isMovingMode = false;
         _movingBuilding = null;
         currentGhost = null;
-        LandGridManager.Ins?.SetGridVisualActive(false);
 
         if (UIManager.Ins != null)
         {
@@ -227,9 +299,6 @@ public class BuildingSystem : Singleton<BuildingSystem>
         {
             _movingBuilding.gameObject.SetActive(true);
             _movingBuilding.ResumeBuildingProcess();
-
-            // 🔥 NẾU HỦY DI CHUYỂN, ĐÁNH DẤU LẠI VỊ TRÍ CŨ
-            LandGridManager.Ins?.MarkAreaAsOccupied(_movingBuilding.transform.position);
         }
 
         EndMovingMode();

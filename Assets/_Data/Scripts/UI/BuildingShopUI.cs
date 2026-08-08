@@ -1,29 +1,47 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
-public enum BuildingCategory
-{
-    Civilian,   // Trang 1: Dân sự (Nhà dân, Chợ, Bếp...)
-    Military,   // Trang 2: Quân sự (Tháp bắn, Trại lính...)
-    Resource    // Trang 3: Tài nguyên (Kho gỗ, Kho đá, Ruộng lúa...)
-}
+/*
+ * BuildingShopUI.cs
+ * Folder: Scripts/UI/
+ * Dự án: KHẨN HOANG (PENTA DEV)
+ * Phong cách: Demacia Rising Two-Column Building Pop-up Shop
+ */
 
 public class BuildingShopUI : MonoBehaviour
 {
-    [Header("=== 3 TRANG NỘI DUNG ===")]
-    [SerializeField] private GameObject civilianPage;  // Panel chứa công trình Dân sự
-    [SerializeField] private GameObject militaryPage;  // Panel chứa công trình Quân sự
-    [SerializeField] private GameObject resourcePage;  // Panel chứa công trình Tài nguyên
-
-    [Header("=== 3 NÚT CHUYỂN TRANG (TAB BUTTONS) ===")]
-    [SerializeField] private Button civilianTabBtn;
-    [SerializeField] private Button militaryTabBtn;
-    [SerializeField] private Button resourceTabBtn;
-
-    [Header("=== ĐỔI MÀU NÚT KHI ĐƯỢC CHỌN (TÙY CHỌN) ===")]
-    [SerializeField] private Color activeTabColor = Color.white;
-    [SerializeField] private Color inactiveTabColor = new Color(0.7f, 0.7f, 0.7f, 1f);
     public static BuildingShopUI Ins { get; private set; }
+
+    [Header("=== CẤU HÌNH HEADER & ĐÓNG cửa SỔ ===")]
+    [SerializeField] private Button closeBtn;
+
+    [Header("=== CỘT BÊN TRÁI (DANH SÁCH CÔNG TRÌNH) ===")]
+    [SerializeField] private Transform itemListContainer;
+    [SerializeField] private BuildingShopItemUI currentSelectedItem;
+
+    [Header("=== CỘT BÊN PHẢI (XEM TRƯỚC CHI TIẾT & NÚT XÂY) ===")]
+    [SerializeField] private Image previewArtImage;
+    [SerializeField] private TextMeshProUGUI selectedNameTMP;
+    [SerializeField] private TextMeshProUGUI benefitTextTMP;
+    [SerializeField] private TextMeshProUGUI descriptionTMP;
+
+    [Header("=== CHI PHÍ TÀI NGUYÊN (TMP) ===")]
+    [SerializeField] private TextMeshProUGUI woodCostTMP;
+    [SerializeField] private TextMeshProUGUI stoneCostTMP;
+    [SerializeField] private TextMeshProUGUI foodCostTMP;
+
+    [Header("=== NÚT XÂY DỰNG & THỜI GIAN ===")]
+    [SerializeField] private Button constructBtn;
+    [SerializeField] private TextMeshProUGUI buildDurationTMP;
+
+    [Header("=== TÙY CHỈNH MÀU GIÁ ===")]
+    [SerializeField] private Color affordableColor = new Color(0.2f, 0.9f, 0.3f, 1f);   // Xanh lá
+    [SerializeField] private Color unaffordableColor = new Color(0.9f, 0.2f, 0.2f, 1f); // Đỏ
+
+    private List<BuildingShopItemUI> shopItemsList = new List<BuildingShopItemUI>();
+
     private void Awake()
     {
         if (Ins == null) Ins = this;
@@ -32,44 +50,171 @@ public class BuildingShopUI : MonoBehaviour
 
     private void Start()
     {
-        // Mặc định khi mở bảng sẽ hiện Trang 1 (Dân sự)
-        SelectCategory(BuildingCategory.Civilian);
+        if (closeBtn != null)
+        {
+            closeBtn.onClick.AddListener(CloseShop);
+        }
 
-        // Gán sự kiện click cho các nút Tab
-        if (civilianTabBtn != null) 
-            civilianTabBtn.onClick.AddListener(() => SelectCategory(BuildingCategory.Civilian));
-            
-        if (militaryTabBtn != null) 
-            militaryTabBtn.onClick.AddListener(() => SelectCategory(BuildingCategory.Military));
-            
-        if (resourceTabBtn != null) 
-            resourceTabBtn.onClick.AddListener(() => SelectCategory(BuildingCategory.Resource));
+        if (constructBtn != null)
+        {
+            constructBtn.onClick.AddListener(OnClickConstructButton);
+        }
+
+        RefreshAllItems();
+    }
+
+    private void OnEnable()
+    {
+        RefreshAllItems();
     }
 
     /// <summary>
-    /// Hàm thực hiện Bật/Tắt trang tương ứng
+    /// Thu thập toàn bộ các item bên cột trái và làm mới giao diện
     /// </summary>
-    public void SelectCategory(BuildingCategory category)
+    public void RefreshAllItems()
     {
-        // 1. Bật/Tắt các Panel trang
-        if (civilianPage != null) civilianPage.SetActive(category == BuildingCategory.Civilian);
-        if (militaryPage != null) militaryPage.SetActive(category == BuildingCategory.Military);
-        if (resourcePage != null) resourcePage.SetActive(category == BuildingCategory.Resource);
+        shopItemsList.Clear();
+        if (itemListContainer != null)
+        {
+            shopItemsList.AddRange(itemListContainer.GetComponentsInChildren<BuildingShopItemUI>(true));
+        }
+        else
+        {
+            shopItemsList.AddRange(GetComponentsInChildren<BuildingShopItemUI>(true));
+        }
 
-        // 2. Cập nhật màu sắc nút Tab để người chơi biết đang ở trang nào
-        UpdateTabButtonVisual(civilianTabBtn, category == BuildingCategory.Civilian);
-        UpdateTabButtonVisual(militaryTabBtn, category == BuildingCategory.Military);
-        UpdateTabButtonVisual(resourceTabBtn, category == BuildingCategory.Resource);
+        if (shopItemsList.Count > 0)
+        {
+            // Mặc định chọn mục đầu tiên trong danh sách
+            if (currentSelectedItem == null || !shopItemsList.Contains(currentSelectedItem))
+            {
+                SelectBuildingItem(shopItemsList[0]);
+            }
+            else
+            {
+                SelectBuildingItem(currentSelectedItem);
+            }
+        }
     }
 
-    private void UpdateTabButtonVisual(Button btn, bool isActive)
+    /// <summary>
+    /// Chọn 1 công trình từ danh sách cột trái và hiển thị chi tiết sang cột phải
+    /// </summary>
+    public void SelectBuildingItem(BuildingShopItemUI item)
     {
-        if (btn == null) return;
-        
-        Image btnImage = btn.GetComponent<Image>();
-        if (btnImage != null)
+        if (item == null) return;
+
+        currentSelectedItem = item;
+
+        // 1. Đổi highlight nền kem ở danh sách cột trái
+        foreach (var i in shopItemsList)
         {
-            btnImage.color = isActive ? activeTabColor : inactiveTabColor;
+            if (i != null)
+            {
+                i.SetSelected(i == currentSelectedItem);
+            }
+        }
+
+        // 2. Cập nhật thông tin cột bên phải
+        if (selectedNameTMP != null) selectedNameTMP.text = item.buildingName;
+        if (benefitTextTMP != null) benefitTextTMP.text = item.benefitText;
+        if (descriptionTMP != null) descriptionTMP.text = item.buildingDescription;
+
+        if (previewArtImage != null)
+        {
+            if (item.artworkSprite != null)
+            {
+                previewArtImage.sprite = item.artworkSprite;
+                previewArtImage.gameObject.SetActive(true);
+            }
+        }
+
+        if (buildDurationTMP != null)
+        {
+            buildDurationTMP.text = item.buildDuration.ToString();
+        }
+
+        // 3. Lấy chi phí và kiểm tra đủ tiền
+        RefreshCostAndAffordability(item.buildingType);
+    }
+
+    /// <summary>
+    /// Cập nhật chi phí tài nguyên và bật/tắt Nút XÂY DỰNG
+    /// </summary>
+    private void RefreshCostAndAffordability(BuildingType type)
+    {
+        if (type == BuildingType.None) return;
+
+        int woodCost = 0, stoneCost = 0, foodCost = 0;
+        if (ConstructionManager.Ins != null)
+        {
+            var costData = ConstructionManager.Ins.GetBuildingCost(type);
+            woodCost = costData.woodCost;
+            stoneCost = costData.stoneCost;
+            foodCost = costData.foodCost;
+        }
+
+        bool hasEnoughWood = true, hasEnoughStone = true, hasEnoughFood = true;
+        bool canAfford = true;
+
+        if (JsonDataManager.Ins != null)
+        {
+            hasEnoughWood = JsonDataManager.Ins.wood >= woodCost;
+            hasEnoughStone = JsonDataManager.Ins.stone >= stoneCost;
+            hasEnoughFood = JsonDataManager.Ins.food >= foodCost;
+            canAfford = JsonDataManager.Ins.HasEnoughResources(woodCost, stoneCost, foodCost);
+        }
+
+        // Đổi màu chữ giá
+        if (woodCostTMP != null)
+        {
+            woodCostTMP.text = woodCost.ToString();
+            woodCostTMP.color = hasEnoughWood ? affordableColor : unaffordableColor;
+        }
+
+        if (stoneCostTMP != null)
+        {
+            stoneCostTMP.text = stoneCost.ToString();
+            stoneCostTMP.color = hasEnoughStone ? affordableColor : unaffordableColor;
+        }
+
+        if (foodCostTMP != null)
+        {
+            foodCostTMP.text = foodCost.ToString();
+            foodCostTMP.color = hasEnoughFood ? affordableColor : unaffordableColor;
+        }
+
+        // Cập nhật trạng thái Nút XÂY DỰNG
+        if (constructBtn != null)
+        {
+            constructBtn.interactable = canAfford;
+        }
+    }
+
+    /// <summary>
+    /// Khi bấm Nút XÂY DỰNG màu vàng nổi bật
+    /// </summary>
+    private void OnClickConstructButton()
+    {
+        if (currentSelectedItem == null || currentSelectedItem.buildingType == BuildingType.None) return;
+
+        if (BuildingSystem.Ins != null)
+        {
+            BuildingSystem.Ins.StartPlacing(currentSelectedItem.buildingType);
+        }
+
+        CloseShop();
+    }
+
+    public void CloseShop()
+    {
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.CloseBuildMenu();
+        }
+        else
+        {
+            gameObject.SetActive(false);
         }
     }
 }

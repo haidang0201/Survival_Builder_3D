@@ -187,7 +187,6 @@ public class WorkerCarryItem : MonoBehaviour
 
         currentWood = null;
         woodStorage.AddWood(1);
-        RoKQuestMissionGuideRouter.Instance?.RegisterWorkerWoodGathered(1);
 
         // Báo cho Stamina biết đã nộp đồ xong
         if (workerStamina != null) workerStamina.OnResourcesDeposited();

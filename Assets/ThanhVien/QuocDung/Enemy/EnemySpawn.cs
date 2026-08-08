@@ -53,8 +53,7 @@ public class EnemySpawn : MonoBehaviour
 
     private bool IsTutorialActive()
     {
-        TutorialManager tut = Object.FindFirstObjectByType<TutorialManager>();
-        if (tut != null && tut.gameObject.activeInHierarchy && tut.enabled) return true;
+        if (CampaignTutorialManager.Ins != null && CampaignTutorialManager.Ins.gameObject.activeInHierarchy) return true;
 
         GameObject tutCanvas = GameObject.Find("TutorialCanvas");
         if (tutCanvas != null && tutCanvas.activeInHierarchy) return true;

@@ -42,102 +42,11 @@ public class EnemyAI : MonoBehaviour
     /// </summary>
     public static Vector3 GetCastleWallDestination(Vector3 fromPosition, Transform fallbackTarget = null, float wallOffset = 1.5f)
     {
-        if (LandGridManager.Ins != null)
+        if (fallbackTarget != null) return fallbackTarget.position;
+        if (SettlementManager.Ins != null && SettlementManager.Ins.CurrentSettlement != null)
         {
-            // 1. Ưu tiên tuyệt đối: Tìm Prefab Fence/Gate/Wall thực tế là con của LandGridManager gần nhất với vị trí Enemy
-            Transform closestFence = null;
-            float minFenceDist = float.MaxValue;
-
-            foreach (Transform child in LandGridManager.Ins.transform)
-            {
-                if (child == null || !child.gameObject.activeInHierarchy) continue;
-                string childName = child.name.ToLower();
-                if (childName.Contains("fence") || childName.Contains("gate") || childName.Contains("wall"))
-                {
-                    float dist = Vector3.Distance(fromPosition, child.position);
-                    if (dist < minFenceDist)
-                    {
-                        minFenceDist = dist;
-                        closestFence = child;
-                    }
-                }
-            }
-
-            if (closestFence != null)
-            {
-                Vector3 fencePos = closestFence.position;
-                Vector3 dir = (fromPosition - fencePos);
-                dir.y = 0f;
-                if (dir.sqrMagnitude > 0.001f)
-                {
-                    dir.Normalize();
-                    Vector3 dest = fencePos + dir * wallOffset;
-                    dest.y = fromPosition.y;
-                    return dest;
-                }
-                fencePos.y = fromPosition.y;
-                return fencePos;
-            }
-
-            // 2. Dự phòng: Tính theo Grid bounds của LandGridManager dùng TileSize thực tế từ Inspector (mặc định 6m)
-            LandGridManager.Ins.GetGridBounds(out int minX, out int maxX, out int minZ, out int maxZ);
-            float tileSize = LandGridManager.Ins.TileSize > 0.1f ? LandGridManager.Ins.TileSize : 6f;
-            float yPos = fromPosition.y;
-
-            float minWorldX = minX * tileSize - wallOffset;
-            float maxWorldX = (maxX + 1) * tileSize + wallOffset;
-            float minWorldZ = minZ * tileSize - wallOffset;
-            float maxWorldZ = (maxZ + 1) * tileSize + wallOffset;
-
-            Vector3 center = new Vector3((minX + maxX + 1) * tileSize * 0.5f, yPos, (minZ + maxZ + 1) * tileSize * 0.5f);
-            if (fallbackTarget != null) center = fallbackTarget.position;
-
-            Vector3 dirCenter = (center - fromPosition);
-            dirCenter.y = 0f;
-
-            if (dirCenter.sqrMagnitude > 0.001f)
-            {
-                dirCenter.Normalize();
-                float tX = float.MaxValue;
-                if (dirCenter.x > 0.0001f) tX = (minWorldX - fromPosition.x) / dirCenter.x;
-                else if (dirCenter.x < -0.0001f) tX = (maxWorldX - fromPosition.x) / dirCenter.x;
-
-                float tZ = float.MaxValue;
-                if (dirCenter.z > 0.0001f) tZ = (minWorldZ - fromPosition.z) / dirCenter.z;
-                else if (dirCenter.z < -0.0001f) tZ = (maxWorldZ - fromPosition.z) / dirCenter.z;
-
-                float t = Mathf.Min(tX, tZ);
-                if (t > 0f && t != float.MaxValue)
-                {
-                    Vector3 intersect = fromPosition + dirCenter * t;
-                    intersect.y = yPos;
-                    return intersect;
-                }
-            }
-
-            float clampedX = Mathf.Clamp(fromPosition.x, minWorldX, maxWorldX);
-            float clampedZ = Mathf.Clamp(fromPosition.z, minWorldZ, maxWorldZ);
-            return new Vector3(clampedX, yPos, clampedZ);
+            return SettlementManager.Ins.CurrentSettlement.transform.position;
         }
-
-        // Fallback nếu chưa có LandGridManager: dùng mép của fallbackTarget
-        if (fallbackTarget != null)
-        {
-            Vector3 targetPos = fallbackTarget.position;
-            Collider col = fallbackTarget.GetComponentInChildren<Collider>();
-            if (col != null)
-            {
-                targetPos = col.ClosestPoint(fromPosition);
-            }
-            Vector3 dir = (fromPosition - targetPos);
-            dir.y = 0f;
-            if (dir.sqrMagnitude > 0.001f)
-            {
-                return targetPos + dir.normalized * (wallOffset + 2.0f);
-            }
-            return targetPos;
-        }
-
         return fromPosition;
     }
 
@@ -818,10 +727,10 @@ public class EnemyAI : MonoBehaviour
         }
         catch { }
 
-        // 4. Tìm theo LandGridManager
-        if (LandGridManager.Ins != null)
+        // 4. Tìm theo SettlementManager
+        if (SettlementManager.Ins != null && SettlementManager.Ins.CurrentSettlement != null)
         {
-            return LandGridManager.Ins.transform;
+            return SettlementManager.Ins.CurrentSettlement.transform;
         }
 
         return null;

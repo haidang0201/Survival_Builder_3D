@@ -561,9 +561,7 @@ public class CampaignTutorialManager : MonoBehaviour
         // 1. Tắt ngón tay đi trong lúc Camera đang di chuyển
         HidePointer();
 
-        Transform expandBtnTrans = (TutorialSceneScanner.Ins != null) 
-            ? TutorialSceneScanner.Ins.GetExpandLandButtonTransform(ExpandDirection.North) 
-            : null;
+        Transform expandBtnTrans = null;
 
         if (expandBtnTrans != null)
         {

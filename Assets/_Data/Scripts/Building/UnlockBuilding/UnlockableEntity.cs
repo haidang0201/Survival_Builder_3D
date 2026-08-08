@@ -83,13 +83,9 @@ public class UnlockableEntity : MonoBehaviour
     /// </summary>
     public bool CanUnlock()
     {
-        // Kiểm tra an toàn hệ thống dữ liệu lõi
-        if (DialogNPC.Instance == null || JsonDataManager.Ins == null) return false;
+        if (JsonDataManager.Ins == null) return false;
 
-        // Check tài nguyên Gỗ, Đá, Thịt thông qua ResourceManager
-        bool hasEnoughResources = DialogNPC.Instance.CanAfford(requirement.woodRequired, requirement.foodRequired, requirement.stoneRequired);
-
-        // Check tài nguyên Vàng thông qua JsonDataManager lõi
+        bool hasEnoughResources = JsonDataManager.Ins.HasEnoughResources(requirement.woodRequired, requirement.stoneRequired, requirement.foodRequired);
         bool hasEnoughGold = JsonDataManager.Ins.gold >= requirement.goldRequired;
 
         return hasEnoughResources && hasEnoughGold;
@@ -104,13 +100,15 @@ public class UnlockableEntity : MonoBehaviour
         if (!CanUnlock()) return false;
 
         // 1. Khấu trừ tài nguyên tiêu tốn từ kho lõi
-        if (DialogNPC.Instance != null)
+        if (JsonDataManager.Ins != null)
         {
-            DialogNPC.Instance.Consume(requirement.woodRequired, requirement.foodRequired, requirement.stoneRequired);
-        }
-        if (JsonDataManager.Ins != null && requirement.goldRequired > 0)
-        {
-            JsonDataManager.Ins.AddGold(-requirement.goldRequired);
+            JsonDataManager.Ins.AddWood(-requirement.woodRequired);
+            JsonDataManager.Ins.AddStone(-requirement.stoneRequired);
+            JsonDataManager.Ins.AddFood(-requirement.foodRequired);
+            if (requirement.goldRequired > 0)
+            {
+                JsonDataManager.Ins.AddGold(-requirement.goldRequired);
+            }
         }
 
         // 2. Thay đổi trạng thái logic của hệ thống sang Đã Mở

@@ -137,16 +137,15 @@ public class HouseSpawnPanel : MonoBehaviour
             return;
         }
 
-        // Kiểm tra và trừ 10 Lúa
-        if (DialogNPC.Instance != null)
+        // Kiểm tra và trừ Lúa
+        if (JsonDataManager.Ins != null)
         {
-            // Trừ 0 Gỗ, 10 Lúa, 0 Đá
-            bool success = DialogNPC.Instance.Consume(0, foodCostPerWorker, 0);
-            if (!success)
+            if (JsonDataManager.Ins.food < foodCostPerWorker)
             {
-                Debug.LogWarning("[HouseSpawnPanel] Không đủ 10 Lúa để chiêu mộ!");
+                Debug.LogWarning("[HouseSpawnPanel] Không đủ Lúa để chiêu mộ!");
                 return;
             }
+            JsonDataManager.Ins.AddFood(-foodCostPerWorker);
         }
 
         Vector3 spawnOrigin = (house != null) ? house.EntrancePosition : transform.position;

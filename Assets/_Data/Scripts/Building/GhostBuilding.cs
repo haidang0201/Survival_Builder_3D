@@ -68,34 +68,14 @@ public class GhostBuilding : MonoBehaviour
 
     private Vector3 SnapToGrid(Vector3 rawWorldPos)
     {
-        if (LandGridManager.Ins != null)
-        {
-            return LandGridManager.Ins.GetSnappedGridPosition(rawWorldPos, sizeX, sizeZ);
-        }
         return rawWorldPos;
     }
 
     private void CheckValidity()
-{
-    bool inUnlockedLand = true;
-    bool isOccupied = false;
-
-    if (LandGridManager.Ins != null)
     {
-        Vector3 snappedPosition = LandGridManager.Ins.GetSnappedGridPosition(transform.position, sizeX, sizeZ);
-        transform.position = snappedPosition;
-
-        // 1. Phải nằm trong vùng đất đã mở khóa (Lưới xanh)
-        inUnlockedLand = LandGridManager.Ins.IsAreaUnlocked(snappedPosition, sizeX, sizeZ);
-        
-        // 2. Không nằm đè lên ô đã có nhà khác
-        isOccupied = LandGridManager.Ins.IsAreaOccupied(snappedPosition, sizeX, sizeZ);
+        isValid = true;
+        ApplyMaterial(validMat);
     }
-
-    // Hợp lệ khi: Đã mở khóa VÀ Chưa bị chiếm chỗ
-    isValid = inUnlockedLand && !isOccupied;
-    ApplyMaterial(isValid ? validMat : invalidMat);
-}
 
     // private bool IsOverlapping()
     // {

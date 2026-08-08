@@ -98,12 +98,11 @@ public class TutorialSceneScanner : MonoBehaviour
     }
 
     /// <summary>
-    /// 2. Tìm Script quản lý UI (BuildingUpgradeUI) nằm trên công trình hoặc object con
+    /// 2. Tìm Script quản lý UI (BuildingUpgradeSidePanelUI)
     /// </summary>
-    public BuildingUpgradeUI GetBuildingUI(UpgradeableBuilding building)
+    public BuildingUpgradeSidePanelUI GetBuildingUI(UpgradeableBuilding building)
     {
-        if (building == null) return null;
-        return building.GetComponentInChildren<BuildingUpgradeUI>(true);
+        return BuildingUpgradeSidePanelUI.Ins;
     }
 
     /// <summary>
@@ -111,8 +110,7 @@ public class TutorialSceneScanner : MonoBehaviour
     /// </summary>
     public bool IsBuildingUIOpen(UpgradeableBuilding building)
     {
-        BuildingUpgradeUI ui = GetBuildingUI(building);
-        return ui != null && ui.IsOpen;
+        return BuildingUpgradeSidePanelUI.Ins != null && BuildingUpgradeSidePanelUI.Ins.gameObject.activeSelf;
     }
 
     /// <summary>
@@ -120,16 +118,9 @@ public class TutorialSceneScanner : MonoBehaviour
     /// </summary>
     public RectTransform GetUpgradeButtonTransform(UpgradeableBuilding building)
     {
-        BuildingUpgradeUI ui = GetBuildingUI(building);
-        if (ui != null)
+        if (BuildingUpgradeSidePanelUI.Ins != null)
         {
-            if (ui.UpgradeButton != null)
-            {
-                return ui.UpgradeButton.GetComponent<RectTransform>();
-            }
-
-            // Fallback: Quét tìm Button có tên chứa "Upgrade" trong UI con
-            Button[] buttons = ui.GetComponentsInChildren<Button>(true);
+            Button[] buttons = BuildingUpgradeSidePanelUI.Ins.GetComponentsInChildren<Button>(true);
             foreach (var btn in buttons)
             {
                 if (btn.name.ToLower().Contains("upgrade"))
@@ -168,11 +159,10 @@ public class TutorialSceneScanner : MonoBehaviour
             }
         }
 
-        // Fallback: Tìm qua BuildingUpgradeUI nếu có khai báo field repairButton
-        BuildingUpgradeUI ui = GetBuildingUI(building);
-        if (ui != null)
+        // Fallback: Tìm qua BuildingUpgradeSidePanelUI nếu có khai báo field repairButton
+        if (BuildingUpgradeSidePanelUI.Ins != null)
         {
-            Transform repairTrans = ui.transform.Find("RepairButton") ?? ui.transform.Find("BtnRepair") ?? ui.transform.Find("BtnSuaChua");
+            Transform repairTrans = BuildingUpgradeSidePanelUI.Ins.transform.Find("RepairButton") ?? BuildingUpgradeSidePanelUI.Ins.transform.Find("BtnRepair") ?? BuildingUpgradeSidePanelUI.Ins.transform.Find("BtnSuaChua");
             if (repairTrans != null) return repairTrans as RectTransform;
         }
 
@@ -180,43 +170,6 @@ public class TutorialSceneScanner : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// 🔥 6. QUÉT NÚT (+) MỞ RỘNG ĐẤT (EXPAND LAND BUTTON)
-    /// Lấy vị trí Nút (+) từ LandGridManager hoặc quét UI/Object có tên 'Expand' / 'btnNorth'
-    /// </summary>
-    public Transform GetExpandLandButtonTransform(ExpandDirection direction = ExpandDirection.North)
-    {
-        // 1. Lấy trực tiếp từ LandGridManager nếu có
-        if (LandGridManager.Ins != null)
-        {
-            Transform targetBtn = null;
-            switch (direction)
-            {
-                case ExpandDirection.North: targetBtn = LandGridManager.Ins.transform.Find("btnNorth") ?? LandGridManager.Ins.transform.Find("BtnNorth"); break;
-                case ExpandDirection.South: targetBtn = LandGridManager.Ins.transform.Find("btnSouth") ?? LandGridManager.Ins.transform.Find("BtnSouth"); break;
-                case ExpandDirection.East:  targetBtn = LandGridManager.Ins.transform.Find("btnEast")  ?? LandGridManager.Ins.transform.Find("BtnEast"); break;
-                case ExpandDirection.West:  targetBtn = LandGridManager.Ins.transform.Find("btnWest")  ?? LandGridManager.Ins.transform.Find("BtnWest"); break;
-            }
-
-            if (targetBtn != null) return targetBtn;
-        }
-
-        // 2. Fallback: Quét tìm GameObject chứa nút Expand trên Scene thuộc Layer UI
-        GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        foreach (var obj in allObjects)
-        {
-            bool isUILayer = (uiLayer.value & (1 << obj.layer)) != 0;
-            string objName = obj.name.ToLower();
-
-            if (isUILayer && (objName.Contains("expand") || objName.Contains("btnnorth") || objName.Contains("btn_expand")))
-            {
-                return obj.transform;
-            }
-        }
-
-        Debug.LogWarning($"[TUTORIAL SCANNER] Không tìm thấy Nút (+) Mở Rộng Đất hướng: {direction}");
-        return null;
-    }
 
     /// <summary>
     /// 7. Tìm vị trí Trại/Căn cứ lính địch

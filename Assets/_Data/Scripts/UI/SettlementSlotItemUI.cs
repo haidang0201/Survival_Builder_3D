@@ -1,0 +1,164 @@
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using TMPro;
+
+/*
+ * SettlementSlotItemUI.cs
+ * Folder: Scripts/UI/
+ * Dự án: KHẨN HOANG (PENTA DEV)
+ * Phong cách: Demacia Rising Settlement Building Slot
+ */
+
+public enum SettlementSlotState
+{
+    Empty,      // Ô TRỐNG (Có thể bấm vào để chọn nhà xây)
+    Occupied,   // ĐÃ CÓ NHÀ (Hiển thị Tên, Icon & Cấp độ)
+    Locked      // BỊ KHÓA 🔒
+}
+
+public class SettlementSlotItemUI : MonoBehaviour, IPointerClickHandler
+{
+    [Header("=== CẤU HÌNH TRẠNG THÁI ===")]
+    public SettlementSlotState state = SettlementSlotState.Empty;
+
+    [Header("=== THÀNH PHẦN UI (TMP & IMAGES) ===")]
+    [SerializeField] private TextMeshProUGUI titleTMP;
+    [SerializeField] private TextMeshProUGUI levelTMP;
+    [SerializeField] private Image iconImage;
+
+    [Header("=== CÁC OBJECT HIỂN THỊ THEO TRẠNG THÁI ===")]
+    [SerializeField] private GameObject emptyStateObj;     // Thể hiện ô TRỐNG (Viền sáng + Chữ TRỐNG)
+    [SerializeField] private GameObject occupiedStateObj;  // Thể hiện ô ĐÃ CÓ NHÀ
+    [SerializeField] private GameObject lockedStateObj;    // Thể hiện ô KHÓA 🔒
+
+    private Vector3 plotWorldPos;
+    private UpgradeableBuilding buildingOnSlot;
+
+    private void Awake()
+    {
+        SetupButtonListeners();
+    }
+
+    private void OnEnable()
+    {
+        SetupButtonListeners();
+    }
+
+    private void SetupButtonListeners()
+    {
+        Button[] allButtons = GetComponentsInChildren<Button>(true);
+        foreach (var btn in allButtons)
+        {
+            btn.onClick.RemoveListener(OnClickSlot);
+            btn.onClick.AddListener(OnClickSlot);
+        }
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        Debug.Log($"[SettlementSlotItemUI] OnPointerClick trigger trên {gameObject.name}");
+        OnClickSlot();
+    }
+
+    /// <summary>
+    /// Thiết lập ô TRỐNG cho vị trí đất tương ứng
+    /// </summary>
+    public void SetEmptySlot(Vector3 worldPos)
+    {
+        plotWorldPos = worldPos;
+        buildingOnSlot = null;
+        state = SettlementSlotState.Empty;
+
+        if (emptyStateObj != null) emptyStateObj.SetActive(true);
+        if (occupiedStateObj != null) occupiedStateObj.SetActive(false);
+        if (lockedStateObj != null) lockedStateObj.SetActive(false);
+
+        if (titleTMP != null) titleTMP.text = "TRỐNG";
+        if (levelTMP != null) levelTMP.text = "";
+    }
+
+    /// <summary>
+    /// Thiết lập ô ĐÃ CÓ CÔNG TRÌNH
+    /// </summary>
+    public void SetOccupiedSlot(UpgradeableBuilding building)
+    {
+        buildingOnSlot = building;
+        state = SettlementSlotState.Occupied;
+
+        if (building != null)
+        {
+            plotWorldPos = building.transform.position;
+        }
+
+        if (emptyStateObj != null) emptyStateObj.SetActive(false);
+        if (occupiedStateObj != null) occupiedStateObj.SetActive(true);
+        if (lockedStateObj != null) lockedStateObj.SetActive(false);
+
+        if (building != null)
+        {
+            int displayLevel = building.CurrentLevel + 1;
+            if (titleTMP != null) titleTMP.text = building.buildingName;
+            if (levelTMP != null) levelTMP.text = $"Lv. {displayLevel}";
+        }
+    }
+
+    /// <summary>
+    /// Thiết lập ô BỊ KHÓA 🔒
+    /// </summary>
+    public void SetLockedSlot()
+    {
+        buildingOnSlot = null;
+        state = SettlementSlotState.Locked;
+
+        if (emptyStateObj != null) emptyStateObj.SetActive(false);
+        if (occupiedStateObj != null) occupiedStateObj.SetActive(false);
+        if (lockedStateObj != null) lockedStateObj.SetActive(true);
+
+        if (titleTMP != null) titleTMP.text = "";
+        if (levelTMP != null) levelTMP.text = "";
+    }
+
+    /// <summary>
+    /// Xử lý sự kiện nhấp vào ô Slot trong Panel
+    /// </summary>
+    public void OnClickSlot()
+    {
+        Debug.Log($"[SettlementSlotItemUI] Clicked slot item '{gameObject.name}' with state: {state}");
+
+        switch (state)
+        {
+            case SettlementSlotState.Empty:
+                // Ô TRỐNG: Chọn ô đất trên map & Mở Shop xây nhà
+                if (BuildingSystem.Ins != null)
+                {
+                    BuildingSystem.Ins.SelectSlot(plotWorldPos);
+                }
+                if (UIManager.Ins != null)
+                {
+                    UIManager.Ins.OpenBuildMenu();
+                }
+                break;
+
+            case SettlementSlotState.Occupied:
+                // Ô ĐÃ CÓ NHÀ: Mở bảng Nâng cấp / Thông tin của nhà đó
+                if (buildingOnSlot != null && UIManager.Ins != null)
+                {
+                    UIManager.Ins.ShowUpgradePanel(buildingOnSlot);
+                }
+                else
+                {
+                    Debug.LogWarning($"[SettlementSlotItemUI] buildingOnSlot là NULL hoặc UIManager là NULL!");
+                }
+                break;
+
+            case SettlementSlotState.Locked:
+                // Ô KHÓA: Hiển thị thông báo
+                if (UIManager.Ins != null)
+                {
+                    UIManager.Ins.ShowWarning("Ô đất này chưa được mở khóa! Hãy nâng cấp Thủ Đô.");
+                }
+                break;
+        }
+    }
+}
