@@ -22,6 +22,11 @@ public class SettlementSidePanelUI : MonoBehaviour
     [SerializeField] private Button upgradeSettlementBtn;
     [SerializeField] private TextMeshProUGUI upgradeBtnTextTMP;
 
+    [Header("=== SPRITE TÙY CHỈNH CHO NÚT HEADER ===")]
+    [SerializeField] private Sprite upgradeHeaderSprite;   // Sprite nút Nâng cấp
+    [SerializeField] private Sprite buildHeaderSprite;     // Sprite nút Xây Nhà Chính
+    [SerializeField] private Sprite attackHeaderSprite;    // Sprite nút Tấn Công / Chiếm Đóng
+
     [Header("=== CONTAINER CHỨA LƯỚI CÁC Ô CÔNG TRÌNH ===")]
     [SerializeField] private Transform slotsContainer;
     [SerializeField] private GameObject slotItemPrefab;
@@ -59,19 +64,62 @@ public class SettlementSidePanelUI : MonoBehaviour
         SettlementZone currentZone = (SettlementManager.Ins != null) ? SettlementManager.Ins.CurrentSettlement : null;
 
         string currentName = (currentZone != null) ? currentZone.settlementName : defaultSettlementName;
-        int currentLevel = (currentZone != null) ? currentZone.settlementLevel : defaultSettlementLevel;
+        int currentLevel = (currentZone != null) ? currentZone.SettlementLevel : defaultSettlementLevel;
+        bool hasEnemy = (currentZone != null) && currentZone.hasEnemyOutpost;
         bool isTownHallBuilt = (currentZone == null) || currentZone.isTownHallEstablished;
 
         if (settlementNameTMP != null) settlementNameTMP.text = currentName;
 
         if (settlementLevelTMP != null)
         {
-            settlementLevelTMP.text = isTownHallBuilt ? $"Lv. {currentLevel}" : "<color=orange>CHƯA CÓ NHÀ CHÍNH</color>";
+            if (hasEnemy)
+            {
+                settlementLevelTMP.text = "<color=red>ĐÁNH ĐỊCH CHINH PHỤC</color>";
+            }
+            else if (isTownHallBuilt)
+            {
+                settlementLevelTMP.text = $"Lv. {currentLevel}";
+            }
+            else
+            {
+                settlementLevelTMP.text = "<color=orange>CHƯA CÓ NHÀ CHÍNH</color>";
+            }
         }
 
         if (upgradeBtnTextTMP != null)
         {
-            upgradeBtnTextTMP.text = isTownHallBuilt ? "Nâng cấp" : "XÂY NHÀ CHÍNH";
+            if (hasEnemy)
+            {
+                upgradeBtnTextTMP.text = "CHIẾM ĐÓNG";
+            }
+            else if (isTownHallBuilt)
+            {
+                upgradeBtnTextTMP.text = "Nâng cấp";
+            }
+            else
+            {
+                upgradeBtnTextTMP.text = "XÂY NHÀ CHÍNH";
+            }
+        }
+
+        if (upgradeSettlementBtn != null)
+        {
+            Image btnImg = upgradeSettlementBtn.GetComponent<Image>();
+            if (btnImg != null)
+            {
+                if (hasEnemy && attackHeaderSprite != null)
+                {
+                    btnImg.sprite = attackHeaderSprite;
+                }
+                else if (!isTownHallBuilt && buildHeaderSprite != null)
+                {
+                    btnImg.sprite = buildHeaderSprite;
+                }
+                else if (isTownHallBuilt && upgradeHeaderSprite != null)
+                {
+                    btnImg.sprite = upgradeHeaderSprite;
+                }
+            }
         }
     }
 
@@ -91,28 +139,57 @@ public class SettlementSidePanelUI : MonoBehaviour
         activeSlotUIItems.Clear();
         activeSlotUIItems.AddRange(slotsContainer.GetComponentsInChildren<SettlementSlotItemUI>(true));
 
-        // 2. Lấy danh sách nhà hiện có trong game (theo SettlementZone hoặc toàn map)
-        List<UpgradeableBuilding> builtStructures = new List<UpgradeableBuilding>();
-        if (currentZone != null && currentZone.builtStructures.Count > 0)
+        // Helper lọc bỏ Nhà Chính khỏi danh sách Slot thông thường
+        bool IsTownHallBuilding(UpgradeableBuilding ub)
         {
-            builtStructures.AddRange(currentZone.builtStructures);
+            if (ub == null) return false;
+            if (currentZone != null && ub == currentZone.townHallBuilding) return true;
+            if (ub.buildingType == BuildingType.House || ub.buildingName.Contains("Nhà chính") || ub.buildingName.Contains("Town Hall")) return true;
+            return false;
         }
-        else if (BuildingManager.Ins != null && BuildingManager.Ins.Buildings != null)
+
+        // 2. Lấy danh sách các nhà công trình (TRỪ NHÀ CHÍNH) CHỈ THUỘC VỀ VÙNG ĐẤT NÀY
+        List<UpgradeableBuilding> builtStructures = new List<UpgradeableBuilding>();
+
+        if (currentZone != null)
         {
-            foreach (var b in BuildingManager.Ins.Buildings)
+            currentZone.Update3DSlotVisibility();
+
+            // Lấy duy nhất từ danh sách công trình đã đăng ký chuẩn của Vùng đất hiện tại
+            if (currentZone.builtStructures != null)
             {
-                if (b == null) continue;
-                UpgradeableBuilding ub = b.GetComponent<UpgradeableBuilding>();
-                if (ub != null) builtStructures.Add(ub);
+                for (int i = currentZone.builtStructures.Count - 1; i >= 0; i--)
+                {
+                    var ub = currentZone.builtStructures[i];
+                    if (ub == null || !ub.gameObject.activeSelf)
+                    {
+                        currentZone.builtStructures.RemoveAt(i);
+                        continue;
+                    }
+
+                    if (!IsTownHallBuilding(ub) && !builtStructures.Contains(ub))
+                    {
+                        builtStructures.Add(ub);
+                    }
+                }
+            }
+        }
+        else
+        {
+            var allInScene = FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
+            foreach (var ub in allInScene)
+            {
+                if (ub != null && ub.gameObject.activeSelf && !IsTownHallBuilding(ub) && !builtStructures.Contains(ub)) builtStructures.Add(ub);
             }
         }
 
-        // 3. Hiển thị danh sách các ô Slot trong Panel
-        int occupiedCount = builtStructures.Count;
-        int emptyUnlockedSlotsCount = 4; // Mặc định 4 ô trống mở khóa
-        int maxUnlocked = occupiedCount + emptyUnlockedSlotsCount;
+        if (currentZone != null) currentZone.AlignBuildingsToSlotPositions();
 
-        int totalCount = totalSlotsCount;
+        // 3. Hiển thị danh sách các ô Slot trong Panel (ĐÚNG BẰNG SỐ SLOT ĐĂNG KÝ TRONG INSPECTOR)
+        int occupiedCount = builtStructures.Count;
+        int registeredSlotCount = (currentZone != null && currentZone.slotPoints.Count > 0) ? currentZone.slotPoints.Count : totalSlotsCount;
+        int unlockedCount = (currentZone != null) ? currentZone.GetUnlockedSlotCount() : registeredSlotCount;
+        int totalCount = registeredSlotCount;
 
         for (int i = 0; i < totalCount; i++)
         {
@@ -128,27 +205,39 @@ public class SettlementSidePanelUI : MonoBehaviour
                 continue;
             }
 
-            if (i < occupiedCount)
+            Vector3 slotPos = (currentZone != null) 
+                ? currentZone.GetSlotWorldPosition(i) 
+                : ((BuildingSystem.Ins != null) ? BuildingSystem.Ins.SelectedSlotPos : Vector3.zero);
+
+            // Tìm công trình thực sự nằm tại vị trí 3D Slot [i]
+            UpgradeableBuilding buildingAtSlot = null;
+            foreach (var b in builtStructures)
             {
-                // Ô ĐÃ CÓ NHÀ
-                slotUI.SetOccupiedSlot(builtStructures[i]);
+                if (b != null && b.gameObject.activeSelf && Vector3.Distance(b.transform.position, slotPos) < 3.5f)
+                {
+                    buildingAtSlot = b;
+                    break;
+                }
             }
-            else if (i < maxUnlocked)
+
+            if (buildingAtSlot != null)
             {
-                // Ô TRỐNG MỞ KHÓA
-                Vector3 defaultPos = (currentZone != null) 
-                    ? currentZone.GetSlotWorldPosition(i) 
-                    : ((BuildingSystem.Ins != null) ? BuildingSystem.Ins.SelectedSlotPos : Vector3.zero);
-                slotUI.SetEmptySlot(defaultPos);
+                // Ô ĐÃ CÓ NHÀ TẠI VỊ TRÍ SLOT 3D [i]
+                slotUI.SetOccupiedSlot(buildingAtSlot);
+            }
+            else if (i < unlockedCount)
+            {
+                // Ô TRỐNG MỞ KHÓA TẠI VỊ TRÍ SLOT 3D [i]
+                slotUI.SetEmptySlot(slotPos);
             }
             else
             {
-                // Ô BỊ KHÓA 🔒
+                // Ô BỊ KHÓA 🔒 (Cần nâng cấp Cấp độ Vùng Đất / Nhà Chính)
                 slotUI.SetLockedSlot();
             }
         }
 
-        // Ẩn các slot dư thừa nếu có
+        // Ẩn các slot dư thừa ngoài số lượng đăng ký
         for (int i = totalCount; i < activeSlotUIItems.Count; i++)
         {
             if (activeSlotUIItems[i] != null) activeSlotUIItems[i].gameObject.SetActive(false);
@@ -179,20 +268,42 @@ public class SettlementSidePanelUI : MonoBehaviour
     private void OnClickUpgradeSettlement()
     {
         SettlementZone currentZone = (SettlementManager.Ins != null) ? SettlementManager.Ins.CurrentSettlement : null;
+        if (currentZone == null) return;
 
-        if (currentZone != null && !currentZone.isTownHallEstablished)
+        if (currentZone.hasEnemyOutpost)
         {
-            // XÂY NGUYÊN NHÀ CHÍNH CHO VÙNG ĐẤT MỚI
-            currentZone.EstablishTownHall();
-            RefreshPanel();
+            if (UIManager.Ins != null) UIManager.Ins.ShowWarning("Vùng đất đang bị Kẻ Địch chiếm đóng! Hãy tiêu diệt Căn cứ Địch trước!");
             return;
         }
 
-        Debug.Log("[SettlementSidePanelUI] Nhấn nút Nâng cấp Thủ Đô.");
-        if (currentZone != null) currentZone.settlementLevel++;
-        else defaultSettlementLevel++;
+        // Đảm bảo Nhà Chính được khởi tạo nếu đã đánh dấu isTownHallEstablished
+        currentZone.EnsureTownHallInstantiated();
 
-        UpdateHeaderVisual();
-        RefreshPanel();
+        UpgradeableBuilding townHall = currentZone.TownHallBuilding;
+
+        if (!currentZone.isTownHallEstablished || townHall == null)
+        {
+            // MỞ BẢNG XÂY DỰNG NHÀ CHÍNH TRÊN UPGRADE SIDE PANEL CHO VÙNG ĐẤT NÀY
+            if (UIManager.Ins != null)
+            {
+                UIManager.Ins.OpenEstablishTownHallPanel(currentZone);
+            }
+            else if (BuildingUpgradeSidePanelUI.Ins != null)
+            {
+                BuildingUpgradeSidePanelUI.Ins.ShowEstablishTownHallPanel(currentZone);
+            }
+            return;
+        }
+
+        Debug.Log($"[SettlementSidePanelUI] Nhấn nút Nâng cấp Thủ Đô {currentZone.settlementName} -> Mở Bảng Nâng Cấp cho Nhà Chính.");
+
+        if (UIManager.Ins != null)
+        {
+            UIManager.Ins.ShowUpgradePanel(townHall);
+        }
+        else if (BuildingUpgradeSidePanelUI.Ins != null)
+        {
+            BuildingUpgradeSidePanelUI.Ins.ShowUpgradePanel(townHall);
+        }
     }
 }

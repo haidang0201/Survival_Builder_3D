@@ -65,21 +65,18 @@ public class BuildingSystem : Singleton<BuildingSystem>
 
     private void HandleSlotSelectionInput()
     {
-        // Phím chuột phải hoặc ESC để bỏ chọn ô đất và đóng menu
+        // Phím chuột phải hoặc ESC để bỏ chọn ô đất và đóng toàn bộ giao diện
         if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
         {
-            if (hasSelectedSlot)
-            {
-                DeselectSlot();
-                if (UIManager.Ins != null) UIManager.Ins.CloseBuildMenu();
-            }
+            DeselectSlot();
+            if (UIManager.Ins != null) UIManager.Ins.CloseAllActiveWindows();
             return;
         }
 
-        // Click chuột trái vào ô đất trống trên bản đồ
+        // Click chuột trái vào bản đồ 3D
         if (Input.GetMouseButtonDown(0))
         {
-            // Bỏ qua nếu bấm vào UI
+            // Bỏ qua nếu bấm vào các phần tử UI Canvas
             if (UnityEngine.EventSystems.EventSystem.current != null &&
                 UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             {
@@ -91,8 +88,26 @@ public class BuildingSystem : Singleton<BuildingSystem>
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
             {
-                SelectSlot(hit.point);
-                if (UIManager.Ins != null) UIManager.Ins.OpenSettlementPanel();
+                SettlementZone zone = hit.collider.GetComponentInParent<SettlementZone>();
+                UpgradeableBuilding building = hit.collider.GetComponentInParent<UpgradeableBuilding>();
+
+                if (building != null || zone != null)
+                {
+                    // Click vào công trình hoặc vùng đất 3D: Chọn vùng đất đó & Mở Bảng Thủ Đô (SettlementSidePanelUI)
+                    SettlementZone targetZone = (zone != null) ? zone : building.GetComponentInParent<SettlementZone>();
+                    if (targetZone != null && SettlementManager.Ins != null)
+                    {
+                        SettlementManager.Ins.SelectSettlement(targetZone);
+                    }
+                    SelectSlot(hit.point);
+                    if (UIManager.Ins != null) UIManager.Ins.OpenSettlementPanel();
+                }
+                else
+                {
+                    // Click ra KHOẢNG KHÔNG / ĐẤT TRỐNG OUTSIDE: Bỏ chọn slot & Đóng TOÀN BỘ giao diện (bao gồm SettlementSidePanel)!
+                    DeselectSlot();
+                    if (UIManager.Ins != null) UIManager.Ins.CloseAllActiveWindows();
+                }
             }
         }
     }

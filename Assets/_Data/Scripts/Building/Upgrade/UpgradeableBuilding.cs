@@ -25,7 +25,7 @@ public class UpgradeableBuilding : MonoBehaviour
     [Tooltip("Thời gian để hoàn thành việc xây dựng công trình này lần đầu tiên (tính bằng Wave/Ngày)")]
     [SerializeField] private int initialBuildDuration = 2;
 
-    public bool IsInitialBuildNeeded => isInitialBuildNeeded;
+    public bool IsInitialBuildNeeded { get => isInitialBuildNeeded; set => isInitialBuildNeeded = value; }
 
     [Header("Loại công trình")]
     public BuildingType buildingType;
@@ -87,6 +87,9 @@ public class UpgradeableBuilding : MonoBehaviour
     [SerializeField] private float repairDuration = 2f;
 
     public bool IsRuined { get; private set; } = false;
+    public int RepairWoodCost => repairWoodCost;
+    public int RepairStoneCost => repairStoneCost;
+    public float RepairDuration => repairDuration;
 
     private float currentProcessTimer = 0f;
     private float currentProcessDuration = 0f;
@@ -119,10 +122,8 @@ public class UpgradeableBuilding : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
-
-        SelectThisBuilding();
-        if (UIManager.Ins != null) UIManager.Ins.ShowUpgradePanel(this);
+        // 🔒 Quy tắc Demacia Rising: Không cho phép chọn trực tiếp công trình 3D trên map.
+        // Mọi thao tác chọn và nâng cấp công trình phải thông qua Bảng Slot (SettlementSidePanelUI).
     }
 
     private void SaveOriginalVisuals()
@@ -301,12 +302,10 @@ public class UpgradeableBuilding : MonoBehaviour
         else if (isInitialBuildNeeded)
         {
             ToggleBuildingLogic(false);
-            IsUpgrading = true;
-            currentProcessCoroutine = StartCoroutine(UpgradeRoutine(initialBuildDuration));
+            StartInitialBuildProcess();
         }
         else
         {
-            // 🔥 FIX: Công trình đặt sẵn lành lặn -> Kích hoạt AI bắn VÀ Reset HP đầy đủ để Enemy nhận diện làm mục tiêu!
             ToggleBuildingLogic(true);
 
             HPTower hpComponent = GetComponent<HPTower>();
@@ -319,6 +318,20 @@ public class UpgradeableBuilding : MonoBehaviour
         UpdateCivilianBuildingData();
     }
 
+    private void OnDestroy()
+    {
+        SettlementZone parentZone = GetComponentInParent<SettlementZone>();
+        if (parentZone != null && parentZone.builtStructures != null)
+        {
+            parentZone.builtStructures.Remove(this);
+        }
+
+        if (SettlementSidePanelUI.Ins != null)
+        {
+            SettlementSidePanelUI.Ins.RefreshPanel();
+        }
+    }
+
     public UpgradeCost GetNextUpgradeCost()
     {
         if (upgradeCosts != null && CurrentLevel < upgradeCosts.Length)
@@ -326,9 +339,105 @@ public class UpgradeableBuilding : MonoBehaviour
         return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0, upgradeDuration = 1 };
     }
 
+    public void StartInitialBuildProcess()
+    {
+        if (IsUpgrading) return;
+        isInitialBuildNeeded = true;
+        int duration = initialBuildDuration > 0 ? initialBuildDuration : 1;
+        if (currentProcessCoroutine != null) StopCoroutine(currentProcessCoroutine);
+        currentProcessCoroutine = StartCoroutine(InitialBuildRoutine(duration));
+    }
+
+    private IEnumerator InitialBuildRoutine(int durationWaves)
+    {
+        IsUpgrading = true;
+        isInitialBuildNeeded = true;
+        activeProcessType = ProcessType.BuildOrUpgrade;
+        currentProcessDuration = durationWaves;
+        currentProcessTimer = 0;
+
+        OnUpgradeStart?.Invoke();
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnBuildingUpgradeStarted(this);
+        }
+
+        var initialProgressUI = BuildingProgressBridge.GetUI(this);
+        if (initialProgressUI == null) initialProgressUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (initialProgressUI != null)
+        {
+            initialProgressUI.gameObject.SetActive(true);
+            initialProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+        }
+
+        int startWave = 0;
+        if (DayNightManager.Ins != null)
+        {
+            startWave = DayNightManager.Ins.CurrentWave;
+        }
+
+        while (currentProcessTimer < durationWaves)
+        {
+            if (DayNightManager.Ins != null)
+            {
+                currentProcessTimer = DayNightManager.Ins.CurrentWave - startWave;
+                if (currentProcessTimer < 0) currentProcessTimer = 0;
+            }
+            else
+            {
+                currentProcessTimer += Time.deltaTime / 10f;
+            }
+
+            var targetProgressUI = BuildingProgressBridge.GetUI(this);
+            if (targetProgressUI == null) targetProgressUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+            if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+
+            if (currentProcessTimer >= durationWaves)
+                break;
+
+            yield return null;
+        }
+
+        // --- HOÀN THÀNH XÂY DỰNG BAN ĐẦU (GIỮ NGUYÊN LV 1 / CURRENT LEVEL = 0) ---
+        isInitialBuildNeeded = false;
+        IsUpgrading = false;
+        activeProcessType = ProcessType.None;
+        currentProcessTimer = 0f;
+        currentProcessDuration = 0f;
+        currentProcessCoroutine = null;
+
+        ToggleBuildingLogic(true);
+
+        HPTower hpComponent = GetComponent<HPTower>();
+        if (hpComponent != null) hpComponent.ResetHealth();
+
+        OnUpgradeComplete?.Invoke();
+        OnLevelChanged?.Invoke();
+
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnBuildingConstructionFinished(buildingType);
+        }
+
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (targetUI != null) targetUI.HandleCompleteSequence();
+
+        var buildingCtrl = GetComponent<BuildingCtrl>();
+        if (buildingCtrl != null) buildingCtrl.AddProgress(1f);
+
+        SettlementZone parentZone = GetComponentInParent<SettlementZone>();
+        if (parentZone != null) parentZone.Update3DSlotVisibility();
+
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
+    }
+
     public void StartUpgradeProcess()
     {
         if (IsUpgrading || CurrentLevel >= MaxLevel - 1) return;
+
+        isInitialBuildNeeded = false;
 
         UpgradeCost nextCost = GetNextUpgradeCost();
         int duration = nextCost.upgradeDuration;
@@ -341,12 +450,14 @@ public class UpgradeableBuilding : MonoBehaviour
             duration = 1;
         }
 
+        if (currentProcessCoroutine != null) StopCoroutine(currentProcessCoroutine);
         currentProcessCoroutine = StartCoroutine(UpgradeRoutine(duration));
     }
 
     private IEnumerator UpgradeRoutine(int durationWaves, int startWavesPassed = 0)
     {
         IsUpgrading = true;
+        isInitialBuildNeeded = false;
         activeProcessType = ProcessType.BuildOrUpgrade;
         currentProcessDuration = durationWaves;
         currentProcessTimer = startWavesPassed;
@@ -357,75 +468,55 @@ public class UpgradeableBuilding : MonoBehaviour
             CampaignTutorialManager.Ins.OnBuildingUpgradeStarted(this);
         }
 
+        var initialProgressUI = BuildingProgressBridge.GetUI(this);
+        if (initialProgressUI == null) initialProgressUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (initialProgressUI != null)
+        {
+            initialProgressUI.gameObject.SetActive(true);
+            initialProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+        }
+
+        int startWave = 0;
         if (DayNightManager.Ins != null)
         {
-            int startWave = DayNightManager.Ins.CurrentWave - startWavesPassed;
-            
-            while (currentProcessTimer < durationWaves)
+            startWave = DayNightManager.Ins.CurrentWave - startWavesPassed;
+        }
+
+        while (currentProcessTimer < durationWaves)
+        {
+            if (DayNightManager.Ins != null)
             {
                 currentProcessTimer = DayNightManager.Ins.CurrentWave - startWave;
                 if (currentProcessTimer < 0) currentProcessTimer = 0;
-
-                var targetProgressUI = BuildingProgressBridge.GetUI(this);
-                if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
-                
-                if (currentProcessTimer >= durationWaves)
-                    break;
-                    
-                yield return null;
             }
-        }
-        else
-        {
-            // Fallback nếu không có DayNightManager
-            while (currentProcessTimer < durationWaves)
+            else
             {
-                currentProcessTimer += Time.deltaTime / 10f; // 10s tượng trưng 1 wave
-                var targetProgressUI = BuildingProgressBridge.GetUI(this);
-                if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
-                yield return null;
+                currentProcessTimer += Time.deltaTime / 10f;
             }
+
+            var targetProgressUI = BuildingProgressBridge.GetUI(this);
+            if (targetProgressUI == null) targetProgressUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+            if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+
+            if (currentProcessTimer >= durationWaves)
+                break;
+
+            yield return null;
         }
 
+        // --- HOÀN THÀNH NÂNG CẤP (TĂNG CẤP ĐỘ MODEL 3D TỪ LV1 LÊN LV2) ---
+        IsUpgrading = false;
         activeProcessType = ProcessType.None;
         currentProcessTimer = 0f;
         currentProcessDuration = 0f;
         currentProcessCoroutine = null;
 
-        if (isInitialBuildNeeded)
-        {
-            isInitialBuildNeeded = false;
-            IsUpgrading = false;
-            
-            ToggleBuildingLogic(true);
+        OnUpgradeComplete?.Invoke();
+        ExecuteLevelUp();
 
-            HPTower hpComponent = GetComponent<HPTower>();
-            if (hpComponent != null) hpComponent.ResetHealth();
-
-            OnUpgradeComplete?.Invoke();
-            OnLevelChanged?.Invoke();
-
-            // 👈 DÁN 4 DÒNG CODE VÀO ĐÚNG VỊ TRÍ NÀY
-            if (CampaignTutorialManager.Ins != null)
-            {
-                CampaignTutorialManager.Ins.OnBuildingConstructionFinished(buildingType);
-            }
-
-            var targetUI = BuildingProgressBridge.GetUI(this);
-            if (targetUI != null) targetUI.HandleCompleteSequence();
-
-            var buildingCtrl = GetComponent<BuildingCtrl>();
-            if (buildingCtrl != null) buildingCtrl.AddProgress(1f);
-        }
-        else
-        {
-            IsUpgrading = false;
-            OnUpgradeComplete?.Invoke();
-            ExecuteLevelUp();
-
-            var targetUI = BuildingProgressBridge.GetUI(this);
-            if (targetUI != null) targetUI.HandleCompleteSequence();
-        }
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (targetUI != null) targetUI.HandleCompleteSequence();
 
         if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
         if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
@@ -521,7 +612,10 @@ public class UpgradeableBuilding : MonoBehaviour
         }
     }
 
-    public void Upgrade() => ExecuteLevelUp();
+    public void Upgrade()
+    {
+        StartUpgradeProcess();
+    }
 
     [ContextMenu("⚡ Nâng cấp Tháp này")]
     public void ExecuteLevelUp()
@@ -666,12 +760,6 @@ public class ClickHelper : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
-        if (parentBuilding == null) return;
-
-        parentBuilding.SelectThisBuilding();
-        if (UIManager.Ins != null) UIManager.Ins.ShowUpgradePanel(parentBuilding);
-
-        if (CampaignTutorialManager.Ins != null) CampaignTutorialManager.Ins.OnClickTownHall(); 
+        // 🔒 Quy tắc Demacia Rising: Không cho phép chọn trực tiếp công trình 3D trên map.
     }
 }

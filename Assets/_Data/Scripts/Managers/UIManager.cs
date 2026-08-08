@@ -65,6 +65,8 @@ public class UIManager : Singleton<UIManager>
     public void OpenBuildMenu()
     {
         Debug.Log("[UIManager] 🛒 OpenBuildMenu được gọi!");
+        HideUpgradePanel();
+
         if (buildingShopPopup != null)
         {
             buildingShopPopup.SetActive(true);
@@ -84,7 +86,7 @@ public class UIManager : Singleton<UIManager>
     public void CloseBuildMenu()
     {
         if (buildingShopPopup != null) buildingShopPopup.SetActive(false);
-        if (BuildingShopUI.Ins != null) BuildingShopUI.Ins.CloseShop();
+        if (BuildingShopUI.Ins != null) BuildingShopUI.Ins.gameObject.SetActive(false);
     }
 
     public void ToggleBuildMenu()
@@ -104,6 +106,21 @@ public class UIManager : Singleton<UIManager>
         Debug.Log($"[UIManager] ⚡ ShowUpgradePanel được gọi cho công trình: {(building != null ? building.buildingName : "null")}");
         if (building == null) return;
 
+        CloseBuildMenu();
+
+        // 1. Đảm bảo Bảng Thủ Đô (Settlement Panel) bên trái LUÔN hiển thị song song!
+        if (settlementSidePanel != null && !settlementSidePanel.activeSelf)
+        {
+            settlementSidePanel.SetActive(true);
+            SettlementSidePanelUI.Ins?.RefreshPanel();
+        }
+        else if (SettlementSidePanelUI.Ins != null && !SettlementSidePanelUI.Ins.gameObject.activeSelf)
+        {
+            SettlementSidePanelUI.Ins.gameObject.SetActive(true);
+            SettlementSidePanelUI.Ins.RefreshPanel();
+        }
+
+        // 2. Mở Bảng Nâng Cấp Side Panel bên phải
         if (BuildingUpgradeSidePanelUI.Ins != null)
         {
             BuildingUpgradeSidePanelUI.Ins.ShowUpgradePanel(building);
@@ -127,6 +144,47 @@ public class UIManager : Singleton<UIManager>
     }
 
     public void CloseUpgradePanel() => HideUpgradePanel();
+
+    public void OpenEstablishTownHallPanel(SettlementZone zone)
+    {
+        if (zone == null) return;
+
+        CloseBuildMenu();
+
+        // 1. Đảm bảo Bảng Thủ Đô bên trái luôn hiển thị
+        if (settlementSidePanel != null && !settlementSidePanel.activeSelf)
+        {
+            settlementSidePanel.SetActive(true);
+            SettlementSidePanelUI.Ins?.RefreshPanel();
+        }
+        else if (SettlementSidePanelUI.Ins != null && !SettlementSidePanelUI.Ins.gameObject.activeSelf)
+        {
+            SettlementSidePanelUI.Ins.gameObject.SetActive(true);
+            SettlementSidePanelUI.Ins.RefreshPanel();
+        }
+
+        // 2. Mở Bảng Nâng Cấp / Xây Dựng Side Panel bên phải
+        if (buildingUpgradeSidePanel != null && !buildingUpgradeSidePanel.activeSelf)
+        {
+            buildingUpgradeSidePanel.SetActive(true);
+        }
+
+        var sideUI = BuildingUpgradeSidePanelUI.Ins;
+        if (sideUI == null && buildingUpgradeSidePanel != null)
+        {
+            sideUI = buildingUpgradeSidePanel.GetComponent<BuildingUpgradeSidePanelUI>();
+        }
+
+        if (sideUI != null)
+        {
+            sideUI.gameObject.SetActive(true);
+            sideUI.ShowEstablishTownHallPanel(zone);
+        }
+        else
+        {
+            Debug.LogWarning("[UIManager] ⚠️ Không tìm thấy BuildingUpgradeSidePanelUI để mở bảng Xây Nhà Chính!");
+        }
+    }
 
     // ====================================================================
     // 4. CHỨC NĂNG CẢNH BÁO VÀ TOOLBAR

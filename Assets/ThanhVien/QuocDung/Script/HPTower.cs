@@ -19,6 +19,8 @@ public class HPTower : MonoBehaviour, IDamageable
     private bool isDestroyed = false;
     public bool IsDestroyed => isDestroyed;
 
+    public event System.Action OnDeathEvent;
+
     // Các thành phần UI được khởi tạo hoàn toàn bằng code lúc chạy game
     private Canvas hpCanvas;
     private Image hpFillImage;
@@ -147,6 +149,8 @@ public class HPTower : MonoBehaviour, IDamageable
     {
         if (isDestroyed) return;
         isDestroyed = true;
+
+        OnDeathEvent?.Invoke();
 
         Debug.Log($"[HPTower] {gameObject.name} đã lọt vào trạng thái sụp đổ!");
 

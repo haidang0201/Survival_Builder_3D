@@ -155,6 +155,12 @@ public class ConstructionManager : Singleton<ConstructionManager>
         var spawned = SpawnBuilding(type, position, rotation);
         if (spawned != null)
         {
+            UpgradeableBuilding ub = spawned.GetComponent<UpgradeableBuilding>();
+            if (ub == null) ub = spawned.GetComponentInChildren<UpgradeableBuilding>();
+            if (ub != null && SettlementManager.Ins != null && SettlementManager.Ins.CurrentSettlement != null)
+            {
+                SettlementManager.Ins.CurrentSettlement.RegisterBuilding(ub);
+            }
 
             if (!buildingCounts.ContainsKey(type)) buildingCounts[type] = 0;
             buildingCounts[type]++;
@@ -182,8 +188,22 @@ public class ConstructionManager : Singleton<ConstructionManager>
 
         if (prefab == null) return null;
 
+        Transform parentTransform = (SettlementManager.Ins != null && SettlementManager.Ins.CurrentSettlement != null)
+            ? SettlementManager.Ins.CurrentSettlement.transform
+            : null;
+
         GameObject obj = Instantiate(prefab, position, rotation);
+        if (parentTransform != null)
+        {
+            obj.transform.SetParent(parentTransform, true);
+        }
         obj.name = type.ToString();
+
+        UpgradeableBuilding ub = obj.GetComponent<UpgradeableBuilding>();
+        if (ub != null && SettlementManager.Ins != null && SettlementManager.Ins.CurrentSettlement != null)
+        {
+            SettlementManager.Ins.CurrentSettlement.RegisterBuilding(ub);
+        }
 
         return obj.GetComponent<BuildingCtrl>();
     }

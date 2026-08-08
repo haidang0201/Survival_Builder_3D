@@ -26,14 +26,276 @@ public class SettlementZone : MonoBehaviour
     public int establishStoneCost = 100;
     public int establishFoodCost = 50;
 
+    [Header("=== CÔNG TRÌNH CÓ SẴN TRÊN CÁC Ô SLOT ===")]
+    [Tooltip("Kéo các Prefab công trình từ Project vào đây để tự động sinh sẵn khi bắt đầu game (Element 0 tương ứng với Slot 0).")]
+    public List<GameObject> prebuiltSlotPrefabs = new List<GameObject>();
+
+    [Header("=== CĂN CỨ / CÔNG TRÌNH ĐỊCH (CHINH PHỤC VÙNG ĐẤT) ===")]
+    [Tooltip("Tích vào nếu vùng đất này ban đầu bị Kẻ Địch chiếm đóng.")]
+    public bool hasEnemyOutpost = false;
+    [Tooltip("Kéo Prefab Căn cứ / Công trình Địch từ Project vào đây.")]
+    public GameObject enemyOutpostPrefab;
+
+    [HideInInspector]
+    public GameObject spawnedEnemyOutpostInstance;
+
     [HideInInspector]
     public UpgradeableBuilding townHallBuilding;        // Building Nhà chính hiện tại
     [HideInInspector]
     public List<UpgradeableBuilding> builtStructures = new List<UpgradeableBuilding>(); // Danh sách công trình đã xây
 
+    public void RegisterBuilding(UpgradeableBuilding building)
+    {
+        if (building == null) return;
+        if (!builtStructures.Contains(building))
+        {
+            builtStructures.Add(building);
+        }
+    }
+
     private void Awake()
     {
         if (townHallPoint == null) townHallPoint = transform;
+    }
+
+    private void Start()
+    {
+        InstantiateEnemyOutpost();
+        EnsureTownHallInstantiated();
+        InstantiatePrebuiltBuildings();
+        Update3DSlotVisibility();
+    }
+
+    public void EnsureTownHallInstantiated()
+    {
+        // Kiểm tra xem townHallBuilding có phải là đối tượng thật trong Scene không (không phải Prefab Asset trong Project)
+        if (townHallBuilding != null && !townHallBuilding.gameObject.scene.IsValid())
+        {
+            if (townHallPrefab == null) townHallPrefab = townHallBuilding.gameObject;
+            townHallBuilding = null;
+        }
+
+        if (isTownHallEstablished && townHallBuilding == null)
+        {
+            var ubs = GetComponentsInChildren<UpgradeableBuilding>(true);
+            foreach (var ub in ubs)
+            {
+                if (ub != null && (ub.buildingType == BuildingType.House || ub.buildingName.Contains("Nhà chính") || ub.buildingName.Contains("Town Hall")))
+                {
+                    townHallBuilding = ub;
+                    break;
+                }
+            }
+
+            if (townHallBuilding == null)
+            {
+                InstantiateTownHallObject();
+            }
+        }
+
+        if (isTownHallEstablished && townHallBuilding != null && !townHallBuilding.IsUpgrading && townHallBuilding.gameObject.scene.IsValid())
+        {
+            townHallBuilding.IsInitialBuildNeeded = false;
+        }
+    }
+
+    public void InstantiateTownHallObject()
+    {
+        GameObject prefabToUse = (townHallPrefab != null) 
+            ? townHallPrefab 
+            : ((ConstructionManager.Ins != null) ? ConstructionManager.Ins.housePrefab : null);
+
+        Transform spawnPoint = (townHallPoint != null) ? townHallPoint : transform;
+
+        if (prefabToUse != null)
+        {
+            GameObject obj = Instantiate(prefabToUse, spawnPoint.position, spawnPoint.rotation, transform);
+            townHallBuilding = obj.GetComponent<UpgradeableBuilding>();
+            Debug.Log($"[SettlementZone] 🏰 Đã khởi tạo Nhà Chính 3D trong Scene cho vùng đất {settlementName}!");
+        }
+        else
+        {
+            Debug.LogWarning($"[SettlementZone] ⚠️ Chưa gán Town Hall Prefab cho vùng đất {settlementName}!");
+        }
+    }
+
+    public UpgradeableBuilding TownHallBuilding
+    {
+        get
+        {
+            EnsureTownHallInstantiated();
+            return townHallBuilding;
+        }
+    }
+
+    public int SettlementLevel
+    {
+        get
+        {
+            var th = TownHallBuilding;
+            if (th != null && isTownHallEstablished)
+                return th.CurrentLevel + 1;
+            return settlementLevel;
+        }
+    }
+
+    private void Update()
+    {
+        // 🔒 Nếu bỏ tích hasEnemyOutpost trong Play Mode hoặc đã tiêu diệt nhưng đối tượng 3D vẫn còn -> Tự động Destroy đối tượng 3D
+        if (!hasEnemyOutpost && spawnedEnemyOutpostInstance != null)
+        {
+            Destroy(spawnedEnemyOutpostInstance);
+            spawnedEnemyOutpostInstance = null;
+            if (SettlementSidePanelUI.Ins != null)
+            {
+                SettlementSidePanelUI.Ins.UpdateHeaderVisual();
+                SettlementSidePanelUI.Ins.RefreshPanel();
+            }
+        }
+        else if (hasEnemyOutpost && spawnedEnemyOutpostInstance == null)
+        {
+            OnEnemyOutpostDestroyed();
+        }
+
+        var th = TownHallBuilding;
+        if (th != null && isTownHallEstablished)
+        {
+            int expectedLevel = th.CurrentLevel + 1;
+            if (settlementLevel != expectedLevel)
+            {
+                settlementLevel = expectedLevel;
+                Update3DSlotVisibility();
+                if (SettlementSidePanelUI.Ins != null)
+                {
+                    SettlementSidePanelUI.Ins.UpdateHeaderVisual();
+                    SettlementSidePanelUI.Ins.RefreshPanel();
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Số lượng ô Slot được mở khóa theo Cấp độ Vùng Đất (settlementLevel):
+    /// - Cấp 1: 2 ô slot
+    /// - Cấp 2: 3 ô slot (mở thêm 1 ô)
+    /// - Cấp 3+: Mở toàn bộ số slot còn lại!
+    /// </summary>
+    public int GetUnlockedSlotCount()
+    {
+        if (!isTownHallEstablished) return 0;
+
+        // Chỉ ẩn slot khi Nhà Chính đang trong tiến trình XÂY DỰNG BAN ĐẦU
+        if (townHallBuilding != null && townHallBuilding.IsInitialBuildNeeded)
+            return 0;
+
+        int totalSlotCount = (slotPoints.Count > 0) ? slotPoints.Count : 12;
+        int level = SettlementLevel;
+
+        if (level <= 1) return Mathf.Min(2, totalSlotCount);
+        if (level == 2) return Mathf.Min(3, totalSlotCount);
+        
+        // Cấp 3 trở lên: Mở toàn bộ số ô slot!
+        return totalSlotCount;
+    }
+
+    private void OnEnable()
+    {
+        Update3DSlotVisibility();
+    }
+
+    /// <summary>
+    /// Bật/Tắt hiển thị 3D cho các mốc đất slot trên thế giới 3D tương ứng theo cấp độ đã mở khóa
+    /// </summary>
+    public void Update3DSlotVisibility()
+    {
+        int unlockedCount = GetUnlockedSlotCount();
+
+        for (int i = 0; i < slotPoints.Count; i++)
+        {
+            if (slotPoints[i] != null)
+            {
+                bool activeState = isTownHallEstablished && !hasEnemyOutpost && (i < unlockedCount);
+                slotPoints[i].gameObject.SetActive(activeState);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sinh các công trình có sẵn (như nhà lính, kho gỗ...) theo cấu hình prebuiltSlotPrefabs
+    /// </summary>
+    public void InstantiatePrebuiltBuildings()
+    {
+        if (!isTownHallEstablished || hasEnemyOutpost) return;
+
+        for (int i = 0; i < prebuiltSlotPrefabs.Count; i++)
+        {
+            if (prebuiltSlotPrefabs[i] == null) continue;
+            if (i >= slotPoints.Count) break;
+
+            Vector3 targetPos = GetSlotWorldPosition(i);
+            bool alreadyExists = false;
+            foreach (var b in builtStructures)
+            {
+                if (b != null && Vector3.Distance(b.transform.position, targetPos) < 2f)
+                {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+
+            if (!alreadyExists)
+            {
+                GameObject obj = Instantiate(prebuiltSlotPrefabs[i], targetPos, Quaternion.identity, transform);
+                UpgradeableBuilding ub = obj.GetComponent<UpgradeableBuilding>();
+                if (ub != null)
+                {
+                    ub.IsInitialBuildNeeded = false;
+                    RegisterBuilding(ub);
+                    if (BuildingManager.Ins != null) BuildingManager.Ins.AddBuilding(ub.GetComponent<BuildingCtrl>());
+                }
+                Debug.Log($"[SettlementZone] 🛠️ Đã sinh công trình có sẵn '{prebuiltSlotPrefabs[i].name}' tại slot {i} vùng đất {settlementName}.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sinh Căn cứ / Công trình Địch ban đầu chiếm đóng vùng đất này
+    /// </summary>
+    public void InstantiateEnemyOutpost()
+    {
+        if (!hasEnemyOutpost || enemyOutpostPrefab == null) return;
+        if (spawnedEnemyOutpostInstance != null) return;
+
+        Transform spawnPoint = (townHallPoint != null) ? townHallPoint : transform;
+        spawnedEnemyOutpostInstance = Instantiate(enemyOutpostPrefab, spawnPoint.position, spawnPoint.rotation, transform);
+        
+        HPTower enemyHP = spawnedEnemyOutpostInstance.GetComponent<HPTower>();
+        if (enemyHP == null) enemyHP = spawnedEnemyOutpostInstance.GetComponentInChildren<HPTower>();
+
+        if (enemyHP != null)
+        {
+            enemyHP.OnDeathEvent += OnEnemyOutpostDestroyed;
+        }
+
+        Debug.Log($"[SettlementZone] ⚔️ Đã sinh Căn cứ Địch tại vùng đất {settlementName}!");
+    }
+
+    public void OnEnemyOutpostDestroyed()
+    {
+        hasEnemyOutpost = false;
+        if (spawnedEnemyOutpostInstance != null)
+        {
+            Destroy(spawnedEnemyOutpostInstance);
+            spawnedEnemyOutpostInstance = null;
+        }
+
+        Debug.Log($"[SettlementZone] 🎉 CHINH PHỤC THÀNH CÔNG! Đã tiêu diệt Căn cứ Địch tại vùng đất {settlementName}!");
+
+        if (SettlementSidePanelUI.Ins != null)
+        {
+            SettlementSidePanelUI.Ins.UpdateHeaderVisual();
+            SettlementSidePanelUI.Ins.RefreshPanel();
+        }
     }
 
     /// <summary>
@@ -41,7 +303,13 @@ public class SettlementZone : MonoBehaviour
     /// </summary>
     public bool EstablishTownHall()
     {
-        if (isTownHallEstablished) return true;
+        if (hasEnemyOutpost)
+        {
+            if (UIManager.Ins != null) UIManager.Ins.ShowWarning("Hãy tiêu diệt Căn cứ Địch trước khi xây Nhà Chính!");
+            return false;
+        }
+
+        if (isTownHallEstablished && townHallBuilding != null) return true;
 
         // Trừ tài nguyên
         if (JsonDataManager.Ins != null)
@@ -57,22 +325,41 @@ public class SettlementZone : MonoBehaviour
             JsonDataManager.Ins.AddFood(-establishFoodCost);
         }
 
-        // Tạo Nhà Chính trong thế giới 3D
-        if (townHallPrefab != null && townHallPoint != null)
+        isTownHallEstablished = true;
+        settlementLevel = 1;
+
+        InstantiateTownHallObject();
+
+        if (townHallBuilding != null)
         {
-            GameObject obj = Instantiate(townHallPrefab, townHallPoint.position, townHallPoint.rotation, transform);
-            townHallBuilding = obj.GetComponent<UpgradeableBuilding>();
+            townHallBuilding.StartInitialBuildProcess();
         }
 
-        isTownHallEstablished = true;
-        Debug.Log($"[SettlementZone] 🎉 Đã xây dựng thành công Nhà Chính cho vùng đất: {settlementName}!");
+        InstantiatePrebuiltBuildings();
+
+        Debug.Log($"[SettlementZone] 🎉 Đã bắt đầu xây dựng Nhà Chính cho vùng đất: {settlementName}!");
 
         if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
         return true;
     }
 
     /// <summary>
-    /// Lấy vị trí 3D cho ô Slot theo Index
+    /// Nâng cấp Cấp độ vùng đất / Nhà chính. Thay đổi model 3D tương ứng theo cấp độ mới!
+    /// </summary>
+    public void UpgradeSettlementLevel()
+    {
+        settlementLevel++;
+        if (townHallBuilding != null)
+        {
+            townHallBuilding.Upgrade();
+        }
+        Debug.Log($"[SettlementZone] 🚀 Đã nâng cấp vùng đất {settlementName} lên Cấp {settlementLevel}!");
+        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
+    }
+
+    /// <summary>
+    /// Lấy vị trí 3D cho ô Slot theo Index.
+    /// Nếu index vượt quá số slotPoint kéo trong Inspector, tự động tính toán vị trí lưới xung quanh TownHall.
     /// </summary>
     public Vector3 GetSlotWorldPosition(int index)
     {
@@ -80,6 +367,35 @@ public class SettlementZone : MonoBehaviour
         {
             return slotPoints[index].position;
         }
-        return transform.position;
+
+        // Tự động tính toán vị trí lưới xung quanh TownHall nếu thiếu slotPoint trong Inspector
+        Vector3 origin = (townHallPoint != null) ? townHallPoint.position : transform.position;
+
+        int cols = 3;
+        int row = index / cols;
+        int col = index % cols;
+
+        float spacing = 12f; // Khoảng cách 12m giữa các mốc công trình
+        float offsetX = (col - 1) * spacing;
+        float offsetZ = (row + 1) * spacing;
+
+        return origin + new Vector3(offsetX, 0f, offsetZ);
+    }
+
+    /// <summary>
+    /// Định vị tự động các công trình đã xây lên vị trí 3D slot chuẩn nếu bị trùng lặp tại (0,0,0)
+    /// </summary>
+    public void AlignBuildingsToSlotPositions()
+    {
+        for (int i = 0; i < builtStructures.Count; i++)
+        {
+            if (builtStructures[i] == null) continue;
+
+            // Nếu nhà chưa có vị trí chuẩn (đang ở Vector3.zero)
+            if (builtStructures[i].transform.position == Vector3.zero)
+            {
+                builtStructures[i].transform.position = GetSlotWorldPosition(i);
+            }
+        }
     }
 }

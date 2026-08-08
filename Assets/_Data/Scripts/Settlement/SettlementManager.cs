@@ -45,6 +45,8 @@ public class SettlementManager : Singleton<SettlementManager>
         if (zone == null) return;
 
         currentSettlement = zone;
+        currentSettlement.Update3DSlotVisibility();
+
         Debug.Log($"[SettlementManager] Đã chọn vùng đất: {currentSettlement.settlementName} (Đã có nhà chính: {currentSettlement.isTownHallEstablished})");
 
         if (UIManager.Ins != null)

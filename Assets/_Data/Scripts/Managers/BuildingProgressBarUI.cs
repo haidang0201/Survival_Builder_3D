@@ -76,12 +76,15 @@ public class BuildingProgressBarUI : MonoBehaviour
     private void OnEnable()
     {
         _realTimeActive = 0f;
+        if (_ownerBuilding == null)
+        {
+            _ownerBuilding = GetComponentInParent<UpgradeableBuilding>();
+        }
+
         if (_ownerBuilding != null)
         {
             BuildingProgressBridge.RegisterUI(_ownerBuilding, this);
 
-            // CHỈ BẬT UI khi nhà đang trong tiến trình Nâng cấp/Xây mới thực sự
-            // SỬA DÒNG NÀY (Thêm kiểm tra !_ownerBuilding.IsRuined)
             if (!_ownerBuilding.IsUpgrading && !_ownerBuilding.IsRuined)
             {
                 HideProgress();
@@ -106,9 +109,32 @@ public class BuildingProgressBarUI : MonoBehaviour
 
     public void DeactivateAllVFX()
     {
-        if (placementDustVFX != null) placementDustVFX.gameObject.SetActive(false);
-        if (constructionLoopVFX != null) constructionLoopVFX.gameObject.SetActive(false);
-        if (completionAuraVFX != null) completionAuraVFX.gameObject.SetActive(false);
+        if (placementDustVFX != null)
+        {
+            placementDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            placementDustVFX.gameObject.SetActive(false);
+        }
+        if (constructionLoopVFX != null)
+        {
+            constructionLoopVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            constructionLoopVFX.gameObject.SetActive(false);
+        }
+        if (completionAuraVFX != null)
+        {
+            completionAuraVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            completionAuraVFX.gameObject.SetActive(false);
+        }
+
+        // 🛡️ FALLBACK: Tắt tất cả ParticleSystem con thuộc UI/Công trình này khi không nâng cấp
+        var allPS = GetComponentsInChildren<ParticleSystem>(true);
+        foreach (var ps in allPS)
+        {
+            if (ps != null)
+            {
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                ps.gameObject.SetActive(false);
+            }
+        }
     }
 
     /// <summary>
@@ -259,6 +285,18 @@ public class BuildingProgressBarUI : MonoBehaviour
     {
         if (upgradeProgressBar != null) upgradeProgressBar.gameObject.SetActive(false);
         if (upgradeTimerText != null) upgradeTimerText.gameObject.SetActive(false);
+
+        var sliders = GetComponentsInChildren<Slider>(true);
+        foreach (var s in sliders)
+        {
+            if (s != null) s.gameObject.SetActive(false);
+        }
+
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        foreach (var t in texts)
+        {
+            if (t != null && t.gameObject != gameObject) t.gameObject.SetActive(false);
+        }
     }
 }
 

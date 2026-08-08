@@ -65,6 +65,7 @@ public class BuildingShopUI : MonoBehaviour
 
     private void OnEnable()
     {
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.ClosePanel();
         RefreshAllItems();
     }
 
@@ -208,13 +209,6 @@ public class BuildingShopUI : MonoBehaviour
 
     public void CloseShop()
     {
-        if (UIManager.Ins != null)
-        {
-            UIManager.Ins.CloseBuildMenu();
-        }
-        else
-        {
-            gameObject.SetActive(false);
-        }
+        gameObject.SetActive(false);
     }
 }
