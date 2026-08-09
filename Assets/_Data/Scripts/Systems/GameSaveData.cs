@@ -42,10 +42,10 @@ public class GameSaveData
 [Serializable]
 public class WorkerState
 {
-    public string workerType; // "Tree", "Stone", "Rice"
+    public string workerType;              // "Tree", "Stone", "Rice"
     public SerializableVector3 position;
     public SerializableVector3 rotation;
-    public bool isCarryingItem; 
+    public bool isCarryingItem = false;    // DEPRECATED: Worker không còn vận chuyển, giữ lại để file JSON cũ đọc không lỗi
 }
 
 [Serializable]

@@ -1,15 +1,26 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 /// <summary>
-/// Kho Gỗ — kho CHÍNH, ghi thẳng vào JsonDataManager (nguồn thật duy nhất).
-/// Worker chặt cây nộp gỗ vào đây → ghi lên HUD ngay lập tức.
-/// Không còn WorkerCarrier / WarehouseStorage làm trung gian.
+/// Kho Gỗ — kho CHÍNH, ghi thẳng vào JsonDataManager.
+/// Tài nguyên gỗ được cộng tự động bởi DayNightManager khi kết thúc mỗi Wave chuẩn bị.
+/// - resourcesOnSkip:    Gỗ nhận được khi người chơi nhấn Skip.
+/// - resourcesOnFullTime: Gỗ nhận được khi để hết thời gian (nhiều hơn).
 /// </summary>
 public class WoodStorage : MonoBehaviour
 {
+    // ── Static registry: DayNightManager tự tìm tất cả kho Gỗ trong Scene ──
+    public static readonly List<WoodStorage> All = new List<WoodStorage>();
+
     [Header("Storage Settings")]
     public int maxCapacity = 9999;
+
+    [Header("Tài nguyên Gỗ theo Wave")]
+    [Tooltip("Gỗ cộng khi người chơi nhấn Skip (ít hơn vì bỏ qua thời gian).")]
+    public int resourcesOnSkip     = 10;
+    [Tooltip("Gỗ cộng khi để hết thời gian chuẩn bị không Skip (nhiều hơn).")]
+    public int resourcesOnFullTime = 15;
 
     [Header("Penta Dev - Civil Workers Setup")]
     [Tooltip("Cấu hình số lượng worker tối đa qua từng level")]
@@ -33,6 +44,42 @@ public class WoodStorage : MonoBehaviour
     void Awake()
     {
         if (maxCapacity < 9999) maxCapacity = 9999;
+    }
+
+    void OnEnable()  { if (!All.Contains(this)) All.Add(this); }
+    void OnDisable() { All.Remove(this); }
+
+    // ── Kiểm tra kho đã xây xong chưa ──
+    /// <summary>
+    /// Kiểm tra kho đã xây xong hoàn tất chưa (không đang xây dở, không nâng cấp dở, không bị tàn tích).
+    /// </summary>
+    public bool IsReadyToProduce()
+    {
+        var building = GetComponent<UpgradeableBuilding>();
+        if (building == null) building = GetComponentInParent<UpgradeableBuilding>();
+
+        if (building != null)
+        {
+            if (building.IsInitialBuildNeeded || building.IsUpgrading || building.IsRuined)
+                return false;
+        }
+
+        return true;
+    }
+
+    // ── Được gọi bởi DayNightManager ──
+    /// <summary>Cộng gỗ SKIP — người chơi nhấn Start Wave sớm (chỉ cộng khi đã xây xong).</summary>
+    public int GrantSkipResources()
+    {
+        if (!IsReadyToProduce()) return 0;
+        return AddWood(resourcesOnSkip);
+    }
+
+    /// <summary>Cộng gỗ ĐẦY GIỜ — để hết thời gian chuẩn bị mới vào Wave (chỉ cộng khi đã xây xong).</summary>
+    public int GrantFullTimeResources()
+    {
+        if (!IsReadyToProduce()) return 0;
+        return AddWood(resourcesOnFullTime);
     }
 
     // ===== PROPERTIES — đọc thẳng từ JsonDataManager =====

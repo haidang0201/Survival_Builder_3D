@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 /// <summary>
 /// Kho Đá — kho CHÍNH, ghi thẳng vào JsonDataManager (nguồn thật duy nhất).
@@ -8,8 +9,17 @@ using UnityEngine.Events;
 /// </summary>
 public class StoneStorage : MonoBehaviour
 {
+    // ── Static registry: DayNightManager tự tìm tất cả kho Đá trong Scene ──
+    public static readonly List<StoneStorage> All = new List<StoneStorage>();
+
     [Header("Storage Settings")]
     public int maxCapacity = 9999;
+
+    [Header("Tài nguyên Đá theo Wave")]
+    [Tooltip("Đá cộng khi người chơi nhấn Skip (ít hơn vì bỏ qua thời gian).")]
+    public int resourcesOnSkip     = 10;
+    [Tooltip("Đá cộng khi để hết thời gian chuẩn bị không Skip (nhiều hơn).")]
+    public int resourcesOnFullTime = 15;
 
     [Header("Penta Dev - Civil Workers Setup")]
     [Tooltip("Cấu hình số lượng worker tối đa qua từng level")]
@@ -33,6 +43,42 @@ public class StoneStorage : MonoBehaviour
     void Awake()
     {
         if (maxCapacity < 9999) maxCapacity = 9999;
+    }
+
+    void OnEnable()  { if (!All.Contains(this)) All.Add(this); }
+    void OnDisable() { All.Remove(this); }
+
+    // ── Kiểm tra kho đã xây xong chưa ──
+    /// <summary>
+    /// Kiểm tra kho đã xây xong hoàn tất chưa (không đang xây dở, không nâng cấp dở, không bị tàn tích).
+    /// </summary>
+    public bool IsReadyToProduce()
+    {
+        var building = GetComponent<UpgradeableBuilding>();
+        if (building == null) building = GetComponentInParent<UpgradeableBuilding>();
+
+        if (building != null)
+        {
+            if (building.IsInitialBuildNeeded || building.IsUpgrading || building.IsRuined)
+                return false;
+        }
+
+        return true;
+    }
+
+    // ── Được gọi bởi DayNightManager ──
+    /// <summary>Cộng đá SKIP — người chơi nhấn Start Wave sớm (chỉ cộng khi đã xây xong).</summary>
+    public int GrantSkipResources()
+    {
+        if (!IsReadyToProduce()) return 0;
+        return AddStone(resourcesOnSkip);
+    }
+
+    /// <summary>Cộng đá ĐẦY GIỜ — để hết thời gian chuẩn bị mới vào Wave (chỉ cộng khi đã xây xong).</summary>
+    public int GrantFullTimeResources()
+    {
+        if (!IsReadyToProduce()) return 0;
+        return AddStone(resourcesOnFullTime);
     }
 
     // ===== PROPERTIES — đọc thẳng từ JsonDataManager =====
