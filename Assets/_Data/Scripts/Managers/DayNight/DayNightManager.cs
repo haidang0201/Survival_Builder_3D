@@ -338,7 +338,7 @@ public class DayNightManager : Singleton<DayNightManager>
     // ────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Cộng tài nguyên vào tất cả kho Gỗ/Lúa/Đá đang hoạt động trong Scene.
+    /// Cộng tài nguyên vào tất cả kho Gỗ/Lúa/Đá đã XÂY XONG trong Scene.
     /// wasSkipped = true  → cộng resourcesOnSkip    (người chơi bấm Skip sớm).
     /// wasSkipped = false → cộng resourcesOnFullTime (để hết giờ chuẩn bị).
     /// </summary>
@@ -348,17 +348,17 @@ public class DayNightManager : Singleton<DayNightManager>
 
         if (wasSkipped)
         {
-            foreach (var s in WoodStorage.All)  { s.GrantSkipResources();    woodTotal  += s.resourcesOnSkip; }
-            foreach (var s in RiceStorage.All)  { s.GrantSkipResources();    riceTotal  += s.resourcesOnSkip; }
-            foreach (var s in StoneStorage.All) { s.GrantSkipResources();    stoneTotal += s.resourcesOnSkip; }
-            Debug.Log($"[WaveManager] ⏩ SKIP → +{woodTotal} gỗ | +{riceTotal} lúa | +{stoneTotal} đá");
+            foreach (var s in WoodStorage.All)  { woodTotal  += s.GrantSkipResources(); }
+            foreach (var s in RiceStorage.All)  { riceTotal  += s.GrantSkipResources(); }
+            foreach (var s in StoneStorage.All) { stoneTotal += s.GrantSkipResources(); }
+            Debug.Log($"[WaveManager] ⏩ SKIP → +{woodTotal} gỗ | +{riceTotal} lúa | +{stoneTotal} đá (Chỉ tính các kho đã xây xong)");
         }
         else
         {
-            foreach (var s in WoodStorage.All)  { s.GrantFullTimeResources(); woodTotal  += s.resourcesOnFullTime; }
-            foreach (var s in RiceStorage.All)  { s.GrantFullTimeResources(); riceTotal  += s.resourcesOnFullTime; }
-            foreach (var s in StoneStorage.All) { s.GrantFullTimeResources(); stoneTotal += s.resourcesOnFullTime; }
-            Debug.Log($"[WaveManager] ⏰ ĐẦY GIỜ → +{woodTotal} gỗ | +{riceTotal} lúa | +{stoneTotal} đá");
+            foreach (var s in WoodStorage.All)  { woodTotal  += s.GrantFullTimeResources(); }
+            foreach (var s in RiceStorage.All)  { riceTotal  += s.GrantFullTimeResources(); }
+            foreach (var s in StoneStorage.All) { stoneTotal += s.GrantFullTimeResources(); }
+            Debug.Log($"[WaveManager] ⏰ ĐẦY GIỜ → +{woodTotal} gỗ | +{riceTotal} lúa | +{stoneTotal} đá (Chỉ tính các kho đã xây xong)");
         }
     }
 }

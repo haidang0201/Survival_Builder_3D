@@ -49,11 +49,38 @@ public class RiceStorage : MonoBehaviour
     void OnEnable()  { if (!All.Contains(this)) All.Add(this); }
     void OnDisable() { All.Remove(this); }
 
+    // ── Kiểm tra kho đã xây xong chưa ──
+    /// <summary>
+    /// Kiểm tra kho đã xây xong hoàn tất chưa (không đang xây dở, không nâng cấp dở, không bị tàn tích).
+    /// </summary>
+    public bool IsReadyToProduce()
+    {
+        var building = GetComponent<UpgradeableBuilding>();
+        if (building == null) building = GetComponentInParent<UpgradeableBuilding>();
+
+        if (building != null)
+        {
+            if (building.IsInitialBuildNeeded || building.IsUpgrading || building.IsRuined)
+                return false;
+        }
+
+        return true;
+    }
+
     // ── Được gọi bởi DayNightManager ──
-    /// <summary>Cộng lúa SKIP — người chơi nhấn Start Wave sớm.</summary>
-    public void GrantSkipResources()     => AddRice(resourcesOnSkip);
-    /// <summary>Cộng lúa ĐẦY GIỜ — để hết thời gian chuẩn bị mới vào Wave.</summary>
-    public void GrantFullTimeResources() => AddRice(resourcesOnFullTime);
+    /// <summary>Cộng lúa SKIP — người chơi nhấn Start Wave sớm (chỉ cộng khi đã xây xong).</summary>
+    public int GrantSkipResources()
+    {
+        if (!IsReadyToProduce()) return 0;
+        return AddRice(resourcesOnSkip);
+    }
+
+    /// <summary>Cộng lúa ĐẦY GIỜ — để hết thời gian chuẩn bị mới vào Wave (chỉ cộng khi đã xây xong).</summary>
+    public int GrantFullTimeResources()
+    {
+        if (!IsReadyToProduce()) return 0;
+        return AddRice(resourcesOnFullTime);
+    }
 
     // ===== PROPERTIES — đọc thẳng từ JsonDataManager =====
     public int  CurrentAmount => JsonDataManager.Ins != null ? JsonDataManager.Ins.food  : 0;
