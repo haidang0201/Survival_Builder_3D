@@ -149,10 +149,7 @@ public class SettlementSidePanelUI : MonoBehaviour
         // Helper lọc bỏ Nhà Chính khỏi danh sách Slot thông thường
         bool IsTownHallBuilding(UpgradeableBuilding ub)
         {
-            if (ub == null) return false;
-            if (currentZone != null && ub == currentZone.townHallBuilding) return true;
-            if (ub.buildingType == BuildingType.House || ub.buildingName.Contains("Nhà chính") || ub.buildingName.Contains("Town Hall")) return true;
-            return false;
+            return SettlementZone.IsTownHallBuilding(ub, currentZone);
         }
 
         // 2. Lấy danh sách các nhà công trình (TRỪ NHÀ CHÍNH) CHỈ THUỘC VỀ VÙNG ĐẤT NÀY
@@ -162,23 +159,29 @@ public class SettlementSidePanelUI : MonoBehaviour
         {
             currentZone.Update3DSlotVisibility();
 
-            // 🔥 Tự động quét và đăng ký lại tất cả công trình hiện có trong Scene vào Vùng đất hiện tại
+            // 🔥 Tự động quét và đăng ký lại tất cả công trình thuộc đúng Transform của Vùng đất hiện tại
             var allBuildingsInScene = Object.FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
             foreach (var ub in allBuildingsInScene)
             {
                 if (ub != null && ub.gameObject.activeSelf && !IsTownHallBuilding(ub))
                 {
-                    currentZone.RegisterBuilding(ub);
+                    bool belongsToCurrentZone = ub.transform.IsChildOf(currentZone.transform) || (ub.GetComponentInParent<SettlementZone>() == currentZone);
+                    if (belongsToCurrentZone)
+                    {
+                        currentZone.RegisterBuilding(ub);
+                    }
                 }
             }
 
-            // Lấy duy nhất từ danh sách công trình đã đăng ký chuẩn của Vùng đất hiện tại
+            // Lấy duy nhất từ danh sách công trình đã đăng ký chuẩn của Vùng đất hiện tại (loại bỏ công trình ngoại bang)
             if (currentZone.builtStructures != null)
             {
                 for (int i = currentZone.builtStructures.Count - 1; i >= 0; i--)
                 {
                     var ub = currentZone.builtStructures[i];
-                    if (ub == null || !ub.gameObject.activeSelf)
+                    bool belongs = ub != null && (ub.transform.IsChildOf(currentZone.transform) || ub.GetComponentInParent<SettlementZone>() == currentZone);
+
+                    if (ub == null || !ub.gameObject.activeSelf || !belongs)
                     {
                         currentZone.builtStructures.RemoveAt(i);
                         continue;
@@ -226,14 +229,18 @@ public class SettlementSidePanelUI : MonoBehaviour
                 ? currentZone.GetSlotWorldPosition(i) 
                 : ((BuildingSystem.Ins != null) ? BuildingSystem.Ins.SelectedSlotPos : Vector3.zero);
 
-            // Tìm công trình thực sự nằm tại vị trí 3D Slot [i]
-            UpgradeableBuilding buildingAtSlot = null;
-            foreach (var b in builtStructures)
+            // Tìm công trình chuẩn thuộc về ô Slot [i] của Vùng đất này
+            UpgradeableBuilding buildingAtSlot = (currentZone != null) ? currentZone.GetBuildingAtSlot(i) : null;
+            if (buildingAtSlot == null)
             {
-                if (b != null && b.gameObject.activeSelf && Vector3.Distance(b.transform.position, slotPos) < 3.5f)
+                foreach (var b in builtStructures)
                 {
-                    buildingAtSlot = b;
-                    break;
+                    if (b != null && b.gameObject.activeSelf && (b.slotIndex == i || Vector3.Distance(b.transform.position, slotPos) < 3.5f))
+                    {
+                        buildingAtSlot = b;
+                        b.slotIndex = i;
+                        break;
+                    }
                 }
             }
 

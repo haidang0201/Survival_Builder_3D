@@ -78,6 +78,9 @@ public class BuildingCtrl : MonoBehaviour
 
     public BuildingState ToState()
     {
+        UpgradeableBuilding ub = GetComponent<UpgradeableBuilding>();
+        if (ub == null) ub = GetComponentInChildren<UpgradeableBuilding>();
+
         return new BuildingState
         {
             buildingType = buildingType,
@@ -89,7 +92,8 @@ public class BuildingCtrl : MonoBehaviour
             isOccupied = IsFull,
             currentWorkers = CurrentWorkerCount,
             maxWorkers = maxWorkers,
-            level = 1
+            level = ub != null ? ub.CurrentLevel : 0,
+            slotIndex = ub != null ? ub.slotIndex : -1
         };
     }
 
@@ -110,6 +114,13 @@ public class BuildingCtrl : MonoBehaviour
 
         transform.position = state.position.ToVector3();
         transform.rotation = Quaternion.Euler(state.rotation.ToVector3());
+
+        UpgradeableBuilding ub = GetComponent<UpgradeableBuilding>();
+        if (ub == null) ub = GetComponentInChildren<UpgradeableBuilding>();
+        if (ub != null)
+        {
+            ub.slotIndex = state.slotIndex;
+        }
     }
 
     public void RestoreState(BuildingCtrlState state)

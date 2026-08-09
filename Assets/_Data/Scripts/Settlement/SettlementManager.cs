@@ -38,6 +38,53 @@ public class SettlementManager : Singleton<SettlementManager>
     }
 
     /// <summary>
+    /// Tìm Vùng đất theo Cấp bậc (Tier 0 = ZEFFIRA, Tier 1 = Ải 1, ...)
+    /// </summary>
+    public SettlementZone GetZoneByTier(int tier)
+    {
+        foreach (var z in allSettlements)
+        {
+            if (z != null && z.GetEffectiveTier() == tier) return z;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Lưu trạng thái PlayerPrefs cho TẤT CẢ các Vùng đất hiện có
+    /// </summary>
+    public void SaveAllSettlementsState()
+    {
+        if (allSettlements == null) return;
+        foreach (var zone in allSettlements)
+        {
+            if (zone != null)
+            {
+                zone.SaveSettlementState();
+            }
+        }
+        PlayerPrefs.Save();
+        Debug.Log("[SettlementManager] 💾 Đã lưu trạng thái toàn bộ Vùng đất vào PlayerPrefs.");
+    }
+
+    /// <summary>
+    /// Cập nhật ẩn/hiện toàn bộ các Vùng đất theo Cấp bậc Tier (Bậc N chỉ hiện khi Bậc N-1 được giải phóng)
+    /// </summary>
+    public void UpdateAllZoneTiers()
+    {
+        if (allSettlements == null || allSettlements.Count == 0) return;
+
+        allSettlements.Sort((a, b) => a.GetEffectiveTier().CompareTo(b.GetEffectiveTier()));
+
+        foreach (var zone in allSettlements)
+        {
+            if (zone != null)
+            {
+                zone.UpdateZoneTierVisibility();
+            }
+        }
+    }
+
+    /// <summary>
     /// Chọn vùng đất active hiện tại khi người chơi click trên bản đồ
     /// </summary>
     public void SelectSettlement(SettlementZone zone)
@@ -45,8 +92,6 @@ public class SettlementManager : Singleton<SettlementManager>
         if (zone == null) return;
 
         currentSettlement = zone;
-        currentSettlement.Update3DSlotVisibility();
-
         Debug.Log($"[SettlementManager] Đã chọn vùng đất: {currentSettlement.settlementName} (Đã có nhà chính: {currentSettlement.isTownHallEstablished})");
 
         if (UIManager.Ins != null)

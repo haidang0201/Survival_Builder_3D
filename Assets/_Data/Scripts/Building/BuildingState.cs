@@ -41,4 +41,5 @@ public class BuildingState
     public bool isRuined;
     public bool startAsRuined;
     public bool isInitialBuildNeeded;
+    public int slotIndex = -1;           // Index của ô Slot 3D (0, 1, 2, 3...)
 }

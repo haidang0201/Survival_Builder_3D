@@ -27,6 +27,9 @@ public class UpgradeableBuilding : MonoBehaviour
 
     public bool IsInitialBuildNeeded { get => isInitialBuildNeeded; set => isInitialBuildNeeded = value; }
 
+    [Header("Chỉ số ô Slot 3D (0, 1, 2, 3... -1 là Nhà Chính)")]
+    public int slotIndex = -1;
+
     [Header("Loại công trình")]
     public BuildingType buildingType;
 
@@ -517,12 +520,25 @@ public class UpgradeableBuilding : MonoBehaviour
         OnUpgradeComplete?.Invoke();
         ExecuteLevelUp();
 
+        SettlementZone parentZone = GetComponentInParent<SettlementZone>();
+        if (parentZone == null && SettlementManager.Ins != null) parentZone = SettlementManager.Ins.CurrentSettlement;
+        if (parentZone != null && SettlementZone.IsTownHallBuilding(this, parentZone))
+        {
+            parentZone.townHallBuilding = this;
+            parentZone.settlementLevel = CurrentLevel + 1;
+            parentZone.SaveSettlementState();
+        }
+
         var targetUI = BuildingProgressBridge.GetUI(this);
         if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
         if (targetUI != null) targetUI.HandleCompleteSequence();
 
         if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
-        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null)
+        {
+            SettlementSidePanelUI.Ins.UpdateHeaderVisual();
+            SettlementSidePanelUI.Ins.RefreshPanel();
+        }
 
         // 🔥 Tự động lưu trạng thái công trình đã nâng cấp xong vào Save Slot 1
         BuildingSystem.Ins?.SaveBuildingsToSlot(1);
@@ -769,6 +785,24 @@ public class UpgradeableBuilding : MonoBehaviour
         }
 
         UpdateCivilianBuildingData();
+        
+        SettlementZone parentZone = GetComponentInParent<SettlementZone>();
+        if (parentZone == null && SettlementManager.Ins != null) parentZone = SettlementManager.Ins.CurrentSettlement;
+
+        if (parentZone != null)
+        {
+            if (SettlementZone.IsTownHallBuilding(this, parentZone))
+            {
+                parentZone.townHallBuilding = this;
+                parentZone.settlementLevel = CurrentLevel + 1;
+                parentZone.SaveSettlementState();
+            }
+            else
+            {
+                parentZone.RegisterBuilding(this);
+            }
+        }
+
         OnLevelChanged?.Invoke();
     }
 

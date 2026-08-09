@@ -162,7 +162,14 @@ public class ConstructionManager : Singleton<ConstructionManager>
                 ub.IsInitialBuildNeeded = false;
                 if (SettlementManager.Ins != null && SettlementManager.Ins.CurrentSettlement != null)
                 {
-                    SettlementManager.Ins.CurrentSettlement.RegisterBuilding(ub);
+                    var zone = SettlementManager.Ins.CurrentSettlement;
+                    int slotIdx = zone.GetSlotIndexAtPosition(position);
+                    if (slotIdx >= 0)
+                    {
+                        ub.slotIndex = slotIdx;
+                        ub.transform.position = zone.GetSlotWorldPosition(slotIdx);
+                    }
+                    zone.RegisterBuilding(ub);
                 }
             }
 

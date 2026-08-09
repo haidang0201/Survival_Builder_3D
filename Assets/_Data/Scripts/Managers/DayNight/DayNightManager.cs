@@ -230,6 +230,12 @@ public class DayNightManager : Singleton<DayNightManager>
         // 🌾 Tự động cộng tài nguyên từ toàn bộ công trình sản xuất khi bắt đầu Wave mới
         WaveResourceManager.CollectBuildingResourcesForWave(currentWave);
 
+        // 💾 TỰ ĐỘNG LƯU DỮ LIỆU TOÀN BỘ GAME MỖI KHI QUA 1 NGÀY / WAVE MỚI
+        if (BuildingSystem.Ins != null) BuildingSystem.Ins.SaveBuildingsToSlot(1);
+        if (SettlementManager.Ins != null) SettlementManager.Ins.SaveAllSettlementsState();
+        PlayerPrefs.Save();
+        Debug.Log($"[DayNightManager] 💾 Đã TỰ ĐỘNG LƯU TOÀN BỘ GAME khi trôi qua Ngày {currentWave}!");
+
         // 🎓 Thông báo tiến trình cho Tutorial
         if (CampaignTutorialManager.Ins != null)
         {

@@ -154,45 +154,177 @@ public class BuildingManager : Singleton<BuildingManager>
         return states;
     }
 
+    private SettlementZone FindClosestZone(Vector3 pos)
+    {
+        SettlementZone[] allZones = FindObjectsByType<SettlementZone>(FindObjectsSortMode.None);
+        SettlementZone bestZone = null;
+        float minDst = float.MaxValue;
+        foreach (var z in allZones)
+        {
+            if (z != null)
+            {
+                Vector3 zPos = (z.townHallPoint != null) ? z.townHallPoint.position : z.transform.position;
+                float dst = Vector3.Distance(zPos, pos);
+                if (dst < minDst)
+                {
+                    minDst = dst;
+                    bestZone = z;
+                }
+            }
+        }
+        return bestZone;
+    }
+
     /// <summary>
-    /// Xoá toàn bộ công trình cũ và tái dựng từ danh sách save.
-    /// Gọi từ BuildingSystem.LoadBuildings().
+    /// Khôi phục trạng thái công trình từ save JSON.
+    /// Ưu tiên cập nhật dữ liệu cho công trình đã có sẵn trong Scene; chỉ khởi tạo mới nếu công trình chưa tồn tại.
     /// </summary>
     public void LoadStates(List<BuildingState> states)
     {
-        if (states == null) return;
+        if (states == null || states.Count == 0) return;
 
-        // Bước 1: Dọn sạch scene
-        ClearAll();
+        UpgradeableBuilding[] existingUbs = FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
 
-        // Bước 2: Tái tạo từng công trình từ state
         foreach (var state in states)
         {
             if (state == null || state.buildingType == BuildingType.None) continue;
 
-            BuildingCtrl spawned = ConstructionManager.Ins.SpawnBuilding(
-                state.buildingType,
-                state.position.ToVector3(),
-                Quaternion.Euler(state.rotation.ToVector3())
-            );
+            Vector3 targetPos = state.position.ToVector3();
+            SettlementZone targetZone = FindClosestZone(targetPos);
+            UpgradeableBuilding targetUb = null;
 
-            if (spawned != null)
+            // 1. Nếu là Nhà Chính (House): Khớp thẳng với Nhà Chính của Vùng đất tương ứng
+            if (state.buildingType == BuildingType.House && targetZone != null)
             {
-                spawned.FromState(state);
-
-                // ÉP CÔNG TRÌNH KHÔI PHỤC ĐÚNG LEVEL VÀ KHÔNG BỊ TỰ NÂNG CẤP LẦN NỮA
-                UpgradeableBuilding upgradeable = spawned.GetComponent<UpgradeableBuilding>();
-                if (upgradeable == null) upgradeable = spawned.GetComponentInChildren<UpgradeableBuilding>();
-
-                if (upgradeable != null)
+                if (targetZone.townHallBuilding != null)
                 {
-                    upgradeable.LoadBuildingData(state.level, state.isRuined, state.isInitialBuildNeeded);
+                    targetUb = targetZone.townHallBuilding;
                 }
+                else
+                {
+                    UpgradeableBuilding[] zoneUbs = targetZone.GetComponentsInChildren<UpgradeableBuilding>(true);
+                    foreach (var ub in zoneUbs)
+                    {
+                        if (ub != null && (ub.buildingType == BuildingType.House || SettlementZone.IsTownHallBuilding(ub, targetZone)))
+                        {
+                            targetUb = ub;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 2. Nếu có slotIndex >= 0: Ưu tiên khớp theo slotIndex trong Vùng đất tương ứng
+            if (targetUb == null && targetZone != null && state.slotIndex >= 0)
+            {
+                targetUb = targetZone.GetBuildingAtSlot(state.slotIndex);
+            }
+
+            // 3. Fallback khớp theo khoảng cách < 3.5m trong Vùng đất tương ứng
+            if (targetUb == null && targetZone != null)
+            {
+                UpgradeableBuilding[] zoneUbs = targetZone.GetComponentsInChildren<UpgradeableBuilding>(true);
+                foreach (var ub in zoneUbs)
+                {
+                    if (ub != null && ub.gameObject.activeInHierarchy && ub.buildingType == state.buildingType)
+                    {
+                        if (Vector3.Distance(ub.transform.position, targetPos) < 3.5f)
+                        {
+                            targetUb = ub;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 4. Nếu đã có sẵn ➔ Cập nhật dữ liệu Level & State, KHÔNG SPAWN MỚI
+            if (targetUb != null)
+            {
+                targetUb.slotIndex = state.slotIndex;
+                BuildingCtrl bCtrl = targetUb.GetComponent<BuildingCtrl>();
+                if (bCtrl != null) bCtrl.FromState(state);
+
+                targetUb.LoadBuildingData(state.level, state.isRuined, state.isInitialBuildNeeded);
+
+                if (targetZone != null)
+                {
+                    targetZone.LoadSettlementState();
+                    if (SettlementZone.IsTownHallBuilding(targetUb, targetZone))
+                    {
+                        targetZone.townHallBuilding = targetUb;
+                        targetZone.settlementLevel = Mathf.Max(targetZone.settlementLevel, state.level + 1);
+                        targetZone.SaveSettlementState();
+                    }
+                    else
+                    {
+                        targetUb.transform.SetParent(targetZone.transform, true);
+                        if (state.slotIndex >= 0)
+                        {
+                            targetUb.transform.position = targetZone.GetSlotWorldPosition(state.slotIndex);
+                        }
+                        targetZone.RegisterBuilding(targetUb);
+                    }
+                }
+
+                Debug.Log($"[BuildingManager] 🔄 Đã khôi phục dữ liệu cho {state.buildingType} tại {targetZone?.settlementName} slot {state.slotIndex} (Level {state.level}).");
             }
             else
             {
-                Debug.LogError($"[BuildingManager] ❌ Khôi phục thất bại: {state.buildingType}. Kiểm tra Prefab trong ConstructionManager!");
+                // 5. Nếu chưa có trong Scene ➔ Khởi tạo mới từ Prefab tại ô Slot của Vùng đất tương ứng
+                Vector3 spawnPos = (targetZone != null && state.slotIndex >= 0) ? targetZone.GetSlotWorldPosition(state.slotIndex) : targetPos;
+
+                BuildingCtrl spawned = ConstructionManager.Ins.SpawnBuilding(
+                    state.buildingType,
+                    spawnPos,
+                    Quaternion.Euler(state.rotation.ToVector3())
+                );
+
+                if (spawned != null)
+                {
+                    spawned.FromState(state);
+                    UpgradeableBuilding upgradeable = spawned.GetComponent<UpgradeableBuilding>();
+                    if (upgradeable == null) upgradeable = spawned.GetComponentInChildren<UpgradeableBuilding>();
+
+                    if (upgradeable != null)
+                    {
+                        upgradeable.slotIndex = state.slotIndex;
+                        upgradeable.LoadBuildingData(state.level, state.isRuined, state.isInitialBuildNeeded);
+
+                        if (targetZone != null)
+                        {
+                            upgradeable.transform.SetParent(targetZone.transform, true);
+                            if (SettlementZone.IsTownHallBuilding(upgradeable, targetZone))
+                            {
+                                targetZone.townHallBuilding = upgradeable;
+                                targetZone.settlementLevel = Mathf.Max(targetZone.settlementLevel, state.level + 1);
+                                targetZone.SaveSettlementState();
+                            }
+                            else
+                            {
+                                targetZone.RegisterBuilding(upgradeable);
+                            }
+                        }
+                    }
+                    Debug.Log($"[BuildingManager] ➕ Đã tái tạo mới {state.buildingType} tại {targetZone?.settlementName} slot {state.slotIndex}.");
+                }
             }
+        }
+
+        // 🔥 Nạp & Đăng ký đầy đủ công trình cho TẤT CẢ các Vùng đất ngay lập tức
+        SettlementZone[] allSceneZones = FindObjectsByType<SettlementZone>(FindObjectsSortMode.None);
+        foreach (var z in allSceneZones)
+        {
+            if (z != null)
+            {
+                z.EnsureAllBuildingsRegistered();
+                z.AlignBuildingsToSlotPositions();
+            }
+        }
+
+        if (SettlementSidePanelUI.Ins != null)
+        {
+            SettlementSidePanelUI.Ins.UpdateHeaderVisual();
+            SettlementSidePanelUI.Ins.RefreshPanel();
         }
     }
 

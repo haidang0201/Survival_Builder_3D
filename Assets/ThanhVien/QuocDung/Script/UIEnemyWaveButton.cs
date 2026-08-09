@@ -133,11 +133,11 @@ public class UIEnemyWaveButton : MonoBehaviour
             // Record targeted settlement zone
             if (targetLeadEnemy != null)
             {
-                SettlementZone zone = targetLeadEnemy.GetComponentInParent<SettlementZone>();
-                if (zone == null) zone = targetLeadEnemy.GetComponentInChildren<SettlementZone>();
+                SettlementZone zone = FindZoneFromTarget(targetLeadEnemy);
                 if (zone != null)
                 {
                     BattleData.TargetedSettlementZoneName = zone.settlementName;
+                    Debug.Log($"[UIEnemyWaveButton] 🎯 Đã ghi nhận Vùng đất mục tiêu chinh phục: {BattleData.TargetedSettlementZoneName}");
                 }
             }
 
@@ -150,6 +150,16 @@ public class UIEnemyWaveButton : MonoBehaviour
             return;
         }
 
+        if (targetLeadEnemy != null)
+        {
+            SettlementZone zone = FindZoneFromTarget(targetLeadEnemy);
+            if (zone != null)
+            {
+                BattleData.TargetedSettlementZoneName = zone.settlementName;
+                Debug.Log($"[UIEnemyWaveButton] 🎯 Đã ghi nhận Vùng đất mục tiêu chinh phục khi mở TroopDispatchUI: {BattleData.TargetedSettlementZoneName}");
+            }
+        }
+
         Vector3 attackPos = targetLeadEnemy.position;
         Debug.Log($"[UIEnemyWaveButton] Player clicked Attack Button! Opening TroopDispatchUI panel...");
 
@@ -157,6 +167,41 @@ public class UIEnemyWaveButton : MonoBehaviour
         TroopDispatchUI.OpenPanel(attackPos, targetLeadEnemy, battleSceneName);
 
         Destroy(gameObject);
+    }
+
+    public static SettlementZone FindZoneFromTarget(Transform target)
+    {
+        if (target == null) return null;
+
+        SettlementZone zone = target.GetComponentInParent<SettlementZone>();
+        if (zone != null) return zone;
+
+        zone = target.GetComponentInChildren<SettlementZone>();
+        if (zone != null) return zone;
+
+        SettlementZone[] allZones = Object.FindObjectsByType<SettlementZone>(FindObjectsSortMode.None);
+        SettlementZone bestZone = null;
+        float minDst = float.MaxValue;
+        foreach (var z in allZones)
+        {
+            if (z != null)
+            {
+                Vector3 zPos = (z.townHallPoint != null) ? z.townHallPoint.position : z.transform.position;
+                float dst = Vector3.Distance(zPos, target.position);
+                if (dst < minDst)
+                {
+                    minDst = dst;
+                    bestZone = z;
+                }
+            }
+        }
+
+        if (bestZone != null && minDst < 30.0f)
+        {
+            return bestZone;
+        }
+
+        return null;
     }
 
     /// <summary>

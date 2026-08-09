@@ -194,32 +194,44 @@ public class UILinh : MonoBehaviour
     }
 
     /// <summary>
-    /// 🔥 Phím B: Xóa file Save và Reload lại Scene để khôi phục 100% trạng thái ban đầu của Scene
+    /// 🔥 Phím B: Xóa sạch 100% PlayerPrefs + File Save JSON và Reload lại Scene về trạng thái ban đầu của Scene
     /// </summary>
     public void ResetGame()
     {
         try
         {
-            // 1. Xóa file save cũ (của UILinh và của JsonDataManager slot 1)
-            DeleteSave();
-
-            // Xóa thêm file save_slot_1.json của hệ thống Building
-            string slot1Path = System.IO.Path.Combine(Application.persistentDataPath, "save_slot_1.json");
-            if (System.IO.File.Exists(slot1Path))
+            // 1. Xóa toàn bộ file save JSON trong persistentDataPath
+            if (Directory.Exists(Application.persistentDataPath))
             {
-                System.IO.File.Delete(slot1Path);
-                Debug.Log("[UILinh] Đã xóa file save_slot_1.json của hệ thống Building.");
+                string[] saveFiles = Directory.GetFiles(Application.persistentDataPath, "*.json");
+                foreach (var file in saveFiles)
+                {
+                    try
+                    {
+                        File.Delete(file);
+                        Debug.Log($"[UILinh] Đã xóa file save: {file}");
+                    }
+                    catch { }
+                }
             }
 
-            // 2. Bật cờ để BattleData KHÔNG tự động load lại file Save khi scene mới
+            // 2. Xóa sạch 100% PlayerPrefs (Bao gồm dữ liệu Vùng đất SettlementZone, Tutorial, Level...)
+            PlayerPrefs.DeleteAll();
+            PlayerPrefs.Save();
+            Debug.Log("[UILinh] Đã xóa sạch 100% PlayerPrefs.");
+
+            // 3. Reset toàn bộ RAM & BattleData
+            BattleData.ResetData();
             BattleData.SkipAutoLoadOnNextSceneLoad = true;
             BattleData.LastBattleWasVictory = false;
 
-            // 3. Load lại đúng Scene hiện tại → Scene sẽ chạy từ dữ liệu gốc 100%
+            JsonDataManager.ResetEndGameStats();
+
+            // 4. Load lại đúng Scene hiện tại → Scene sẽ khởi tạo 100% mới tinh
             Scene currentScene = SceneManager.GetActiveScene();
             SceneManager.LoadScene(currentScene.buildIndex);
 
-            Debug.Log("[UILinh] Đã hoàn nguyên toàn bộ Scene về trạng thái khởi tạo ban đầu thành công!");
+            Debug.Log("[UILinh] 🎉 Đã hoàn nguyên 100% game về trạng thái khởi tạo ban đầu thành công!");
         }
         catch (Exception e)
         {
@@ -239,15 +251,10 @@ public class UILinh : MonoBehaviour
                 File.Delete(savePath);
                 Debug.Log($"[UILinh] Đã xóa thành công file Save JSON tại: {savePath}");
             }
-            else
-            {
-                Debug.LogWarning($"[UILinh] File Save không tồn tại để xóa: {savePath}");
-            }
 
-            // 🔥 Xóa cờ trạng thái Tutorial để có thể test lại từ đầu
-            PlayerPrefs.DeleteKey("TutorialCompleted");
+            PlayerPrefs.DeleteAll();
             PlayerPrefs.Save();
-            Debug.Log("[UILinh] Đã reset trạng thái hoàn thành Tutorial trong PlayerPrefs.");
+            Debug.Log("[UILinh] Đã xóa sạch PlayerPrefs.");
         }
         catch (Exception e)
         {

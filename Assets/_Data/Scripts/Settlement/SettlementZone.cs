@@ -16,6 +16,12 @@ public class SettlementZone : MonoBehaviour
     public bool isUnlocked = true;                     // Vùng đất đã được mở khóa trên bản đồ chưa
     public bool isTownHallEstablished = true;           // Đã xây Nhà Chính chưa (Vùng đất khởi đầu = true)
 
+    [Header("=== PHÂN BẬC VÙNG ĐẤT (ZONE TIER / ẢI) ===")]
+    [Tooltip("Bậc 0 = Vùng đất khởi đầu (ZEFFIRA). Bậc 1, 2, 3... = Các ải mở khóa tiếp theo.")]
+    public int zoneTier = 0;
+    [Tooltip("Vùng đất bậc trước đó cần giải phóng để mở khóa vùng đất này (để trống sẽ tự tìm Zone bậc zoneTier - 1).")]
+    public SettlementZone previousTierZone;
+
     [Header("=== VỊ TRÍ 3D CỦA NHÀ CHÍNH & CÁC Ô SLOT ===")]
     public Transform townHallPoint;                     // Vị trí đặt Nhà Chính ở trung tâm
     public GameObject townHallPrefab;                   // Prefab Nhà Chính khi khởi tạo
@@ -130,18 +136,214 @@ public class SettlementZone : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Kiểm tra chuẩn xác một UpgradeableBuilding có phải là Nhà Chính (House / Town Hall) của Vùng đất hay không.
+    /// (Nhà chính có BuildingType = BuildingType.House)
+    /// </summary>
+    /// <summary>
+    /// Kiểm tra chuẩn xác một UpgradeableBuilding có phải là Nhà Chính (House / Town Hall) của Vùng đất hay không.
+    /// (Nhà chính có BuildingType = BuildingType.House)
+    /// </summary>
+    public static bool IsTownHallBuilding(UpgradeableBuilding ub, SettlementZone zone = null)
+    {
+        if (ub == null) return false;
+        if (zone != null && ub == zone.townHallBuilding) return true;
+
+        string name = !string.IsNullOrEmpty(ub.buildingName) ? ub.buildingName.ToLower() : "";
+        string goName = ub.gameObject.name.ToLower();
+
+        // 🛑 LOẠI TRỪ TẤT CẢ CÁC NHÀ KHO VÀ TRẠI LÍNH (Tránh nhầm Warehouse/Storage/Barracks thành TownHall)
+        if (name.Contains("warehouse") || goName.Contains("warehouse") || 
+            name.Contains("storage") || goName.Contains("storage") || 
+            name.Contains("barrack") || goName.Contains("barrack"))
+        {
+            return false;
+        }
+
+        if (ub.buildingType == BuildingType.House) return true;
+
+        if (name.Contains("nhà chính") || name.Contains("town hall") || name.Contains("townhall")) return true;
+        if (goName.Contains("nhà chính") || goName.Contains("townhall") || goName.Contains("nhachinh")) return true;
+
+        return false;
+    }
+
     private void Awake()
     {
         if (townHallPoint == null) townHallPoint = transform;
+
+        // Tự động đồng bộ settlementName theo tên GameObject nếu tên bị trùng mặc định
+        if (string.IsNullOrEmpty(settlementName) || (settlementName == "ZEFFIRA" && !gameObject.name.Equals("ZEFFIRA", System.StringComparison.OrdinalIgnoreCase)))
+        {
+            settlementName = gameObject.name;
+        }
+
+        // 💾 Load ngay trạng thái từ PlayerPrefs trong Awake() để tránh bị BuildingManager đè dữ liệu cũ khi LoadScene
+        LoadSettlementState();
+
+        // Bậc 0 (ZEFFIRA) luôn là vùng đất chính của người chơi, tuyệt đối không bao giờ có Địch
+        if (GetEffectiveTier() == 0 || settlementName.Equals("ZEFFIRA", System.StringComparison.OrdinalIgnoreCase))
+        {
+            hasEnemyOutpost = false;
+            isUnlocked = true;
+        }
     }
 
     private void Start()
     {
         LoadSettlementState();
+        UpdateZoneTierVisibility();
         InstantiateEnemyOutpost();
         EnsureTownHallInstantiated();
         InstantiatePrebuiltBuildings();
+        EnsureAllBuildingsRegistered();
         Update3DSlotVisibility();
+    }
+
+    public void EnsureAllBuildingsRegistered()
+    {
+        UpgradeableBuilding[] localUbs = GetComponentsInChildren<UpgradeableBuilding>(true);
+        List<UpgradeableBuilding> allLocalList = new List<UpgradeableBuilding>(localUbs);
+        Vector3 originPos = (townHallPoint != null) ? townHallPoint.position : transform.position;
+
+        UpgradeableBuilding[] sceneUbs = Object.FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
+        foreach (var ub in sceneUbs)
+        {
+            if (ub == null || !ub.gameObject.activeSelf || allLocalList.Contains(ub)) continue;
+
+            SettlementZone otherZone = ub.GetComponentInParent<SettlementZone>();
+            if (otherZone != null && otherZone != this) continue;
+
+            float dist = Vector3.Distance(ub.transform.position, originPos);
+            if (dist < 18.0f)
+            {
+                ub.transform.SetParent(this.transform, true);
+                allLocalList.Add(ub);
+            }
+        }
+
+        foreach (var ub in allLocalList)
+        {
+            if (ub == null || !ub.gameObject.activeSelf) continue;
+
+            if (IsTownHallBuilding(ub, this))
+            {
+                townHallBuilding = ub;
+                int currentLvl = ub.CurrentLevel + 1;
+                if (currentLvl != settlementLevel)
+                {
+                    settlementLevel = currentLvl;
+                    SaveSettlementState();
+                }
+            }
+            else
+            {
+                if (ub.slotIndex < 0)
+                {
+                    ub.slotIndex = GetSlotIndexAtPosition(ub.transform.position);
+                }
+                RegisterBuilding(ub);
+            }
+        }
+    }
+
+    public int GetEffectiveTier()
+    {
+        if (zoneTier > 0) return zoneTier;
+        if (settlementName.Equals("ZEFFIRA", System.StringComparison.OrdinalIgnoreCase)) return 0;
+        if (transform.parent != null)
+        {
+            return transform.GetSiblingIndex();
+        }
+        return 0;
+    }
+
+    public SettlementZone GetPreviousZone()
+    {
+        if (previousTierZone != null && previousTierZone != this) return previousTierZone;
+
+        int myTier = GetEffectiveTier();
+        if (myTier <= 0) return null;
+
+        // 1. Tìm từ SettlementManager
+        if (SettlementManager.Ins != null)
+        {
+            previousTierZone = SettlementManager.Ins.GetZoneByTier(myTier - 1);
+            if (previousTierZone != null && previousTierZone != this) return previousTierZone;
+        }
+
+        // 2. Tìm từ cùng Parent ("Land") theo thứ tự Sibling Index
+        if (transform.parent != null)
+        {
+            int prevIndex = transform.GetSiblingIndex() - 1;
+            if (prevIndex >= 0 && prevIndex < transform.parent.childCount)
+            {
+                previousTierZone = transform.parent.GetChild(prevIndex).GetComponent<SettlementZone>();
+                if (previousTierZone != null && previousTierZone != this) return previousTierZone;
+            }
+        }
+
+        // 3. Tìm trong toàn bộ Scene (kể cả inactive)
+        SettlementZone[] allZones = Object.FindObjectsByType<SettlementZone>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var z in allZones)
+        {
+            if (z != null && z != this && z.GetEffectiveTier() == myTier - 1)
+            {
+                previousTierZone = z;
+                return previousTierZone;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Kiểm tra và ẩn/hiện Vùng đất theo phân bậc Tier (Bậc 0 mở sẵn, Bậc N ẩn cho tới khi Bậc N-1 giải phóng)
+    /// </summary>
+    public void UpdateZoneTierVisibility()
+    {
+        int myTier = GetEffectiveTier();
+
+        // Bậc 0 (ZEFFIRA) luôn luôn mở khóa và hiển thị từ đầu
+        if (myTier <= 0)
+        {
+            isUnlocked = true;
+            if (!gameObject.activeSelf) gameObject.SetActive(true);
+            return;
+        }
+
+        SettlementZone prevZone = GetPreviousZone();
+
+        // Zone bậc N chỉ mở khóa & xuất hiện khi Zone bậc N-1 ĐÃ GIẢI PHÓNG (hasEnemyOutpost == false)
+        bool isPrevConquered = false;
+        if (prevZone != null)
+        {
+            isPrevConquered = !prevZone.hasEnemyOutpost;
+        }
+        else if (myTier == 1)
+        {
+            // Mặc định mở khóa Bậc 1 (VASKASIA) nếu Bậc 0 không có địch
+            SettlementZone zeffira = GameObject.Find("ZEFFIRA")?.GetComponent<SettlementZone>();
+            if (zeffira != null)
+            {
+                isPrevConquered = !zeffira.hasEnemyOutpost;
+            }
+            else
+            {
+                isPrevConquered = true;
+            }
+        }
+
+        if (isPrevConquered)
+        {
+            isUnlocked = true;
+            if (!gameObject.activeSelf) gameObject.SetActive(true);
+        }
+        else
+        {
+            // 🔒 ẨN HOÀN TOÀN VÙNG ĐẤT BẬC CAO CHO ĐẾN KHI BẬC TRƯỚC ĐÓ ĐƯỢC GIẢI PHÓNG
+            isUnlocked = false;
+            if (gameObject.activeSelf) gameObject.SetActive(false);
+        }
     }
 
     public void SaveSettlementState()
@@ -149,16 +351,50 @@ public class SettlementZone : MonoBehaviour
         PlayerPrefs.SetInt($"Settlement_{settlementName}_Level", settlementLevel);
         PlayerPrefs.SetInt($"Settlement_{settlementName}_Unlocked", isUnlocked ? 1 : 0);
         PlayerPrefs.SetInt($"Settlement_{settlementName}_TownHallEstablished", isTownHallEstablished ? 1 : 0);
+        PlayerPrefs.SetInt($"Settlement_{settlementName}_HasEnemyOutpost", hasEnemyOutpost ? 1 : 0);
         PlayerPrefs.Save();
     }
 
     public void LoadSettlementState()
     {
+        if (GetEffectiveTier() == 0 || settlementName.Equals("ZEFFIRA", System.StringComparison.OrdinalIgnoreCase))
+        {
+            hasEnemyOutpost = false;
+            isUnlocked = true;
+            return;
+        }
+
         if (PlayerPrefs.HasKey($"Settlement_{settlementName}_Level"))
         {
-            settlementLevel = PlayerPrefs.GetInt($"Settlement_{settlementName}_Level", settlementLevel);
+            int savedLevel = PlayerPrefs.GetInt($"Settlement_{settlementName}_Level", settlementLevel);
+            if (savedLevel > settlementLevel) settlementLevel = savedLevel;
+        }
+
+        if (PlayerPrefs.HasKey($"Settlement_{settlementName}_Unlocked"))
+        {
             isUnlocked = PlayerPrefs.GetInt($"Settlement_{settlementName}_Unlocked", isUnlocked ? 1 : 0) == 1;
+        }
+
+        if (PlayerPrefs.HasKey($"Settlement_{settlementName}_TownHallEstablished"))
+        {
             isTownHallEstablished = PlayerPrefs.GetInt($"Settlement_{settlementName}_TownHallEstablished", isTownHallEstablished ? 1 : 0) == 1;
+        }
+
+        if (PlayerPrefs.HasKey($"Settlement_{settlementName}_HasEnemyOutpost"))
+        {
+            hasEnemyOutpost = PlayerPrefs.GetInt($"Settlement_{settlementName}_HasEnemyOutpost", hasEnemyOutpost ? 1 : 0) == 1;
+        }
+
+        if (!hasEnemyOutpost && spawnedEnemyOutpostInstance != null)
+        {
+            GameObject outpostObj = spawnedEnemyOutpostInstance;
+            spawnedEnemyOutpostInstance = null;
+            if (outpostObj != null)
+            {
+                outpostObj.SetActive(false);
+                if (Application.isPlaying) Destroy(outpostObj);
+                else DestroyImmediate(outpostObj);
+            }
         }
     }
 
@@ -225,7 +461,15 @@ public class SettlementZone : MonoBehaviour
         {
             var th = TownHallBuilding;
             if (th != null && isTownHallEstablished)
-                return th.CurrentLevel + 1;
+            {
+                int lvl = th.CurrentLevel + 1;
+                if (lvl != settlementLevel)
+                {
+                    settlementLevel = lvl;
+                    SaveSettlementState();
+                }
+                return settlementLevel;
+            }
             return settlementLevel;
         }
     }
@@ -249,10 +493,6 @@ public class SettlementZone : MonoBehaviour
                 SettlementSidePanelUI.Ins.UpdateHeaderVisual();
                 SettlementSidePanelUI.Ins.RefreshPanel();
             }
-        }
-        else if (hasEnemyOutpost && spawnedEnemyOutpostInstance == null && !isTownHallEstablished)
-        {
-            OnEnemyOutpostDestroyed();
         }
 
         var th = TownHallBuilding;
@@ -362,72 +602,62 @@ public class SettlementZone : MonoBehaviour
     }
 
     /// <summary>
-    /// Sinh Căn cứ / Công trình Địch ban đầu chiếm đóng vùng đất này
+    /// Sinh Căn cứ / Công trình Địch ban đầu chiếm đóng vùng đất này từ Prefab dưới Transform của Vùng đất
     /// </summary>
     public void InstantiateEnemyOutpost()
     {
-        if (!hasEnemyOutpost) return;
-        if (spawnedEnemyOutpostInstance != null) return;
-
-        // 1. Tự động tìm EnemySpawn từ enemySpawn, enemySpawnPoint hoặc trong Scene / Children nếu chưa được gán
-        if (enemySpawn == null && enemySpawnPoint != null)
+        if (GetEffectiveTier() == 0 || settlementName.Equals("ZEFFIRA", System.StringComparison.OrdinalIgnoreCase))
         {
-            enemySpawn = enemySpawnPoint.GetComponent<EnemySpawn>();
-            if (enemySpawn == null) enemySpawn = enemySpawnPoint.GetComponentInParent<EnemySpawn>();
-            if (enemySpawn == null) enemySpawn = enemySpawnPoint.GetComponentInChildren<EnemySpawn>();
+            hasEnemyOutpost = false;
+            return;
+        }
+
+        if (!hasEnemyOutpost)
+        {
+            if (spawnedEnemyOutpostInstance != null)
+            {
+                GameObject outpostObj = spawnedEnemyOutpostInstance;
+                spawnedEnemyOutpostInstance = null;
+                if (outpostObj != null)
+                {
+                    outpostObj.SetActive(false);
+                    if (Application.isPlaying) Destroy(outpostObj);
+                    else DestroyImmediate(outpostObj);
+                }
+            }
+            return;
+        }
+
+        // 1. Xác định vị trí spawn chuẩn của Vùng đất này
+        Vector3 spawnPosition = (enemySpawnPoint != null) ? enemySpawnPoint.position : ((townHallPoint != null) ? townHallPoint.position : transform.position);
+        Quaternion spawnRotation = (enemySpawnPoint != null) ? enemySpawnPoint.rotation : transform.rotation;
+
+        // 2. Khởi tạo Căn cứ Địch từ Prefab trực tiếp dưới Transform Vùng đất (SetParent = transform)
+        if (spawnedEnemyOutpostInstance == null && enemyOutpostPrefab != null)
+        {
+            spawnedEnemyOutpostInstance = Instantiate(enemyOutpostPrefab, spawnPosition, spawnRotation, transform);
+            spawnedEnemyOutpostInstance.name = $"{enemyOutpostPrefab.name}_{settlementName}";
+        }
+        else if (spawnedEnemyOutpostInstance == null && enemySpawnPoint != null && enemySpawnPoint.gameObject.scene.IsValid() && enemySpawnPoint.GetComponentInChildren<HPTower>() != null)
+        {
+            spawnedEnemyOutpostInstance = enemySpawnPoint.gameObject;
+        }
+
+        // 3. Lấy EnemySpawn CHỈ THUỘC VỀ Căn cứ Địch vừa sinh dưới Vùng đất này
+        if (spawnedEnemyOutpostInstance != null)
+        {
+            enemySpawn = spawnedEnemyOutpostInstance.GetComponent<EnemySpawn>();
+            if (enemySpawn == null) enemySpawn = spawnedEnemyOutpostInstance.GetComponentInChildren<EnemySpawn>();
         }
 
         if (enemySpawn == null)
         {
             enemySpawn = GetComponentInChildren<EnemySpawn>();
-            if (enemySpawn == null)
-            {
-                enemySpawn = Object.FindFirstObjectByType<EnemySpawn>();
-            }
-        }
-
-        // 2. Xác định vị trí spawn từ EnemySpawn (hoặc enemySpawnPoint / townHallPoint / transform)
-        Vector3 spawnPosition = transform.position;
-        Quaternion spawnRotation = transform.rotation;
-
-        if (enemySpawn != null)
-        {
-            spawnPosition = enemySpawn.GetSpawnPosition();
-            spawnRotation = enemySpawn.transform.rotation;
-        }
-        else if (enemySpawnPoint != null)
-        {
-            spawnPosition = enemySpawnPoint.position;
-            spawnRotation = enemySpawnPoint.rotation;
-        }
-        else if (townHallPoint != null)
-        {
-            spawnPosition = townHallPoint.position;
-            spawnRotation = townHallPoint.rotation;
-        }
-
-        // 3. Khởi tạo hoặc liên kết Căn cứ Địch
-        if (enemySpawn != null && enemySpawn.gameObject.scene.IsValid() && enemySpawn.GetComponentInChildren<HPTower>() != null)
-        {
-            spawnedEnemyOutpostInstance = enemySpawn.gameObject;
-        }
-        else if (enemySpawnPoint != null && enemySpawnPoint.gameObject.scene.IsValid() && enemySpawnPoint.GetComponentInChildren<HPTower>() != null)
-        {
-            spawnedEnemyOutpostInstance = enemySpawnPoint.gameObject;
-        }
-        else if (enemyOutpostPrefab != null)
-        {
-            spawnedEnemyOutpostInstance = Instantiate(enemyOutpostPrefab, spawnPosition, spawnRotation, transform);
         }
 
         // 4. Đăng ký sự kiện tiêu diệt Căn cứ Địch
         if (spawnedEnemyOutpostInstance != null)
         {
-            if (enemySpawn == null)
-            {
-                enemySpawn = spawnedEnemyOutpostInstance.GetComponentInChildren<EnemySpawn>();
-            }
-
             HPTower enemyHP = spawnedEnemyOutpostInstance.GetComponent<HPTower>();
             if (enemyHP == null) enemyHP = spawnedEnemyOutpostInstance.GetComponentInChildren<HPTower>();
 
@@ -436,12 +666,11 @@ public class SettlementZone : MonoBehaviour
                 enemyHP.OnDeathEvent -= OnEnemyOutpostDestroyed;
                 enemyHP.OnDeathEvent += OnEnemyOutpostDestroyed;
             }
-
-            Debug.Log($"[SettlementZone] ⚔️ Căn cứ Địch đã khởi tạo/liên kết tại vị trí spawn {spawnPosition} cho vùng đất {settlementName}!");
+            Debug.Log($"[SettlementZone] 🏰 Đã khởi tạo Căn cứ Địch thành công tại {settlementName}.");
         }
         else
         {
-            Debug.LogWarning($"[SettlementZone] ⚠️ Chưa gán enemyOutpostPrefab hoặc không tìm thấy vị trí EnemySpawn cho vùng đất {settlementName}!");
+            Debug.LogWarning($"[SettlementZone] ⚠️ Chưa gán enemyOutpostPrefab cho vùng đất {settlementName}!");
         }
     }
 
@@ -454,7 +683,15 @@ public class SettlementZone : MonoBehaviour
             spawnedEnemyOutpostInstance = null;
         }
 
+        SaveSettlementState();
+
         Debug.Log($"[SettlementZone] 🎉 CHINH PHỤC THÀNH CÔNG! Đã tiêu diệt Căn cứ Địch tại vùng đất {settlementName}!");
+
+        // 🔓 Tự động mở khóa & hiển thị Vùng đất Bậc tiếp theo
+        if (SettlementManager.Ins != null)
+        {
+            SettlementManager.Ins.UpdateAllZoneTiers();
+        }
 
         if (SettlementSidePanelUI.Ins != null)
         {
@@ -492,6 +729,7 @@ public class SettlementZone : MonoBehaviour
 
         isTownHallEstablished = true;
         settlementLevel = 1;
+        SaveSettlementState();
 
         InstantiateTownHallObject();
 
@@ -529,6 +767,27 @@ public class SettlementZone : MonoBehaviour
     }
 
     /// <summary>
+    /// Kiểm tra xem vị trí 3D slot này đã có công trình thuộc Vùng đất chiếm đóng chưa (bán kính 3.0m)
+    /// </summary>
+    public bool IsPositionOccupiedByBuilding(Vector3 position)
+    {
+        if (townHallBuilding != null && townHallBuilding.gameObject.activeSelf)
+        {
+            if (Vector3.Distance(townHallBuilding.transform.position, position) < 3.5f) return true;
+        }
+
+        foreach (var b in builtStructures)
+        {
+            if (b != null && b.gameObject.activeSelf)
+            {
+                if (Vector3.Distance(b.transform.position, position) < 3.0f) return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Lấy vị trí 3D cho ô Slot theo Index.
     /// Nếu index vượt quá số slotPoint kéo trong Inspector, tự động tính toán vị trí lưới xung quanh TownHall.
     /// </summary>
@@ -554,6 +813,54 @@ public class SettlementZone : MonoBehaviour
     }
 
     /// <summary>
+    /// Tìm công trình đã xây tương ứng với chỉ số ô Slot (0, 1, 2, 3...)
+    /// </summary>
+    public UpgradeableBuilding GetBuildingAtSlot(int slotIndex)
+    {
+        foreach (var b in builtStructures)
+        {
+            if (b != null && b.gameObject.activeInHierarchy && b.slotIndex == slotIndex)
+            {
+                return b;
+            }
+        }
+
+        // Fallback kiểm tra vị trí 3D nếu slotIndex chưa gán
+        Vector3 slotPos = GetSlotWorldPosition(slotIndex);
+        foreach (var b in builtStructures)
+        {
+            if (b != null && b.gameObject.activeInHierarchy && b.slotIndex < 0)
+            {
+                if (Vector3.Distance(b.transform.position, slotPos) < 3.5f)
+                {
+                    b.slotIndex = slotIndex;
+                    return b;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Lấy chỉ số ô Slot (0, 1, 2, 3...) gần nhất với vị trí 3D truyền vào
+    /// </summary>
+    public int GetSlotIndexAtPosition(Vector3 position)
+    {
+        for (int i = 0; i < slotPoints.Count; i++)
+        {
+            if (slotPoints[i] != null)
+            {
+                if (Vector3.Distance(slotPoints[i].position, position) < 3.5f)
+                {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
     /// Định vị tự động các công trình đã xây lên vị trí 3D slot chuẩn nếu bị trùng lặp tại (0,0,0)
     /// </summary>
     public void AlignBuildingsToSlotPositions()
@@ -562,8 +869,11 @@ public class SettlementZone : MonoBehaviour
         {
             if (builtStructures[i] == null) continue;
 
-            // Nếu nhà chưa có vị trí chuẩn (đang ở Vector3.zero)
-            if (builtStructures[i].transform.position == Vector3.zero)
+            if (builtStructures[i].slotIndex >= 0)
+            {
+                builtStructures[i].transform.position = GetSlotWorldPosition(builtStructures[i].slotIndex);
+            }
+            else if (builtStructures[i].transform.position == Vector3.zero)
             {
                 builtStructures[i].transform.position = GetSlotWorldPosition(i);
             }
