@@ -112,6 +112,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 550302825359904224}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1517275501341508974}
   m_SourcePrefab: {fileID: 100100000, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
 --- !u!1 &2526221843238153254 stripped
 GameObject:
@@ -142,7 +145,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorkerCarryItem
   handPoint: {fileID: 624074257968941706}
   agent: {fileID: 550302825359904224}
-  woodStoragePoint: {fileID: 0}
 --- !u!114 &4660682261389266012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -155,19 +157,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e443681a733c324fa8079a7ad877ea5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkerFindTree
-  agent: {fileID: 550302825359904224}
-  carrySystem: {fileID: 5089379585130406109}
-  animator: {fileID: 7458265984922259316}
-  stamina: {fileID: 7061918736928962524}
-  chopDistance: 1.5
-  chopTime: 1.4
-  chopImpactRatio: 0.98
-  liftTriggerName: Lift
-  liftTime: 1
-  liftGrabRatio: 0.6
-  wanderRadius: 5
-  wanderInterval: 3
-  stuckTimeout: 2
 --- !u!114 &7061918736928962524
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -180,28 +169,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d2ee751f2b79af498f83c5db4b63606, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkerStamina
-  maxStamina: 500
-  drainPerSecond: 5
-  recoverPerSecond: 20
-  restThreshold: 0
-  resumeThreshold: 100
-  kitchen: {fileID: 0}
   house: {fileID: 0}
-  hungryRecoverMultiplier: 0.3
+  kitchen: {fileID: 0}
+  animator: {fileID: 0}
+  agent: {fileID: 0}
+  handPoint: {fileID: 0}
   workerModel: {fileID: 2526221843238153254}
   extraModelsToHide:
   - {fileID: 3303401124307998308}
   - {fileID: 3694187609883769675}
-  interactionRadius: 2
-  waitingScatterRadius: 2.5
-  restSpot: {fileID: 0}
-  onStaminaDepleted:
-    m_PersistentCalls:
-      m_Calls: []
-  onStaminaRecovered:
-    m_PersistentCalls:
-      m_Calls: []
   isCarryingResources: 0
+  isReturnPending: 0
 --- !u!114 &3396696558019864731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -214,19 +192,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac8774c2e77651743bea7d6b05a8029e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkerEnemyFlee
-  enemyTag: Enemy
-  detectRadius: 8
-  detectInterval: 0.25
-  safeExtraRadius: 2
-  arriveDistance: 2
   house: {fileID: 0}
-  fallbackHomeSpot: {fileID: 0}
+  animator: {fileID: 7458265984922259316}
   workerModel: {fileID: 2526221843238153254}
   extraModelsToHide:
   - {fileID: 3694187609883769675}
-  animator: {fileID: 7458265984922259316}
-  speedParamName: Speed
-  fleeBoolName: 
 --- !u!195 &550302825359904224
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -249,6 +219,27 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &1517275501341508974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4191418717481340852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd8f4a9d37241284abb4b16be975e639, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorkerHarvest
+  harvestType: 0
+  animator: {fileID: 7458265984922259316}
+  chopTrigger: Chop
+  harvestTrigger: Harvest
+  mineTrigger: Mine
+  forceRetrigger: 1
+  retriggerInterval: 1.5
+  directStateName: 
+  directLayerIndex: 0
 --- !u!4 &6427517059054190159 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -1164004058888205142, guid: a07a5fe5504a0594ea3620ae6f27a2c6, type: 3}
