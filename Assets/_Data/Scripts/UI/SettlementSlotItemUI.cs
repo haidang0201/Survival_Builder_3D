@@ -100,6 +100,33 @@ public class SettlementSlotItemUI : MonoBehaviour, IPointerClickHandler
             int displayLevel = building.CurrentLevel + 1;
             if (titleTMP != null) titleTMP.text = building.buildingName;
             if (levelTMP != null) levelTMP.text = $"Lv. {displayLevel}";
+
+            if (iconImage != null)
+            {
+                Sprite sp = null;
+                if (building.BuildingIcons != null && building.BuildingIcons.Length > 0)
+                {
+                    int idx = Mathf.Clamp(building.CurrentLevel, 0, building.BuildingIcons.Length - 1);
+                    sp = building.BuildingIcons[idx];
+                }
+
+                if (sp == null && BuildingShopUI.Ins != null)
+                {
+                    var shopItem = BuildingShopUI.Ins.GetShopItem(building.buildingType);
+                    if (shopItem != null) sp = shopItem.artworkSprite;
+                }
+
+                if (sp != null)
+                {
+                    iconImage.sprite = sp;
+                    iconImage.color = Color.white;
+                    iconImage.gameObject.SetActive(true);
+                }
+                else
+                {
+                    iconImage.gameObject.SetActive(false); // 🔒 Tắt khối vuông trắng khi không có Sprite
+                }
+            }
         }
     }
 

@@ -19,6 +19,8 @@ public class BuildingShopUI : MonoBehaviour
 
     [Header("=== CỘT BÊN TRÁI (DANH SÁCH CÔNG TRÌNH) ===")]
     [SerializeField] private Transform itemListContainer;
+    [Tooltip("Kéo thả các Nút công trình thủ công vào đây nếu muốn gán cố định trên Unity Inspector")]
+    [SerializeField] private BuildingShopItemUI[] shopItemButtons;
     [SerializeField] private BuildingShopItemUI currentSelectedItem;
 
     [Header("=== CỘT BÊN PHẢI (XEM TRƯỚC CHI TIẾT & NÚT XÂY) ===")]
@@ -67,6 +69,11 @@ public class BuildingShopUI : MonoBehaviour
     {
         if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.ClosePanel();
         RefreshAllItems();
+
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnShopOpened();
+        }
     }
 
     /// <summary>
@@ -75,27 +82,128 @@ public class BuildingShopUI : MonoBehaviour
     public void RefreshAllItems()
     {
         shopItemsList.Clear();
-        if (itemListContainer != null)
+
+        // 1. Ưu tiên lấy từ mảng shopItemButtons nếu người chơi gán trực tiếp trên Inspector
+        if (shopItemButtons != null && shopItemButtons.Length > 0)
         {
-            shopItemsList.AddRange(itemListContainer.GetComponentsInChildren<BuildingShopItemUI>(true));
-        }
-        else
-        {
-            shopItemsList.AddRange(GetComponentsInChildren<BuildingShopItemUI>(true));
+            foreach (var item in shopItemButtons)
+            {
+                if (item != null && !shopItemsList.Contains(item))
+                {
+                    shopItemsList.Add(item);
+                }
+            }
         }
 
-        if (shopItemsList.Count > 0)
+        // 2. Nếu chưa gán shopItemButtons, tự động thu thập từ itemListContainer hoặc toàn bộ thẻ con
+        if (shopItemsList.Count == 0)
         {
-            // Mặc định chọn mục đầu tiên trong danh sách
-            if (currentSelectedItem == null || !shopItemsList.Contains(currentSelectedItem))
+            if (itemListContainer == null)
             {
-                SelectBuildingItem(shopItemsList[0]);
+                BuildingShopItemUI firstItem = GetComponentInChildren<BuildingShopItemUI>(true);
+                if (firstItem != null) itemListContainer = firstItem.transform.parent;
+                if (itemListContainer == null) itemListContainer = transform.Find("ItemListContainer") ?? transform.Find("Content");
             }
-            else
+
+            if (itemListContainer != null)
             {
-                SelectBuildingItem(currentSelectedItem);
+                itemListContainer.gameObject.SetActive(true);
+            }
+
+            BuildingShopItemUI[] allChildItems = GetComponentsInChildren<BuildingShopItemUI>(true);
+            if (allChildItems == null || allChildItems.Length == 0)
+            {
+                allChildItems = Object.FindObjectsByType<BuildingShopItemUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            }
+
+            if (allChildItems != null)
+            {
+                foreach (var item in allChildItems)
+                {
+                    if (item != null && !shopItemsList.Contains(item))
+                    {
+                        shopItemsList.Add(item);
+                    }
+                }
             }
         }
+
+        // Lấy thông tin Vùng đất hiện tại
+        SettlementZone currentZone = (SettlementManager.Ins != null) ? SettlementManager.Ins.CurrentSettlement : null;
+        if (currentZone == null) currentZone = Object.FindFirstObjectByType<SettlementZone>();
+
+        // 3. Đảm bảo BẬT SetActive(true) cho toàn bộ các nút, cập nhật trạng thái Khóa/Mở Khóa theo Vùng Đất và gắn sự kiện Click
+        foreach (var item in shopItemsList)
+        {
+            if (item != null)
+            {
+                item.gameObject.SetActive(true);
+                item.transform.localScale = Vector3.one;
+
+                // Kiểm tra xem công trình có được mở khóa trên Vùng Đất Đã Giải Phóng chưa
+                bool isUnlockedAtZone = SettlementZone.IsBuildingTypeUnlockedGlobally(item.buildingType);
+                item.SetItemUnlockedState(isUnlockedAtZone);
+
+                CanvasGroup cg = item.GetComponent<CanvasGroup>();
+                if (cg != null)
+                {
+                    cg.alpha = isUnlockedAtZone ? 1f : 0.4f;
+                    cg.interactable = isUnlockedAtZone;
+                    cg.blocksRaycasts = isUnlockedAtZone;
+                }
+
+                item.RefreshItemName();
+                item.SetSelected(false);
+
+                Button b = item.GetComponent<Button>();
+                if (b == null) b = item.GetComponentInChildren<Button>();
+                if (b != null)
+                {
+                    b.interactable = isUnlockedAtZone;
+                    b.onClick.RemoveListener(item.OnClickFromShop);
+                    if (isUnlockedAtZone)
+                    {
+                        b.onClick.AddListener(item.OnClickFromShop);
+                    }
+                }
+            }
+        }
+
+        ClearSelectionDetails();
+    }
+
+    public void ClearSelectionDetails()
+    {
+        currentSelectedItem = null;
+        if (selectedNameTMP != null) selectedNameTMP.text = "Chọn công trình";
+        if (benefitTextTMP != null) benefitTextTMP.text = "";
+        if (descriptionTMP != null) descriptionTMP.text = "Hãy chọn một công trình ở danh sách bên trái để xem chi tiết.";
+
+        if (previewArtImage != null)
+        {
+            previewArtImage.gameObject.SetActive(false);
+        }
+
+        if (woodCostTMP != null) woodCostTMP.text = "0";
+        if (stoneCostTMP != null) stoneCostTMP.text = "0";
+        if (foodCostTMP != null) foodCostTMP.text = "0";
+
+        if (constructBtn != null) constructBtn.interactable = false;
+    }
+
+    /// <summary>
+    /// Tìm thẻ công trình trong Shop theo BuildingType
+    /// </summary>
+    public BuildingShopItemUI GetShopItem(BuildingType type)
+    {
+        if (shopItemsList != null)
+        {
+            foreach (var item in shopItemsList)
+            {
+                if (item != null && item.buildingType == type) return item;
+            }
+        }
+        return null;
     }
 
     /// <summary>
@@ -137,6 +245,11 @@ public class BuildingShopUI : MonoBehaviour
 
         // 3. Lấy chi phí và kiểm tra đủ tiền
         RefreshCostAndAffordability(item.buildingType);
+
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnShopItemSelected(item.buildingType);
+        }
     }
 
     /// <summary>
@@ -185,10 +298,18 @@ public class BuildingShopUI : MonoBehaviour
             foodCostTMP.color = hasEnoughFood ? affordableColor : unaffordableColor;
         }
 
+        // Kiểm tra xem công trình có được mở khóa toàn cục từ Vùng Đất Giải Phóng chưa
+        bool isUnlockedAtZone = SettlementZone.IsBuildingTypeUnlockedGlobally(type);
+
+        if (!isUnlockedAtZone && descriptionTMP != null)
+        {
+            descriptionTMP.text = "<color=red>🔒 Công trình này chưa mở khóa! Hãy đánh bại Kẻ Địch giải phóng vùng đất chứa công trình này.</color>";
+        }
+
         // Cập nhật trạng thái Nút XÂY DỰNG
         if (constructBtn != null)
         {
-            constructBtn.interactable = canAfford;
+            constructBtn.interactable = canAfford && isUnlockedAtZone;
         }
     }
 

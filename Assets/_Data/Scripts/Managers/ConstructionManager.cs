@@ -169,14 +169,7 @@ public class ConstructionManager : Singleton<ConstructionManager>
             JsonDataManager.RegisterStat_BuildingConstructed();
             SettlementSidePanelUI.Ins?.RefreshPanel();
 
-            if (type == BuildingType.WoodCutter || type == BuildingType.StoneStorage)
-            {
-                CampaignTutorialManager.Ins?.OnCivilBuildingPlaced(type, spawned.transform);
-            }
-            else if (type == BuildingType.WatchTower || type == BuildingType.ArcherTower)
-            {
-                CampaignTutorialManager.Ins?.OnDefenseBuildingPlaced(type, spawned.transform);
-            }
+            CampaignTutorialManager.Ins?.OnBuildingPlaced(type);
 
             Debug.Log($"[ConstructionManager] ✅ Đã xây {type} thành công!");
         }

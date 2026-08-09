@@ -46,13 +46,6 @@ public class BuildingManager : Singleton<BuildingManager>
             return;
         }
 
-        // Kiểm tra chồng lấn với công trình đã có (bỏ qua chính nó)
-        if (!CanBuild(building.transform.position, building.buildingType, building))
-        {
-            Debug.LogWarning($"[BuildingManager] ⚠️ Chồng lấn vị trí khi đăng ký {building.buildingType} tại {building.transform.position}");
-            return;
-        }
-
         buildings.Add(building);
         Debug.Log($"[BuildingManager] ➕ Đã đăng ký: {building.buildingType} ({building.gameObject.name})");
     }
@@ -110,9 +103,11 @@ public class BuildingManager : Singleton<BuildingManager>
     public List<BuildingState> GetAllStates()
     {
         var states = new List<BuildingState>();
-        foreach (var b in buildings)
+        BuildingCtrl[] sceneBuildings = Object.FindObjectsByType<BuildingCtrl>(FindObjectsSortMode.None);
+
+        foreach (var b in sceneBuildings)
         {
-            if (b != null)
+            if (b != null && b.gameObject.activeInHierarchy)
             {
                 BuildingState state = b.ToState();
 
@@ -178,10 +173,21 @@ public class BuildingManager : Singleton<BuildingManager>
         BuildingCtrl[] allBuildingsInScene = FindObjectsByType<BuildingCtrl>(FindObjectsSortMode.None);
         foreach (var b in allBuildingsInScene)
         {
-            if (b != null)
-                Destroy(b.gameObject);
+            if (b != null && b.gameObject != null)
+            {
+                DestroyImmediate(b.gameObject);
+            }
         }
         buildings.Clear();
+
+        if (SettlementManager.Ins != null && SettlementManager.Ins.CurrentSettlement != null)
+        {
+            if (SettlementManager.Ins.CurrentSettlement.builtStructures != null)
+            {
+                SettlementManager.Ins.CurrentSettlement.builtStructures.Clear();
+            }
+        }
+
         Debug.Log("[BuildingManager] 🗑️ Đã dọn sạch toàn bộ công trình (kể cả có sẵn) trong scene.");
     }
 

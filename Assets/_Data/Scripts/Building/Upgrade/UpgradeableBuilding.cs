@@ -538,7 +538,14 @@ public class UpgradeableBuilding : MonoBehaviour
 
     public void TriggerDestructionSequence()
     {
+        StopAllCoroutines();
+        IsUpgrading = false;
+        isInitialBuildNeeded = false;
+        activeProcessType = ProcessType.None;
+        currentProcessCoroutine = null;
+
         IsRuined = true;
+        startAsRuined = true;
         HideAllVisualModels();
 
         if (ruinedVisualModel != null) ruinedVisualModel.SetActive(true);
@@ -546,6 +553,13 @@ public class UpgradeableBuilding : MonoBehaviour
 
         HPTower hpComponent = GetComponent<HPTower>();
         if (hpComponent != null) hpComponent.SetRuinedHealth();
+
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (targetUI != null) targetUI.gameObject.SetActive(false);
+
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
     }
 
     public void StartRepair()
@@ -695,6 +709,7 @@ public class UpgradeableBuilding : MonoBehaviour
     {
         StopAllCoroutines();
         IsUpgrading = false;
+        activeProcessType = ProcessType.None;
         currentProcessCoroutine = null;
 
         HideAllVisualModels();
@@ -706,9 +721,17 @@ public class UpgradeableBuilding : MonoBehaviour
         CurrentLevel = Mathf.Clamp(level, 0, MaxLevel - 1);
         IsRuined = isRuinedState;
         
-        // 🔥 FIX: Đồng bộ cả biến startAsRuined khi Load Data từ Save
+        // 🔥 FIX: Đồng bộ biến startAsRuined và isInitialBuildNeeded
         startAsRuined = isRuinedState;
-        isInitialBuildNeeded = isInitialBuildNeededState;
+        
+        if (!isInitialBuildNeededState || CurrentLevel > 0)
+        {
+            isInitialBuildNeeded = false;
+        }
+        else
+        {
+            isInitialBuildNeeded = isInitialBuildNeededState;
+        }
 
         if (IsRuined)
         {
@@ -718,6 +741,11 @@ public class UpgradeableBuilding : MonoBehaviour
             HPTower hpComponent = GetComponent<HPTower>();
             if (hpComponent != null) hpComponent.SetRuinedHealth();
         }
+        else if (isInitialBuildNeeded)
+        {
+            ToggleBuildingLogic(false);
+            StartInitialBuildProcess();
+        }
         else
         {
             UpdateVisualModel();
@@ -725,6 +753,10 @@ public class UpgradeableBuilding : MonoBehaviour
 
             HPTower hpComponent = GetComponent<HPTower>();
             if (hpComponent != null) hpComponent.ResetHealth();
+
+            var targetUI = BuildingProgressBridge.GetUI(this);
+            if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+            if (targetUI != null) targetUI.gameObject.SetActive(false);
         }
 
         UpdateCivilianBuildingData();

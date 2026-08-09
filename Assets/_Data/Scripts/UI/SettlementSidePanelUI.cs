@@ -44,6 +44,8 @@ public class SettlementSidePanelUI : MonoBehaviour
     {
         if (upgradeSettlementBtn != null)
         {
+            upgradeSettlementBtn.interactable = true;
+            upgradeSettlementBtn.onClick.RemoveListener(OnClickUpgradeSettlement);
             upgradeSettlementBtn.onClick.AddListener(OnClickUpgradeSettlement);
         }
 
@@ -53,6 +55,11 @@ public class SettlementSidePanelUI : MonoBehaviour
 
     private void OnEnable()
     {
+        if (upgradeSettlementBtn != null)
+        {
+            upgradeSettlementBtn.interactable = true;
+        }
+        UpdateHeaderVisual();
         RefreshPanel();
     }
 
@@ -154,6 +161,16 @@ public class SettlementSidePanelUI : MonoBehaviour
         if (currentZone != null)
         {
             currentZone.Update3DSlotVisibility();
+
+            // 🔥 Tự động quét và đăng ký lại tất cả công trình hiện có trong Scene vào Vùng đất hiện tại
+            var allBuildingsInScene = Object.FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
+            foreach (var ub in allBuildingsInScene)
+            {
+                if (ub != null && ub.gameObject.activeSelf && !IsTownHallBuilding(ub))
+                {
+                    currentZone.RegisterBuilding(ub);
+                }
+            }
 
             // Lấy duy nhất từ danh sách công trình đã đăng ký chuẩn của Vùng đất hiện tại
             if (currentZone.builtStructures != null)
@@ -265,10 +282,19 @@ public class SettlementSidePanelUI : MonoBehaviour
         return null;
     }
 
-    private void OnClickUpgradeSettlement()
+    public void OnClickUpgradeSettlement()
     {
         SettlementZone currentZone = (SettlementManager.Ins != null) ? SettlementManager.Ins.CurrentSettlement : null;
-        if (currentZone == null) return;
+        if (currentZone == null)
+        {
+            currentZone = Object.FindFirstObjectByType<SettlementZone>();
+        }
+
+        if (currentZone == null)
+        {
+            Debug.LogWarning("[SettlementSidePanelUI] ⚠️ Không tìm thấy SettlementZone nào trong Scene!");
+            return;
+        }
 
         if (currentZone.hasEnemyOutpost)
         {
@@ -280,6 +306,14 @@ public class SettlementSidePanelUI : MonoBehaviour
         currentZone.EnsureTownHallInstantiated();
 
         UpgradeableBuilding townHall = currentZone.TownHallBuilding;
+        if (townHall == null)
+        {
+            townHall = currentZone.GetComponentInChildren<UpgradeableBuilding>();
+        }
+        if (townHall == null)
+        {
+            townHall = Object.FindFirstObjectByType<UpgradeableBuilding>();
+        }
 
         if (!currentZone.isTownHallEstablished || townHall == null)
         {

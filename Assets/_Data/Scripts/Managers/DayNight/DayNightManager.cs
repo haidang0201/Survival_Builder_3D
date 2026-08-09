@@ -250,6 +250,16 @@ public class DayNightManager : Singleton<DayNightManager>
 
         OnNightStart?.Invoke();
         OnWaveStart?.Invoke(currentWave);
+
+        // 🌾 Tự động cộng tài nguyên từ toàn bộ công trình sản xuất khi bắt đầu Wave mới
+        WaveResourceManager.CollectBuildingResourcesForWave(currentWave);
+
+        // 🎓 Thông báo tiến trình cho Tutorial
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnDayOrWaveIncremented();
+        }
+
         UpdateSkipButtonUI();
     }
 

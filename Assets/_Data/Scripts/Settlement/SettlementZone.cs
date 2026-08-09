@@ -30,11 +30,82 @@ public class SettlementZone : MonoBehaviour
     [Tooltip("Kéo các Prefab công trình từ Project vào đây để tự động sinh sẵn khi bắt đầu game (Element 0 tương ứng với Slot 0).")]
     public List<GameObject> prebuiltSlotPrefabs = new List<GameObject>();
 
+    [Header("=== CÔNG TRÌNH MỞ KHÓA TẠI VÙNG ĐẤT NÀY ===")]
+    [Tooltip("Tích chọn nếu vùng đất này cho phép xây tất cả các loại công trình.")]
+    public bool unlockAllBuildings = true;
+    [Tooltip("Danh sách các loại công trình mở khóa riêng tại vùng đất này (ví dụ: Trại Lính Cung, Tháp Phòng Thủ...)")]
+    public List<BuildingType> unlockedBuildingTypes = new List<BuildingType>();
+
     [Header("=== CĂN CỨ / CÔNG TRÌNH ĐỊCH (CHINH PHỤC VÙNG ĐẤT) ===")]
     [Tooltip("Tích vào nếu vùng đất này ban đầu bị Kẻ Địch chiếm đóng.")]
     public bool hasEnemyOutpost = false;
     [Tooltip("Kéo Prefab Căn cứ / Công trình Địch từ Project vào đây.")]
     public GameObject enemyOutpostPrefab;
+
+    /// <summary>
+    /// Kiểm tra xem loại công nghệ công trình này đã được mở khóa toàn quốc (cho phép xây ở mọi vùng đất) chưa.
+    /// - Công trình Khởi Đầu (House, WoodCutter, Kitchen, FoodStorage, BarracksMelee): Mặc định mở khóa từ Đầu Game ở mọi nơi.
+    /// - Công trình Nâng Cao (StoneMine/StoneStorage, BarracksArcher, ArcherTower...): Khóa toàn quốc cho tới khi XÂM CHIẾM / GIẢI PHÓNG được Vùng Đất chứa công nghệ đó!
+    /// </summary>
+    public static bool IsBuildingTypeUnlockedGlobally(BuildingType type)
+    {
+        if (type == BuildingType.None) return true;
+
+        // 1. CÔNG TRÌNH CƠ BẢN KHỞI ĐẦU: Mặc định được mở khóa xây dựng ở tất cả các vùng đất
+        if (type == BuildingType.House || 
+            type == BuildingType.WoodCutter || 
+            type == BuildingType.Kitchen || 
+            type == BuildingType.FoodStorage || 
+            type == BuildingType.BarracksMelee)
+        {
+            return true;
+        }
+
+        // 2. CÔNG NGHỆ NÂNG CAO (Kho Đá/Mỏ Đá, Lính Cung, Tháp Canh...): Chỉ mở khóa xây ở mọi nơi sau khi XÂM CHIẾM được Vùng Đất chứa công nghệ đó!
+        SettlementZone[] allZones = Object.FindObjectsByType<SettlementZone>(FindObjectsSortMode.None);
+        if (allZones == null || allZones.Length == 0) return true;
+
+        foreach (var zone in allZones)
+        {
+            if (zone == null) continue;
+
+            // ĐIỀU KIỆN XÂM CHIẾM THÀNH CÔNG: Vùng đất được mở khóa VÀ ĐÃ TIÊU DIỆT CĂN CỨ ĐỊCH (hasEnemyOutpost == false)
+            bool isConqueredTerritory = zone.isUnlocked && !zone.hasEnemyOutpost;
+
+            if (isConqueredTerritory)
+            {
+                // Nếu vùng đất đã xâm chiếm này cho phép mở khóa tất cả công nghệ
+                if (zone.unlockAllBuildings) return true;
+
+                // Kiểm tra loại công nghệ trong danh sách unlockedBuildingTypes do người dùng kéo thả trên Inspector
+                if (zone.unlockedBuildingTypes != null)
+                {
+                    foreach (var unlockedType in zone.unlockedBuildingTypes)
+                    {
+                        if (unlockedType == type) return true;
+
+                        // Đồng bộ cặp Mỏ Đá (StoneMine) & Kho Đá (StoneStorage) nếu có
+                        if ((type == BuildingType.StoneMine || type == BuildingType.StoneStorage) &&
+                            (unlockedType == BuildingType.StoneMine || unlockedType == BuildingType.StoneStorage))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Chưa xâm chiếm được Vùng Đất nào mở khóa công nghệ này -> KHÓA XÂY DỰNG TOÀN QUỐC!
+        return false;
+    }
+
+    /// <summary>
+    /// Kiểm tra xem loại công trình này có được phép xây không
+    /// </summary>
+    public bool IsBuildingUnlocked(BuildingType type)
+    {
+        return IsBuildingTypeUnlockedGlobally(type);
+    }
 
     [HideInInspector]
     public GameObject spawnedEnemyOutpostInstance;
@@ -60,37 +131,51 @@ public class SettlementZone : MonoBehaviour
 
     private void Start()
     {
+        LoadSettlementState();
         InstantiateEnemyOutpost();
         EnsureTownHallInstantiated();
         InstantiatePrebuiltBuildings();
         Update3DSlotVisibility();
     }
 
+    public void SaveSettlementState()
+    {
+        PlayerPrefs.SetInt($"Settlement_{settlementName}_Level", settlementLevel);
+        PlayerPrefs.SetInt($"Settlement_{settlementName}_Unlocked", isUnlocked ? 1 : 0);
+        PlayerPrefs.SetInt($"Settlement_{settlementName}_TownHallEstablished", isTownHallEstablished ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
+    public void LoadSettlementState()
+    {
+        if (PlayerPrefs.HasKey($"Settlement_{settlementName}_Level"))
+        {
+            settlementLevel = PlayerPrefs.GetInt($"Settlement_{settlementName}_Level", settlementLevel);
+            isUnlocked = PlayerPrefs.GetInt($"Settlement_{settlementName}_Unlocked", isUnlocked ? 1 : 0) == 1;
+            isTownHallEstablished = PlayerPrefs.GetInt($"Settlement_{settlementName}_TownHallEstablished", isTownHallEstablished ? 1 : 0) == 1;
+        }
+    }
+
     public void EnsureTownHallInstantiated()
     {
-        // Kiểm tra xem townHallBuilding có phải là đối tượng thật trong Scene không (không phải Prefab Asset trong Project)
-        if (townHallBuilding != null && !townHallBuilding.gameObject.scene.IsValid())
+        // 1. Quét tìm Nhà Chính thực tế thuộc vùng đất này để tránh lấy nhầm Nhà Chính của vùng đất khác
+        if (townHallBuilding == null || !townHallBuilding.gameObject.scene.IsValid())
         {
-            if (townHallPrefab == null) townHallPrefab = townHallBuilding.gameObject;
-            townHallBuilding = null;
-        }
-
-        if (isTownHallEstablished && townHallBuilding == null)
-        {
-            var ubs = GetComponentsInChildren<UpgradeableBuilding>(true);
-            foreach (var ub in ubs)
+            UpgradeableBuilding[] localUbs = GetComponentsInChildren<UpgradeableBuilding>(true);
+            foreach (var ub in localUbs)
             {
-                if (ub != null && (ub.buildingType == BuildingType.House || ub.buildingName.Contains("Nhà chính") || ub.buildingName.Contains("Town Hall")))
+                if (ub != null && ub.gameObject.scene.IsValid() && 
+                   (ub.buildingType == BuildingType.House || ub.buildingName.Contains("Nhà chính") || ub.buildingName.Contains("Town Hall") || ub.name.Contains("TownHall") || ub.name.Contains("House")))
                 {
                     townHallBuilding = ub;
                     break;
                 }
             }
+        }
 
-            if (townHallBuilding == null)
-            {
-                InstantiateTownHallObject();
-            }
+        if (isTownHallEstablished && townHallBuilding == null)
+        {
+            InstantiateTownHallObject();
         }
 
         if (isTownHallEstablished && townHallBuilding != null && !townHallBuilding.IsUpgrading && townHallBuilding.gameObject.scene.IsValid())
@@ -339,6 +424,11 @@ public class SettlementZone : MonoBehaviour
 
         Debug.Log($"[SettlementZone] 🎉 Đã bắt đầu xây dựng Nhà Chính cho vùng đất: {settlementName}!");
 
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnTownHallEstablished(this);
+        }
+
         if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
         return true;
     }
@@ -353,6 +443,7 @@ public class SettlementZone : MonoBehaviour
         {
             townHallBuilding.Upgrade();
         }
+        SaveSettlementState();
         Debug.Log($"[SettlementZone] 🚀 Đã nâng cấp vùng đất {settlementName} lên Cấp {settlementLevel}!");
         if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
     }

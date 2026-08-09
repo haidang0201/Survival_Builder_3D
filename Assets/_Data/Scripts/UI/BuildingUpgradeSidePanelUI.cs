@@ -115,30 +115,48 @@ public class BuildingUpgradeSidePanelUI : MonoBehaviour
         // 2. Ảnh Art Preview (nếu có Sprite)
         if (artworkImage != null)
         {
-            var rend = targetBuilding.GetComponentInChildren<SpriteRenderer>();
-            if (rend != null && rend.sprite != null)
+            Sprite sp = null;
+            if (targetBuilding.BuildingIcons != null && targetBuilding.BuildingIcons.Length > 0)
             {
-                artworkImage.sprite = rend.sprite;
+                int idx = Mathf.Clamp(targetBuilding.CurrentLevel, 0, targetBuilding.BuildingIcons.Length - 1);
+                sp = targetBuilding.BuildingIcons[idx];
+            }
+
+            if (sp == null && BuildingShopUI.Ins != null)
+            {
+                var shopItem = BuildingShopUI.Ins.GetShopItem(targetBuilding.buildingType);
+                if (shopItem != null) sp = shopItem.artworkSprite;
+            }
+
+            if (sp == null)
+            {
+                var rend = targetBuilding.GetComponentInChildren<SpriteRenderer>();
+                if (rend != null) sp = rend.sprite;
+            }
+
+            if (sp != null)
+            {
+                artworkImage.sprite = sp;
+                artworkImage.color = Color.white;
                 artworkImage.gameObject.SetActive(true);
+            }
+            else
+            {
+                artworkImage.gameObject.SetActive(false); // 🔒 Tắt hình vuông trắng khi không có sprite
             }
         }
 
-        // 3. So sánh Chỉ số Cấp hiện tại & Cấp tiếp theo
+        // 3. So sánh Chỉ số Cấp hiện tại & Cấp tiếp theo (Lấy dữ liệu thực từ công trình)
+        GetBuildingRealStats(targetBuilding, out string curStatText, out string nextStatText);
+
         if (currentLevelStatTMP != null)
         {
-            currentLevelStatTMP.text = $"Cấp {currentLevel}: Sản lượng tối ưu";
+            currentLevelStatTMP.text = curStatText;
         }
 
         if (nextLevelStatTMP != null)
         {
-            if (isMaxLevel)
-            {
-                nextLevelStatTMP.text = "ĐÃ ĐẠT CẤP TỐI ĐA (MAX)";
-            }
-            else
-            {
-                nextLevelStatTMP.text = $"Cấp {currentLevel + 1}: +100% Sản lượng & Độ bền";
-            }
+            nextLevelStatTMP.text = nextStatText;
         }
 
         // 4. Lấy chi phí nâng cấp hoặc sửa chữa
@@ -181,7 +199,7 @@ public class BuildingUpgradeSidePanelUI : MonoBehaviour
                          targetBuilding.buildingName.Contains("Town Hall");
 
         // Cần Cấp Thủ Đô > Cấp hiện tại của công trình (Trừ chính Nhà Chính)
-        bool settlementLevelOk = isTownHall || ((targetBuilding.CurrentLevel + 1) < settlementLevel);
+        bool settlementLevelOk = isTownHall || (targetBuilding.CurrentLevel < settlementLevel);
 
         bool hasEnoughWood = true, hasEnoughStone = true, hasEnoughFood = true;
         bool canAfford = true;
@@ -434,6 +452,123 @@ public class BuildingUpgradeSidePanelUI : MonoBehaviour
         if (SettlementSidePanelUI.Ins != null)
         {
             SettlementSidePanelUI.Ins.RefreshPanel();
+        }
+    }
+
+    /// <summary>
+    /// Tính toán và định dạng thông số tăng sản lượng / sức chứa thực tế theo từng Cấp công trình
+    /// </summary>
+    private void GetBuildingRealStats(UpgradeableBuilding building, out string currentStatStr, out string nextStatStr)
+    {
+        if (building == null)
+        {
+            currentStatStr = "Cấp 1: Bình thường";
+            nextStatStr = "Cấp 2: + Sản lượng";
+            return;
+        }
+
+        int curLvl = building.CurrentLevel; // 0-indexed
+        int nextLvl = curLvl + 1;
+        bool isMax = nextLvl >= building.MaxLevel;
+
+        BuildingType type = building.buildingType;
+
+        switch (type)
+        {
+            case BuildingType.WoodCutter:
+                {
+                    var ws = building.GetComponentInChildren<WoodStorage>();
+                    int curWorkers = (ws != null && ws.maxWorkersLevels != null && curLvl < ws.maxWorkersLevels.Length) ? ws.maxWorkersLevels[curLvl] : (curLvl + 1) * 2;
+                    int nextWorkers = (ws != null && ws.maxWorkersLevels != null && nextLvl < ws.maxWorkersLevels.Length) ? ws.maxWorkersLevels[nextLvl] : (nextLvl + 1) * 2;
+                    int diff = nextWorkers - curWorkers;
+
+                    currentStatStr = $"{curWorkers * 15} Gỗ/lượt";
+                    nextStatStr = isMax ? "ĐÃ ĐẠT CẤP TỐI ĐA" : $"+{diff * 15} Gỗ/lượt";
+                }
+                break;
+
+            case BuildingType.StoneMine:
+            case BuildingType.StoneStorage:
+                {
+                    var ss = building.GetComponentInChildren<StoneStorage>();
+                    int curWorkers = (ss != null && ss.maxWorkersLevels != null && curLvl < ss.maxWorkersLevels.Length) ? ss.maxWorkersLevels[curLvl] : (curLvl + 1) * 2;
+                    int nextWorkers = (ss != null && ss.maxWorkersLevels != null && nextLvl < ss.maxWorkersLevels.Length) ? ss.maxWorkersLevels[nextLvl] : (nextLvl + 1) * 2;
+                    int diff = nextWorkers - curWorkers;
+
+                    currentStatStr = $"{curWorkers * 15} Đá/lượt";
+                    nextStatStr = isMax ? "ĐÃ ĐẠT CẤP TỐI ĐA" : $"+{diff * 15} Đá/lượt";
+                }
+                break;
+
+            case BuildingType.Kitchen:
+            case BuildingType.FoodStorage:
+                {
+                    var rs = building.GetComponentInChildren<RiceStorage>();
+                    var kit = building.GetComponentInChildren<Kitchen>();
+                    int curWorkers = (rs != null && rs.maxWorkersLevels != null && curLvl < rs.maxWorkersLevels.Length) ? rs.maxWorkersLevels[curLvl] : ((kit != null && kit.maxWorkersLevels != null && curLvl < kit.maxWorkersLevels.Length) ? kit.maxWorkersLevels[curLvl] : (curLvl + 1) * 3);
+                    int nextWorkers = (rs != null && rs.maxWorkersLevels != null && nextLvl < rs.maxWorkersLevels.Length) ? rs.maxWorkersLevels[nextLvl] : ((kit != null && kit.maxWorkersLevels != null && nextLvl < kit.maxWorkersLevels.Length) ? kit.maxWorkersLevels[nextLvl] : (nextLvl + 1) * 3);
+                    int diff = nextWorkers - curWorkers;
+
+                    currentStatStr = $"{curWorkers * 15} Lương/lượt";
+                    nextStatStr = isMax ? "ĐÃ ĐẠT CẤP TỐI ĐA" : $"+{diff * 15} Lương/lượt";
+                }
+                break;
+
+            case BuildingType.House:
+                {
+                    int curCap = (curLvl + 1) * 4;
+                    int nextCap = (nextLvl + 1) * 4;
+                    int diff = nextCap - curCap;
+
+                    currentStatStr = $"{curCap} Dân làng";
+                    nextStatStr = isMax ? "ĐÃ ĐẠT CẤP TỐI ĐA" : $"+{diff} Dân làng";
+                }
+                break;
+
+            case BuildingType.BarracksMelee:
+            case BuildingType.BarracksArcher:
+                {
+                    int curSoldiers = (curLvl + 1) * 5;
+                    int nextSoldiers = (nextLvl + 1) * 5;
+                    int diff = nextSoldiers - curSoldiers;
+
+                    currentStatStr = $"{curSoldiers} Lính";
+                    nextStatStr = isMax ? "ĐÃ ĐẠT CẤP TỐI ĐA" : $"+{diff} Lính";
+                }
+                break;
+
+            case BuildingType.WatchTower:
+            case BuildingType.ArcherTower:
+            case BuildingType.Cannon:
+                {
+                    float curDmg = 20f * (curLvl + 1);
+                    float nextDmg = 20f * (nextLvl + 1);
+
+                    var towerAI = building.GetComponentInChildren<AttackTowerAI>();
+                    if (towerAI != null)
+                    {
+                        if (curLvl == 0) curDmg = towerAI.damageLv1;
+                        else if (curLvl == 1) curDmg = towerAI.damageLv2;
+                        else if (curLvl == 2) curDmg = towerAI.damageLv3;
+
+                        if (nextLvl == 0) nextDmg = towerAI.damageLv1;
+                        else if (nextLvl == 1) nextDmg = towerAI.damageLv2;
+                        else if (nextLvl == 2) nextDmg = towerAI.damageLv3;
+                    }
+
+                    float diffDmg = nextDmg - curDmg;
+
+                    currentStatStr = $"{curDmg} DP";
+                    nextStatStr = isMax ? "ĐÃ ĐẠT CẤP TỐI ĐA" : $"+{diffDmg} DP";
+                }
+                break;
+
+            default:
+                {
+                    currentStatStr = $"Cấp {curLvl + 1}: Hiệu suất bình thường";
+                    nextStatStr = isMax ? "ĐÃ ĐẠT CẤP TỐI ĐA" : $"Cấp {nextLvl + 1}: +100% Hiệu suất & Độ bền";
+                }
+                break;
         }
     }
 
