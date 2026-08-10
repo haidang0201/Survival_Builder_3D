@@ -31,12 +31,15 @@ public class DayNightManager : Singleton<DayNightManager>
     [Tooltip("Số vàng thưởng cho mỗi giây skip sớm")]
     public int bonusPerSecondSkipped = 0;
 
-    [Header("--- UI NÚT SKIP WAVE ---")]
+    [Header("--- UI NÚT SKIP WAVE & HIỂN THỊ NGÀY ---")]
     [Tooltip("Kéo Nút Skip Wave trong Canvas vào đây (hoặc tự gắn hàm SkipPreparation vào OnClick)")]
     public Button skipWaveButton;
 
     [Tooltip("Text hiển thị trên nút Skip Wave (Ví dụ: 'START WAVE 1')")]
     public TextMeshProUGUI skipButtonTextTMP;
+
+    [Tooltip("Text hiển thị Ngày trên UI Canvas (Ví dụ: 'Ngày 0')")]
+    public TextMeshProUGUI dayTextTMP;
 
     [Header("--- HIỆU ỨNG ÁNH SÁNG KHI SKIP (3 GIÂY) ---")]
     [Tooltip("Nguồn sáng Directional Light (Tự động tìm trong scene nếu bỏ trống)")]
@@ -47,6 +50,27 @@ public class DayNightManager : Singleton<DayNightManager>
 
     [Tooltip("Cường độ ánh sáng tối thiểu ở giữa chu kỳ ban đêm (0.15 = tối nhẹ)")]
     public float minLightIntensity = 0.15f;
+
+    [Header("--- HIỆU ỨNG ĐÁM MÂY CHE MÀN HÌNH (CLOUD TRANSITION) ---")]
+    [Tooltip("Bật/tắt hiệu ứng đám mây kéo che màn hình khi Skip Day")]
+    public bool enableCloudTransition = true;
+
+    [Tooltip("Kéo các Transform đám mây vào đây (Ví dụ: Cloud 1, Cloud 2, Cloud 3)")]
+    public Transform[] cloudTransforms;
+
+    [Tooltip("Khoảng cách/Hướng di chuyển đẩy mây ra ngoài màn hình ở trạng thái nghỉ.\n" +
+             "Ví dụ:\n" +
+             "Mây 1 (Trái): (-35, 0, 0)\n" +
+             "Mây 2 (Phải): (35, 0, 0)\n" +
+             "Mây 3 (Trái/Trên): (-30, 8, 0)")]
+    public Vector3[] cloudOffscreenOffsets;
+
+    [Tooltip("Tích vào nếu Mây thuộc UI Canvas (RectTransform)")]
+    public bool isUICloud = false;
+
+    private Vector3[] cloudClosedPositions; // Vị trí che màn hình (xếp sẵn trong Editor)
+    private Vector3[] cloudOpenPositions;   // Vị trí ngoài màn hình (tự tính theo offset)
+    private bool isCloudPosInitialized = false;
 
     private Coroutine lightTransitionCoroutine;
     private float defaultLightIntensity = 1.0f;
@@ -101,6 +125,7 @@ public class DayNightManager : Singleton<DayNightManager>
             defaultLightRotation = directionalLight.transform.localEulerAngles;
         }
 
+        InitCloudPositions();
         UpdateSkipButtonUI();
         Debug.Log($"[WaveManager] Hệ thống Wave đã sẵn sàng! Đang ở giai đoạn Chuẩn bị cho Wave 1");
     }
@@ -179,42 +204,71 @@ public class DayNightManager : Singleton<DayNightManager>
         isLightAnimating = true;
         if (skipWaveButton != null) skipWaveButton.interactable = false;
 
+        InitCloudPositions();
+
         float elapsedTime = 0f;
         Vector3 startRot = directionalLight != null ? directionalLight.transform.localEulerAngles : Vector3.zero;
         float originalIntensity = defaultLightIntensity > 0 ? defaultLightIntensity : (directionalLight != null ? directionalLight.intensity : 1.0f);
+        bool hasIncrementedDay = false;
 
         while (elapsedTime < lightTransitionDuration)
         {
             elapsedTime += Time.deltaTime;
             float t = Mathf.Clamp01(elapsedTime / lightTransitionDuration);
 
+            // 1. Ánh sáng xoay & đổi cường độ
             if (directionalLight != null)
             {
-                // 1. Quay 360 độ theo trục X từ góc ban đầu trong 3 giây
                 float currentX = startRot.x + (t * 360f);
                 directionalLight.transform.localRotation = Quaternion.Euler(currentX, startRot.y, startRot.z);
 
-                // 2. Ánh sáng giảm dần ở giữa chu kỳ (t = 0.5 -> tối) rồi sáng dần lại (t = 1.0 -> sáng hoàn toàn)
                 float intensityMultiplier = 0.5f * (1f + Mathf.Cos(t * 2f * Mathf.PI));
                 directionalLight.intensity = Mathf.Lerp(minLightIntensity, originalIntensity, intensityMultiplier);
+            }
+
+            // 2. Di chuyển các đám mây (Pha 1: Trái/Phải kéo vào giữa | Pha 2: Từ giữa mở ra 2 bên)
+            if (enableCloudTransition)
+            {
+                UpdateCloudTransition(elapsedTime, lightTransitionDuration);
+            }
+
+            // 3. Khi mây che kín màn hình ở giữa chu kỳ (t >= 0.5f), chính thức tăng ngày ngay lập tức đằng sau đám mây
+            if (t >= 0.5f && !hasIncrementedDay)
+            {
+                hasIncrementedDay = true;
+                ExecuteDayIncrementLogic();
             }
 
             yield return null;
         }
 
-        // Kết thúc chu kỳ 3s, trả lại góc xoay và cường độ ban đầu
+        // Đảm bảo đã tăng ngày nếu chu kỳ hoàn tất
+        if (!hasIncrementedDay)
+        {
+            hasIncrementedDay = true;
+            ExecuteDayIncrementLogic();
+        }
+
+        // Trả lại góc xoay và cường độ ánh sáng ban đầu
         if (directionalLight != null)
         {
             directionalLight.transform.localRotation = Quaternion.Euler(startRot);
             directionalLight.intensity = originalIntensity;
         }
-        lightTransitionCoroutine = null;
 
-        // === CHÍNH THỨC TĂNG SỐ NGÀY / WAVE SAU KHI HẾT CHU KỲ ÁNH SÁNG (3S) ===
-        currentWave++;
-        currentWaveState = WaveState.Combat;
-        isWaveActive = true;
-        timer = 0;
+        // Trả các đám mây về vị trí mở hoàn toàn ngoài màn hình
+        if (enableCloudTransition && cloudTransforms != null && cloudOpenPositions != null)
+        {
+            for (int i = 0; i < cloudTransforms.Length; i++)
+            {
+                if (cloudTransforms[i] != null && i < cloudOpenPositions.Length)
+                {
+                    SetCloudPosition(cloudTransforms[i], cloudOpenPositions[i]);
+                }
+            }
+        }
+
+        lightTransitionCoroutine = null;
         isLightAnimating = false;
 
         if (skipWaveButton != null)
@@ -222,7 +276,20 @@ public class DayNightManager : Singleton<DayNightManager>
             skipWaveButton.interactable = true;
         }
 
-        Debug.Log($"[WaveManager] 🔥 HẾT CHU KỲ ÁNH SÁNG (3S)! CHÍNH THỨC TĂNG LÊN DAY {currentWave} (WAVE {currentWave})!");
+        UpdateSkipButtonUI();
+    }
+
+    /// <summary>
+    /// Thực hiện logic chính thức tăng Ngày / Wave khi màn hình đang được Đám mây che kín
+    /// </summary>
+    private void ExecuteDayIncrementLogic()
+    {
+        currentWave++;
+        currentWaveState = WaveState.Combat;
+        isWaveActive = true;
+        timer = 0;
+
+        Debug.Log($"[WaveManager] 🔥 ĐÁM MÂY CHE KÍN MÀN HÌNH! CHÍNH THỨC TĂNG LÊN DAY {currentWave} (WAVE {currentWave})!");
 
         OnNightStart?.Invoke();
         OnWaveStart?.Invoke(currentWave);
@@ -243,6 +310,158 @@ public class DayNightManager : Singleton<DayNightManager>
         }
 
         UpdateSkipButtonUI();
+    }
+
+    // ================= LOGIC XỬ LÝ HIỆU ỨNG ĐÁM MÂY =================
+    private Vector3 GetCloudPosition(Transform cloud)
+    {
+        if (cloud == null) return Vector3.zero;
+        if (isUICloud && cloud is RectTransform rect)
+        {
+            return rect.anchoredPosition3D;
+        }
+        return cloud.localPosition;
+    }
+
+    private void SetCloudPosition(Transform cloud, Vector3 targetPos)
+    {
+        if (cloud == null) return;
+        if (isUICloud && cloud is RectTransform rect)
+        {
+            rect.anchoredPosition3D = targetPos;
+        }
+        else
+        {
+            cloud.localPosition = targetPos;
+        }
+    }
+
+    private Vector3 GetDefaultOffsetForCloud(int index, bool isChildOfCamera)
+    {
+        if (cloudOffscreenOffsets != null && index < cloudOffscreenOffsets.Length && cloudOffscreenOffsets[index] != Vector3.zero)
+        {
+            return cloudOffscreenOffsets[index];
+        }
+
+        if (isChildOfCamera)
+        {
+            switch (index % 3)
+            {
+                case 0: return new Vector3(-15f, 0f, 0f); // Mây 1: Từ Bên Trái
+                case 1: return new Vector3(15f, 0f, 0f);  // Mây 2: Từ Bên Phải
+                case 2: return new Vector3(-12f, 4f, 0f); // Mây 3: Từ Bên Trái / Trên
+                default: return new Vector3(-15f, 0f, 0f);
+            }
+        }
+        else
+        {
+            switch (index % 3)
+            {
+                case 0: return new Vector3(-35f, 0f, 0f); // Mây 1: Từ Bên Trái
+                case 1: return new Vector3(35f, 0f, 0f);  // Mây 2: Từ Bên Phải
+                case 2: return new Vector3(-30f, 8f, 0f); // Mây 3: Từ Bên Trái / Trên
+                default: return new Vector3(-35f, 0f, 0f);
+            }
+        }
+    }
+
+    public void InitCloudPositions()
+    {
+        if (!enableCloudTransition) return;
+
+        Camera mainCam = Camera.main;
+        if (mainCam == null) mainCam = UnityEngine.Object.FindFirstObjectByType<Camera>();
+
+        // Tự động tìm các đám mây dưới Main Camera nếu trong Inspector chưa kéo thả (Size = 0)
+        if (cloudTransforms == null || cloudTransforms.Length == 0)
+        {
+            if (mainCam != null)
+            {
+                System.Collections.Generic.List<Transform> foundClouds = new System.Collections.Generic.List<Transform>();
+                foreach (Transform child in mainCam.transform)
+                {
+                    if (child.name.ToLower().Contains("cloud"))
+                    {
+                        foundClouds.Add(child);
+                    }
+                }
+                if (foundClouds.Count > 0)
+                {
+                    cloudTransforms = foundClouds.ToArray();
+                    Debug.Log($"[DayNightManager] ☁️ Tự động tìm thấy {cloudTransforms.Length} đám mây dưới {mainCam.name}!");
+                }
+            }
+        }
+
+        if (cloudTransforms == null || cloudTransforms.Length == 0) return;
+
+        if (!isCloudPosInitialized || cloudClosedPositions == null || cloudClosedPositions.Length != cloudTransforms.Length)
+        {
+            cloudClosedPositions = new Vector3[cloudTransforms.Length];
+            cloudOpenPositions = new Vector3[cloudTransforms.Length];
+
+            for (int i = 0; i < cloudTransforms.Length; i++)
+            {
+                if (cloudTransforms[i] != null)
+                {
+                    bool isChildOfCam = mainCam != null && cloudTransforms[i].IsChildOf(mainCam.transform);
+
+                    // Nếu mây là con của Camera và Z đang = 0 (bị khuất sau kính camera), tự điều chỉnh Z = 3.5f để nằm trước ống kính camera
+                    if (isChildOfCam && !isUICloud)
+                    {
+                        Vector3 currentLocal = cloudTransforms[i].localPosition;
+                        if (Mathf.Abs(currentLocal.z) < 1.0f)
+                        {
+                            currentLocal.z = 3.5f;
+                            cloudTransforms[i].localPosition = currentLocal;
+                        }
+                    }
+
+                    cloudClosedPositions[i] = GetCloudPosition(cloudTransforms[i]);
+                    Vector3 offset = GetDefaultOffsetForCloud(i, isChildOfCam);
+                    cloudOpenPositions[i] = cloudClosedPositions[i] + offset;
+
+                    // Ngay khi khởi động, ẩn mây ra ngoài màn hình
+                    SetCloudPosition(cloudTransforms[i], cloudOpenPositions[i]);
+                }
+            }
+            isCloudPosInitialized = true;
+        }
+    }
+
+    private void UpdateCloudTransition(float elapsedTime, float totalDuration)
+    {
+        if (cloudTransforms == null || cloudClosedPositions == null) return;
+
+        float halfDuration = totalDuration * 0.5f;
+
+        for (int i = 0; i < cloudTransforms.Length; i++)
+        {
+            if (cloudTransforms[i] == null) continue;
+
+            Vector3 startPos;
+            Vector3 targetPos;
+            float t;
+
+            if (elapsedTime <= halfDuration)
+            {
+                // Pha 1 (0 -> 1.5s): Mây kéo từ ngoài VÀO GIỮA che màn hình
+                startPos = cloudOpenPositions[i];
+                targetPos = cloudClosedPositions[i];
+                t = Mathf.Clamp01(elapsedTime / halfDuration);
+            }
+            else
+            {
+                // Pha 2 (1.5s -> 3.0s): Mây từ giữa MỞ RA 2 BÊN ra ngoài màn hình
+                startPos = cloudClosedPositions[i];
+                targetPos = cloudOpenPositions[i];
+                t = Mathf.Clamp01((elapsedTime - halfDuration) / halfDuration);
+            }
+
+            float smoothT = Mathf.SmoothStep(0f, 1f, t);
+            Vector3 currentPos = Vector3.Lerp(startPos, targetPos, smoothT);
+            SetCloudPosition(cloudTransforms[i], currentPos);
+        }
     }
 
     /// <summary>
@@ -276,10 +495,23 @@ public class DayNightManager : Singleton<DayNightManager>
     }
 
     /// <summary>
-    /// Cập nhật hiển thị giao diện Nút UI Skip Wave (Sạch sẽ, không hiện +G)
+    /// Cập nhật hiển thị giao diện Text Ngày (1 Wave = 1 Ngày)
+    /// </summary>
+    public void UpdateDayTextUI()
+    {
+        if (dayTextTMP != null)
+        {
+            dayTextTMP.text = $"Ngày {currentWave}";
+        }
+    }
+
+    /// <summary>
+    /// Cập nhật hiển thị giao diện Nút UI Skip Wave (Sạch sẽ, không hiện +G) và Text Ngày
     /// </summary>
     private void UpdateSkipButtonUI()
     {
+        UpdateDayTextUI();
+
         if (skipWaveButton != null)
         {
             skipWaveButton.interactable = true;
