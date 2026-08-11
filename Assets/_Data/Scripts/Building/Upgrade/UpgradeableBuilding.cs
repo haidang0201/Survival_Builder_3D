@@ -302,13 +302,15 @@ public class UpgradeableBuilding : MonoBehaviour
             isInitialBuildNeeded = false;
             TriggerDestructionSequence();
         }
-        else if (isInitialBuildNeeded)
+        else if (isInitialBuildNeeded && IsUpgrading && currentProcessCoroutine != null)
         {
+            // Đang trong tiến trình thi công (được gọi từ ConstructionManager hoặc LoadBuildingData)
             ToggleBuildingLogic(false);
-            StartInitialBuildProcess();
         }
         else
         {
+            // Các công trình đã có sẵn trong Scene hoặc nạp từ Scene khác về sẽ là công trình đã xây xong
+            isInitialBuildNeeded = false;
             ToggleBuildingLogic(true);
 
             HPTower hpComponent = GetComponent<HPTower>();
@@ -749,13 +751,23 @@ public class UpgradeableBuilding : MonoBehaviour
         // 🔥 FIX: Đồng bộ biến startAsRuined và isInitialBuildNeeded
         startAsRuined = isRuinedState;
         
-        if (!isInitialBuildNeededState || CurrentLevel > 0)
+        bool isReturningFromBattle = BattleData.HasData || BattleData.HasResult || BattleData.LastBattleWasVictory;
+
+        if (isReturningFromBattle || !isInitialBuildNeededState || CurrentLevel > 0 || level > 0)
         {
             isInitialBuildNeeded = false;
         }
         else
         {
             isInitialBuildNeeded = isInitialBuildNeededState;
+        }
+
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (targetUI != null)
+        {
+            targetUI.DeactivateAllVFX();
+            targetUI.gameObject.SetActive(false);
         }
 
         if (IsRuined)
@@ -778,10 +790,6 @@ public class UpgradeableBuilding : MonoBehaviour
 
             HPTower hpComponent = GetComponent<HPTower>();
             if (hpComponent != null) hpComponent.ResetHealth();
-
-            var targetUI = BuildingProgressBridge.GetUI(this);
-            if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
-            if (targetUI != null) targetUI.gameObject.SetActive(false);
         }
 
         UpdateCivilianBuildingData();
