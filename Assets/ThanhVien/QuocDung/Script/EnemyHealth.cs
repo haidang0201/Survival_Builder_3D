@@ -32,6 +32,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     // 🌟 KHAI BÁO BIẾN TRẠNG THÁI CHẾT (Tránh lỗi không tìm thấy biến)
     private bool isDead = false;
+    public bool IsDead => isDead || CurrentHealth <= 0f;
 
     // Các thành phần UI được khởi tạo hoàn toàn bằng code lúc chạy game
     private Canvas hpCanvas;
@@ -136,7 +137,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             return;
 
         CurrentHealth -= amount;
-        Debug.Log($"{name} took {amount} damage at {hitPoint}. Current HP: {CurrentHealth}");
+        // Debug.Log($"{name} took {amount} damage at {hitPoint}. Current HP: {CurrentHealth}");
+
+        // Enable combat on EnemyAI when damaged
+        EnemyAI enemyAI = GetComponent<EnemyAI>();
+        if (enemyAI != null)
+        {
+            enemyAI.EnableCombat();
+        }
 
         if (hpFillImage != null)
         {
@@ -168,20 +176,18 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     public void OnDeath()
     {
-        if (isDead)
-            return;
-
+        if (isDead) return;
         isDead = true;
-        Debug.Log($"{name} died");
-        
-        if (hpCanvas != null) hpCanvas.gameObject.SetActive(false);
 
-        // 🌟 KÍCH HOẠT EVENT: Báo hiệu cho các Manager khác (như RoKFirstRaidManager) biết quái này đã chết
+        // ✅ Báo cho Tutorial Manager biết quái đã bị hạ
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnEnemyKilled();
+        }
+
         OnEnemyDied?.Invoke(this);
-
         Destroy(gameObject);
     }
-
     private void LateUpdate()
     {
         if (hpCanvas != null && hpCanvas.gameObject.activeSelf && camTransform != null)
@@ -194,11 +200,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         if (whiteSprite != null)
         {
-            if (whiteSprite.texture != null)
+            if (Application.isPlaying)
             {
-                Destroy(whiteSprite.texture);
+                Destroy(whiteSprite);
             }
-            Destroy(whiteSprite);
+            else
+            {
+                DestroyImmediate(whiteSprite);
+            }
         }
     }
 }

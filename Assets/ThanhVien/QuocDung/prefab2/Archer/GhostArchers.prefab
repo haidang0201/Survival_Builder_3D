@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 5333909472057682924}
   - component: {fileID: 690076386615868598}
   - component: {fileID: 2354679673683789506}
-  m_Layer: 11
+  m_Layer: 0
   m_Name: GhostArchers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -33,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.97714686, y: 0.0000011434079, z: 1.876509}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 329298062334064454}
@@ -72,6 +72,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 0
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 9
   buildingName: "Th\xE1p Cung"
@@ -101,6 +102,10 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 6d40eda199e2f4b4f87f5ae946de63b2, type: 3}
   - {fileID: 21300000, guid: c8902977bf142ec47bb07f4909d0fdd8, type: 3}
   - {fileID: 21300000, guid: c8902977bf142ec47bb07f4909d0fdd8, type: 3}
+  ruinedVisualModel: {fileID: 0}
+  repairWoodCost: 30
+  repairStoneCost: 30
+  repairDuration: 5
 --- !u!65 &5199507879581856568
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -152,6 +157,8 @@ MonoBehaviour:
   animator: {fileID: 2831875671423961722}
   attackParamName: IsAttack
   attackRange: 8
+  rotationSpeed: 10
+  partToRotate: {fileID: 0}
 --- !u!82 &5333909472057682924
 AudioSource:
   m_ObjectHideFlags: 0
@@ -294,16 +301,18 @@ MonoBehaviour:
   - {fileID: 8541478601719109598}
   - {fileID: 1940704726347678661}
   buildingType: 9
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &2952158091922424639
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -409,16 +418,18 @@ MonoBehaviour:
   - {fileID: 8541478601719109598}
   - {fileID: 1940704726347678661}
   buildingType: 9
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!4 &8326799192757899103 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6590621797040573536, guid: 7e43670d742d0604ca4b5984242b6802, type: 3}
@@ -534,16 +545,18 @@ MonoBehaviour:
   - {fileID: 8541478601719109598}
   - {fileID: 1940704726347678661}
   buildingType: 9
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &8634564951709561807
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -554,27 +567,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2283128918011225735, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_Layer
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3305062427163196632, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_Layer
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4173611588803900156, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_Layer
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4525996663672269425, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_Layer
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4748289475689829902, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_Layer
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5968051312889730762, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_Layer
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6911117920321829390, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: animator
@@ -590,7 +603,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7736553044894252102, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_Layer
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8306262536278951049, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_LocalPosition.x
@@ -634,7 +647,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8691504505096296483, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}
       propertyPath: m_Layer
-      value: 11
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -676,16 +689,18 @@ MonoBehaviour:
   - {fileID: 8541478601719109598}
   - {fileID: 1940704726347678661}
   buildingType: 9
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!95 &2831875671423961722 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5807661066353932725, guid: 910244fdfb7ebab4181058582bf8a867, type: 3}

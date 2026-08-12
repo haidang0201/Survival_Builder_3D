@@ -14,8 +14,6 @@ GameObject:
   - component: {fileID: 64290586370141854}
   - component: {fileID: 64189816799595732}
   - component: {fileID: 64335578167134696}
-  - component: {fileID: 904028361498263846}
-  - component: {fileID: 6493124518582129456}
   m_Layer: 7
   m_Name: SM_Env_Tree_09
   m_TagString: Untagged
@@ -161,38 +159,3 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 43944751346649128, guid: 671b04d3df7ff0e429b72c31f381fdca, type: 2}
---- !u!114 &904028361498263846
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 170592}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 47521f9b65bd6654c99d7e55745643bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Tree
-  maxHealth: 8
-  woodPool: {fileID: 0}
-  dropAmount: 1
-  chipVFX: {fileID: 0}
---- !u!114 &6493124518582129456
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 170592}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c650f09944822f49a6b055918618cd0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TreeVisual
-  shakeAngle: 15
-  shakeSpeed: 12
-  shakeDuration: 0.4
-  fallAngle: 90
-  fallDuration: 0.8
-  fallDelay: 0.1
-  fallDirection: {x: 0, y: 0, z: 0}

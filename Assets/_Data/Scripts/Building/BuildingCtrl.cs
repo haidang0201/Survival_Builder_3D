@@ -1,65 +1,53 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /*
  * BuildingCtrl.cs
  * Folder: Scripts/Building/
- * Người làm: DŨNG / TIẾN
+ * Người làm: DŨNG
  *
- * Controller gắn lên prefab công trình.
- * Quản lý: xây dựng, worker, save/load trạng thái, xoay 90°.
- *
- * Luồng save:  ToState()   → BuildingState → JsonDataManager
- * Luồng load:  FromState() ← BuildingState ← JsonDataManager
- *
- * API chuẩn (các class khác phải dùng đúng tên này):
- *   ToState()   – export sang BuildingState
- *   FromState() – import từ BuildingState
+ * Thực thể đại diện cho 1 công trình trong scene.
+ * Tự đăng ký/huỷ đăng ký với BuildingManager.
  */
 
 public class BuildingCtrl : MonoBehaviour
 {
-    // ================= INSPECTOR =================
+    [Header("Cấu hình công trình")]
+    public BuildingType buildingType = BuildingType.None;
 
-    [Header("Config")]
-    public BuildingType buildingType;
+    [Tooltip("Sức chứa worker tối đa của công trình này")]
+    public int maxWorkers = 2;
 
-    [Header("References")]
-    public Transform door;          // Vị trí worker đứng làm việc
+    [Tooltip("Tốc độ sản xuất tài nguyên (nếu có, đơn vị/giây)")]
+    public float productionRate = 1f;
 
-    [Header("State – chỉ xem, không sửa tay")]
-    [SerializeField] private float buildProgress = 0f;
-    [SerializeField] private bool isOccupied = false;
-    [SerializeField] private int currentWorkers = 0;
-    [SerializeField] private int maxWorkers = 4;
-    internal string type;
+    [Tooltip("Góc xoay cố định khi đặt (độ). 0, 90, 180, 270")]
+    public float fixedYRotation = 0f;
 
-    // // Thêm vào file BuildingCtrl.cs của bạn
-    // public float currentHealth = 100f; 
-    // public float maxHealth = 100f;
+    // ================= STATE =================
+    private readonly System.Collections.Generic.List<WorkerCtrl> assignedWorkers
+        = new System.Collections.Generic.List<WorkerCtrl>();
 
-    // // Thêm giả lập số lính/thợ hiện tại để UI lấy dữ liệu test
-    // public int currentWorkers = 1;
-    // public int maxWorkers = 4;
-    // public int currentSoldiers = 0;
-    // public int maxSoldiers = 5;
+    public IReadOnlyList<WorkerCtrl> AssignedWorkers => assignedWorkers;
+    public int CurrentWorkerCount => assignedWorkers.Count;
+    public bool IsFull => assignedWorkers.Count >= maxWorkers;
+    public bool IsAvailable => !IsFull;
+    public bool IsBuilt => true;
 
-    // ================= PROPERTIES =================
+    public void AddProgress(float progress)
+    {
+    }
 
-    public bool IsBuilt => buildProgress >= 1f;
-    public bool IsOccupied => isOccupied;
-    public bool IsAvailable => IsBuilt && !isOccupied;
-    public int CurrentWorkers => currentWorkers;
-    public int MaxWorkers => maxWorkers;
-
-    /// <summary>Góc Y hiện tại (luôn là bội số 90°)</summary>
+    public Vector3 Position => transform.position;
     public float CurrentYRotation => NormalizeAngle(transform.eulerAngles.y);
-
-    // ================= LIFECYCLE =================
 
     private void Start()
     {
-        // Khi nhà thật xuất hiện, lập tức ghi danh vào danh sách quản lý của Dũng
-        if (BuildingManager.Ins != null)
+        if (BuildingManager.HasInstance)
+        {
+            BuildingManager.Ins?.AddBuilding(this);
+        }
+        else if (BuildingManager.Ins != null)
         {
             BuildingManager.Ins.AddBuilding(this);
         }
@@ -67,140 +55,102 @@ public class BuildingCtrl : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Khi nhà bị quái đánh sập hoặc bị bán, xóa tên khỏi danh sách để đất trống xây lại được
-        if (BuildingManager.Ins != null)
+        if (BuildingManager.HasInstance)
         {
-            BuildingManager.Ins.RemoveBuilding(this);
+            BuildingManager.Ins?.RemoveBuilding(this);
         }
     }
-
-    // ================= PUBLIC – WORKER =================
 
     public void AssignWorker(WorkerCtrl worker)
     {
-        if (!IsAvailable)
-        {
-            Debug.LogWarning($"[BuildingCtrl] {buildingType} không available, không thể gán worker.");
-            return;
-        }
+        if (!IsAvailable) return;
+        if (worker == null) return;
+        if (assignedWorkers.Contains(worker)) return;
 
-        if (currentWorkers < maxWorkers)
-        {
-            currentWorkers++;
-        }
-        isOccupied = true;
-        worker.MoveToLocation(door.position);
+        assignedWorkers.Add(worker);
     }
 
-    public void ReleaseWorker(WorkerCtrl worker)
+    public void RemoveWorker(WorkerCtrl worker)
     {
-        if (currentWorkers > 0)
-        {
-            currentWorkers--;
-        }
-        isOccupied = false;
-        worker.ComeBackToWork();
+        if (worker == null) return;
+        assignedWorkers.Remove(worker);
     }
 
-    public void SetWorkerState(int current, int max)
-    {
-        maxWorkers = Mathf.Max(0, max);
-        currentWorkers = Mathf.Clamp(current, 0, maxWorkers);
-    }
-
-    // ================= PUBLIC – BUILD =================
-
-    public void AddProgress(float amount)
-    {
-        if (IsBuilt) return;
-
-        buildProgress = Mathf.Clamp01(buildProgress + amount);
-        Debug.Log($"[BuildingCtrl] {buildingType} buildProgress = {buildProgress}"); // thêm dòng này
-
-        if (IsBuilt) OnBuildComplete();
-    }
-
-    public void CancelBuild()
-    {
-        buildProgress = 0f;
-        isOccupied = false;
-    }
-
-    // ================= PUBLIC – ROTATION =================
-
-    /// <summary>Xoay thêm 90° theo chiều Y (gọi từ GhostBuilding hoặc UI)</summary>
-    public void RotateStep()
-    {
-        float newY = (CurrentYRotation + 90f) % 360f;
-        transform.rotation = Quaternion.Euler(0f, newY, 0f);
-    }
-
-    /// <summary>Set góc xoay cụ thể – dùng khi load từ save</summary>
-    public void SetRotation(float yDegrees)
-    {
-        float snapped = SnapRotation(yDegrees);
-        transform.rotation = Quaternion.Euler(0f, snapped, 0f);
-    }
-
-    // ================= PUBLIC – SAVE / LOAD =================
-
-    /// <summary>
-    /// Export trạng thái hiện tại → BuildingState để lưu JSON.
-    /// Tên chuẩn: ToState() – không đổi tên, các class khác phụ thuộc vào tên này.
-    /// </summary>
     public BuildingState ToState()
     {
+        UpgradeableBuilding ub = GetComponent<UpgradeableBuilding>();
+        if (ub == null) ub = GetComponentInChildren<UpgradeableBuilding>();
+
         return new BuildingState
         {
             buildingType = buildingType,
             prefabName = gameObject.name,
             position = new SerializableVector3(transform.position),
             rotation = new SerializableVector3(transform.eulerAngles),
-            buildProgress = buildProgress,
+            buildProgress = 1f,
             isBuilt = IsBuilt,
-            isOccupied = isOccupied,
-            currentWorkers = currentWorkers,
+            isOccupied = IsFull,
+            currentWorkers = CurrentWorkerCount,
             maxWorkers = maxWorkers,
-            level = 0
+            level = ub != null ? ub.CurrentLevel : 0,
+            slotIndex = ub != null ? ub.slotIndex : -1
         };
     }
 
-    /// <summary>
-    /// Import BuildingState → restore trạng thái sau khi load JSON.
-    /// Gọi NGAY SAU khi SpawnBuilding() để tránh Start() đăng ký hai lần.
-    /// </summary>
-    public void FromState(BuildingState state)
+    public BuildingCtrlState GetState()
     {
-        buildingType = state.buildingType;
-        buildProgress = state.buildProgress;
-        isOccupied = state.isOccupied;
-        maxWorkers = Mathf.Max(0, state.maxWorkers);
-        currentWorkers = Mathf.Clamp(state.currentWorkers, 0, maxWorkers);
-
-        transform.position = state.position.ToVector3();
-        transform.eulerAngles = state.rotation.ToVector3();
+        return new BuildingCtrlState
+        {
+            buildingType = buildingType,
+            position = transform.position,
+            yRotation = CurrentYRotation,
+            assignedWorkerCount = assignedWorkers.Count,
+        };
     }
 
-    // ================= PRIVATE =================
-
-    private void OnBuildComplete()
+    public void FromState(BuildingState state)
     {
-        Debug.Log($"[BuildingCtrl] ✅ {buildingType} đã xây xong!");
+        if (state == null) return;
 
-        if (buildingType == BuildingType.WatchTower)
+        transform.position = state.position.ToVector3();
+        transform.rotation = Quaternion.Euler(state.rotation.ToVector3());
+
+        UpgradeableBuilding ub = GetComponent<UpgradeableBuilding>();
+        if (ub == null) ub = GetComponentInChildren<UpgradeableBuilding>();
+        if (ub != null)
         {
-            StartupTwoMissionTutorial.Instance?.NotifyWatchTowerBuilt(); // ĐỔI TỪ NotifyWatchTowerPlaced() SANG HÀM MỚI
+            ub.slotIndex = state.slotIndex;
         }
     }
 
-    /// <summary>Snap góc về bội số 90° gần nhất</summary>
-    private float SnapRotation(float angle)
+    public void RestoreState(BuildingCtrlState state)
     {
-        return Mathf.Round(angle / 90f) * 90f % 360f;
+        if (state == null) return;
+
+        transform.position = state.position;
+        transform.rotation = Quaternion.Euler(0f, state.yRotation, 0f);
     }
 
-    private float NormalizeAngle(float angle)
+    private static float NormalizeAngle(float angle)
     {
-        return (angle % 360f + 360f) % 360f;
+        angle %= 360f;
+        if (angle < 0f) angle += 360f;
+
+        // Snap về góc chuẩn 0, 90, 180, 270 để tránh sai số float
+        if (Mathf.Abs(angle - 0f) < 5f || Mathf.Abs(angle - 360f) < 5f) return 0f;
+        if (Mathf.Abs(angle - 90f) < 5f) return 90f;
+        if (Mathf.Abs(angle - 180f) < 5f) return 180f;
+        if (Mathf.Abs(angle - 270f) < 5f) return 270f;
+
+        return angle;
     }
+}
+
+[System.Serializable]
+public class BuildingCtrlState
+{
+    public BuildingType buildingType;
+    public Vector3 position;
+    public float yRotation;
+    public int assignedWorkerCount;
 }

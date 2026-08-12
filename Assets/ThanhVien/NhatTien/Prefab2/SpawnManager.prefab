@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3271398448212576775
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8496768804676430428}
+  - component: {fileID: 6493644612583006120}
+  m_Layer: 0
+  m_Name: SpawnManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8496768804676430428
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3271398448212576775}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -76.33548, y: 1.39398, z: -50.38317}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6493644612583006120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3271398448212576775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f347577fd85954c9310b6a981fde1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorkerSpawner
+  treeWorkerPrefab: {fileID: 4191418717481340852, guid: e617e924a2176df4ab5bbe4258490bc0, type: 3}
+  riceWorkerPrefab: {fileID: 4184119805880974729, guid: 2b8337558274df040acb28691de14220, type: 3}
+  stoneWorkerPrefab: {fileID: 7195124832196148853, guid: 996bcca624831524c8208128f1c556f4, type: 3}
+  carrierWorkerPrefab: {fileID: 2238227453136603502, guid: db7c5fd7e4d5bbe4bba82f9a6776776a, type: 3}
+  handPointChildName: HandPoint
+  addEnemyFlee: 1
+  defaultSpawnScatterRadius: 2.5
+  maxSpawnPositionAttempts: 8

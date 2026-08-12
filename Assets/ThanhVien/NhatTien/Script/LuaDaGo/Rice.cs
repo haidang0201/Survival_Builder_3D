@@ -9,14 +9,31 @@ public class Rice : MonoBehaviour
     public ObjectPool ricePool;
     public int dropAmount = 2;
 
+    [Header("Respawn Settings")]
+    [Tooltip("Thời gian (giây) lúa hồi sinh sau khi gặt. 0 = không hồi sinh.")]
+    public float respawnDelay = 45f;
+
     private int  currentHealth;
     private bool isOccupied = false;
+    private Coroutine respawnRoutine;
 
     void OnEnable()
     {
         currentHealth = maxHealth;
         isOccupied    = false;
         WorkerFindRice.Registry.Add(this);
+    }
+
+    public int GetCurrentHealth() => currentHealth;
+    
+    public void SetCurrentHealth(int health)
+    {
+        currentHealth = health;
+        if (currentHealth <= 0)
+        {
+            SetVisible(false);
+            WorkerFindRice.Registry.Remove(this);
+        }
     }
 
     void OnDisable()
@@ -26,7 +43,7 @@ public class Rice : MonoBehaviour
 
     public bool TryClaim()
     {
-        if (isOccupied) return false;
+        if (isOccupied || currentHealth <= 0) return false;
         isOccupied = true;
         return true;
     }
@@ -46,9 +63,40 @@ public class Rice : MonoBehaviour
     {
         RicePickup[] drops = DropRice();
         isOccupied = false;
-        gameObject.SetActive(false);
-        Debug.Log($"[Rice] '{name}' đã gặt xong → tắt.");
+
+        if (respawnDelay <= 0f)
+        {
+            gameObject.SetActive(false);
+        }
+        else
+        {
+            if (respawnRoutine != null) StopCoroutine(respawnRoutine);
+            respawnRoutine = StartCoroutine(RespawnRoutine());
+        }
+
         return drops;
+    }
+
+    System.Collections.IEnumerator RespawnRoutine()
+    {
+        // Ẩn lúa + xóa khỏi Registry (không SetActive(false) để coroutine vẫn chạy)
+        SetVisible(false);
+        WorkerFindRice.Registry.Remove(this);
+
+        yield return new WaitForSeconds(respawnDelay);
+
+        // Hồi sinh
+        currentHealth = maxHealth;
+        isOccupied    = false;
+        SetVisible(true);
+        WorkerFindRice.Registry.Add(this);
+        respawnRoutine = null;
+    }
+
+    void SetVisible(bool visible)
+    {
+        foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = visible;
+        foreach (var c in GetComponentsInChildren<Collider>())  c.enabled = visible;
     }
 
     RicePickup[] DropRice()

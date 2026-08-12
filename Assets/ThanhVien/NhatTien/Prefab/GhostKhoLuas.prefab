@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 332411702714899150}
   - component: {fileID: 5676461809145549237}
   - component: {fileID: 5835443542123061056}
-  - component: {fileID: 1411505221130103803}
   - component: {fileID: 2675246424494048265}
   m_Layer: 11
   m_Name: GhostKhoLuas
@@ -30,7 +29,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.12631328, y: 0.3060526, z: -1.1626242}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6855894570574499582}
@@ -69,6 +68,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeableBuilding
   isInitialBuildNeeded: 1
+  startAsRuined: 0
   initialBuildDuration: 5
   buildingType: 5
   buildingName: Food Storage
@@ -98,27 +98,10 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 8586eb5be42379646a755ac3306aabd1, type: 3}
   - {fileID: 21300000, guid: 6ed6ab34c2d48f647b451f296011f784, type: 3}
   - {fileID: 21300000, guid: 0e6ad5cc5493197448c0a9b9fcc9dbe7, type: 3}
---- !u!65 &1411505221130103803
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4753436910173820360}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 10.2286625, y: 1.8279905, z: 7.0969133}
-  m_Center: {x: -1.6167784, y: 0.91381407, z: 0.36659527}
+  ruinedVisualModel: {fileID: 0}
+  repairWoodCost: 30
+  repairStoneCost: 30
+  repairDuration: 5
 --- !u!114 &2675246424494048265
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -136,16 +119,18 @@ MonoBehaviour:
   - {fileID: 1506753747909990820}
   - {fileID: 7155816854271764207}
   buildingType: 5
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1001 &1075276997833429690
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -255,16 +240,18 @@ MonoBehaviour:
   - {fileID: 1506753747909990820}
   - {fileID: 7155816854271764207}
   buildingType: 5
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!4 &6855894570574499582 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5893278361766976580, guid: 96f3781e4efcf8f4c8d851b3b40868f2, type: 3}
@@ -380,16 +367,18 @@ MonoBehaviour:
   - {fileID: 1506753747909990820}
   - {fileID: 7155816854271764207}
   buildingType: 5
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!114 &3376546026980741618 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1511283183772167501, guid: 5093573054ddf2147856104c4bae3d49, type: 3}
@@ -544,13 +533,15 @@ MonoBehaviour:
   - {fileID: 1506753747909990820}
   - {fileID: 7155816854271764207}
   buildingType: 5
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0

@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 150.99829, y: 0.0000011211912, z: 78.12309}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4433519162118688143}
@@ -130,17 +130,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4a436575addd89488411ada559bb676, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GhostBuilding
+  levelModels: []
   buildingType: 8
+  sizeX: 1
+  sizeZ: 1
   validMat: {fileID: 2100000, guid: 8cc090e7a0783a141927ce3b6e6c615f, type: 2}
   invalidMat: {fileID: 2100000, guid: d31b976efb0c88c499b2960d7c6c3c84, type: 2}
   groundLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 8
   buildingLayer:
     serializedVersion: 2
     m_Bits: 2048
-  snapStep: 1
   checkYSize: 2
+  isValid: 0
 --- !u!1 &2936633381406691193
 GameObject:
   m_ObjectHideFlags: 0

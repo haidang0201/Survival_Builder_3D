@@ -46,6 +46,11 @@ public class AttackTowerAI : MonoBehaviour
     [Header("Hệ thống nhắm mục tiêu (Targeting)")]
     [SerializeField] private float attackRange = 8f; 
 
+    [Header("Cấu hình Tấn Công Tự Động")]
+    [Tooltip("Tự động tấn công khi có mục tiêu. Mặc định với Pháo (Cannon) sẽ là FALSE để ngắt tự động đánh.")]
+    [SerializeField] private bool autoAttack = true;
+    public bool AutoAttack { get => autoAttack; set => autoAttack = value; }
+
     [Header("Cấu hình Xoay (Rotation)")]
     public float rotationSpeed = 10f;
     [Tooltip("Kéo phần đầu hoặc thân tháp cần xoay vào đây. Nếu để trống, sẽ xoay toàn bộ tháp.")]
@@ -58,6 +63,11 @@ public class AttackTowerAI : MonoBehaviour
     private HPTower hpTower;
     private Transform currentTarget;
     private float nextFireTime;
+
+    private void Awake()
+    {
+        autoAttack = false;
+    }
 
     public bool IsDestroyed()
     {
@@ -103,10 +113,47 @@ public class AttackTowerAI : MonoBehaviour
         }
     }
 
+    public bool CanAttack()
+    {
+        if (IsDestroyed()) return false;
+
+        // 🔥 Ở Scene Main Game: TOÀN BỘ tháp (Cung & Pháo) ĐỀU KHÔNG ĐƯỢC BẮN
+        // (Để quái đứng tại hàng rào chờ người chơi bấm nút Tấn Công sang SceneBattle).
+        // Chỉ khi vào bên trong SceneBattle (IsInBattleScene() == true) mới cho phép bắn!
+        if (!IsInBattleScene())
+        {
+            return false;
+        }
+
+        if (upgradeableBuilding == null)
+        {
+            upgradeableBuilding = GetComponent<UpgradeableBuilding>();
+            if (upgradeableBuilding == null) upgradeableBuilding = GetComponentInParent<UpgradeableBuilding>();
+            if (upgradeableBuilding == null) upgradeableBuilding = GetComponentInChildren<UpgradeableBuilding>();
+        }
+
+        if (upgradeableBuilding != null)
+        {
+            if (upgradeableBuilding.IsInitialBuildNeeded || upgradeableBuilding.IsUpgrading || upgradeableBuilding.IsRuined)
+            {
+                return false;
+            }
+        }
+
+        BuildingCtrl buildingCtrl = GetComponent<BuildingCtrl>();
+        if (buildingCtrl == null) buildingCtrl = GetComponentInParent<BuildingCtrl>();
+        if (buildingCtrl != null && !buildingCtrl.IsBuilt)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     // Hàm nhận lệnh tấn công do Tháp Canh truyền mục tiêu sang
     public void CommandAttack(Transform target)
     {
-        if (IsDestroyed())
+        if (!CanAttack())
         {
             currentTarget = null;
             return;
@@ -116,24 +163,35 @@ public class AttackTowerAI : MonoBehaviour
         Debug.Log($"[AttackTowerAI] CommandAttack received. Target={(target == null ? "null" : target.name)}");
     }
 
+    /// <summary>
+    /// Hàm bắn thủ công trên Pháo/Tháp (Bỏ qua kiểm tra autoAttack), dành cho việc điều khiển Cannon bắn theo lệnh người chơi
+    /// </summary>
+    public void ManualAttack(Transform target)
+    {
+        if (IsDestroyed()) return;
+        if (target == null || !target.gameObject.activeInHierarchy) return;
+
+        currentTarget = target;
+        RotateTowardsTarget();
+        ExecuteAttack();
+    }
+
     private void Update()
     {
-        // Nếu tháp đã bị phá hủy -> Không bắn và hủy mục tiêu
-        if (IsDestroyed())
+        // Nếu không thể tấn công (đang xây dựng, nâng cấp, hư hỏng, hoặc bị phá hủy) -> Không bắn và hủy mục tiêu
+        if (!CanAttack())
         {
             if (currentTarget != null) currentTarget = null;
             return;
         }
 
-        // Nếu không có mục tiêu được chỉ định từ tháp canh -> Bỏ qua không bắn
-        if (currentTarget == null) return;
-
-        if (!currentTarget.gameObject.activeInHierarchy)
+        // Nếu không có mục tiêu (hoặc mục tiêu đã chết/hủy) -> Tự động tìm kẻ địch gần nhất trong SceneBattle hoặc trong tầm bắn
+        if (currentTarget == null || !currentTarget.gameObject.activeInHierarchy || IsTargetDead(currentTarget))
         {
-            Debug.Log($"[AttackTowerAI] Current target {currentTarget.name} is not active -> clearing");
-            currentTarget = null;
-            return;
+            currentTarget = FindNearestTarget();
         }
+
+        if (currentTarget == null) return;
 
         // Xoay tháp về phía mục tiêu
         RotateTowardsTarget();
@@ -144,6 +202,67 @@ public class AttackTowerAI : MonoBehaviour
             ExecuteAttack();
             nextFireTime = Time.time + 1f / fireRate;
         }
+    }
+
+    private bool IsTargetDead(Transform target)
+    {
+        if (target == null) return true;
+        var hp = target.GetComponentInParent<EnemyHealth>();
+        if (hp != null && (hp.IsDead || hp.CurrentHealth <= 0)) return true;
+
+        var ai = target.GetComponentInParent<EnemyAI>();
+        if (ai != null && !ai.gameObject.activeInHierarchy) return true;
+
+        return false;
+    }
+
+    private Transform FindNearestTarget()
+    {
+        bool inBattle = IsInBattleScene();
+        float checkRadius = inBattle ? 50f : Mathf.Max(attackRange, 40f);
+        float minDistance = float.MaxValue;
+        Transform bestTarget = null;
+
+        Collider[] colliders = Physics.OverlapSphere(transform.position, checkRadius);
+        foreach (var col in colliders)
+        {
+            if (col == null || !col.gameObject.activeInHierarchy) continue;
+
+            bool isEnemy = col.CompareTag("Enemy") || col.name.ToLower().Contains("enemy") || col.GetComponentInParent<EnemyHealth>() != null || col.GetComponentInParent<EnemyAI>() != null;
+            if (isEnemy)
+            {
+                Transform enemyTrans = col.transform;
+                var hp = col.GetComponentInParent<EnemyHealth>();
+                if (hp != null)
+                {
+                    if (hp.IsDead || hp.CurrentHealth <= 0) continue;
+                    enemyTrans = hp.transform;
+                }
+
+                var ai = col.GetComponentInParent<EnemyAI>();
+                if (ai != null)
+                {
+                    if (!ai.gameObject.activeInHierarchy) continue;
+                    enemyTrans = ai.transform;
+                }
+
+                float dist = Vector3.Distance(transform.position, enemyTrans.position);
+                if (dist < minDistance)
+                {
+                    minDistance = dist;
+                    bestTarget = enemyTrans;
+                }
+            }
+        }
+
+        return bestTarget;
+    }
+
+    private bool IsInBattleScene()
+    {
+        if (BattleManager.Ins != null) return true;
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        return sceneName.ToLower().Contains("battle");
     }
 
     private void RotateTowardsTarget()

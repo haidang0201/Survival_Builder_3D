@@ -163,6 +163,25 @@ public class HUDController : MonoBehaviour
     // PRIVATE – ANIMATION & POOL (TỐI ƯU ĐỒ HỌA)
     // ──────────────────────────────────────────────────────────────
 
+    public static string FormatNumber(int amount)
+    {
+        int absAmount = Mathf.Abs(amount);
+        string sign = amount < 0 ? "-" : "";
+
+        if (absAmount >= 1_000_000)
+        {
+            float val = absAmount / 1_000_000f;
+            return sign + (val % 1 == 0 ? val.ToString("0") : val.ToString("0.#")) + "m";
+        }
+        if (absAmount >= 1_000)
+        {
+            float val = absAmount / 1_000f;
+            return sign + (val % 1 == 0 ? val.ToString("0") : val.ToString("0.#")) + "k";
+        }
+
+        return amount.ToString();
+    }
+
     private void AnimateNumber(TextMeshProUGUI text, int fromValue, int toValue)
     {
         if (text == null) return;
@@ -175,7 +194,7 @@ public class HUDController : MonoBehaviour
         DOTween.To(() => temp, x =>
         {
             temp = x;
-            text.text = x.ToString(); // Cập nhật trực tiếp số lên màn hình
+            text.text = FormatNumber(x); // Cập nhật trực tiếp số lên màn hình dạng ngắn (1k, 1.5k, 1m...)
         }, toValue, 0.2f) // Thời gian chạy số 0.2 giây
         .SetEase(Ease.OutQuad)
         .SetId(text);
@@ -183,7 +202,7 @@ public class HUDController : MonoBehaviour
 
     private void SetTextInstant(TextMeshProUGUI text, int value)
     {
-        if (text != null) text.text = value.ToString();
+        if (text != null) text.text = FormatNumber(value);
     }
 
     private void PulseOrShake(TextMeshProUGUI text, int delta)
@@ -229,7 +248,7 @@ public class HUDController : MonoBehaviour
         if (ft != null)
         {
             string prefix = amount > 0 ? "+" : "";
-            ft.Setup(prefix + amount, color);
+            ft.Setup(prefix + FormatNumber(amount), color);
         }
 
         obj.transform.DOComplete();

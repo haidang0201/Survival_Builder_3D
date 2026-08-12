@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1554414988231863081}
   m_Layer: 0
-  m_Name: HandPoint (3)
+  m_Name: HandPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -41,7 +41,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 7.437
+      value: 7.57
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.y
@@ -82,6 +82,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_Name
       value: WorkerCarrier
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0fb973e027c18794690a4041558b7234, type: 3}
+      propertyPath: m_TagString
+      value: Worker
       objectReference: {fileID: 0}
     - target: {fileID: 933360862552426075, guid: 0fb973e027c18794690a4041558b7234, type: 3}
       propertyPath: m_LocalPosition.x
@@ -191,7 +195,6 @@ MonoBehaviour:
   recoverPerSecond: 20
   restThreshold: 0
   resumeThreshold: 100
-  morningForceWakeThreshold: 30
   kitchen: {fileID: 0}
   house: {fileID: 0}
   hungryRecoverMultiplier: 0.3

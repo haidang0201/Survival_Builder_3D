@@ -25,69 +25,7 @@ Transform:
   m_GameObject: {fileID: 3893539223284032744}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.7, y: 0.37, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6904818074612623944}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5391280013096522573
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3417616045261112055}
-  m_Layer: 0
-  m_Name: Spawn (1)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3417616045261112055
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5391280013096522573}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.25, y: 0.37, z: 11.8}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6904818074612623944}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6017954338059035344
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4888100597587580527}
-  m_Layer: 0
-  m_Name: Spawn (2)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4888100597587580527
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6017954338059035344}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.72, y: 0.37, z: 17.39}
+  m_LocalPosition: {x: 34.33, y: 0, z: 7.66}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -105,7 +43,7 @@ GameObject:
   - component: {fileID: 5604620364914663613}
   m_Layer: 0
   m_Name: EnemySpawnManager
-  m_TagString: Untagged
+  m_TagString: Respawn
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -124,8 +62,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 267864803989536797}
-  - {fileID: 3417616045261112055}
-  - {fileID: 4888100597587580527}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5604620364914663613
@@ -140,25 +76,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4a7ff61e8ef1794da6fa01ea1f319b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemySpawn
+  enemyCountInBase: 5
   enemyPrefab: {fileID: 370480945864454416, guid: 2d56dfb52da6a654ab4fca2a3d449e2d, type: 3}
-  spawnOnStart: 1
+  spawnOnStart: 0
   spawnPoints:
   - {fileID: 267864803989536797}
-  - {fileID: 3417616045261112055}
-  - {fileID: 4888100597587580527}
+  spawnForwardOffset: 3.5
   attackTarget: {fileID: 0}
   useGridSpawn: 1
-  rows: 2
-  cols: 2
+  rows: 1
+  cols: 1
   spacingX: 1
   spacingZ: 1
-  useWaveSpawn: 1
-  spawnOnlyAtNight: 0
-  waveInterval: 5
-  scaleDifficultyWithDays: 1
-  daysToIncreaseSpawnPoints: 2
-  extraRowsPerDay: 0
-  extraColsPerDay: 1
-  extraEnemiesPerDay: 1
-  waveIntervalReductionPerDay: 0.5
-  minWaveInterval: 2
+  useWaveSpawn: 0
+  waveInterval: 30
+  autoSpawnWaveAlways: 1
+  showAttackButton: 1
+  warningIconPrefab: {fileID: 0}
+  warningIconHeightOffset: 3
+  warningArrowSize: 0.89
+  warningArrowLengthMultiplier: 1
+  warningArrowExtraLength: 0
+  warningTimerTextScale: 2.5
+  warningTextHeightOffset: 4
+  exitPlayModeWhenNoBuildings: 0

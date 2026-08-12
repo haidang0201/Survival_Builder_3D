@@ -144,7 +144,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 91.59, y: 0.13, z: 34.26}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4835187908008450657}
@@ -210,6 +210,7 @@ MonoBehaviour:
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
   projectileSpeed: 15
+  projectileSpawnDelay: 0.35
   currentState: 0
   currentTarget: {fileID: 0}
   scanFrequency: 0.25
@@ -229,6 +230,11 @@ MonoBehaviour:
   visionRayCount: 7
   destinationUpdateThreshold: 0.5
   enemyTag: Enemy
+  autoAggro: 0
+  isRespondingToWarning: 0
+  isReturning: 0
+  returnPosition: {x: 0, y: 0, z: 0}
+  warningPosition: {x: 0, y: 0, z: 0}
 --- !u!195 &5008260829330063038
 NavMeshAgent:
   m_ObjectHideFlags: 0

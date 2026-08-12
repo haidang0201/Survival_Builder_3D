@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using System.Collections;
 
 public class UpgradeableBuilding : MonoBehaviour
@@ -9,18 +10,25 @@ public class UpgradeableBuilding : MonoBehaviour
         public int woodCost;
         public int stoneCost;
         public int foodCost;
-        public float upgradeDuration; // Thời gian nâng cấp tính bằng giây
+        public int upgradeDuration;
     }
 
     [Header("Penta Dev - Khởi Tạo Xây Dựng Ban Đầu")]
     [Tooltip("TÍCH VÀO: Công trình chưa xây. Khi vừa chạy game sẽ ép chạy thời gian, VFX, SFX như nâng cấp.\nTẮT TÍCH: Công trình đã xây xong từ trước, vào game sẽ không lặp lại.")]
     [SerializeField] private bool isInitialBuildNeeded = true;
 
-    [Tooltip("Thời gian để hoàn thành việc xây dựng công trình này lần đầu tiên (tính bằng giây)")]
-    [SerializeField] private float initialBuildDuration = 5f;
+    [Tooltip("TÍCH VÀO: Khi vừa mở Game, nhà sẽ tự động nằm ở trạng thái PHÁ HỦY/TÀN TÍCH và cần được SỬA CHỮA.")]
+    [SerializeField] private bool startAsRuined = false;
 
-    // Cổng Property để UI đọc trạng thái xem nhà có phải đang trong luồng xây mới hay không
-    public bool IsInitialBuildNeeded => isInitialBuildNeeded;
+    public bool StartAsRuined => startAsRuined;
+
+    [Tooltip("Thời gian để hoàn thành việc xây dựng công trình này lần đầu tiên (tính bằng Wave/Ngày)")]
+    [SerializeField] private int initialBuildDuration = 2;
+
+    public bool IsInitialBuildNeeded { get => isInitialBuildNeeded; set => isInitialBuildNeeded = value; }
+
+    [Header("Chỉ số ô Slot 3D (0, 1, 2, 3... -1 là Nhà Chính)")]
+    public int slotIndex = -1;
 
     [Header("Loại công trình")]
     public BuildingType buildingType;
@@ -34,58 +42,43 @@ public class UpgradeableBuilding : MonoBehaviour
     [Header("Cấu hình chi phí nâng cấp (Phần tử 0 là từ Lv1 -> Lv2)")]
     [SerializeField] private UpgradeCost[] upgradeCosts;
 
-    public int CurrentLevel { get; private set; } = 0; // Level hiện tại của công trình
+    public int CurrentLevel { get; private set; } = 0;
     public int MaxLevel => visualModels != null ? visualModels.Length : 0;
 
     private GameObject[] instantiatedModels;
     public GameObject[] VisualModels => (instantiatedModels != null && instantiatedModels.Length > 0) ? instantiatedModels : visualModels;
 
-    // Trạng thái kiểm tra xem nhà có đang trong quá trình nâng cấp không
     public bool IsUpgrading { get; private set; } = false;
 
-    // Các sự kiện phục vụ nâng cấp / huấn luyện
     public event System.Action OnUpgradeStart;
     public event System.Action OnUpgradeComplete;
     public event System.Action OnLevelChanged;
 
-    // ====================================================================
-    // --- HAI BẠN THÊM ĐOẠN NÀY VÀO ĐỂ QUẢ LÝ CODE CÁC CẤP ĐỘ ---
     [Header("Quản lý Code AI của từng Cấp độ (Kéo các Script tương ứng vào đây)")]
     [SerializeField] private AttackTowerAI[] towerLevelScripts;
-
-    // Cổng public để UIManager hoặc hệ thống khác đứng ngoài lấy danh sách code
     public AttackTowerAI[] TowerLevelScripts => towerLevelScripts;
-    // ====================================================================
 
     [Header("Penta Dev - Quản lý Cấp độ Công trình Dân sự")]
     [SerializeField] private WoodStorage[] woodStorageLevels;
     [SerializeField] private StoneStorage[] stoneStorageLevels;
     [SerializeField] private RiceStorage[] riceStorageLevels;
     [SerializeField] private Kitchen[] kitchenLevels;
-    [SerializeField] private House[] houseLevels; // <-- VŨ THÊM DÒNG NÀY VÀO ĐÂY
+    [SerializeField] private House[] houseLevels;
 
     public WoodStorage[] WoodStorageLevels => woodStorageLevels;
     public StoneStorage[] StoneStorageLevels => stoneStorageLevels;
     public RiceStorage[] RiceStorageLevels => riceStorageLevels;
     public Kitchen[] KitchenLevels => kitchenLevels;
-    public House[] HouseLevels => houseLevels; // <-- VŨ THÊM DÒNG NÀY ĐỂ UI ĐỌC ĐƯỢC
-    // ====================================================================
+    public House[] HouseLevels => houseLevels;
 
-    // Các trường lưu giữ visual gốc phục vụ cơ chế tự tham chiếu không reparent
     private System.Collections.Generic.List<GameObject> originalChildren = new System.Collections.Generic.List<GameObject>();
     private MeshRenderer rootRendererComponent;
     private SkinnedMeshRenderer rootSkinnedRendererComponent;
     private int selfRefIndex = -1;
 
-    // --- CHÈN THÊM ĐOẠN NÀY VÀO ---
     [Header("Mảng chứa các Icon hiển thị trên UI tương ứng từng Cấp")]
     [SerializeField] private Sprite[] buildingIcons;
-
     public Sprite[] BuildingIcons => buildingIcons;
-    // --------------------------------
-    // ====================================================================
-    // PENTA DEV - PHÂN KHU PHỐI HỢP HỆ THỐNG TÀN TÍCH & SỬA CHỮA
-    // ====================================================================
 
     [Header("Penta Dev - Giao Diện Tàn Tích")]
     [Tooltip("Kéo Model nhà nát (Xác nhà đổ nát) vào đây")]
@@ -94,16 +87,24 @@ public class UpgradeableBuilding : MonoBehaviour
     [Header("Penta Dev - Chi Phí Sửa Chữa")]
     [SerializeField] private int repairWoodCost = 30;
     [SerializeField] private int repairStoneCost = 30;
-    [SerializeField] private float repairDuration = 5f;
+    [SerializeField] private float repairDuration = 2f;
 
-    // Property để hệ thống kiểm tra trạng thái công trình xem có đang bị hỏng không
     public bool IsRuined { get; private set; } = false;
+    public int RepairWoodCost => repairWoodCost;
+    public int RepairStoneCost => repairStoneCost;
+    public float RepairDuration => repairDuration;
+
+    private float currentProcessTimer = 0f;
+    private float currentProcessDuration = 0f;
+    private Coroutine currentProcessCoroutine = null;
+
+    private enum ProcessType { None, BuildOrUpgrade, Repair }
+    private ProcessType activeProcessType = ProcessType.None;
 
     private void Awake()
     {
         if (transform.parent != null && transform.parent.GetComponentInParent<UpgradeableBuilding>() != null)
         {
-            // Tắt các script AI và chính nó trên clone này để tránh bắn đạn trùng lặp hoặc lỗi đệ quy hình ảnh
             var attackAI = GetComponent<AttackTowerAI>();
             if (attackAI != null) attackAI.enabled = false;
 
@@ -124,7 +125,8 @@ public class UpgradeableBuilding : MonoBehaviour
 
     private void OnMouseDown()
     {
-        SelectThisBuilding();
+        // 🔒 Quy tắc Demacia Rising: Không cho phép chọn trực tiếp công trình 3D trên map.
+        // Mọi thao tác chọn và nâng cấp công trình phải thông qua Bảng Slot (SettlementSidePanelUI).
     }
 
     private void SaveOriginalVisuals()
@@ -136,9 +138,7 @@ public class UpgradeableBuilding : MonoBehaviour
 
         foreach (Transform child in transform)
         {
-            // THÊM DÒNG NÀY VÀO ĐÂY: Bỏ qua model tàn tích không lưu vào danh sách gốc
             if (ruinedVisualModel != null && child.gameObject == ruinedVisualModel) continue;
-            // Không tính các visual model khác được kéo sẵn vào (nếu có)
             bool isOtherVisualModel = false;
             if (visualModels != null)
             {
@@ -151,10 +151,7 @@ public class UpgradeableBuilding : MonoBehaviour
                     }
                 }
             }
-            if (!isOtherVisualModel)
-            {
-                originalChildren.Add(child.gameObject);
-            }
+            if (!isOtherVisualModel) originalChildren.Add(child.gameObject);
         }
     }
 
@@ -165,10 +162,7 @@ public class UpgradeableBuilding : MonoBehaviour
 
         for (int i = 0; i < originalChildren.Count; i++)
         {
-            if (originalChildren[i] != null)
-            {
-                originalChildren[i].SetActive(active);
-            }
+            if (originalChildren[i] != null) originalChildren[i].SetActive(active);
         }
     }
 
@@ -180,7 +174,6 @@ public class UpgradeableBuilding : MonoBehaviour
         Transform fp = null;
         if (CurrentLevel == selfRefIndex)
         {
-            // Tìm trong các visual gốc ban đầu
             for (int i = 0; i < originalChildren.Count; i++)
             {
                 if (originalChildren[i] != null)
@@ -195,10 +188,7 @@ public class UpgradeableBuilding : MonoBehaviour
             if (instantiatedModels != null && CurrentLevel >= 0 && CurrentLevel < instantiatedModels.Length)
             {
                 GameObject activeModel = instantiatedModels[CurrentLevel];
-                if (activeModel != null)
-                {
-                    fp = FindFirePointRecursive(activeModel.transform);
-                }
+                if (activeModel != null) fp = FindFirePointRecursive(activeModel.transform);
             }
         }
 
@@ -213,9 +203,7 @@ public class UpgradeableBuilding : MonoBehaviour
     {
         string nameLower = parent.name.ToLower();
         if (nameLower.Contains("firepoint") || nameLower.Contains("muzzle") || nameLower.Contains("spawn") || nameLower.Contains("shoot"))
-        {
             return parent;
-        }
 
         foreach (Transform child in parent)
         {
@@ -232,9 +220,8 @@ public class UpgradeableBuilding : MonoBehaviour
         if (visualModels == null) return;
 
         instantiatedModels = new GameObject[visualModels.Length];
-
-        // 1. Kiểm tra xem có phần tử nào là tự tham chiếu (self-reference) tới chính gameObject này hay không
         selfRefIndex = -1;
+
         for (int i = 0; i < visualModels.Length; i++)
         {
             if (visualModels[i] == gameObject)
@@ -246,12 +233,10 @@ public class UpgradeableBuilding : MonoBehaviour
 
         if (selfRefIndex != -1)
         {
-            // Lưu lại các children gốc hiện tại trước khi sinh bất cứ model mới nào con của nó
             SaveOriginalVisuals();
             instantiatedModels[selfRefIndex] = gameObject;
         }
 
-        // 2. Khởi tạo các phần tử còn lại từ Prefab hoặc Object con khác
         for (int i = 0; i < visualModels.Length; i++)
         {
             if (i == selfRefIndex) continue;
@@ -259,10 +244,8 @@ public class UpgradeableBuilding : MonoBehaviour
             GameObject modelSource = visualModels[i];
             if (modelSource == null) continue;
 
-            // Kiểm tra xem modelSource có phải là Prefab ngoài Project hay không (scene của nó không hợp lệ)
             if (!modelSource.scene.IsValid() || string.IsNullOrEmpty(modelSource.scene.name))
             {
-                // Instantiate thành gameobject con của building
                 GameObject newInstance = Instantiate(modelSource, transform.position, transform.rotation, transform);
                 newInstance.name = modelSource.name;
                 instantiatedModels[i] = newInstance;
@@ -270,50 +253,31 @@ public class UpgradeableBuilding : MonoBehaviour
             }
             else
             {
-                // Sử dụng luôn gameobject có sẵn trong Scene
                 instantiatedModels[i] = modelSource;
                 modelSource.SetActive(i == CurrentLevel);
             }
         }
 
-        // 3. Nếu không có tự tham chiếu, thực hiện ẩn các MeshRenderer gốc ban đầu trên parent tránh chồng lấn
         if (selfRefIndex == -1)
         {
             MeshRenderer rootRenderer = GetComponent<MeshRenderer>();
-            if (rootRenderer != null)
-            {
-                rootRenderer.enabled = false;
-            }
+            if (rootRenderer != null) rootRenderer.enabled = false;
             SkinnedMeshRenderer rootSkinnedRenderer = GetComponent<SkinnedMeshRenderer>();
-            if (rootSkinnedRenderer != null)
-            {
-                rootSkinnedRenderer.enabled = false;
-            }
+            if (rootSkinnedRenderer != null) rootSkinnedRenderer.enabled = false;
 
             foreach (Transform child in transform)
             {
-                // THÊM DÒNG NÀY VÀO ĐÂY: Nếu là nhà nát thì bỏ qua, không được tắt MeshRenderer
                 if (ruinedVisualModel != null && child.gameObject == ruinedVisualModel) continue;
 
                 bool isVisualModel = false;
                 foreach (var im in instantiatedModels)
                 {
-                    if (im == child.gameObject)
-                    {
-                        isVisualModel = true;
-                        break;
-                    }
+                    if (im == child.gameObject) { isVisualModel = true; break; }
                 }
                 if (!isVisualModel)
                 {
-                    foreach (var mr in child.GetComponentsInChildren<MeshRenderer>(true))
-                    {
-                        mr.enabled = false;
-                    }
-                    foreach (var smr in child.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                    {
-                        smr.enabled = false;
-                    }
+                    foreach (var mr in child.GetComponentsInChildren<MeshRenderer>(true)) mr.enabled = false;
+                    foreach (var smr in child.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.enabled = false;
                 }
             }
         }
@@ -321,39 +285,9 @@ public class UpgradeableBuilding : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log($"[UpgradeableBuilding Debug] Start called on '{gameObject.name}'");
         InitializeModels();
         UpdateVisualModel();
 
-        if (visualModels != null)
-        {
-            Debug.Log($"[UpgradeableBuilding Debug] visualModels count: {visualModels.Length}");
-            for (int i = 0; i < visualModels.Length; i++)
-            {
-                var vm = visualModels[i];
-                Debug.Log($"  - visualModels[{i}]: {(vm != null ? vm.name : "null")} (IsSceneObject: {(vm != null ? vm.scene.IsValid().ToString() : "N/A")})");
-            }
-        }
-        else
-        {
-            Debug.Log("[UpgradeableBuilding Debug] visualModels is null!");
-        }
-
-        if (instantiatedModels != null)
-        {
-            Debug.Log($"[UpgradeableBuilding Debug] instantiatedModels count: {instantiatedModels.Length}");
-            for (int i = 0; i < instantiatedModels.Length; i++)
-            {
-                var im = instantiatedModels[i];
-                Debug.Log($"  - instantiatedModels[{i}]: {(im != null ? im.name : "null")} (ActiveSelf: {(im != null ? im.activeSelf.ToString() : "N/A")})");
-            }
-        }
-        else
-        {
-            Debug.Log("[UpgradeableBuilding Debug] instantiatedModels is null!");
-        }
-
-        // Tự động gán ClickHelper cho tất cả các Collider con để bắt sự kiện click
         foreach (Collider col in GetComponentsInChildren<Collider>(true))
         {
             if (col.gameObject.GetComponent<ClickHelper>() == null)
@@ -363,231 +297,352 @@ public class UpgradeableBuilding : MonoBehaviour
             }
         }
 
-        // Nếu căn nhà này được đánh dấu là CẦN XÂY DỰNG BAN ĐẦU
-        if (isInitialBuildNeeded)
+        if (startAsRuined)
         {
-            // Kích hoạt trạng thái nâng cấp giả lập để UI bắt đầu đếm số và chạy VFX/SFX
-            IsUpgrading = true;
-            StartCoroutine(UpgradeRoutine(initialBuildDuration));
+            isInitialBuildNeeded = false;
+            TriggerDestructionSequence();
+        }
+        else if (isInitialBuildNeeded && IsUpgrading && currentProcessCoroutine != null)
+        {
+            // Đang trong tiến trình thi công (được gọi từ ConstructionManager hoặc LoadBuildingData)
+            ToggleBuildingLogic(false);
+        }
+        else
+        {
+            // Các công trình đã có sẵn trong Scene hoặc nạp từ Scene khác về sẽ là công trình đã xây xong
+            isInitialBuildNeeded = false;
+            ToggleBuildingLogic(true);
+
+            HPTower hpComponent = GetComponent<HPTower>();
+            if (hpComponent != null)
+            {
+                hpComponent.ResetHealth();
+            }
         }
 
         UpdateCivilianBuildingData();
     }
 
-    // Hàm lấy chi phí cần thiết để lên cấp tiếp theo
+    private void OnDestroy()
+    {
+        SettlementZone parentZone = GetComponentInParent<SettlementZone>();
+        if (parentZone != null && parentZone.builtStructures != null)
+        {
+            parentZone.builtStructures.Remove(this);
+        }
+
+        if (SettlementSidePanelUI.Ins != null)
+        {
+            SettlementSidePanelUI.Ins.RefreshPanel();
+        }
+    }
+
     public UpgradeCost GetNextUpgradeCost()
     {
         if (upgradeCosts != null && CurrentLevel < upgradeCosts.Length)
-        {
             return upgradeCosts[CurrentLevel];
-        }
-        // Trả về mặc định nếu đạt cấp tối đa
-        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0, upgradeDuration = 0f };
+        return new UpgradeCost { woodCost = 0, stoneCost = 0, foodCost = 0, upgradeDuration = 1 };
     }
 
-    /// <summary>
-    /// Kích hoạt tiến trình đếm ngược nâng cấp bằng Coroutine
-    /// </summary>
+    public void StartInitialBuildProcess()
+    {
+        if (IsUpgrading) return;
+        isInitialBuildNeeded = true;
+        int duration = initialBuildDuration > 0 ? initialBuildDuration : 1;
+        if (currentProcessCoroutine != null) StopCoroutine(currentProcessCoroutine);
+        currentProcessCoroutine = StartCoroutine(InitialBuildRoutine(duration));
+    }
+
+    private IEnumerator InitialBuildRoutine(int durationWaves)
+    {
+        IsUpgrading = true;
+        isInitialBuildNeeded = true;
+        activeProcessType = ProcessType.BuildOrUpgrade;
+        currentProcessDuration = durationWaves;
+        currentProcessTimer = 0;
+
+        OnUpgradeStart?.Invoke();
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnBuildingUpgradeStarted(this);
+        }
+
+        var initialProgressUI = BuildingProgressBridge.GetUI(this);
+        if (initialProgressUI == null) initialProgressUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (initialProgressUI != null)
+        {
+            initialProgressUI.gameObject.SetActive(true);
+            initialProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+        }
+
+        int startWave = 0;
+        if (DayNightManager.Ins != null)
+        {
+            startWave = DayNightManager.Ins.CurrentWave;
+        }
+
+        while (currentProcessTimer < durationWaves)
+        {
+            if (DayNightManager.Ins != null)
+            {
+                currentProcessTimer = DayNightManager.Ins.CurrentWave - startWave;
+                if (currentProcessTimer < 0) currentProcessTimer = 0;
+            }
+            else
+            {
+                currentProcessTimer += Time.deltaTime / 10f;
+            }
+
+            var targetProgressUI = BuildingProgressBridge.GetUI(this);
+            if (targetProgressUI == null) targetProgressUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+            if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+
+            if (currentProcessTimer >= durationWaves)
+                break;
+
+            yield return null;
+        }
+
+        // --- HOÀN THÀNH XÂY DỰNG BAN ĐẦU (GIỮ NGUYÊN LV 1 / CURRENT LEVEL = 0) ---
+        isInitialBuildNeeded = false;
+        IsUpgrading = false;
+        activeProcessType = ProcessType.None;
+        currentProcessTimer = 0f;
+        currentProcessDuration = 0f;
+        currentProcessCoroutine = null;
+
+        ToggleBuildingLogic(true);
+
+        HPTower hpComponent = GetComponent<HPTower>();
+        if (hpComponent != null) hpComponent.ResetHealth();
+
+        OnUpgradeComplete?.Invoke();
+        OnLevelChanged?.Invoke();
+
+        if (CampaignTutorialManager.Ins != null)
+        {
+            CampaignTutorialManager.Ins.OnBuildingConstructionFinished(buildingType);
+        }
+
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (targetUI != null) targetUI.HandleCompleteSequence();
+
+        var buildingCtrl = GetComponent<BuildingCtrl>();
+        if (buildingCtrl != null) buildingCtrl.AddProgress(1f);
+
+        SettlementZone parentZone = GetComponentInParent<SettlementZone>();
+        if (parentZone != null) parentZone.Update3DSlotVisibility();
+
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
+
+        // 🔥 Tự động lưu trạng thái công trình đã xây xong vào Save Slot 1
+        BuildingSystem.Ins?.SaveBuildingsToSlot(1);
+    }
+
     public void StartUpgradeProcess()
     {
         if (IsUpgrading || CurrentLevel >= MaxLevel - 1) return;
 
-        UpgradeCost nextCost = GetNextUpgradeCost();
-        float duration = nextCost.upgradeDuration;
+        isInitialBuildNeeded = false;
 
-        // Nếu là nhà lính (BarracksMelee, BarracksArcher, BarracksSpear) hoặc nếu duration chưa được thiết lập hợp lệ, mặc định ép về 5 giây
+        UpgradeCost nextCost = GetNextUpgradeCost();
+        int duration = nextCost.upgradeDuration;
+
         if (buildingType == BuildingType.BarracksMelee || 
             buildingType == BuildingType.BarracksArcher || 
             buildingType == BuildingType.BarracksSpear || 
-            duration <= 0f)
+            duration <= 0)
         {
-            duration = 5f;
+            duration = 1;
         }
 
-        StartCoroutine(UpgradeRoutine(duration));
+        if (currentProcessCoroutine != null) StopCoroutine(currentProcessCoroutine);
+        currentProcessCoroutine = StartCoroutine(UpgradeRoutine(duration));
     }
 
-    private IEnumerator UpgradeRoutine(float duration)
+    private IEnumerator UpgradeRoutine(int durationWaves, int startWavesPassed = 0)
     {
         IsUpgrading = true;
-        OnUpgradeStart?.Invoke();
-        float timer = 0f;
+        isInitialBuildNeeded = false;
+        activeProcessType = ProcessType.BuildOrUpgrade;
+        currentProcessDuration = durationWaves;
+        currentProcessTimer = startWavesPassed;
 
-        // Nếu panel nâng cấp của nhà này đang mở trên UI, hiển thị slider/text thời gian
-        if (UIManager.Ins != null)
+        OnUpgradeStart?.Invoke();
+        if (CampaignTutorialManager.Ins != null)
         {
-            UIManager.Ins.UpdateUpgradeProgress(0f, duration);
+            CampaignTutorialManager.Ins.OnBuildingUpgradeStarted(this);
         }
 
-        // Vòng lặp đếm ngược thời gian nâng cấp theo thời gian thực
-        while (timer < duration)
+        var initialProgressUI = BuildingProgressBridge.GetUI(this);
+        if (initialProgressUI == null) initialProgressUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (initialProgressUI != null)
         {
-            timer += Time.deltaTime;
+            initialProgressUI.gameObject.SetActive(true);
+            initialProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+        }
 
-            // Cập nhật giá trị hiển thị lên UI liên tục mỗi khung hình
-            if (UIManager.Ins != null)
+        int startWave = 0;
+        if (DayNightManager.Ins != null)
+        {
+            startWave = DayNightManager.Ins.CurrentWave - startWavesPassed;
+        }
+
+        while (currentProcessTimer < durationWaves)
+        {
+            if (DayNightManager.Ins != null)
             {
-                UIManager.Ins.UpdateUpgradeProgress(timer, duration);
+                currentProcessTimer = DayNightManager.Ins.CurrentWave - startWave;
+                if (currentProcessTimer < 0) currentProcessTimer = 0;
             }
+            else
+            {
+                currentProcessTimer += Time.deltaTime / 10f;
+            }
+
+            var targetProgressUI = BuildingProgressBridge.GetUI(this);
+            if (targetProgressUI == null) targetProgressUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+            if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, durationWaves, true);
+
+            if (currentProcessTimer >= durationWaves)
+                break;
+
             yield return null;
         }
 
-        // ====================================================================
-        // --- PHÂN TÁCH LUỒNG XỬ LÝ KHI HẾT THỜI GIAN (PENTA DEV - VŨ) ---
-        // ====================================================================
-        if (isInitialBuildNeeded)
+        // --- HOÀN THÀNH NÂNG CẤP (TĂNG CẤP ĐỘ MODEL 3D TỪ LV1 LÊN LV2) ---
+        IsUpgrading = false;
+        activeProcessType = ProcessType.None;
+        currentProcessTimer = 0f;
+        currentProcessDuration = 0f;
+        currentProcessCoroutine = null;
+
+        OnUpgradeComplete?.Invoke();
+        ExecuteLevelUp();
+
+        SettlementZone parentZone = GetComponentInParent<SettlementZone>();
+        if (parentZone == null && SettlementManager.Ins != null) parentZone = SettlementManager.Ins.CurrentSettlement;
+        if (parentZone != null && SettlementZone.IsTownHallBuilding(this, parentZone))
         {
-            isInitialBuildNeeded = false; // TẮT TÍCH VĨNH VIỄN: Xác nhận đã xây dựng xong!
-            IsUpgrading = false;
-            OnUpgradeComplete?.Invoke();
-            OnLevelChanged?.Invoke();
-
-            // Kích hoạt hiệu ứng hoàn thành (Aura quét dọc thân nhà) từ BuildingProgressBarUI
-            var targetUI = BuildingProgressBridge.GetUI(this);
-            if (targetUI != null)
-            {
-                targetUI.HandleCompleteSequence();
-            }
-
-            // >>> THÊM MỚI: Báo cho BuildingCtrl biết công trình đã xây xong thật sự
-            var buildingCtrl = GetComponent<BuildingCtrl>();
-            if (buildingCtrl != null)
-            {
-                buildingCtrl.AddProgress(1f);
-            }
-
-            Debug.Log($"[Penta Dev] 🏠 Công trình {buildingName} đã hoàn thành xây dựng lần đầu tiên thành công!");
+            parentZone.townHallBuilding = this;
+            parentZone.settlementLevel = CurrentLevel + 1;
+            parentZone.SaveSettlementState();
         }
-        else
+
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (targetUI != null) targetUI.HandleCompleteSequence();
+
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null)
         {
-            IsUpgrading = false;
-            OnUpgradeComplete?.Invoke();
-            ExecuteLevelUp();
+            SettlementSidePanelUI.Ins.UpdateHeaderVisual();
+            SettlementSidePanelUI.Ins.RefreshPanel();
         }
-        // ====================================================================
 
-        // TẮT TEXT VÀ SLIDER THỜI GIAN KHI NÂNG CẤP/XÂY DỰNG XONG
-        if (UIManager.Ins != null)
-        {
-            UIManager.Ins.HideUpgradeProgress();
-            UIManager.Ins.RefreshUpgradePanel(this);
-        }
+        // 🔥 Tự động lưu trạng thái công trình đã nâng cấp xong vào Save Slot 1
+        BuildingSystem.Ins?.SaveBuildingsToSlot(1);
     }
 
+    public void HideAllVisualModels()
+    {
+        InitializeModels();
+        if (instantiatedModels != null)
+        {
+            for (int i = 0; i < instantiatedModels.Length; i++)
+            {
+                if (instantiatedModels[i] != null && instantiatedModels[i] != gameObject)
+                    instantiatedModels[i].SetActive(false);
+            }
+        }
+        SetOriginalLevelActive(false);
+    }
 
-
-    /// <summary>
-    /// Được gọi tự động từ hàm OnDeath() của HPTower khi công trình bị hết máu
-    /// </summary>
     public void TriggerDestructionSequence()
     {
+        StopAllCoroutines();
+        IsUpgrading = false;
+        isInitialBuildNeeded = false;
+        activeProcessType = ProcessType.None;
+        currentProcessCoroutine = null;
+
         IsRuined = true;
+        startAsRuined = true;
+        HideAllVisualModels();
 
-        // 1. Ẩn Model đồ họa cấp độ hiện tại của nhà đi
-        SetActiveModel(CurrentLevel, false);
-
-        // 2. Bật Model tàn tích đổ nát lên
-        if (ruinedVisualModel != null)
-        {
-            ruinedVisualModel.SetActive(true);
-        }
-
-        // 3. Tắt hoạt động AI tháp phòng thủ (nếu có) để ngừng bắn quái
+        if (ruinedVisualModel != null) ruinedVisualModel.SetActive(true);
         ToggleBuildingLogic(false);
 
-        // 4. KIỂM TRA ĐIỀU KIỆN NHÀ CHÍNH SẬP ĐỂ HIỆN BẢNG TỔNG KẾT (GAME OVER)
-        if (buildingName.Contains("Nhà Chính"))
-        {
-            Debug.Log("[Penta Dev] 🔥 NHÀ CHÍNH ĐÃ BỊ PHÁ HỦY! Kích hoạt bảng tổng kết chiến dịch...");
-            // Thêm luồng gọi bảng UI tổng kết của nhóm Vũ tại đây, ví dụ:
-            // if (UIManager.Ins != null) UIManager.Ins.ShowSummaryPanel();
-        }
+        HPTower hpComponent = GetComponent<HPTower>();
+        if (hpComponent != null) hpComponent.SetRuinedHealth();
+
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (targetUI != null) targetUI.gameObject.SetActive(false);
+
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
     }
 
-
-    /// <summary>
-    /// Hàm ra lệnh bắt đầu sửa chữa (Được gọi từ nút Sửa Chữa trên giao diện UI)
-    /// </summary>
     public void StartRepair()
     {
-        if (!IsRuined || IsUpgrading) return; // Đang bận nâng cấp hoặc nhà chưa hỏng thì bỏ qua
+        if (!IsRuined || IsUpgrading) return;
+        if (JsonDataManager.Ins == null) return;
 
-        // CHẶN TẬN GỐC: trừ tài nguyên sửa chữa tại đây, TRƯỚC khi cho phép đếm giờ sửa chữa.
-        if (JsonDataManager.Ins == null)
-        {
-            Debug.LogWarning($"[UpgradeableBuilding] Không tìm thấy JsonDataManager.Ins — huỷ sửa chữa {buildingName}.");
-            return;
-        }
-
-        bool spent = JsonDataManager.Ins.TrySpendCombined(
-            woodCost: repairWoodCost,
-            stoneCost: repairStoneCost);
-
-        if (!spent)
-        {
-            Debug.LogWarning($"[UpgradeableBuilding] Không đủ tài nguyên để sửa chữa {buildingName} (cần Gỗ:{repairWoodCost} Đá:{repairStoneCost}).");
-            return;
-        }
+        bool spent = JsonDataManager.Ins.TrySpendCombined(woodCost: repairWoodCost, stoneCost: repairStoneCost);
+        if (!spent) return;
 
         StartCoroutine(RepairRoutine());
     }
 
-    private IEnumerator RepairRoutine()
+    private IEnumerator RepairRoutine(float startTimer = 0f)
     {
-        // Sử dụng cầu nối BuildingProgressBridge có sẵn của Vũ để tìm đúng UI bar trên đầu nhà
-        var targetProgressUI = BuildingProgressBridge.GetUI(this);
-        float timer = 0f;
+        IsUpgrading = true;
+        activeProcessType = ProcessType.Repair;
+        currentProcessDuration = repairDuration;
+        currentProcessTimer = startTimer;
 
-        // Vòng lặp chạy thanh tiến trình đếm ngược thời gian sửa chữa y hệt luồng nâng cấp
-        while (timer < repairDuration)
+        var targetProgressUI = BuildingProgressBridge.GetUI(this);
+
+        while (currentProcessTimer < repairDuration)
         {
-            timer += Time.deltaTime;
-            if (targetProgressUI != null)
-            {
-                // Đẩy số giây chạy lên slider và text
-                targetProgressUI.UpdateProgress(timer, repairDuration);
-            }
+            currentProcessTimer += Time.deltaTime;
+            if (targetProgressUI != null) targetProgressUI.UpdateProgress(currentProcessTimer, repairDuration, false);
             yield return null;
         }
 
-        // --- HOÀN THÀNH TIẾN TRÌNH SỬA CHỮA ---
+        activeProcessType = ProcessType.None;
+        currentProcessTimer = 0f;
+        currentProcessDuration = 0f;
+        currentProcessCoroutine = null;
+
+        IsUpgrading = false;
         IsRuined = false;
+        
+        // 🔥 FIX: Bỏ luôn dấu tích startAsRuined khi sửa xong để đồng bộ với Inspector & Enemy AI!
+        startAsRuined = false;
 
-        // 1. Gọi HPTower hồi lại toàn bộ máu và thiết lập lại trạng thái sinh tồn
+        if (CampaignTutorialManager.Ins != null) CampaignTutorialManager.Ins.OnBuildingRepaired(this);
+
         HPTower hpComponent = GetComponent<HPTower>();
-        if (hpComponent != null)
-        {
-            hpComponent.ResetHealth();
-        }
+        if (hpComponent != null) hpComponent.ResetHealth();
 
-        // 2. Ẩn model xác nhà nát đi
         if (ruinedVisualModel != null) ruinedVisualModel.SetActive(false);
 
-        // 3. Hiển thị lại Model nhà nguyên bản theo đúng Cấp độ hiện tại
         UpdateVisualModel();
-
-        // 4. Kích hoạt bật lại các đoạn code AI bắn đạn tháp phòng thủ
         ToggleBuildingLogic(true);
 
-        // 5. Chạy hiệu ứng hào quang hoàn thành (Aura VFX) và ẩn thanh đếm
-        if (targetProgressUI != null)
-        {
-            targetProgressUI.HandleCompleteSequence();
-        }
+        if (targetProgressUI != null) targetProgressUI.HandleCompleteSequence();
+        if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+        if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
 
-        // Làm mới lại bảng thông tin nâng cấp trên UI
-        if (UIManager.Ins != null)
-        {
-            UIManager.Ins.RefreshUpgradePanel(this);
-        }
-
-        Debug.Log($"[Penta Dev] 🛠️ Công trình {buildingName} đã được sửa chữa và phục hồi trạng thái hoạt động!");
+        // 🔥 Tự động lưu trạng thái công trình đã sửa chữa xong vào Save Slot 1
+        BuildingSystem.Ins?.SaveBuildingsToSlot(1);
     }
 
-    /// <summary>
-    /// Hàm phụ trợ Tắt/Bật code AI hoạt động của tháp
-    /// </summary>
-    private void ToggleBuildingLogic(bool active)
+    public void ToggleBuildingLogic(bool active)
     {
         if (towerLevelScripts != null)
         {
@@ -598,36 +653,27 @@ public class UpgradeableBuilding : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Thực hiện thay đổi cấp độ và model thực tế
-    /// </summary>
+    public void Upgrade()
+    {
+        StartUpgradeProcess();
+    }
+
     [ContextMenu("⚡ Nâng cấp Tháp này")]
     public void ExecuteLevelUp()
     {
         if (CurrentLevel < MaxLevel - 1)
         {
-            // Ẩn model hiện tại
             SetActiveModel(CurrentLevel, false);
-
-            CurrentLevel++; // Tăng cấp độ hiện tại lên
-
-            // Cập nhật chỉ số và tự gọi SetupLevel cho công trình dân sự mới
+            CurrentLevel++;
             UpdateCivilianBuildingData();
 
-            // Làm mới Panel nâng cấp để đẩy text lên UI ngay lập tức
-            if (UIManager.Ins != null)
-            {
-                UIManager.Ins.RefreshUpgradePanel(this);
-            }
+            if (BuildingUpgradeSidePanelUI.Ins != null) BuildingUpgradeSidePanelUI.Ins.RefreshPanel();
+            if (SettlementSidePanelUI.Ins != null) SettlementSidePanelUI.Ins.RefreshPanel();
 
-            Debug.Log($"[UpgradeableBuilding] {buildingName} đã nâng lên Level {CurrentLevel + 1}");
-
-            // Hiện model mới
             SetActiveModel(CurrentLevel, true);
-
-            Debug.Log($"[{buildingName}] Đã hoàn tất nâng cấp lên Level {CurrentLevel + 1}");
             OnLevelChanged?.Invoke();
         }
+        if (CampaignTutorialManager.Ins != null) CampaignTutorialManager.Ins.OnBuildingUpgraded(this);
     }
 
     [ContextMenu("🔄 Reset level về 1")]
@@ -637,7 +683,6 @@ public class UpgradeableBuilding : MonoBehaviour
         CurrentLevel = 0;
         SetActiveModel(CurrentLevel, true);
         UpdateCivilianBuildingData();
-        Debug.Log($"[{buildingName}] Đã reset về Level 1");
         OnLevelChanged?.Invoke();
     }
 
@@ -646,20 +691,10 @@ public class UpgradeableBuilding : MonoBehaviour
         InitializeModels();
         if (instantiatedModels == null || index < 0 || index >= instantiatedModels.Length) return;
 
-        if (index == selfRefIndex)
-        {
-            SetOriginalLevelActive(active);
-        }
-        else
-        {
-            if (instantiatedModels[index] != null)
-                instantiatedModels[index].SetActive(active);
-        }
+        if (index == selfRefIndex) SetOriginalLevelActive(active);
+        else if (instantiatedModels[index] != null) instantiatedModels[index].SetActive(active);
 
-        if (active)
-        {
-            UpdateFirePointForLevel();
-        }
+        if (active) UpdateFirePointForLevel();
     }
 
     public void UpdateVisualModel()
@@ -668,162 +703,146 @@ public class UpgradeableBuilding : MonoBehaviour
         if (instantiatedModels == null) return;
         for (int i = 0; i < instantiatedModels.Length; i++)
         {
-            if (i == selfRefIndex)
-            {
-                SetOriginalLevelActive(i == CurrentLevel);
-            }
-            else
-            {
-                if (instantiatedModels[i] != null)
-                    instantiatedModels[i].SetActive(i == CurrentLevel);
-            }
+            if (i == selfRefIndex) SetOriginalLevelActive(i == CurrentLevel);
+            else if (instantiatedModels[i] != null) instantiatedModels[i].SetActive(i == CurrentLevel);
         }
-
         UpdateFirePointForLevel();
     }
 
-    private void OnGUI()
-    {
-        if (selectedInstance == this)
-        {
-            GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
-            buttonStyle.fontSize = 18;
-            buttonStyle.fontStyle = FontStyle.Bold;
-            buttonStyle.normal.textColor = Color.white;
-
-            string btnText = $"⚡ NÂNG CẤP: {buildingName} (Lv {CurrentLevel + 1} -> {CurrentLevel + 2})";
-            bool isMax = CurrentLevel >= MaxLevel - 1;
-            if (isMax)
-            {
-                btnText = $"🔄 RESET VỀ LEVEL 1 ({buildingName})";
-            }
-
-            // Vẽ background box
-            GUI.Box(new Rect(10, 10, 480, 80), $"Bảng Nâng Cấp Nhanh - {buildingName} (Đang chọn)");
-
-            if (GUI.Button(new Rect(20, 35, 390, 45), btnText, buttonStyle))
-            {
-                if (!isMax)
-                {
-                    ExecuteLevelUp();
-                }
-                else
-                {
-                    ResetLevel();
-                }
-            }
-
-            // Nút close
-            if (GUI.Button(new Rect(420, 35, 60, 45), "X", buttonStyle))
-            {
-                selectedInstance = null;
-            }
-        }
-    }
-
-    // --- KHU VỰC ĐỒNG BỘ DÂN SỰ CỦA VỦ VÀ ĐĂNG (GIỮ LẠI BẢN GETCOMPONENTINCHILDREN TỐI ƯU) ---
     private void UpdateCivilianBuildingData()
     {
-        // Khi nhà nâng cấp, Model mới được bật lên. Chúng ta cần lấy đúng Script dân sự nằm trên Model đó hoặc trên chính Object này.
         switch (buildingType)
         {
-            case BuildingType.WoodCutter: // Sửa lại đúng tên Enum loại kho gỗ của các bạn
+            case BuildingType.WoodCutter:
                 WoodStorage ws = GetComponentInChildren<WoodStorage>();
                 if (ws != null) ws.SetupLevel(CurrentLevel);
                 break;
-
             case BuildingType.StoneStorage:
                 StoneStorage ss = GetComponentInChildren<StoneStorage>();
                 if (ss != null) ss.SetupLevel(CurrentLevel);
                 break;
-
-            case BuildingType.FoodStorage: // Sửa lại đúng tên Enum loại kho lúa của các bạn
+            case BuildingType.FoodStorage:
                 RiceStorage rs = GetComponentInChildren<RiceStorage>();
                 if (rs != null) rs.SetupLevel(CurrentLevel);
                 break;
-
             case BuildingType.Kitchen:
                 Kitchen kc = GetComponentInChildren<Kitchen>();
                 if (kc != null) kc.SetupLevel(CurrentLevel);
                 break;
-            case BuildingType.House: // <-- THÊM LOGIC ĐỒNG BỘ CHO NHÀ WORKER
-                House hs = GetComponentInChildren<House>();
-                // Nếu các file House của bạn có viết hàm SetupLevel(level) giống WoodStorage thì gọi ở đây,
-                // hoặc tạm thời giữ để cập nhật model visual khi nâng cấp thành công.
-                break;
         }
     }
 
-    /// <summary>
-    /// Thiết lập lại cấp độ của công trình khi tải dữ liệu từ file JSON.
-    /// </summary>
-    public void LoadLevel(int level)
+    public void LoadBuildingData(int level, bool isRuinedState = false, bool isInitialBuildNeededState = false)
     {
-        StopAllCoroutines(); // Dừng các tiến trình xây dựng hoặc nâng cấp đang chạy
+        StopAllCoroutines();
         IsUpgrading = false;
-        isInitialBuildNeeded = false; // Đã tải dữ liệu từ Save -> Xác nhận đã được xây xong từ trước
+        activeProcessType = ProcessType.None;
+        currentProcessCoroutine = null;
 
-        SetActiveModel(CurrentLevel, false);
+        HideAllVisualModels();
+        if (ruinedVisualModel != null)
+        {
+            ruinedVisualModel.SetActive(false);
+        }
+
         CurrentLevel = Mathf.Clamp(level, 0, MaxLevel - 1);
-        SetActiveModel(CurrentLevel, true);
+        IsRuined = isRuinedState;
+        
+        // 🔥 FIX: Đồng bộ biến startAsRuined và isInitialBuildNeeded
+        startAsRuined = isRuinedState;
+        
+        bool isReturningFromBattle = BattleData.HasData || BattleData.HasResult || BattleData.LastBattleWasVictory;
+
+        if (isReturningFromBattle || !isInitialBuildNeededState || CurrentLevel > 0 || level > 0)
+        {
+            isInitialBuildNeeded = false;
+        }
+        else
+        {
+            isInitialBuildNeeded = isInitialBuildNeededState;
+        }
+
+        var targetUI = BuildingProgressBridge.GetUI(this);
+        if (targetUI == null) targetUI = GetComponentInChildren<BuildingProgressBarUI>(true);
+        if (targetUI != null)
+        {
+            targetUI.DeactivateAllVFX();
+            targetUI.gameObject.SetActive(false);
+        }
+
+        if (IsRuined)
+        {
+            if (ruinedVisualModel != null) ruinedVisualModel.SetActive(true);
+            ToggleBuildingLogic(false);
+
+            HPTower hpComponent = GetComponent<HPTower>();
+            if (hpComponent != null) hpComponent.SetRuinedHealth();
+        }
+        else if (isInitialBuildNeeded)
+        {
+            ToggleBuildingLogic(false);
+            StartInitialBuildProcess();
+        }
+        else
+        {
+            UpdateVisualModel();
+            ToggleBuildingLogic(true);
+
+            HPTower hpComponent = GetComponent<HPTower>();
+            if (hpComponent != null) hpComponent.ResetHealth();
+        }
 
         UpdateCivilianBuildingData();
+        
+        SettlementZone parentZone = GetComponentInParent<SettlementZone>();
+        if (parentZone == null && SettlementManager.Ins != null) parentZone = SettlementManager.Ins.CurrentSettlement;
+
+        if (parentZone != null)
+        {
+            if (SettlementZone.IsTownHallBuilding(this, parentZone))
+            {
+                parentZone.townHallBuilding = this;
+                parentZone.settlementLevel = CurrentLevel + 1;
+                parentZone.SaveSettlementState();
+            }
+            else
+            {
+                parentZone.RegisterBuilding(this);
+            }
+        }
+
         OnLevelChanged?.Invoke();
+    }
+
+    public void LoadLevel(int level)
+    {
+        LoadBuildingData(level, false, false);
+    }
+
+    public void PauseBuildingProcess()
+    {
+        if (currentProcessCoroutine != null)
+        {
+            StopCoroutine(currentProcessCoroutine);
+            currentProcessCoroutine = null;
+        }
+    }
+
+    public void ResumeBuildingProcess()
+    {
+        if (activeProcessType == ProcessType.BuildOrUpgrade && currentProcessDuration > 0f)
+            currentProcessCoroutine = StartCoroutine(UpgradeRoutine((int)currentProcessDuration, (int)currentProcessTimer));
+        else if (activeProcessType == ProcessType.Repair && currentProcessDuration > 0f)
+            currentProcessCoroutine = StartCoroutine(RepairRoutine(currentProcessTimer));
     }
 }
 
-// Lớp trợ giúp bắt sự kiện click cho các collider con
 public class ClickHelper : MonoBehaviour
 {
     public UpgradeableBuilding parentBuilding;
+
     private void OnMouseDown()
     {
-        if (parentBuilding != null)
-        {
-            parentBuilding.SelectThisBuilding();
-        }
+        // 🔒 Quy tắc Demacia Rising: Không cho phép chọn trực tiếp công trình 3D trên map.
     }
 }
-
-#if UNITY_EDITOR
-[UnityEditor.CustomEditor(typeof(UpgradeableBuilding))]
-public class UpgradeableBuildingEditor : UnityEditor.Editor
-{
-    public override void OnInspectorGUI()
-    {
-        DrawDefaultInspector();
-
-        UpgradeableBuilding building = (UpgradeableBuilding)target;
-
-        GUILayout.Space(15);
-        GUILayout.Label("⚡ BẢNG ĐIỀU KHIỂN NÂNG CẤP NHANH", UnityEditor.EditorStyles.boldLabel);
-
-        // Hiển thị thông tin level hiện tại
-        UnityEditor.EditorGUILayout.HelpBox($"Cấp độ hiện tại: Level {building.CurrentLevel + 1} / {building.MaxLevel}", UnityEditor.MessageType.Info);
-
-        if (GUILayout.Button("⚡ NÂNG CẤP NGAY", GUILayout.Height(40)))
-        {
-            if (Application.isPlaying)
-            {
-                building.ExecuteLevelUp();
-            }
-            else
-            {
-                UnityEditor.EditorUtility.DisplayDialog("Thông báo", "Vui lòng bấm nút PLAY (Chạy game) trên thanh công cụ Unity trước khi sử dụng nút này!", "OK");
-            }
-        }
-
-        if (GUILayout.Button("🔄 RESET VỀ LEVEL 1", GUILayout.Height(30)))
-        {
-            if (Application.isPlaying)
-            {
-                building.ResetLevel();
-            }
-            else
-            {
-                UnityEditor.EditorUtility.DisplayDialog("Thông báo", "Vui lòng bấm nút PLAY (Chạy game) trên thanh công cụ Unity trước khi sử dụng nút này!", "OK");
-            }
-        }
-    }
-}
-#endif

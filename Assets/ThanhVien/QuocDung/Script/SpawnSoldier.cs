@@ -8,7 +8,12 @@ public class SpawnSoldier : MonoBehaviour
 {
     [Header("Spawn Settings")]
     [SerializeField] private GameObject soldierPrefab;
-    [SerializeField] private float spawnRadius = 5f;
+    [Tooltip("Bán kính phân bố vị trí lính quanh khu vực sinh lính")]
+    [Range(0.5f, 10f)]
+    [SerializeField] private float spawnRadius = 3.5f;
+    [Tooltip("Khoảng cách đẩy vị trí sinh lính ra phía trước cổng/mặt tiền công trình (tránh bị chìm vào trong nhà)")]
+    [Range(0f, 10f)]
+    [SerializeField] private float spawnForwardOffset = 2.5f;
 
     [Header("Upgrade Settings")]
     [SerializeField] private int currentLevel = 1;
@@ -31,6 +36,36 @@ public class SpawnSoldier : MonoBehaviour
     private Coroutine hologramAnimationCoroutine;
 
     public float TestDuration => testDuration;
+
+    public List<UnitController> GetActiveSoldierControllers()
+    {
+        List<UnitController> list = new List<UnitController>();
+        if (spawnedSoldiers != null)
+        {
+            foreach (var go in spawnedSoldiers)
+            {
+                if (go != null && go.activeInHierarchy)
+                {
+                    UnitController uc = go.GetComponent<UnitController>();
+                    if (uc == null) uc = go.GetComponentInChildren<UnitController>();
+                    if (uc != null && !list.Contains(uc)) list.Add(uc);
+                }
+            }
+        }
+
+        if (list.Count == 0)
+        {
+            UnitController[] children = GetComponentsInChildren<UnitController>();
+            foreach (var uc in children)
+            {
+                if (uc != null && uc.gameObject.activeInHierarchy && !list.Contains(uc))
+                {
+                    list.Add(uc);
+                }
+            }
+        }
+        return list;
+    }
 
     void Awake()
     {
@@ -82,10 +117,7 @@ public class SpawnSoldier : MonoBehaviour
         }
 
         // Khi Spawner bị tắt (do nâng cấp tắt model con hoặc bị hủy), xóa toàn bộ lính cũ
-        if (spawnedSoldiers != null && spawnedSoldiers.Count > 0)
-        {
-            ClearSpawnedSoldiers();
-        }
+        ClearSpawnedSoldiers();
         ClearHolograms();
     }
 
@@ -93,16 +125,21 @@ public class SpawnSoldier : MonoBehaviour
     {
         if (upgradeableBuilding != null)
         {
+            // Nếu nhà đang trong tiến trình nâng cấp/xây mới thì đợi đến khi xong mới spawn lính thật
+            if (upgradeableBuilding.IsUpgrading) return;
+
+            int activeLevel = upgradeableBuilding.CurrentLevel + 1;
+
             if (isOnMainBuildingObject)
             {
-                currentLevel = upgradeableBuilding.CurrentLevel + 1;
+                currentLevel = activeLevel;
             }
             else
             {
-                int activeLevel = upgradeableBuilding.CurrentLevel + 1;
                 // Chỉ sinh lính nếu cấp độ của script này trùng khớp với cấp độ thực tế của công trình
                 if (currentLevel != activeLevel)
                 {
+                    ClearSpawnedSoldiers();
                     return;
                 }
             }
@@ -137,23 +174,14 @@ public class SpawnSoldier : MonoBehaviour
     {
         if (isTesting) return;
         ClearHolograms();
+        SyncLevel(); // Tự động spawn lính thật ngay khi nâng cấp/xây dựng hoàn tất!
     }
 
     private void HandleLevelChanged()
     {
-        if (isOnMainBuildingObject)
-        {
-            int targetLevel = upgradeableBuilding.CurrentLevel + 1;
-            if (currentLevel != targetLevel)
-            {
-                Debug.Log($"[SpawnSoldier] Đồng bộ nâng cấp: Level thay đổi từ {currentLevel} -> {targetLevel}. Tiến hành xóa lính cũ/hologram và spawn lính mới.");
-                ClearHolograms();
-                ClearSpawnedSoldiers();
-                currentLevel = targetLevel;
-                int newCount = GetMaxSoldiersForLevel(currentLevel);
-                SpawnSoldiers(newCount);
-            }
-        }
+        if (isTesting) return;
+        ClearHolograms();
+        SyncLevel(); // Tự động spawn lính thật khi level công trình thay đổi!
     }
 
     private void StartHologramAnimationCoroutine()
@@ -299,14 +327,14 @@ public class SpawnSoldier : MonoBehaviour
         }
     }
 
-    // Hàm lấy số lượng lính tối đa dựa theo Level
+    // Hàm lấy số lượng lính tối đa dựa theo Level (Lv1: 4, Lv2: 6, Lv3: 8)
     public int GetMaxSoldiersForLevel(int level)
     {
         switch (level)
         {
             case 1: return 4;
             case 2: return 6;
-            case 3: return 7;
+            case 3: return 8;
             default: return 4; // Fallback
         }
     }
@@ -332,30 +360,35 @@ public class SpawnSoldier : MonoBehaviour
             return;
         }
 
-        // Tự động dọn dẹp tất cả hologram dư thừa trước khi spawn lính thật
+        // Tự động dọn dẹp hologram và lính cũ trước khi spawn lính mới để tránh trùng lặp
         ClearHolograms();
+        ClearSpawnedSoldiers();
 
-        // Kiểm tra và đảm bảo không spawn vượt quá số lượng tối đa của Level
         int maxAllowed = GetMaxSoldiersForLevel(currentLevel);
-        int activeCount = GetActiveSoldiersCount();
-
-        if (activeCount + count > maxAllowed)
+        if (count <= 0 || count > maxAllowed)
         {
-            ClearSpawnedSoldiers();
-            count = Mathf.Min(count, maxAllowed);
+            count = maxAllowed;
         }
 
         float damage = GetDamageForLevel(currentLevel);
         Debug.Log($"[SpawnSoldier] {gameObject.name} (Lv {currentLevel}) đang spawn {count} lính mới với sát thương {damage}.");
 
+        Vector3 baseSpawnCenter = transform.position + transform.forward * spawnForwardOffset;
+
         for (int i = 0; i < count; i++)
         {
             Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
-            Vector3 spawnPosition = new Vector3(
-                transform.position.x + randomCircle.x,
-                transform.position.y,
-                transform.position.z + randomCircle.y
+            Vector3 rawPosition = new Vector3(
+                baseSpawnCenter.x + randomCircle.x,
+                baseSpawnCenter.y,
+                baseSpawnCenter.z + randomCircle.y
             );
+
+            Vector3 spawnPosition = rawPosition;
+            if (UnityEngine.AI.NavMesh.SamplePosition(rawPosition, out UnityEngine.AI.NavMeshHit hit, 10f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                spawnPosition = hit.position;
+            }
 
             GameObject soldier = Instantiate(soldierPrefab, spawnPosition, Quaternion.identity);
 
@@ -379,10 +412,20 @@ public class SpawnSoldier : MonoBehaviour
     // Hàm dọn dẹp các lính cũ đang hoạt động
     private void ClearSpawnedSoldiers()
     {
+        if (spawnedSoldiers == null) return;
+
+        // Nếu Scene đang đóng / unload thì chỉ dọn dẹp list C#, KHÔNG gọi Destroy() để tránh lỗi Scene Cleanup của Unity Engine
+        if (!gameObject.scene.isLoaded)
+        {
+            spawnedSoldiers.Clear();
+            return;
+        }
+
         Debug.Log($"[SpawnSoldier] ClearSpawnedSoldiers được gọi trên {gameObject.name}. Danh sách đang có {spawnedSoldiers.Count} lính.");
 
-        foreach (GameObject soldier in spawnedSoldiers)
+        for (int i = spawnedSoldiers.Count - 1; i >= 0; i--)
         {
+            GameObject soldier = spawnedSoldiers[i];
             if (soldier != null)
             {
                 Debug.Log($"[SpawnSoldier] Hủy lính trong danh sách: {soldier.name}");
@@ -390,20 +433,6 @@ public class SpawnSoldier : MonoBehaviour
             }
         }
         spawnedSoldiers.Clear();
-
-        Collider[] colliders = Physics.OverlapSphere(transform.position, spawnRadius * 3f);
-        foreach (var col in colliders)
-        {
-            if (col != null)
-            {
-                UnitController unit = col.GetComponentInParent<UnitController>();
-                if (unit != null && unit.gameObject != gameObject)
-                {
-                    Debug.Log($"[SpawnSoldier] Phát hiện và hủy lính lọt lưới xung quanh: {unit.gameObject.name}");
-                    Destroy(unit.gameObject);
-                }
-            }
-        }
     }
 
     // Hàm tạo material hologram mặc định bằng code
@@ -493,14 +522,22 @@ public class SpawnSoldier : MonoBehaviour
             holoMat = CreateDefaultHologramMaterial();
         }
 
+        Vector3 baseSpawnCenter = transform.position + transform.forward * spawnForwardOffset;
+
         for (int i = 0; i < count; i++)
         {
             Vector2 randomCircle = Random.insideUnitCircle * spawnRadius;
-            Vector3 spawnPosition = new Vector3(
-                transform.position.x + randomCircle.x,
-                transform.position.y,
-                transform.position.z + randomCircle.y
+            Vector3 rawPosition = new Vector3(
+                baseSpawnCenter.x + randomCircle.x,
+                baseSpawnCenter.y,
+                baseSpawnCenter.z + randomCircle.y
             );
+
+            Vector3 spawnPosition = rawPosition;
+            if (UnityEngine.AI.NavMesh.SamplePosition(rawPosition, out UnityEngine.AI.NavMeshHit hit, 10f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                spawnPosition = hit.position;
+            }
 
             GameObject hologram = Instantiate(soldierPrefab, spawnPosition, Quaternion.identity);
             hologram.name = $"{soldierPrefab.name}_Hologram_{i}";
@@ -566,6 +603,13 @@ public class SpawnSoldier : MonoBehaviour
         StopHologramAnimationCoroutine();
         if (spawnedHologramsList != null && spawnedHologramsList.Count > 0)
         {
+            if (!gameObject.scene.isLoaded)
+            {
+                spawnedHologramsList.Clear();
+                spawnedHolograms = false;
+                return;
+            }
+
             Debug.Log($"[SpawnSoldier] ClearHolograms được gọi trên {gameObject.name}. Đang dọn dẹp {spawnedHologramsList.Count} lính hologram.");
             foreach (GameObject hologram in spawnedHologramsList)
             {
@@ -583,7 +627,14 @@ public class SpawnSoldier : MonoBehaviour
     {
         if (dynamicHologramMaterial != null)
         {
-            Destroy(dynamicHologramMaterial);
+            if (Application.isPlaying)
+            {
+                Destroy(dynamicHologramMaterial);
+            }
+            else
+            {
+                DestroyImmediate(dynamicHologramMaterial);
+            }
         }
     }
 
@@ -609,21 +660,19 @@ public class SpawnSoldier : MonoBehaviour
     public int GetActiveSoldiersCount()
     {
         if (spawnedSoldiers == null) return 0;
-        int count = 0;
-        foreach (GameObject soldier in spawnedSoldiers)
-        {
-            if (soldier != null)
-            {
-                count++;
-            }
-        }
-        return count;
+        spawnedSoldiers.RemoveAll(soldier => soldier == null);
+        return spawnedSoldiers.Count;
     }
 
     public void LoadAndSpawnSoldiers(int count, int buildingLevel)
     {
         ClearSpawnedSoldiers();
         currentLevel = buildingLevel + 1;
+        int maxAllowed = GetMaxSoldiersForLevel(currentLevel);
+        if (count <= 0 || count > maxAllowed)
+        {
+            count = maxAllowed;
+        }
         SpawnSoldiers(count);
     }
 

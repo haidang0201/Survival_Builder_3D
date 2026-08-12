@@ -45,6 +45,18 @@ public class TreeVisual : MonoBehaviour
         isFalling = false;
     }
 
+    /// <summary>
+    /// Reset về trạng thái ban đầu (gọi khi cây hồi sinh mà không qua SetActive).
+    /// </summary>
+    public void ResetState()
+    {
+        StopAllCoroutines();
+        shakeCoroutine = null;
+        fallCoroutine  = null;
+        transform.localRotation = originalRotation;
+        isFalling = false;
+    }
+
     // ===== PUBLIC API =====
 
     /// <summary>Gọi khi cây bị chặt 1 lần (còn sống).</summary>

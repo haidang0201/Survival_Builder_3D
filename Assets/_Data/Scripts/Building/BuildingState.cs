@@ -36,4 +36,10 @@ public class BuildingState
     public int currentWorkers;      // Số worker hiện tại của công trình
     public int maxWorkers;          // Số worker tối đa của công trình
     public int level;               // Cấp độ công trình (dùng khi có nâng cấp)
+    
+    // ── THUỘC TÍNH NÂNG CAO (TUTORIAL / LƯU TRẠNG THÁI) ─────────
+    public bool isRuined;
+    public bool startAsRuined;
+    public bool isInitialBuildNeeded;
+    public int slotIndex = -1;           // Index của ô Slot 3D (0, 1, 2, 3...)
 }

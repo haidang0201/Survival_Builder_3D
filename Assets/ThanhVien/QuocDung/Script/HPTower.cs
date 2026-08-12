@@ -19,6 +19,8 @@ public class HPTower : MonoBehaviour, IDamageable
     private bool isDestroyed = false;
     public bool IsDestroyed => isDestroyed;
 
+    public event System.Action OnDeathEvent;
+
     // Các thành phần UI được khởi tạo hoàn toàn bằng code lúc chạy game
     private Canvas hpCanvas;
     private Image hpFillImage;
@@ -105,8 +107,23 @@ public class HPTower : MonoBehaviour, IDamageable
     {
         if (isDestroyed) return;
 
+        // Bỏ qua không nhận sát thương nếu công trình đang trong quá trình xây dựng ban đầu hoặc chưa xây xong
+        UpgradeableBuilding building = GetComponent<UpgradeableBuilding>();
+        if (building == null) building = GetComponentInParent<UpgradeableBuilding>();
+        if (building != null && (building.IsInitialBuildNeeded || building.IsUpgrading))
+        {
+            return;
+        }
+
+        BuildingCtrl ctrl = GetComponent<BuildingCtrl>();
+        if (ctrl == null) ctrl = GetComponentInParent<BuildingCtrl>();
+        if (ctrl != null && !ctrl.IsBuilt)
+        {
+            return;
+        }
+
         CurrentHealth -= amount;
-        Debug.Log($"[HPTower] {gameObject.name} nhận {amount} sát thương tại {hitPoint}. HP còn lại: {CurrentHealth}/{MaxHealth}");
+        // Debug.Log($"[HPTower] {gameObject.name} nhận {amount} sát thương tại {hitPoint}. HP còn lại: {CurrentHealth}/{MaxHealth}");
 
         // CẬP NHẬT THANH MÁU ĐÃ VẼ BẰNG CODE
         if (hpFillImage != null)
@@ -132,6 +149,8 @@ public class HPTower : MonoBehaviour, IDamageable
     {
         if (isDestroyed) return;
         isDestroyed = true;
+
+        OnDeathEvent?.Invoke();
 
         Debug.Log($"[HPTower] {gameObject.name} đã lọt vào trạng thái sụp đổ!");
 
@@ -196,6 +215,23 @@ public class HPTower : MonoBehaviour, IDamageable
                 Destroy(whiteSprite.texture);
             }
             Destroy(whiteSprite);
+        }
+    }
+
+    // Thêm hàm này vào cuối file HPTower.cs[cite: 28]
+    /// <summary>
+    /// Đưa thanh máu về 0 và ẩn Canvas HP khi công trình ở trạng thái Tàn Tích ban đầu
+    /// </summary>
+    public void SetRuinedHealth()
+    {
+        CurrentHealth = 0f;
+        if (hpFillImage != null)
+        {
+            hpFillImage.fillAmount = 0f;
+        }
+        if (hpCanvas != null)
+        {
+            hpCanvas.gameObject.SetActive(false);
         }
     }
 }

@@ -23,19 +23,16 @@ public class UIResourceObserver : MonoBehaviour
             return;
         }
 
-        if (JsonDataManager.Ins == null)
+        if (JsonDataManager.Ins != null)
         {
-            Debug.LogError("[UIResourceObserver] JsonDataManager.Ins chưa tồn tại!");
-            return;
+            Subscribe();
+            RefreshHUD();
         }
-
-        Subscribe();
-        RefreshHUD();
     }
 
     private void OnEnable()
     {
-        if (!_isSubscribed && JsonDataManager.Ins != null)
+        if (!_isSubscribed && JsonDataManager.HasInstance)
             Subscribe();
     }
 
@@ -47,8 +44,11 @@ public class UIResourceObserver : MonoBehaviour
     private void Subscribe()
     {
         if (_isSubscribed) return;
+        if (!JsonDataManager.HasInstance) return;
 
         var dm = JsonDataManager.Ins;
+        if (dm == null) return;
+
         dm.OnGoldChanged += OnGoldChanged;
         dm.OnWoodChanged += OnWoodChanged;
         dm.OnStoneChanged += OnStoneChanged;
@@ -59,9 +59,12 @@ public class UIResourceObserver : MonoBehaviour
 
     private void Unsubscribe()
     {
-        if (!_isSubscribed || JsonDataManager.Ins == null) return;
+        if (!_isSubscribed) return;
+        if (!JsonDataManager.HasInstance) return;
 
         var dm = JsonDataManager.Ins;
+        if (dm == null) return;
+
         dm.OnGoldChanged -= OnGoldChanged;
         dm.OnWoodChanged -= OnWoodChanged;
         dm.OnStoneChanged -= OnStoneChanged;
@@ -77,9 +80,11 @@ public class UIResourceObserver : MonoBehaviour
 
     private void RefreshHUD()
     {
-        if (hud == null || JsonDataManager.Ins == null) return;
+        if (hud == null || !JsonDataManager.HasInstance) return;
 
         var dm = JsonDataManager.Ins;
+        if (dm == null) return;
+
         hud.UpdateGold(dm.gold);
         hud.UpdateWood(dm.wood);
         hud.UpdateStone(dm.stone);

@@ -71,14 +71,21 @@ public class BuildingProgressBarUI : MonoBehaviour
         }
     }
 
+    private float _realTimeActive = 0f;
+
     private void OnEnable()
     {
+        _realTimeActive = 0f;
+        if (_ownerBuilding == null)
+        {
+            _ownerBuilding = GetComponentInParent<UpgradeableBuilding>();
+        }
+
         if (_ownerBuilding != null)
         {
             BuildingProgressBridge.RegisterUI(_ownerBuilding, this);
 
-            // CHỈ BẬT UI khi nhà đang trong tiến trình Nâng cấp/Xây mới thực sự
-            if (!_ownerBuilding.IsUpgrading)
+            if (!_ownerBuilding.IsUpgrading && !_ownerBuilding.IsRuined)
             {
                 HideProgress();
                 DeactivateAllVFX();
@@ -102,9 +109,32 @@ public class BuildingProgressBarUI : MonoBehaviour
 
     public void DeactivateAllVFX()
     {
-        if (placementDustVFX != null) placementDustVFX.gameObject.SetActive(false);
-        if (constructionLoopVFX != null) constructionLoopVFX.gameObject.SetActive(false);
-        if (completionAuraVFX != null) completionAuraVFX.gameObject.SetActive(false);
+        if (placementDustVFX != null)
+        {
+            placementDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            placementDustVFX.gameObject.SetActive(false);
+        }
+        if (constructionLoopVFX != null)
+        {
+            constructionLoopVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            constructionLoopVFX.gameObject.SetActive(false);
+        }
+        if (completionAuraVFX != null)
+        {
+            completionAuraVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            completionAuraVFX.gameObject.SetActive(false);
+        }
+
+        // 🛡️ FALLBACK: Tắt tất cả ParticleSystem con thuộc UI/Công trình này khi không nâng cấp
+        var allPS = GetComponentsInChildren<ParticleSystem>(true);
+        foreach (var ps in allPS)
+        {
+            if (ps != null)
+            {
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                ps.gameObject.SetActive(false);
+            }
+        }
     }
 
     /// <summary>
@@ -133,8 +163,9 @@ public class BuildingProgressBarUI : MonoBehaviour
     /// <summary>
     /// Cập nhật thanh tiến trình & đếm ngược thời gian
     /// </summary>
-    public void UpdateProgress(float currentTimer, float totalDuration)
+    public void UpdateProgress(float currentTimer, float totalDuration, bool isWaveMode = false)
     {
+        _realTimeActive += Time.deltaTime;
         // Bật UI Slider & Text lên CHỈ khi hàm này được gọi
         if (upgradeProgressBar != null)
         {
@@ -147,7 +178,14 @@ public class BuildingProgressBarUI : MonoBehaviour
         {
             if (!upgradeTimerText.gameObject.activeSelf) upgradeTimerText.gameObject.SetActive(true);
             float timeLeft = Mathf.Max(0f, totalDuration - currentTimer);
-            upgradeTimerText.text = $"{timeLeft:F1}s";
+            if (isWaveMode)
+            {
+                upgradeTimerText.text = $"{Mathf.CeilToInt(timeLeft)} Wave";
+            }
+            else
+            {
+                upgradeTimerText.text = $"{timeLeft:F1}s";
+            }
         }
 
         // Bật VFX khói thi công mượt mà
@@ -157,8 +195,8 @@ public class BuildingProgressBarUI : MonoBehaviour
             if (!constructionLoopVFX.isPlaying) constructionLoopVFX.Play();
         }
 
-        // Xử lý âm thanh gõ thi công trong giới hạn thời gian
-        bool isSoundWithinDuration = maxConstructionSoundDuration <= 0f || currentTimer < maxConstructionSoundDuration;
+        // Xử lý âm thanh gõ thi công trong giới hạn thời gian thực tế
+        bool isSoundWithinDuration = maxConstructionSoundDuration <= 0f || _realTimeActive < maxConstructionSoundDuration;
 
         if (isSoundWithinDuration)
         {
@@ -247,6 +285,18 @@ public class BuildingProgressBarUI : MonoBehaviour
     {
         if (upgradeProgressBar != null) upgradeProgressBar.gameObject.SetActive(false);
         if (upgradeTimerText != null) upgradeTimerText.gameObject.SetActive(false);
+
+        var sliders = GetComponentsInChildren<Slider>(true);
+        foreach (var s in sliders)
+        {
+            if (s != null) s.gameObject.SetActive(false);
+        }
+
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        foreach (var t in texts)
+        {
+            if (t != null && t.gameObject != gameObject) t.gameObject.SetActive(false);
+        }
     }
 }
 
@@ -284,32 +334,25 @@ public static class BuildingProgressBridge
 
 public static class UIManagerExtensions
 {
-    public static void UpdateUpgradeProgress(this UIManager uiManager, float currentTimer, float totalDuration)
+    // Cập nhật tiến độ chỉ cho 1 công trình chỉ định
+    public static void UpdateUpgradeProgress(this UIManager uiManager, UpgradeableBuilding building, float currentTimer, float totalDuration, bool isWaveMode = false)
     {
-        var allBuildings = Object.FindObjectsByType<UpgradeableBuilding>(FindObjectsSortMode.None);
-        foreach (var building in allBuildings)
+        if (building == null) return;
+        var targetUI = BuildingProgressBridge.GetUI(building);
+        if (targetUI != null)
         {
-            if (building.IsUpgrading)
-            {
-                var targetUI = BuildingProgressBridge.GetUI(building);
-                if (targetUI != null)
-                {
-                    targetUI.UpdateProgress(currentTimer, totalDuration);
-                }
-            }
+            targetUI.UpdateProgress(currentTimer, totalDuration, isWaveMode);
         }
     }
 
-    public static void HideUpgradeProgress(this UIManager uiManager)
+    // Ẩn tiến độ chỉ cho 1 công trình chỉ định
+    public static void HideUpgradeProgress(this UIManager uiManager, UpgradeableBuilding building)
     {
-        var allUIs = Object.FindObjectsByType<BuildingProgressBarUI>(FindObjectsSortMode.None);
-        foreach (var ui in allUIs)
+        if (building == null) return;
+        var targetUI = BuildingProgressBridge.GetUI(building);
+        if (targetUI != null)
         {
-            if (ui.upgradeProgressBar != null && ui.upgradeProgressBar.gameObject.activeSelf)
-            {
-                ui.HandleCompleteSequence();
-            }
-            ui.HideProgress();
+            targetUI.HandleCompleteSequence();
         }
     }
 }
