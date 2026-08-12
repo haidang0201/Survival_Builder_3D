@@ -1,135 +1,142 @@
 using UnityEngine;
 
-/// <summary>
-/// Quản lý nhạc nền (Background Music - BGM) đơn giản và độc lập.
-/// Gán script này vào 1 GameObject trong Scene và gán file nhạc vào ô BGM Clip.
-/// </summary>
 public class SoundManager : MonoBehaviour
 {
-    [Header("--- Background Music Settings ---")]
-    [Tooltip("File nhạc nền (AudioClip) cần phát")]
-    public AudioClip bgmClip;
+    [Header("Day / Night Music")]
+    [SerializeField] private AudioClip dayMusic;
+    [SerializeField] private AudioClip nightMusic;
+    [SerializeField] private AudioClip roosterSound;
 
-    [Range(0f, 1f)]
-    [Tooltip("Âm lượng nhạc nền (0.0 đến 1.0)")]
-    public float bgmVolume = 0.5f;
+    [Header("Volume")]
+    [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
+    [SerializeField, Range(0f, 1f)] private float effectVolume = 1f;
 
-    [Tooltip("Tự động phát nhạc ngay khi load Scene")]
-    public bool playOnAwake = true;
+    [Header("Options")]
+    [SerializeField] private bool playRoosterWhenDayStarts = true;
+    [SerializeField] private bool playCurrentMusicOnStart = true;
 
-    [Tooltip("Lặp lại nhạc nền khi hết bài")]
-    public bool loop = true;
-
-    [Tooltip("Giữ nhạc nền tiếp tục phát khi chuyển qua Scene khác")]
-    public bool dontDestroyOnLoad = false;
-
-    private AudioSource audioSource;
+    private AudioSource musicSource;
+    private AudioSource effectSource;
+    private DayNightManager dayNightManager;
+    private bool isBound;
 
     private void Awake()
     {
-        if (dontDestroyOnLoad)
-        {
-            SoundManager[] existingManagers = FindObjectsByType<SoundManager>(FindObjectsSortMode.None);
-            if (existingManagers.Length > 1)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            DontDestroyOnLoad(gameObject);
-        }
+        musicSource = gameObject.AddComponent<AudioSource>();
+        musicSource.playOnAwake = false;
+        musicSource.loop = true;
+        musicSource.spatialBlend = 0f;
+        musicSource.volume = musicVolume;
 
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
+        effectSource = gameObject.AddComponent<AudioSource>();
+        effectSource.playOnAwake = false;
+        effectSource.loop = false;
+        effectSource.spatialBlend = 0f;
+        effectSource.volume = effectVolume;
+    }
 
-        audioSource.playOnAwake = false;
+    private void OnEnable()
+    {
+        TryBindDayNightManager();
     }
 
     private void Start()
     {
-        if (playOnAwake && bgmClip != null)
+        TryBindDayNightManager();
+
+        if (playCurrentMusicOnStart && dayNightManager != null)
         {
-            PlayBGM(bgmClip);
+            ApplyMusicForCurrentMode(false);
         }
+    }
+
+    private void OnDisable()
+    {
+        UnbindDayNightManager();
     }
 
     private void Update()
     {
-        if (audioSource != null && audioSource.volume != bgmVolume)
+        if (!isBound)
         {
-            audioSource.volume = bgmVolume;
+            TryBindDayNightManager();
         }
     }
 
-    #region Public API
-
-    /// <summary>
-    /// Phát nhạc nền
-    /// </summary>
-    public void PlayBGM(AudioClip clip = null)
+    private void TryBindDayNightManager()
     {
-        if (audioSource == null) return;
-
-        AudioClip clipToPlay = clip != null ? clip : bgmClip;
-        if (clipToPlay == null)
+        if (isBound)
         {
-            Debug.LogWarning("[SoundManager] Chưa gán BGM Clip trong Inspector!");
             return;
         }
 
-        audioSource.clip = clipToPlay;
-        audioSource.volume = bgmVolume;
-        audioSource.loop = loop;
-        audioSource.Play();
+        dayNightManager = DayNightManager.Ins;
+        if (dayNightManager == null)
+        {
+            return;
+        }
+
+        dayNightManager.OnDayStart += HandleDayStart;
+        dayNightManager.OnNightStart += HandleNightStart;
+        isBound = true;
     }
 
-    /// <summary>
-    /// Dừng nhạc nền
-    /// </summary>
-    public void StopBGM()
+    private void UnbindDayNightManager()
     {
-        if (audioSource != null && audioSource.isPlaying)
+        if (!isBound || dayNightManager == null)
         {
-            audioSource.Stop();
+            return;
+        }
+
+        dayNightManager.OnDayStart -= HandleDayStart;
+        dayNightManager.OnNightStart -= HandleNightStart;
+        isBound = false;
+    }
+
+    private void HandleDayStart()
+    {
+        if (playRoosterWhenDayStarts && roosterSound != null)
+        {
+            effectSource.PlayOneShot(roosterSound, effectVolume);
+        }
+
+        PlayMusic(dayMusic);
+    }
+
+    private void HandleNightStart()
+    {
+        PlayMusic(nightMusic);
+    }
+
+    private void ApplyMusicForCurrentMode(bool restartIfSameClip)
+    {
+        if (dayNightManager.IsDay())
+        {
+            PlayMusic(dayMusic, restartIfSameClip);
+        }
+        else
+        {
+            PlayMusic(nightMusic, restartIfSameClip);
         }
     }
 
-    /// <summary>
-    /// Tạm dừng nhạc nền
-    /// </summary>
-    public void PauseBGM()
+    private void PlayMusic(AudioClip clip, bool restartIfSameClip = false)
     {
-        if (audioSource != null && audioSource.isPlaying)
+        if (clip == null)
         {
-            audioSource.Pause();
+            musicSource.Stop();
+            musicSource.clip = null;
+            return;
         }
-    }
 
-    /// <summary>
-    /// Tiếp tục phát nhạc nền
-    /// </summary>
-    public void ResumeBGM()
-    {
-        if (audioSource != null && !audioSource.isPlaying)
+        musicSource.volume = musicVolume;
+
+        if (!restartIfSameClip && musicSource.clip == clip && musicSource.isPlaying)
         {
-            audioSource.UnPause();
+            return;
         }
-    }
 
-    /// <summary>
-    /// Thay đổi âm lượng nhạc nền (0.0 đến 1.0)
-    /// </summary>
-    public void SetVolume(float volume)
-    {
-        bgmVolume = Mathf.Clamp01(volume);
-        if (audioSource != null)
-        {
-            audioSource.volume = bgmVolume;
-        }
+        musicSource.clip = clip;
+        musicSource.Play();
     }
-
-    #endregion
 }
-
